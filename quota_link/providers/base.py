@@ -2,7 +2,7 @@
 
 from typing import Any, Mapping, Protocol, runtime_checkable
 
-from quota_link.models import BalanceSnapshot
+from ..models import BalanceSnapshot
 
 
 @runtime_checkable

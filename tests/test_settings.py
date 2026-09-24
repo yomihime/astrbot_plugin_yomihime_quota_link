@@ -1,3 +1,5 @@
+import pytest
+
 from quota_link.models import (
     ProviderType,
     QueryParseErrorCode,
@@ -40,6 +42,10 @@ def test_empty_configuration_is_valid_with_defaults():
     assert settings.errors == ()
     assert settings.timeout_seconds == 8
     assert settings.cache_ttl_seconds == 60
+    assert settings.max_concurrency == 4
+    assert settings.total_timeout_seconds == 30
+    assert settings.allow_group_queries is False
+    assert settings.group_allowed_user_ids == ()
 
 
 def test_unknown_type_and_duplicate_id_are_diagnosed_locally():
@@ -105,6 +111,17 @@ def test_provider_alias_resolves_provider_even_when_multiple_accounts_share_type
     assert len(settings.queryable_accounts) == 2
 
 
+def test_provider_aliases_are_public_normalized_and_read_only():
+    aliases = load_settings({}).directory.provider_aliases
+
+    assert aliases["deepseek"] is ProviderType.DEEPSEEK
+    assert aliases["深度求索"] is ProviderType.DEEPSEEK
+    assert aliases["阿里百炼"] is ProviderType.ALIBABA_BAILIAN
+    assert aliases["openai-compatible"] is ProviderType.OPENAI_COMPATIBLE
+    with pytest.raises(TypeError):
+        aliases["custom"] = ProviderType.DEEPSEEK
+
+
 def test_missing_environment_reference_and_credentials_are_unqueryable():
     settings = load_settings(
         {
@@ -145,6 +162,7 @@ def test_missing_endpoint_and_disabled_account_do_not_enter_resolution_index():
                     "No endpoint",
                     endpoint=None,
                     auth={"api_key": "credential"},
+                    provider_type="openai_compatible",
                 ),
                 account("disabled", "Disabled", enabled=False),
             ]
@@ -276,3 +294,112 @@ def test_environment_resolved_secret_is_available_but_hidden_from_repr():
     assert settings.accounts[0].env_references[0].variable_name == "API_KEY"
     assert settings.directory.entries[0].id == "main"
     assert not hasattr(settings.directory.entries[0], "auth")
+
+
+def test_query_fingerprint_tracks_auth_endpoint_and_response_mapping_only():
+    base = account(
+        auth={"api_key": "secret-a"},
+        endpoint={"url": "https://example.invalid/balance"},
+        response_mapping={"remaining": "data.left"},
+    )
+    same = {**base, "display_name": "Renamed", "aliases": ["other"]}
+    variants = (
+        {**base, "auth": {"api_key": "secret-b"}},
+        {**base, "endpoint": {"url": "https://example.invalid/v2/balance"}},
+        {**base, "response_mapping": {"remaining": "result.left"}},
+        {**base, "timeout_seconds": 3},
+    )
+    fingerprint = load_settings({"providers": [base]}).accounts[0].config_fingerprint
+
+    assert (
+        load_settings({"providers": [base]}).accounts[0].config_fingerprint
+        == fingerprint
+    )
+    assert (
+        load_settings({"providers": [same]}).accounts[0].config_fingerprint
+        == fingerprint
+    )
+    assert all(
+        load_settings({"providers": [variant]}).accounts[0].config_fingerprint
+        != fingerprint
+        for variant in variants
+    )
+    assert "secret-a" not in fingerprint
+    assert "secret-a" not in repr(load_settings({"providers": [base]}))
+
+
+def test_account_response_mapping_is_immutable_and_hidden_from_repr():
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    response_mapping={
+                        "remaining": "payload.balance",
+                        "nested": {"x": 1},
+                    }
+                )
+            ]
+        }
+    )
+    mapping = settings.accounts[0].response_mapping
+
+    assert mapping["remaining"] == "payload.balance"
+    assert mapping["nested"]["x"] == 1
+    assert "response_mapping" not in repr(settings.accounts[0])
+    with pytest.raises(TypeError):
+        mapping["remaining"] = "changed"
+    with pytest.raises(TypeError):
+        mapping["nested"]["x"] = 2
+
+
+def test_builtin_provider_types_accept_missing_account_endpoint():
+    settings = load_settings(
+        {
+            "providers": [
+                account("deepseek", "DeepSeek", endpoint=None),
+                account(
+                    "bailian",
+                    "Bailian",
+                    provider_type="alibaba_bailian",
+                    endpoint=None,
+                ),
+            ]
+        }
+    )
+
+    assert [item.queryable for item in settings.accounts] == [True, True]
+    assert not any(error.code == "missing_endpoint" for error in settings.errors)
+
+
+def test_global_query_settings_validate_boundaries_and_group_defaults():
+    settings = load_settings(
+        {
+            "max_concurrency": 1,
+            "total_timeout_seconds": 0.01,
+            "allow_group_queries": True,
+            "group_allowed_user_ids": [" 1001 ", "1001", "1002"],
+        }
+    )
+    invalid = load_settings(
+        {
+            "max_concurrency": 0,
+            "total_timeout_seconds": float("inf"),
+            "allow_group_queries": "yes",
+            "group_allowed_user_ids": ["valid", ""],
+        }
+    )
+
+    assert settings.max_concurrency == 1
+    assert settings.total_timeout_seconds == 0.01
+    assert settings.allow_group_queries is True
+    assert settings.group_allowed_user_ids == ("1001", "1002")
+    assert invalid.max_concurrency == 4
+    assert invalid.total_timeout_seconds == 30
+    assert invalid.allow_group_queries is False
+    assert invalid.group_allowed_user_ids == ()
+    assert {error.code for error in invalid.errors} >= {
+        "invalid_positive_integer",
+        "invalid_positive_number",
+        "invalid_boolean",
+        "invalid_user_ids",
+    }

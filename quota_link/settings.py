@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 import os
 import re
@@ -9,7 +11,7 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Mapping
 
-from quota_link.models import (
+from .models import (
     ProviderType,
     QueryParseError,
     QueryParseErrorCode,
@@ -21,6 +23,8 @@ from quota_link.models import (
 _ENV_REFERENCE = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$")
 _DEFAULT_TIMEOUT = 8.0
 _DEFAULT_CACHE_TTL = 60.0
+_DEFAULT_MAX_CONCURRENCY = 4
+_DEFAULT_TOTAL_TIMEOUT = 30.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +68,11 @@ class AccountDirectory:
     )
     _provider_index: Mapping[str, ProviderType] = field(repr=False, compare=False)
 
+    @property
+    def provider_aliases(self) -> Mapping[str, ProviderType]:
+        """Return the normalized, credential-free provider alias mapping."""
+        return self._provider_index
+
     def resolve_target(self, name: str) -> QueryParseResult:
         """Resolve an account name before considering built-in provider aliases."""
         normalized = normalize_name(name)
@@ -106,6 +115,8 @@ class AccountSettings:
     env_references: tuple[EnvironmentReference, ...]
     auth: Mapping[str, Any] = field(repr=False, compare=False)
     endpoint: Mapping[str, Any] | None = field(repr=False, compare=False)
+    response_mapping: Mapping[str, Any] = field(repr=False, compare=False)
+    config_fingerprint: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,6 +128,10 @@ class PluginSettings:
     errors: tuple[ConfigDiagnostic, ...]
     timeout_seconds: float = _DEFAULT_TIMEOUT
     cache_ttl_seconds: float = _DEFAULT_CACHE_TTL
+    max_concurrency: int = _DEFAULT_MAX_CONCURRENCY
+    total_timeout_seconds: float = _DEFAULT_TOTAL_TIMEOUT
+    allow_group_queries: bool = False
+    group_allowed_user_ids: tuple[str, ...] = ()
 
     @property
     def enabled_accounts(self) -> tuple[AccountSettings, ...]:
@@ -181,10 +196,72 @@ def _positive_number(
     return number
 
 
+def _positive_integer(
+    value: Any,
+    default: int,
+    path: str,
+    errors: list[ConfigDiagnostic],
+) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        errors.append(
+            ConfigDiagnostic(
+                "invalid_positive_integer",
+                path,
+                f"{path} 必须为正整数；已使用默认值",
+            )
+        )
+        return default
+    return value
+
+
+def _deep_freeze(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType(
+            {key: _deep_freeze(item) for key, item in value.items()}
+        )
+    if isinstance(value, (list, tuple)):
+        return tuple(_deep_freeze(item) for item in value)
+    return value
+
+
 def _freeze_mapping(value: Mapping[str, Any] | None) -> Mapping[str, Any] | None:
     if value is None:
         return None
-    return MappingProxyType(dict(value))
+    return _deep_freeze(value)
+
+
+def _canonical_value(value: Any) -> Any:
+    """Convert supported config values to deterministic JSON-safe data."""
+    if isinstance(value, Mapping):
+        return {
+            str(key): _canonical_value(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_canonical_value(item) for item in value]
+    if value is None or isinstance(value, (str, bool, int, float)):
+        return value
+    return str(value)
+
+
+def _config_fingerprint(
+    provider_type: ProviderType,
+    auth: Mapping[str, Any],
+    endpoint: Mapping[str, Any] | None,
+    response_mapping: Mapping[str, Any],
+    timeout_seconds: float,
+) -> str:
+    payload = {
+        "provider_type": provider_type.value,
+        "auth": _canonical_value(auth),
+        "endpoint": _canonical_value(endpoint),
+        "response_mapping": _canonical_value(response_mapping),
+        "timeout_seconds": timeout_seconds,
+    }
+    encoded = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _resolve_secrets(
@@ -359,6 +436,44 @@ def load_settings(
         "cache_ttl_seconds",
         errors,
     )
+    max_concurrency = _positive_integer(
+        raw.get("max_concurrency", _DEFAULT_MAX_CONCURRENCY),
+        _DEFAULT_MAX_CONCURRENCY,
+        "max_concurrency",
+        errors,
+    )
+    total_timeout = _positive_number(
+        raw.get("total_timeout_seconds", _DEFAULT_TOTAL_TIMEOUT),
+        _DEFAULT_TOTAL_TIMEOUT,
+        "total_timeout_seconds",
+        errors,
+    )
+    allow_group_queries = raw.get("allow_group_queries", False)
+    if not isinstance(allow_group_queries, bool):
+        errors.append(
+            ConfigDiagnostic(
+                "invalid_boolean",
+                "allow_group_queries",
+                "allow_group_queries 必须为布尔值；已使用默认值",
+            )
+        )
+        allow_group_queries = False
+    group_ids_raw = raw.get("group_allowed_user_ids", ())
+    if not isinstance(group_ids_raw, (list, tuple)) or any(
+        not isinstance(user_id, str) or not user_id.strip() for user_id in group_ids_raw
+    ):
+        errors.append(
+            ConfigDiagnostic(
+                "invalid_user_ids",
+                "group_allowed_user_ids",
+                "group_allowed_user_ids 必须为非空文本列表；已使用空列表",
+            )
+        )
+        group_allowed_user_ids: tuple[str, ...] = ()
+    else:
+        group_allowed_user_ids = tuple(
+            dict.fromkeys(user_id.strip() for user_id in group_ids_raw)
+        )
     records = raw.get("providers", ())
     if not isinstance(records, (list, tuple)):
         errors.append(
@@ -476,6 +591,19 @@ def load_settings(
                     safe_account_id,
                 )
             )
+        response_mapping_raw = record.get("response_mapping", {})
+        if not isinstance(response_mapping_raw, Mapping):
+            response_mapping = {}
+            errors.append(
+                ConfigDiagnostic(
+                    "invalid_response_mapping",
+                    f"{path}.response_mapping",
+                    "response_mapping 必须为映射；已使用空映射",
+                    safe_account_id,
+                )
+            )
+        else:
+            response_mapping = response_mapping_raw
         enabled = record.get("enabled", True) is True
         if "enabled" in record and not isinstance(record["enabled"], bool):
             errors.append(
@@ -522,7 +650,11 @@ def load_settings(
                     safe_account_id,
                 )
             )
-        if reason is None and not _has_endpoint(endpoint):
+        if (
+            reason is None
+            and provider_type is ProviderType.OPENAI_COMPATIBLE
+            and not _has_endpoint(endpoint)
+        ):
             reason = "missing_endpoint"
             errors.append(
                 ConfigDiagnostic(
@@ -544,6 +676,16 @@ def load_settings(
             )
             continue
         ids.add(normalized_id)
+        frozen_auth = _freeze_mapping(auth)
+        frozen_endpoint = _freeze_mapping(endpoint)
+        frozen_response_mapping = _freeze_mapping(response_mapping)
+        fingerprint = _config_fingerprint(
+            provider_type,
+            auth,
+            endpoint,
+            response_mapping,
+            account_timeout,
+        )
         candidate = AccountSettings(
             id=account_id,
             provider_type=provider_type,
@@ -555,8 +697,10 @@ def load_settings(
             queryable=reason is None,
             unavailable_reason=reason,
             env_references=tuple(dict.fromkeys(env_references)),
-            auth=_freeze_mapping(auth),
-            endpoint=_freeze_mapping(endpoint),
+            auth=frozen_auth,
+            endpoint=frozen_endpoint,
+            response_mapping=frozen_response_mapping,
+            config_fingerprint=fingerprint,
         )
         parsed.append(candidate)
         parsed_paths.append(path)
@@ -605,4 +749,14 @@ def load_settings(
         _account_index=MappingProxyType(account_index),
         _provider_index=MappingProxyType(_provider_aliases()),
     )
-    return PluginSettings(accounts, directory, tuple(errors), timeout, ttl)
+    return PluginSettings(
+        accounts=accounts,
+        directory=directory,
+        errors=tuple(errors),
+        timeout_seconds=timeout,
+        cache_ttl_seconds=ttl,
+        max_concurrency=max_concurrency,
+        total_timeout_seconds=total_timeout,
+        allow_group_queries=allow_group_queries,
+        group_allowed_user_ids=group_allowed_user_ids,
+    )

@@ -1,4 +1,5 @@
 import ast
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,8 @@ def _is_core_module(module: str) -> bool:
 
 
 def _module_name(path: Path, root: Path) -> str:
+    if path == root / "main.py":
+        return "plugin.main"
     relative = path.relative_to(root).with_suffix("")
     parts = list(relative.parts)
     if parts[-1] == "__init__":
@@ -52,6 +55,26 @@ def _resolve_imports(path: Path, module_name: str, root: Path) -> set[str]:
                     imports.add(imported_child)
 
     return imports
+
+
+def _uses_absolute_prefix(path: Path, prefixes: tuple[str, ...]) -> bool:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            if any(
+                alias.name == prefix or alias.name.startswith(f"{prefix}.")
+                for alias in node.names
+                for prefix in prefixes
+            ):
+                return True
+        elif isinstance(node, ast.ImportFrom) and node.level == 0:
+            module = node.module or ""
+            if any(
+                module == prefix or module.startswith(f"{prefix}.")
+                for prefix in prefixes
+            ):
+                return True
+    return False
 
 
 def _module_sources(root: Path) -> dict[str, Path]:
@@ -151,6 +174,32 @@ def test_module_dependencies_follow_core_and_provider_boundaries():
     modules = _module_sources(ROOT)
     _assert_import_direction(ROOT, modules)
     _assert_no_cycles(_dependency_graph(ROOT, modules))
+
+
+def test_astrbot_boundary_stays_in_main_and_schema_has_safe_templates():
+    modules = _module_sources(ROOT)
+    main_imports = _resolve_imports(ROOT / "main.py", "plugin.main", ROOT)
+    assert "astrbot.api.event" in main_imports
+    assert "astrbot.api.star" in main_imports
+    assert all(
+        not any(
+            name == "astrbot" or name.startswith("astrbot.")
+            for name in _resolve_imports(path, name, ROOT)
+        )
+        for name, path in modules.items()
+        if name != "plugin.main"
+    )
+    assert all(
+        not _uses_absolute_prefix(path, ("quota_link",)) for path in modules.values()
+    ), "plugin modules must use package-relative imports for AstrBot namespace loading"
+
+    schema = json.loads((ROOT / "_conf_schema.json").read_text(encoding="utf-8"))
+    providers = schema["providers"]
+    assert providers["type"] == "template_list"
+    assert providers["default"] == []
+    auth = providers["templates"]["provider_account"]["items"]["auth"]
+    assert auth["items"]["api_key"]["secret"] is True
+    assert auth["items"]["api_key"]["default"] == ""
 
 
 def _write_module(root: Path, relative_path: str, source: str) -> Path:

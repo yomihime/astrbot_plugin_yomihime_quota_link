@@ -1,0 +1,111 @@
+{
+  "timeout_seconds": {
+    "description": "单个账户查询的最长等待秒数",
+    "type": "float",
+    "default": 8.0
+  },
+  "total_timeout_seconds": {
+    "description": "一次查询所有目标的最长等待秒数",
+    "type": "float",
+    "default": 30.0
+  },
+  "cache_ttl_seconds": {
+    "description": "成功查询结果的缓存秒数",
+    "type": "float",
+    "default": 60.0
+  },
+  "max_concurrency": {
+    "description": "同时查询的账户数上限",
+    "type": "int",
+    "default": 4
+  },
+  "allow_group_queries": {
+    "description": "是否允许在群聊查询",
+    "type": "bool",
+    "default": false
+  },
+  "group_allowed_user_ids": {
+    "description": "群聊查询白名单用户 ID",
+    "type": "list",
+    "default": []
+  },
+  "providers": {
+    "description": "配置多个供应商账户；API 密钥只在 WebUI 中遮罩显示",
+    "type": "template_list",
+    "default": [],
+    "templates": {
+      "provider_account": {
+        "name": "API 账户",
+        "hint": "供应商适配器尚未实现时，账户查询会明确提示暂不支持。",
+        "display_item": "display_name",
+        "items": {
+          "id": {
+            "description": "账户唯一 ID",
+            "type": "string",
+            "default": ""
+          },
+          "type": {
+            "description": "供应商类型",
+            "type": "string",
+            "default": "deepseek",
+            "options": ["alibaba_bailian", "deepseek", "openai_compatible"]
+          },
+          "display_name": {
+            "description": "显示名称",
+            "type": "string",
+            "default": ""
+          },
+          "aliases": {
+            "description": "用于命令和自然语言匹配的其他名称",
+            "type": "list",
+            "default": []
+          },
+          "enabled": {
+            "description": "启用此账户",
+            "type": "bool",
+            "default": true
+          },
+          "timeout_seconds": {
+            "description": "账户查询超时秒数",
+            "type": "float",
+            "default": 8.0
+          },
+          "cache_ttl_seconds": {
+            "description": "账户成功结果缓存秒数",
+            "type": "float",
+            "default": 60.0
+          },
+          "auth": {
+            "description": "账户凭据",
+            "type": "object",
+            "items": {
+              "api_key": {
+                "description": "API 密钥或令牌",
+                "type": "string",
+                "default": "",
+                "secret": true
+              }
+            }
+          },
+          "endpoint": {
+            "description": "自定义余额查询端点；部分供应商需要此项",
+            "type": "object",
+            "items": {
+              "url": {
+                "description": "余额查询 URL",
+                "type": "string",
+                "default": ""
+              }
+            }
+          },
+          "response_mapping": {
+            "description": "供应商响应字段映射预留项",
+            "type": "dict",
+            "items": {},
+            "default": {}
+          }
+        }
+      }
+    }
+  }
+}

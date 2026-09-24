@@ -1,6 +1,6 @@
 """Provider-independent contracts for quota lookups."""
 
-from quota_link.models import (
+from .models import (
     SUPPORTED_PROVIDER_TYPES,
     BalanceItem,
     BalanceItemKind,

@@ -3,8 +3,8 @@
 from types import MappingProxyType
 from typing import Mapping
 
-from quota_link.models import SUPPORTED_PROVIDER_TYPES, ProviderType
-from quota_link.providers.base import ProviderAdapter
+from ..models import SUPPORTED_PROVIDER_TYPES, ProviderType
+from .base import ProviderAdapter
 
 # Types recognized by configuration stay separate from executable adapters.
 # No real provider adapter is implemented in the framework phase.

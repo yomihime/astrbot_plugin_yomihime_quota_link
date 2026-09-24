@@ -16,6 +16,7 @@ from quota_link.models import (
     QueryParseResult,
     QueryRequest,
     QueryRequestKind,
+    QueryResult,
     SnapshotStatus,
 )
 
@@ -124,3 +125,15 @@ def test_standard_error_has_only_safe_message_and_diagnostic_code():
     assert error.safe_message == "认证失败，请检查已配置的凭据。"
     assert not hasattr(error, "response")
     assert not hasattr(error, "exception")
+
+
+def test_query_result_is_immutable_and_requires_aware_aggregate_time():
+    request = QueryRequest(QueryRequestKind.ALL)
+    result = QueryResult(request, [], datetime(2026, 9, 24, tzinfo=UTC))
+
+    assert result.request is request
+    assert result.snapshots == ()
+    with pytest.raises((AttributeError, TypeError)):
+        result.snapshots = ()
+    with pytest.raises(ValueError, match="timezone-aware"):
+        QueryResult(request, (), datetime(2026, 9, 24))

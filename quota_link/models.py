@@ -193,3 +193,22 @@ class BalanceSnapshot:
         object.__setattr__(self, "balances", tuple(self.balances))
         if any(not isinstance(item, BalanceItem) for item in self.balances):
             raise TypeError("balances must contain only BalanceItem values")
+
+
+@dataclass(frozen=True, slots=True)
+class QueryResult:
+    """An immutable aggregate outcome for one parsed request."""
+
+    request: QueryRequest
+    snapshots: tuple[BalanceSnapshot, ...]
+    queried_at: datetime
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.request, QueryRequest):
+            raise TypeError("request must be a QueryRequest")
+        object.__setattr__(self, "snapshots", tuple(self.snapshots))
+        if any(
+            not isinstance(snapshot, BalanceSnapshot) for snapshot in self.snapshots
+        ):
+            raise TypeError("snapshots must contain only BalanceSnapshot values")
+        _require_aware(self.queried_at, "queried_at")
