@@ -16,6 +16,7 @@ from .quota_link.formatter import (
     format_result,
     format_status,
 )
+from .quota_link.http_client import HttpProviderClient
 from .quota_link.intent import (
     PermissionContext,
     can_query,
@@ -52,16 +53,21 @@ class YomihimeQuotaLink(Star):
         """Create per-plugin settings, cache, and query service from config."""
         self.settings = load_settings(self.config)
         self.cache = BalanceCache()
+        self.http_client = HttpProviderClient(timeout=self.settings.timeout_seconds)
         self.service = QueryService(
-            self.settings, IMPLEMENTED_ADAPTERS, None, self.cache
+            self.settings, IMPLEMENTED_ADAPTERS, self.http_client, self.cache
         )
 
     async def initialize(self) -> None:
-        await self.service.close()
+        await self._close_runtime()
         self._build_runtime()
 
     async def terminate(self) -> None:
+        await self._close_runtime()
+
+    async def _close_runtime(self) -> None:
         await self.service.close()
+        await self.http_client.close()
 
     @filter.command("yql")
     async def quota_link(self, event: AstrMessageEvent):

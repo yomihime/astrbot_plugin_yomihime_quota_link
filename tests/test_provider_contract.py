@@ -10,11 +10,14 @@ from quota_link.models import (
     SnapshotStatus,
 )
 from quota_link.providers import IMPLEMENTED_ADAPTERS, SUPPORTED_PROVIDER_TYPES
+from quota_link.providers.alibaba_bailian import AlibabaBailianAdapter
 from quota_link.providers.base import (
     AsyncProviderClient,
     ProviderAdapter,
     ProviderResponse,
 )
+from quota_link.providers.deepseek import DeepSeekAdapter
+from quota_link.providers.openai_compatible import OpenAICompatibleAdapter
 
 
 class FakeResponse:
@@ -29,6 +32,9 @@ class FakeClient:
         assert method == "GET"
         assert url == "https://example.invalid/balance"
         return FakeResponse()
+
+    async def close(self) -> None:
+        pass
 
 
 class ExampleAdapter:
@@ -66,6 +72,14 @@ def test_adapter_protocol_can_consume_async_client_without_network():
     assert snapshot.balances[0].remaining == Decimal("12.3400")
 
 
-def test_recognized_provider_types_have_no_placeholder_adapters():
+def test_recognized_provider_types_have_explicit_stateless_adapters():
     assert len(SUPPORTED_PROVIDER_TYPES) == 3
-    assert set(IMPLEMENTED_ADAPTERS) == set()
+    assert set(IMPLEMENTED_ADAPTERS) == set(SUPPORTED_PROVIDER_TYPES)
+    assert isinstance(IMPLEMENTED_ADAPTERS[ProviderType.DEEPSEEK], DeepSeekAdapter)
+    assert isinstance(
+        IMPLEMENTED_ADAPTERS[ProviderType.ALIBABA_BAILIAN], AlibabaBailianAdapter
+    )
+    assert isinstance(
+        IMPLEMENTED_ADAPTERS[ProviderType.OPENAI_COMPATIBLE],
+        OpenAICompatibleAdapter,
+    )

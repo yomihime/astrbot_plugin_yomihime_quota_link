@@ -1,0 +1,12 @@
+{
+  "Code": "200",
+  "Message": "success",
+  "RequestId": "removed-from-official-example",
+  "Success": true,
+  "Data": {
+    "AvailableCashAmount": "10000.00",
+    "Currency": "CNY",
+    "AvailableAmount": "999999.00",
+    "CreditAmount": "1000.00"
+  }
+}

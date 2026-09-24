@@ -206,7 +206,10 @@ def test_help_and_status_are_local_and_never_disclose_credentials():
                     "id": "bailian-main",
                     "type": "alibaba_bailian",
                     "display_name": "百炼账户",
-                    "auth": {"api_key": secret},
+                    "auth": {
+                        "access_key_id": "test-access-key-id",
+                        "access_key_secret": secret,
+                    },
                 }
             ]
         },
@@ -221,7 +224,7 @@ def test_help_and_status_are_local_and_never_disclose_credentials():
     assert "/yql status" in help_text
     assert "/yql all" in help_text
     assert "账户：共 1 个，启用 1 个，可查询 1 个" in status_text
-    assert "百炼账户：已配置，查询适配器可能尚未实现" in status_text
+    assert "百炼账户：已配置，可查询" in status_text
     assert secret not in help_text + status_text
 
 
@@ -251,7 +254,7 @@ def test_status_folds_control_characters_in_configured_account_names():
 
     text = format_status(settings)
 
-    assert "账户 群聊查询：已开启：已配置，查询适配器可能尚未实现" in text
+    assert "账户 群聊查询：已开启：已配置，可查询" in text
     assert "\n群聊查询：已开启" not in text
 
 

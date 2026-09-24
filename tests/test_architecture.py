@@ -200,6 +200,14 @@ def test_astrbot_boundary_stays_in_main_and_schema_has_safe_templates():
     auth = providers["templates"]["provider_account"]["items"]["auth"]
     assert auth["items"]["api_key"]["secret"] is True
     assert auth["items"]["api_key"]["default"] == ""
+    assert auth["items"]["access_key_id"]["secret"] is True
+    assert auth["items"]["access_key_secret"]["secret"] is True
+    assert "DashScope" in auth["items"]["access_key_id"]["description"]
+    endpoint = providers["templates"]["provider_account"]["items"]["endpoint"]
+    assert endpoint["items"]["auth_mode"]["options"] == ["bearer", "header", "query"]
+    mapping = providers["templates"]["provider_account"]["items"]["response_mapping"]
+    assert "amount_path" in mapping["items"]
+    assert "Grsai" in providers["templates"]["provider_account"]["hint"]
 
 
 def _write_module(root: Path, relative_path: str, source: str) -> Path:

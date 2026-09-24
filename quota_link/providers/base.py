@@ -1,6 +1,7 @@
 """Small async contracts shared by future balance provider adapters."""
 
-from typing import Any, Mapping, Protocol, runtime_checkable
+from collections.abc import Callable, Mapping
+from typing import Any, Protocol, runtime_checkable
 
 from ..models import BalanceSnapshot
 
@@ -28,7 +29,10 @@ class AsyncProviderClient(Protocol):
         params: Mapping[str, str] | None = None,
         json: Any = None,
         timeout: float | None = None,
+        params_factory: Callable[[], Mapping[str, str]] | None = None,
     ) -> ProviderResponse: ...
+
+    async def close(self) -> None: ...
 
 
 @runtime_checkable

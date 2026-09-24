@@ -49,7 +49,10 @@ def make_settings(
                     "id": "second",
                     "type": "alibaba_bailian",
                     "display_name": "Second",
-                    "auth": {"api_key": "secret-two"},
+                    "auth": {
+                        "access_key_id": "test-access-key-id",
+                        "access_key_secret": "secret-two",
+                    },
                 },
             ],
         }
@@ -202,7 +205,7 @@ def test_unqueryable_account_returns_configuration_error_without_adapter_call() 
     asyncio.run(run())
 
 
-def test_missing_adapter_is_explicitly_not_implemented() -> None:
+def test_empty_adapter_registry_is_explicitly_not_implemented() -> None:
     async def run() -> None:
         service = QueryService(make_settings(), {}, FakeClient(), BalanceCache())
 

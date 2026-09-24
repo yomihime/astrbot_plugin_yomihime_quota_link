@@ -50,6 +50,29 @@ class FakeEvent:
         return text
 
 
+class FakeHttpResponse:
+    status_code = 401
+
+    def json(self):
+        return {}
+
+
+class FakeHttpClient:
+    instances = []
+
+    def __init__(self, **kwargs):
+        self.closed = False
+        self.requests = []
+        self.__class__.instances.append(self)
+
+    async def request(self, method, url, **kwargs):
+        self.requests.append((method, url, kwargs))
+        return FakeHttpResponse()
+
+    async def close(self):
+        self.closed = True
+
+
 def _identity_decorator(*args, **kwargs):
     return lambda function: function
 
@@ -106,6 +129,8 @@ def entrypoint(monkeypatch):
     monkeypatch.setitem(sys.modules, package_name, plugin_package)
 
     module = importlib.import_module(f"{package_name}.main")
+    monkeypatch.setattr(module, "HttpProviderClient", FakeHttpClient)
+    FakeHttpClient.instances.clear()
     models = importlib.import_module(f"{package_name}.quota_link.models")
     module.YomihimeQuotaLink._test_models = models
     return module.YomihimeQuotaLink
@@ -126,7 +151,11 @@ def _config():
                 "type": "openai_compatible",
                 "display_name": "Nova Quota",
                 "auth": {"api_key": "test-placeholder-2"},
-                "endpoint": {"url": "https://example.invalid/balance"},
+                "endpoint": {
+                    "url": "https://example.invalid/balance",
+                    "auth_mode": "bearer",
+                },
+                "response_mapping": {"amount_path": "/remaining"},
             },
         ]
     }
@@ -154,7 +183,7 @@ def test_all_command_forms_keep_the_complete_multiword_argument(entrypoint):
         assert expected in event.replies[0]
 
 
-def test_natural_language_queries_all_four_target_shapes(entrypoint):
+def test_natural_language_queries_use_implemented_adapters_without_network(entrypoint):
     plugin = entrypoint(None, _config())
     messages = (
         "余额都还剩多少？",
@@ -166,7 +195,7 @@ def test_natural_language_queries_all_four_target_shapes(entrypoint):
         event = FakeEvent(message)
         asyncio.run(_collect(plugin.natural_language_query(event)))
         assert len(event.replies) == 1
-        assert "查询失败：该供应商的余额查询尚未实现" in event.replies[0]
+        assert "查询失败" in event.replies[0]
 
 
 def test_permission_gate_precedes_local_account_disclosure(entrypoint):
@@ -202,6 +231,8 @@ def test_empty_configuration_starts_and_shutdown_clears_service_cache(entrypoint
     asyncio.run(plugin.initialize())
     assert plugin.settings.accounts == ()
     assert plugin.cache is not initial_cache
+    assert FakeHttpClient.instances[-2].closed
+    assert not plugin.http_client.closed
 
     event = FakeEvent("/yql")
     asyncio.run(_collect(plugin.quota_link(event)))
@@ -225,4 +256,5 @@ def test_empty_configuration_starts_and_shutdown_clears_service_cache(entrypoint
     assert cache._entries
     asyncio.run(plugin.terminate())
     assert plugin.service._closed
+    assert plugin.http_client.closed
     assert plugin.cache._entries == {}

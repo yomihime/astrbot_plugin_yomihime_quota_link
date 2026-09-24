@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Mapping
+from urllib.parse import urlsplit
 
 from .models import (
     ProviderType,
@@ -296,6 +297,7 @@ def _has_credential(auth: Mapping[str, Any]) -> bool:
         "api_key",
         "access_key_id",
         "access_key_secret",
+        "security_token",
         "token",
         "secret",
         "key",
@@ -314,6 +316,7 @@ def _credential_values(auth: Mapping[str, Any]) -> set[str]:
         "api_key",
         "access_key_id",
         "access_key_secret",
+        "security_token",
         "token",
         "secret",
         "key",
@@ -333,6 +336,7 @@ def _raw_credential_values(value: Any, env: Mapping[str, str]) -> set[str]:
         "api_key",
         "access_key_id",
         "access_key_secret",
+        "security_token",
         "token",
         "secret",
         "key",
@@ -381,6 +385,173 @@ def _has_endpoint(endpoint: Any) -> bool:
         and isinstance(path, str)
         and bool(path.strip())
     )
+
+
+def _has_fields(auth: Mapping[str, Any], fields: tuple[str, ...]) -> bool:
+    return all(
+        isinstance(auth.get(name), str) and bool(auth[name].strip()) for name in fields
+    )
+
+
+def _valid_pointer(value: Any) -> bool:
+    return isinstance(value, str) and (
+        value == "" or (value.startswith("/") and not re.search(r"~(?![01])", value))
+    )
+
+
+def _compatible_config_error(
+    auth: Mapping[str, Any],
+    endpoint: Mapping[str, Any] | None,
+    mapping: Mapping[str, Any],
+) -> tuple[str, str] | None:
+    if not _has_fields(auth, ("api_key",)):
+        return "missing_credentials", "missing_credentials"
+    if not isinstance(endpoint, Mapping):
+        return "missing_endpoint", "missing_endpoint"
+    raw_url = endpoint.get("url")
+    if not isinstance(raw_url, str) or not raw_url.strip():
+        base_url, path = endpoint.get("base_url"), endpoint.get("path")
+        if (
+            not isinstance(base_url, str)
+            or not base_url.strip()
+            or not isinstance(path, str)
+            or not path.strip()
+        ):
+            return "missing_endpoint", "missing_endpoint"
+        raw_url = base_url.rstrip("/") + "/" + path.lstrip("/")
+    if not isinstance(raw_url, str):
+        return "invalid_endpoint", "invalid_endpoint"
+    try:
+        parsed = urlsplit(raw_url)
+        _ = parsed.port
+    except ValueError:
+        return "invalid_endpoint", "invalid_endpoint"
+    if (
+        parsed.scheme.casefold() != "https"
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        return "invalid_endpoint", "invalid_endpoint"
+    if (
+        parsed.path.rstrip("/")
+        .casefold()
+        .endswith(("/chat/completions", "/completions", "/responses"))
+    ):
+        return "invalid_endpoint", "invalid_endpoint"
+    method = endpoint.get("method", "GET")
+    if not isinstance(method, str) or method.upper() not in {"GET", "POST"}:
+        return "invalid_endpoint", "invalid_endpoint"
+    mode = endpoint.get("auth_mode")
+    if not isinstance(mode, str) or mode not in {"bearer", "header", "query"}:
+        return "invalid_endpoint", "invalid_endpoint"
+    if mode in {"header", "query"}:
+        auth_name = endpoint.get("auth_name")
+        if not isinstance(auth_name, str) or not auth_name.strip():
+            return "invalid_endpoint", "invalid_endpoint"
+        if mode == "header" and (
+            not re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", auth_name)
+            or auth_name.casefold() in {"host", "content-length", "connection"}
+        ):
+            return "invalid_endpoint", "invalid_endpoint"
+        if mode == "query" and any(
+            ord(char) < 32 or ord(char) == 127 for char in auth_name
+        ):
+            return "invalid_endpoint", "invalid_endpoint"
+    if method.upper() == "POST":
+        body = endpoint.get("json_body")
+        if not isinstance(body, Mapping):
+            return "invalid_endpoint", "invalid_endpoint"
+        if _contains_auth_or_template(body):
+            return "invalid_endpoint", "invalid_endpoint"
+        try:
+            json.dumps(body, allow_nan=False)
+        except (TypeError, ValueError):
+            return "invalid_endpoint", "invalid_endpoint"
+    else:
+        body = endpoint.get("json_body")
+        if body not in (None, {}):
+            return "invalid_endpoint", "invalid_endpoint"
+    amount_path = mapping.get("amount_path")
+    if not _valid_pointer(amount_path) or not amount_path.strip():
+        return "invalid_response_mapping", "invalid_response_mapping"
+    path_keys = (
+        "total_path",
+        "remaining_path",
+        "used_path",
+        "unit_path",
+        "kind_path",
+        "status_path",
+        "expires_at_path",
+        "expiry_path",
+        "success_path",
+        "failure_path",
+    )
+    if any(key in mapping and not _valid_pointer(mapping[key]) for key in path_keys):
+        return "invalid_response_mapping", "invalid_response_mapping"
+    if "status_path" in mapping and not isinstance(
+        mapping.get("status_values"), Mapping
+    ):
+        return "invalid_response_mapping", "invalid_response_mapping"
+    unit = mapping.get("unit", "custom")
+    if "unit_path" in mapping and "unit" not in mapping:
+        return "invalid_response_mapping", "invalid_response_mapping"
+    if not isinstance(unit, str) or unit not in {
+        "CNY",
+        "USD",
+        "JPY",
+        "credit",
+        "credits",
+        "tokens",
+        "requests",
+        "custom",
+    }:
+        return "invalid_response_mapping", "invalid_response_mapping"
+    kind = mapping.get("kind", "custom")
+    if not isinstance(kind, str) or kind not in {
+        "cash",
+        "quota",
+        "free_quota",
+        "subscription",
+        "credits",
+        "usage",
+        "custom",
+    }:
+        return "invalid_response_mapping", "invalid_response_mapping"
+    if "status_values" in mapping:
+        status_values = mapping["status_values"]
+        if not isinstance(status_values, Mapping) or any(
+            not isinstance(value, str)
+            or value not in {"available", "unavailable", "partial", "unknown"}
+            for value in status_values.values()
+        ):
+            return "invalid_response_mapping", "invalid_response_mapping"
+    if "success_path" in mapping and "success_value" not in mapping:
+        return "invalid_response_mapping", "invalid_response_mapping"
+    if "failure_path" in mapping and "failure_value" not in mapping:
+        return "invalid_response_mapping", "invalid_response_mapping"
+    return None
+
+
+def _contains_auth_or_template(value: Any) -> bool:
+    if isinstance(value, str):
+        return "${" in value or "{{" in value or "}}" in value
+    if isinstance(value, Mapping):
+        return any(
+            (
+                isinstance(key, str)
+                and key.casefold()
+                in {"authorization", "api_key", "apikey", "token", "secret", "password"}
+            )
+            or _contains_auth_or_template(key)
+            or _contains_auth_or_template(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, (list, tuple)):
+        return any(_contains_auth_or_template(item) for item in value)
+    return False
 
 
 def _provider_aliases() -> dict[str, ProviderType]:
@@ -603,7 +774,22 @@ def load_settings(
                 )
             )
         else:
-            response_mapping = response_mapping_raw
+            response_mapping = dict(response_mapping_raw)
+            for mapping_key in (
+                "total_path",
+                "remaining_path",
+                "used_path",
+                "unit_path",
+                "kind_path",
+                "status_path",
+                "expires_at_path",
+                "expiry_path",
+                "success_path",
+                "failure_path",
+            ):
+                value = response_mapping.get(mapping_key)
+                if isinstance(value, str) and not value.strip():
+                    response_mapping.pop(mapping_key)
         enabled = record.get("enabled", True) is True
         if "enabled" in record and not isinstance(record["enabled"], bool):
             errors.append(
@@ -640,7 +826,9 @@ def load_settings(
                     safe_account_id,
                 )
             )
-        elif not _has_credential(auth):
+        elif provider_type is ProviderType.DEEPSEEK and not _has_fields(
+            auth, ("api_key",)
+        ):
             reason = "missing_credentials"
             errors.append(
                 ConfigDiagnostic(
@@ -650,20 +838,38 @@ def load_settings(
                     safe_account_id,
                 )
             )
-        if (
-            reason is None
-            and provider_type is ProviderType.OPENAI_COMPATIBLE
-            and not _has_endpoint(endpoint)
+        elif provider_type is ProviderType.ALIBABA_BAILIAN and not _has_fields(
+            auth, ("access_key_id", "access_key_secret")
         ):
-            reason = "missing_endpoint"
+            reason = "missing_credentials"
             errors.append(
                 ConfigDiagnostic(
-                    "missing_endpoint",
-                    f"{path}.endpoint",
-                    "缺少余额查询端点",
+                    "missing_credentials",
+                    f"{path}.auth",
+                    "阿里云 BSS 查询需要独立 AccessKey ID 和 AccessKey Secret",
                     safe_account_id,
                 )
             )
+        elif provider_type is ProviderType.OPENAI_COMPATIBLE:
+            issue = _compatible_config_error(auth, endpoint, response_mapping)
+            if issue is not None:
+                code, reason = issue
+                field_path = (
+                    f"{path}.endpoint"
+                    if code in {"missing_endpoint", "invalid_endpoint"}
+                    else f"{path}.response_mapping"
+                    if code == "invalid_response_mapping"
+                    else f"{path}.auth"
+                )
+                messages = {
+                    "missing_credentials": "兼容接口需要配置 API 密钥",
+                    "missing_endpoint": "缺少余额查询端点",
+                    "invalid_endpoint": "余额端点必须是安全的 HTTPS GET 或 POST 配置",
+                    "invalid_response_mapping": "兼容接口必须配置有效的 amount_path 映射",
+                }
+                errors.append(
+                    ConfigDiagnostic(code, field_path, messages[code], safe_account_id)
+                )
         secret_values = all_secrets | _credential_values(auth)
         if any(
             any(secret in name for secret in secret_values)

@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import pytest
 
 from quota_link.models import (
@@ -28,9 +31,21 @@ def account(
         "aliases": list(aliases),
         "enabled": enabled,
         "auth": {"api_key": "secret-key"} if auth is None else auth,
-        "endpoint": {"url": "https://example.invalid/balance"}
+        "endpoint": (
+            {
+                "url": "https://example.invalid/balance",
+                "auth_mode": "bearer",
+            }
+            if provider_type == "openai_compatible"
+            else None
+            if provider_type in {"deepseek", "alibaba_bailian"}
+            else {"url": "https://example.invalid/balance"}
+        )
         if endpoint is _DEFAULT_ENDPOINT
         else endpoint,
+        "response_mapping": {"amount_path": "/remaining"}
+        if provider_type == "openai_compatible"
+        else {},
         **extra,
     }
 
@@ -362,6 +377,10 @@ def test_builtin_provider_types_accept_missing_account_endpoint():
                     "Bailian",
                     provider_type="alibaba_bailian",
                     endpoint=None,
+                    auth={
+                        "access_key_id": "ram-id",
+                        "access_key_secret": "ram-secret",
+                    },
                 ),
             ]
         }
@@ -369,6 +388,182 @@ def test_builtin_provider_types_accept_missing_account_endpoint():
 
     assert [item.queryable for item in settings.accounts] == [True, True]
     assert not any(error.code == "missing_endpoint" for error in settings.errors)
+
+
+def test_each_provider_requires_its_own_credentials():
+    settings = load_settings(
+        {
+            "providers": [
+                account("ds", "DeepSeek", auth={"access_key_id": "wrong"}),
+                account("ali", "Ali", provider_type="alibaba_bailian"),
+                account(
+                    "compatible",
+                    "Compatible",
+                    provider_type="openai_compatible",
+                    auth={"api_key": "key"},
+                    endpoint={
+                        "url": "https://balance.example/api",
+                        "auth_mode": "bearer",
+                    },
+                    response_mapping={"amount_path": "/balance"},
+                ),
+            ]
+        }
+    )
+    assert [
+        (item.queryable, item.unavailable_reason) for item in settings.accounts
+    ] == [
+        (False, "missing_credentials"),
+        (False, "missing_credentials"),
+        (True, None),
+    ]
+
+
+def test_webui_default_fields_accept_empty_optional_values_with_base_url():
+    root = Path(__file__).resolve().parents[1]
+    schema = json.loads((root / "_conf_schema.json").read_text(encoding="utf-8"))
+    template = schema["providers"]["templates"]["provider_account"]["items"]
+
+    def defaults(field):
+        return {
+            name: definition.get("default")
+            for name, definition in template[field]["items"].items()
+        }
+
+    endpoint = defaults("endpoint")
+    endpoint.update(
+        {
+            "base_url": "https://balance.example.test",
+            "path": "/v1/balance",
+        }
+    )
+    response_mapping = defaults("response_mapping")
+    response_mapping["amount_path"] = "/data/remaining"
+    auth = defaults("auth")
+    auth["api_key"] = "offline-key"
+
+    settings = load_settings(
+        {
+            "providers": [
+                {
+                    "id": "webui-compatible",
+                    "type": "openai_compatible",
+                    "display_name": "WebUI compatible",
+                    "auth": auth,
+                    "endpoint": endpoint,
+                    "response_mapping": response_mapping,
+                }
+            ]
+        },
+        environ={},
+    )
+
+    assert settings.accounts[0].queryable
+    assert settings.accounts[0].endpoint["url"] == ""
+    assert settings.accounts[0].response_mapping["amount_path"] == "/data/remaining"
+    assert "remaining_path" not in settings.accounts[0].response_mapping
+
+
+def test_empty_required_amount_path_is_invalid():
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    endpoint={
+                        "url": "",
+                        "base_url": "https://balance.example.test",
+                        "path": "/balance",
+                        "method": "GET",
+                        "auth_mode": "bearer",
+                        "json_body": {},
+                    },
+                    response_mapping={"amount_path": ""},
+                )
+            ]
+        }
+    )
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == "invalid_response_mapping"
+    assert any(error.code == "invalid_response_mapping" for error in settings.errors)
+
+
+@pytest.mark.parametrize(
+    "endpoint,mapping,code",
+    [
+        (
+            {"url": "http://balance.example/api", "auth_mode": "bearer"},
+            {"amount_path": "/x"},
+            "invalid_endpoint",
+        ),
+        (
+            {
+                "url": "https://balance.example/api",
+                "method": "DELETE",
+                "auth_mode": "bearer",
+            },
+            {"amount_path": "/x"},
+            "invalid_endpoint",
+        ),
+        (
+            {"url": "https://balance.example/api", "auth_mode": "bearer"},
+            {},
+            "invalid_response_mapping",
+        ),
+        (
+            {"url": "https://balance.example/api", "auth_mode": "header"},
+            {"amount_path": "/x"},
+            "invalid_endpoint",
+        ),
+        (
+            {"url": "https://balance.example/api", "auth_mode": "bearer"},
+            {"amount_path": "/x", "unit_path": "/unit"},
+            "invalid_response_mapping",
+        ),
+        (
+            {"url": "https://balance.example/api", "auth_mode": "bearer"},
+            {"amount_path": "/x", "unit": "password-value"},
+            "invalid_response_mapping",
+        ),
+        (
+            {"url": "https://balance.example/api", "auth_mode": "bearer"},
+            {"amount_path": "/x/~2invalid"},
+            "invalid_response_mapping",
+        ),
+        (
+            {"url": "https://balance.example/api", "auth_mode": "bearer"},
+            {"amount_path": "/x", "unit": {}},
+            "invalid_response_mapping",
+        ),
+        (
+            {"url": "https://balance.example/api", "auth_mode": "bearer"},
+            {
+                "amount_path": "/x",
+                "status_path": "/status",
+                "status_values": {"ok": []},
+            },
+            "invalid_response_mapping",
+        ),
+    ],
+)
+def test_compatible_provider_rejects_unsafe_or_incomplete_contract(
+    endpoint, mapping, code
+):
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    endpoint=endpoint,
+                    response_mapping=mapping,
+                )
+            ]
+        }
+    )
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == code
+    assert any(error.code == code for error in settings.errors)
 
 
 def test_global_query_settings_validate_boundaries_and_group_defaults():

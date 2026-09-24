@@ -29,6 +29,8 @@ _UNAVAILABLE_REASONS = {
     "missing_environment_variable": "凭据环境变量未设置",
     "missing_credentials": "缺少可用凭据",
     "missing_endpoint": "缺少余额查询端点",
+    "invalid_endpoint": "余额端点配置无效",
+    "invalid_response_mapping": "响应映射配置无效",
 }
 
 
@@ -169,7 +171,7 @@ def format_status(settings: PluginSettings) -> str:
             if not entry.enabled:
                 state = "已禁用"
             elif entry.queryable:
-                state = "已配置，查询适配器可能尚未实现"
+                state = "已配置，可查询"
             else:
                 state = _UNAVAILABLE_REASONS.get(
                     entry.unavailable_reason or "", "暂不可查询"
