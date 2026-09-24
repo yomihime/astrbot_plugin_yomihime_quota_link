@@ -122,6 +122,16 @@ ruff check .
 ruff format --check .
 ```
 
+### 构建插件包
+
+本地构建需要 Python 3.12+。构建脚本会检查指定 tag 与 `metadata.yaml` 中的 `version` 完全一致，并生成以 tag 命名的 ZIP；ZIP 根目录直接是插件文件。
+
+```bash
+python scripts/build_plugin.py --tag v0.1.0 --output-dir dist
+```
+
+示例产物为 `dist/astrbot_plugin_yomihime_quota_link-v0.1.0.zip`。推送新的 `v*` tag 后，GitHub Actions 会运行代码检查和测试，再构建相同的 ZIP，并将其上传到该次工作流的 **Artifacts** 供下载。本工作流只上传 Actions artifact，不会自动创建 GitHub Release，也不会自动创建或修改 tag、更新元数据版本。创建 tag 前，请先提交与该 tag 完全一致的 `metadata.yaml` 版本和更新记录。构建通过只表示代码检查与打包通过，不表示三类供应商的真实账户余额均已验收；当前阿里云现金和 Grsai 协议仍存在上述实测限制。
+
 插件持久化数据应写入 AstrBot 的 `data` 目录，不要写入插件源码目录。
 
 ## 许可证
