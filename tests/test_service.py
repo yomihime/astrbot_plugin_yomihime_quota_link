@@ -176,6 +176,71 @@ def test_account_query_does_not_call_other_provider_adapter() -> None:
     asyncio.run(run())
 
 
+def test_grsai_provider_query_includes_legacy_profile_but_excludes_generic_relay() -> (
+    None
+):
+    async def run() -> None:
+        settings = make_settings(
+            providers=[
+                {
+                    "id": "native-grsai",
+                    "type": "grsai",
+                    "display_name": "Native Grsai",
+                    "auth": {"token": "native-token"},
+                    "region": "china",
+                },
+                {
+                    "id": "legacy-grsai",
+                    "type": "openai_compatible",
+                    "service_profile": "grsai",
+                    "balance_scope": "account",
+                    "display_name": "Legacy Grsai",
+                    "auth": {"token": "legacy-token"},
+                    "endpoint": {"base_url": "https://legacy.invalid"},
+                },
+                {
+                    "id": "generic-relay",
+                    "type": "openai_compatible",
+                    "display_name": "Generic relay",
+                    "auth": {"api_key": "generic-key"},
+                    "endpoint": {
+                        "base_url": "https://generic.invalid",
+                        "path": "/balance",
+                        "auth_mode": "bearer",
+                    },
+                    "response_mapping": {"amount_path": "/remaining"},
+                },
+            ]
+        )
+        grsai_adapter = RecordingAdapter()
+        compatible_adapter = RecordingAdapter()
+        service = QueryService(
+            settings,
+            {
+                ProviderType.GRSAI: grsai_adapter,
+                ProviderType.OPENAI_COMPATIBLE: compatible_adapter,
+            },
+            FakeClient(),
+            BalanceCache(),
+        )
+        grsai = await service.query(QueryRequest(QueryRequestKind.PROVIDER, "grsai"))
+        assert [snapshot.account_id for snapshot in grsai.snapshots] == [
+            "native-grsai",
+            "legacy-grsai",
+        ]
+        assert grsai_adapter.calls == ["native-grsai"]
+        assert compatible_adapter.calls == ["legacy-grsai"]
+        generic = await service.query(
+            QueryRequest(QueryRequestKind.PROVIDER, "openai_compatible")
+        )
+        assert [snapshot.account_id for snapshot in generic.snapshots] == [
+            "generic-relay"
+        ]
+        await service.close()
+
+    asyncio.run(run())
+
+
 def test_unqueryable_account_returns_configuration_error_without_adapter_call() -> None:
     async def run() -> None:
         settings = make_settings(

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, MutableMapping
 from typing import Any
 
 from astrbot.api.event import AstrMessageEvent, filter
@@ -21,15 +21,22 @@ from .quota_link.intent import (
     PermissionContext,
     can_query,
     parse_command,
-    parse_natural_language,
 )
 from .quota_link.providers import IMPLEMENTED_ADAPTERS
 from .quota_link.service import QueryService
-from .quota_link.settings import PluginSettings, load_settings
+from .quota_link.settings import (
+    PluginSettings,
+    load_settings,
+    migrate_account_templates,
+)
+from .quota_link.tool_facts import (
+    encode_tool_result,
+    serialize_capabilities,
+    serialize_parse_error,
+    serialize_query_result,
+)
 
-_COMMAND_EVENT = "yomihime_quota_link.command_handled"
 _COMMAND_START = re.compile(r"^\s*(?:/\s*)?yql\b\s*(.*)$", re.IGNORECASE | re.DOTALL)
-_COMMAND_MESSAGE = re.compile(r"^\s*(?:/|!|\.)\S")
 
 
 @register(
@@ -44,6 +51,10 @@ class YomihimeQuotaLink(Star):
     def __init__(self, context: Any, config: Mapping[str, Any] | None = None) -> None:
         super().__init__(context, config)
         self.config = config or {}
+        save_config = getattr(self.config, "save_config", None)
+        if isinstance(self.config, MutableMapping) and callable(save_config):
+            if migrate_account_templates(self.config):
+                save_config()
         self.settings: PluginSettings
         self.cache: BalanceCache
         self.service: QueryService
@@ -72,7 +83,6 @@ class YomihimeQuotaLink(Star):
     @filter.command("yql")
     async def quota_link(self, event: AstrMessageEvent):
         """Run one full-argument /yql request."""
-        event.set_extra(_COMMAND_EVENT, True)
         context = self._permission_context(event)
         if not can_query(context, self.settings):
             yield event.plain_result("当前会话无权查询额度信息。")
@@ -84,27 +94,104 @@ class YomihimeQuotaLink(Star):
         parsed = parse_command(argument, self.settings.directory)
         yield event.plain_result(await self._render(parsed))
 
-    @filter.event_message_type(filter.EventMessageType.ALL)
-    async def natural_language_query(self, event: AstrMessageEvent):
-        """Answer recognized balance questions once, leaving commands to filters."""
-        if (
-            event.get_extra(_COMMAND_EVENT, False)
-            or event.get_extra("parsed_params") is not None
-        ):
-            return
-        message = event.get_message_str()
-        if _COMMAND_MESSAGE.match(message) or re.match(
-            r"^\s*yql(?:\s|$)", message, re.IGNORECASE
-        ):
-            return
+    @filter.llm_tool(name="yql_query_balance")
+    async def query_balance_tool(
+        self,
+        event: AstrMessageEvent,
+        operation: str = "query",
+        target: str = "all",
+    ) -> str:
+        """查询余额事实，或列出本地已配置的可查询账户。
+
+        用户询问余额时使用 query；询问当前能查哪些账户或余额时使用 list。
+        list 只读取本地账户目录，不访问供应商。query 的目标可填账户 ID、显示名、
+        别名、供应商名或 all；最终用户回复由 LLM 根据返回的 JSON 事实组织。
+
+        Args:
+            operation(string): 操作类型，query 查询余额，list 列出可查询账户。
+            target(string): query 操作的账户或供应商名称；查询全部时填 all，list 忽略此项。
+        """
         context = self._permission_context(event)
         if not can_query(context, self.settings):
-            return
-        parsed = parse_natural_language(message, self.settings.directory)
-        if parsed is None:
-            return
-        event.set_extra(_COMMAND_EVENT, True)
-        yield event.plain_result(await self._render(parsed))
+            safe_operation = (
+                operation
+                if isinstance(operation, str) and operation in {"query", "list"}
+                else "query"
+            )
+            return encode_tool_result(
+                {
+                    "schema_version": 1,
+                    "operation": safe_operation,
+                    "error": {
+                        "category": "permission",
+                        "message": "当前会话无权查询额度信息。",
+                    },
+                }
+            )
+
+        if not isinstance(operation, str) or operation not in {"query", "list"}:
+            return encode_tool_result(
+                {
+                    "schema_version": 1,
+                    "operation": "query",
+                    "error": {
+                        "category": "invalid_operation",
+                        "message": "操作类型必须为 query 或 list。",
+                    },
+                }
+            )
+
+        if operation == "list":
+            from .quota_link.capabilities import describe_capabilities
+
+            accounts = describe_capabilities(self.settings.directory)
+            return serialize_capabilities(accounts)
+        if not isinstance(target, str):
+            return encode_tool_result(
+                {
+                    "schema_version": 1,
+                    "operation": "query",
+                    "error": {
+                        "category": "invalid_target",
+                        "message": "查询目标必须是账户、供应商名称或 all。",
+                    },
+                }
+            )
+
+        parsed = parse_command(target, self.settings.directory)
+        if parsed.error is not None:
+            return serialize_parse_error("query", parsed)
+        if parsed.request is None or parsed.request.kind.value not in {
+            "all",
+            "account",
+            "provider",
+        }:
+            return encode_tool_result(
+                {
+                    "schema_version": 1,
+                    "operation": "query",
+                    "error": {
+                        "category": "invalid_target",
+                        "message": "查询目标必须是账户、供应商名称或 all。",
+                    },
+                }
+            )
+
+        from .quota_link.capabilities import describe_capabilities
+
+        accounts = describe_capabilities(self.settings.directory)
+        balance_metadata = {
+            str(account["id"]): {
+                "balance_scope": str(account["balance_scope"]),
+                "balance_kind": str(account["balance_kind"]),
+            }
+            for account in accounts
+            if "id" in account
+            and "balance_scope" in account
+            and "balance_kind" in account
+        }
+        result = await self.service.query(parsed.request)
+        return serialize_query_result(result, balance_metadata=balance_metadata)
 
     async def _render(self, parsed) -> str:
         if parsed.error is not None:

@@ -73,7 +73,7 @@ def test_adapter_protocol_can_consume_async_client_without_network():
 
 
 def test_recognized_provider_types_have_explicit_stateless_adapters():
-    assert len(SUPPORTED_PROVIDER_TYPES) == 3
+    assert len(SUPPORTED_PROVIDER_TYPES) == 4
     assert set(IMPLEMENTED_ADAPTERS) == set(SUPPORTED_PROVIDER_TYPES)
     assert isinstance(IMPLEMENTED_ADAPTERS[ProviderType.DEEPSEEK], DeepSeekAdapter)
     assert isinstance(
@@ -83,3 +83,4 @@ def test_recognized_provider_types_have_explicit_stateless_adapters():
         IMPLEMENTED_ADAPTERS[ProviderType.OPENAI_COMPATIBLE],
         OpenAICompatibleAdapter,
     )
+    assert isinstance(IMPLEMENTED_ADAPTERS[ProviderType.GRSAI], OpenAICompatibleAdapter)

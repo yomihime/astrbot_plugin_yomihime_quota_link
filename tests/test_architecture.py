@@ -202,12 +202,19 @@ def test_astrbot_boundary_stays_in_main_and_schema_has_safe_templates():
     assert auth["items"]["api_key"]["default"] == ""
     assert auth["items"]["access_key_id"]["secret"] is True
     assert auth["items"]["access_key_secret"]["secret"] is True
-    assert "DashScope" in auth["items"]["access_key_id"]["description"]
+    assert "DashScope" in auth["items"]["access_key_id"]["hint"]
     endpoint = providers["templates"]["provider_account"]["items"]["endpoint"]
     assert endpoint["items"]["auth_mode"]["options"] == ["bearer", "header", "query"]
     mapping = providers["templates"]["provider_account"]["items"]["response_mapping"]
     assert "amount_path" in mapping["items"]
-    assert "Grsai" in providers["templates"]["provider_account"]["hint"]
+    assert set(providers["templates"]) == {
+        "deepseek",
+        "alibaba_bailian",
+        "grsai",
+        "openai_compatible",
+        "provider_account",
+    }
+    assert "旧版" in providers["templates"]["provider_account"]["name"]
 
 
 def _write_module(root: Path, relative_path: str, source: str) -> Path:

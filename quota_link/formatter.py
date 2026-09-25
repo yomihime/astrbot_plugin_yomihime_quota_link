@@ -28,9 +28,13 @@ _KIND_LABELS = {
 _UNAVAILABLE_REASONS = {
     "missing_environment_variable": "凭据环境变量未设置",
     "missing_credentials": "缺少可用凭据",
-    "missing_endpoint": "缺少余额查询端点",
-    "invalid_endpoint": "余额端点配置无效",
-    "invalid_response_mapping": "响应映射配置无效",
+    "missing_endpoint": "配置不全：请按服务商文档补齐 Host 与 API Path",
+    "missing_base_url": "配置不全：请填写 HTTPS 服务根地址 Host",
+    "missing_api_path": "配置不全：请填写以 / 开头的 API Path",
+    "invalid_endpoint": "Host 或 API Path 配置无效；Host 填 HTTPS 服务根地址，API Path 以 / 开头",
+    "invalid_base_url": "Host 配置无效；请填写不含路径、参数或凭据的 HTTPS 服务根地址",
+    "invalid_api_path": "API Path 配置无效；请填写以 / 开头且不含参数的相对路径",
+    "invalid_response_mapping": "配置不全：请在高级设置中按服务商响应文档填写余额映射",
 }
 
 
@@ -142,7 +146,9 @@ def format_help(settings: PluginSettings) -> str:
         "  /yql status          查看本地配置状态\n"
         "  /yql all             查询所有账户\n"
         "  /yql <名称>          查询指定账户或供应商\n"
-        "也可发送“余额还剩多少”等自然语言进行查询。"
+        "在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。\n"
+        "配置 OpenAI 兼容服务时，模型接口兼容不代表余额接口通用；按余额文档填写 Host、API Path 和高级认证/响应映射。资料不全的账户会标为不可查询。\n"
+        "阿里云百炼模板查询阿里云账户现金余额（BSS），不是模型额度；RAM 身份至少需要 AliyunBSSReadOnlyAccess。"
     ]
     entries = [entry for entry in settings.directory.entries if entry.enabled]
     if entries:
@@ -173,9 +179,10 @@ def format_status(settings: PluginSettings) -> str:
             elif entry.queryable:
                 state = "已配置，可查询"
             else:
-                state = _UNAVAILABLE_REASONS.get(
-                    entry.unavailable_reason or "", "暂不可查询"
+                reason = _UNAVAILABLE_REASONS.get(
+                    entry.unavailable_reason or "", "配置不全或暂不可查询"
                 )
+                state = f"不可查询：{reason}"
             lines.append(f"  {_single_line(entry.display_name)}：{state}")
     if settings.errors:
         lines.append(f"配置问题：{len(settings.errors)} 项")

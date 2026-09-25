@@ -28,12 +28,14 @@ EXPECTED_ROOT_FILES = {
 EXPECTED_PACKAGE_FILES = {
     "quota_link/__init__.py",
     "quota_link/cache.py",
+    "quota_link/capabilities.py",
     "quota_link/formatter.py",
     "quota_link/http_client.py",
     "quota_link/intent.py",
     "quota_link/models.py",
     "quota_link/service.py",
     "quota_link/settings.py",
+    "quota_link/tool_facts.py",
     "quota_link/providers/__init__.py",
     "quota_link/providers/base.py",
     "quota_link/providers/deepseek.py",
@@ -74,6 +76,32 @@ def test_build_contains_only_plugin_sources_and_is_reproducible(tmp_path: Path) 
     second = _run(*args)
     assert second.returncode == 0, second.stderr
     assert hashlib.sha256(archive.read_bytes()).hexdigest() == digest
+
+
+def test_new_modules_import_from_archive_without_source_tree(tmp_path: Path) -> None:
+    archive = build_plugin.build(VERSION, tmp_path / "dist")
+    script = """
+import importlib
+import json
+import sys
+
+archive = sys.argv[1]
+sys.path.insert(0, archive)
+capabilities = importlib.import_module("quota_link.capabilities")
+tool_facts = importlib.import_module("quota_link.tool_facts")
+assert capabilities.__file__.startswith(archive)
+assert tool_facts.__file__.startswith(archive)
+assert callable(capabilities.describe_capabilities)
+assert json.loads(tool_facts.encode_tool_result({"ok": True})) == {"ok": True}
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", "-c", script, str(archive)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_build_rejects_invalid_or_mismatched_tag(tmp_path: Path) -> None:

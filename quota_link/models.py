@@ -11,6 +11,7 @@ class ProviderType(StrEnum):
 
     ALIBABA_BAILIAN = "alibaba_bailian"
     DEEPSEEK = "deepseek"
+    GRSAI = "grsai"
     OPENAI_COMPATIBLE = "openai_compatible"
 
 

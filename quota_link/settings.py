@@ -7,6 +7,7 @@ import json
 import math
 import os
 import re
+from collections.abc import MutableMapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Mapping
@@ -26,6 +27,15 @@ _DEFAULT_TIMEOUT = 8.0
 _DEFAULT_CACHE_TTL = 60.0
 _DEFAULT_MAX_CONCURRENCY = 4
 _DEFAULT_TOTAL_TIMEOUT = 30.0
+_GRSAI_CREDIT_PATH_SCOPES = {
+    "/client/openapi/getCredits": "account",
+    "/client/openapi/getAPIKeyCredits": "api_key",
+}
+_GRSAI_ACCOUNT_CREDITS_PATH = "/client/openapi/getCredits"
+GRSAI_REGION_HOSTS = {
+    "china": "https://grsai.dakka.com.cn",
+    "global": "https://grsaiapi.com",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +67,9 @@ class AccountDirectoryEntry:
     queryable: bool
     unavailable_reason: str | None
     env_references: tuple[EnvironmentReference, ...] = ()
+    balance_kind: str = "custom"
+    balance_scope: str = "generic"
+    service_profile: str = "generic"
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,6 +131,11 @@ class AccountSettings:
     endpoint: Mapping[str, Any] | None = field(repr=False, compare=False)
     response_mapping: Mapping[str, Any] = field(repr=False, compare=False)
     config_fingerprint: str
+    balance_kind: str = "custom"
+    balance_scope: str = "generic"
+    service_profile: str = "generic"
+    prefer_split_endpoint: bool = False
+    region: str = "china"
 
 
 @dataclass(frozen=True, slots=True)
@@ -251,6 +269,10 @@ def _config_fingerprint(
     endpoint: Mapping[str, Any] | None,
     response_mapping: Mapping[str, Any],
     timeout_seconds: float,
+    service_profile: str = "generic",
+    balance_scope: str = "generic",
+    prefer_split_endpoint: bool = False,
+    region: str = "china",
 ) -> str:
     payload = {
         "provider_type": provider_type.value,
@@ -258,6 +280,10 @@ def _config_fingerprint(
         "endpoint": _canonical_value(endpoint),
         "response_mapping": _canonical_value(response_mapping),
         "timeout_seconds": timeout_seconds,
+        "service_profile": service_profile,
+        "balance_scope": balance_scope,
+        "prefer_split_endpoint": prefer_split_endpoint,
+        "region": region,
     }
     encoded = json.dumps(
         payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
@@ -399,25 +425,108 @@ def _valid_pointer(value: Any) -> bool:
     )
 
 
+def _grsai_account_config_error(
+    auth: Mapping[str, Any], endpoint: Mapping[str, Any] | None
+) -> tuple[str, str] | None:
+    if not _has_fields(auth, ("token",)):
+        return "missing_grsai_token", "missing_grsai_token"
+    if not isinstance(endpoint, Mapping):
+        return "missing_endpoint", "missing_endpoint"
+    base_url = endpoint.get("base_url")
+    if not isinstance(base_url, str) or not base_url.strip():
+        return "missing_base_url", "missing_base_url"
+    if (
+        base_url != base_url.strip()
+        or "\\" in base_url
+        or any(ord(char) < 32 or ord(char) == 127 for char in base_url)
+    ):
+        return "invalid_base_url", "invalid_base_url"
+    try:
+        parsed_base = urlsplit(base_url)
+        _ = parsed_base.port
+    except ValueError:
+        return "invalid_base_url", "invalid_base_url"
+    if (
+        parsed_base.scheme.casefold() != "https"
+        or not parsed_base.hostname
+        or parsed_base.username is not None
+        or parsed_base.password is not None
+        or parsed_base.path not in {"", "/"}
+        or parsed_base.query
+        or parsed_base.fragment
+    ):
+        return "invalid_base_url", "invalid_base_url"
+    if endpoint.get("path", "") not in (None, "", _GRSAI_ACCOUNT_CREDITS_PATH):
+        return "grsai_account_path_mismatch", "grsai_account_path_mismatch"
+    method = endpoint.get("method", "")
+    if method not in (None, "") and (
+        not isinstance(method, str) or method.upper() != "POST"
+    ):
+        return "grsai_method_must_post", "grsai_method_must_post"
+    if endpoint.get("json_body") not in (None, {}):
+        return "invalid_endpoint", "invalid_endpoint"
+    return None
+
+
 def _compatible_config_error(
     auth: Mapping[str, Any],
     endpoint: Mapping[str, Any] | None,
     mapping: Mapping[str, Any],
+    service_profile: str = "generic",
+    balance_scope: str = "generic",
+    prefer_split_endpoint: bool = False,
 ) -> tuple[str, str] | None:
+    if service_profile == "grsai" and balance_scope == "account":
+        return _grsai_account_config_error(auth, endpoint)
     if not _has_fields(auth, ("api_key",)):
         return "missing_credentials", "missing_credentials"
     if not isinstance(endpoint, Mapping):
         return "missing_endpoint", "missing_endpoint"
     raw_url = endpoint.get("url")
-    if not isinstance(raw_url, str) or not raw_url.strip():
+    if prefer_split_endpoint or not isinstance(raw_url, str) or not raw_url.strip():
         base_url, path = endpoint.get("base_url"), endpoint.get("path")
-        if (
-            not isinstance(base_url, str)
-            or not base_url.strip()
-            or not isinstance(path, str)
-            or not path.strip()
-        ):
+        has_base = isinstance(base_url, str) and bool(base_url.strip())
+        has_path = isinstance(path, str) and bool(path.strip())
+        if not has_base and not has_path:
             return "missing_endpoint", "missing_endpoint"
+        if not has_base:
+            return "missing_base_url", "missing_base_url"
+        if not has_path:
+            return "missing_api_path", "missing_api_path"
+        if base_url != base_url.strip():
+            return "invalid_base_url", "invalid_base_url"
+        if path != path.strip():
+            return "invalid_api_path", "invalid_api_path"
+        try:
+            parsed_base = urlsplit(base_url.strip())
+            _ = parsed_base.port
+        except ValueError:
+            return "invalid_base_url", "invalid_base_url"
+        if (
+            parsed_base.scheme.casefold() != "https"
+            or not parsed_base.hostname
+            or parsed_base.username is not None
+            or parsed_base.password is not None
+            or parsed_base.path not in {"", "/"}
+            or parsed_base.query
+            or parsed_base.fragment
+        ):
+            return "invalid_base_url", "invalid_base_url"
+        try:
+            parsed_path = urlsplit(path.strip())
+        except ValueError:
+            return "invalid_api_path", "invalid_api_path"
+        if (
+            not path.startswith("/")
+            or path.startswith("//")
+            or parsed_path.scheme
+            or parsed_path.netloc
+            or parsed_path.query
+            or parsed_path.fragment
+            or parsed_path.path != path
+            or "\\" in path
+        ):
+            return "invalid_api_path", "invalid_api_path"
         raw_url = base_url.rstrip("/") + "/" + path.lstrip("/")
     if not isinstance(raw_url, str):
         return "invalid_endpoint", "invalid_endpoint"
@@ -444,6 +553,18 @@ def _compatible_config_error(
     method = endpoint.get("method", "GET")
     if not isinstance(method, str) or method.upper() not in {"GET", "POST"}:
         return "invalid_endpoint", "invalid_endpoint"
+    if (
+        service_profile == "grsai"
+        and parsed.path in _GRSAI_CREDIT_PATH_SCOPES
+        and method.upper() == "GET"
+    ):
+        return "grsai_method_must_post", "grsai_method_must_post"
+    if (
+        service_profile == "grsai"
+        and parsed.path in _GRSAI_CREDIT_PATH_SCOPES
+        and balance_scope != _GRSAI_CREDIT_PATH_SCOPES[parsed.path]
+    ):
+        return "grsai_balance_scope_mismatch", "grsai_balance_scope_mismatch"
     mode = endpoint.get("auth_mode")
     if not isinstance(mode, str) or mode not in {"bearer", "header", "query"}:
         return "invalid_endpoint", "invalid_endpoint"
@@ -561,9 +682,11 @@ def _provider_aliases() -> dict[str, ProviderType]:
             "alibaba bailian",
             "百炼",
             "阿里百炼",
+            "阿里云百炼",
             "dashscope",
         ),
-        "deepseek": ("deepseek", "深度求索"),
+        "deepseek": ("deepseek", "ds", "深度求索"),
+        "grsai": ("grsai",),
         "openai_compatible": (
             "openai_compatible",
             "openai compatible",
@@ -575,6 +698,84 @@ def _provider_aliases() -> dict[str, ProviderType]:
         for provider, names in aliases.items()
         for alias in names
     }
+
+
+def migrate_account_templates(config: MutableMapping[str, Any]) -> bool:
+    """Retag old WebUI entries while preserving Grsai node selection."""
+    records = config.get("providers")
+    if not isinstance(records, list):
+        return False
+    changed = False
+    supported = {provider.value for provider in ProviderType}
+    for record in records:
+        if not isinstance(record, MutableMapping):
+            continue
+        provider_type = record.get("type")
+        template_key = record.get("__template_key")
+        if provider_type == ProviderType.GRSAI.value and "region" not in record:
+            endpoint = record.get("endpoint")
+            legacy_host = (
+                endpoint.get("base_url") if isinstance(endpoint, Mapping) else None
+            )
+            if isinstance(legacy_host, str) and legacy_host.strip():
+                inferred = next(
+                    (
+                        region
+                        for region, host in GRSAI_REGION_HOSTS.items()
+                        if legacy_host.rstrip("/") == host
+                    ),
+                    None,
+                )
+                if inferred is not None:
+                    record["region"] = inferred
+                    changed = True
+                elif template_key == ProviderType.GRSAI.value:
+                    # Keep WebUI defaults from silently switching an unknown
+                    # existing Host to the domestic node.
+                    record["region"] = "invalid_legacy_host"
+                    changed = True
+            elif isinstance(endpoint, Mapping) and endpoint.get("url"):
+                if template_key == ProviderType.GRSAI.value:
+                    record["region"] = "invalid_legacy_host"
+                    changed = True
+        if (
+            provider_type == ProviderType.OPENAI_COMPATIBLE.value
+            and template_key == ProviderType.OPENAI_COMPATIBLE.value
+        ):
+            endpoint = record.get("endpoint")
+            if isinstance(endpoint, Mapping):
+                url = endpoint.get("url")
+                if (
+                    isinstance(url, str)
+                    and url.strip()
+                    # A complete Host/Path pair may be a newer configuration.
+                    # Preserve that ambiguous record instead of changing its UI.
+                    and not all(
+                        endpoint.get(key) not in (None, "")
+                        for key in ("base_url", "path")
+                    )
+                ):
+                    record["__template_key"] = "provider_account"
+                    changed = True
+            continue
+        if template_key != "provider_account":
+            continue
+        if isinstance(provider_type, str) and provider_type in supported:
+            # Keep legacy compatible accounts on the editable legacy template:
+            # it still exposes endpoint.url, which takes precedence at runtime.
+            if provider_type == ProviderType.OPENAI_COMPATIBLE.value:
+                continue
+            if provider_type == ProviderType.GRSAI.value and "region" not in record:
+                endpoint = record.get("endpoint")
+                if isinstance(endpoint, Mapping) and any(
+                    endpoint.get(key) for key in ("base_url", "url")
+                ):
+                    # Unknown old Host must remain on the old template; the
+                    # Grsai template would fill a default region in the UI.
+                    continue
+            record["__template_key"] = provider_type
+            changed = True
+    return changed
 
 
 def load_settings(
@@ -671,7 +872,14 @@ def load_settings(
             continue
         account_id = record.get("id")
         display_name = record.get("display_name")
-        provider_raw = record.get("type")
+        template_key = record.get("__template_key")
+        template_type = (
+            template_key
+            if isinstance(template_key, str)
+            and template_key in {item.value for item in ProviderType}
+            else None
+        )
+        provider_raw = record.get("type", template_type)
         if not isinstance(account_id, str) or not account_id.strip():
             errors.append(
                 ConfigDiagnostic("invalid_id", f"{path}.id", "账户 id 必须为非空文本")
@@ -693,6 +901,16 @@ def load_settings(
             errors.append(
                 ConfigDiagnostic(
                     "unknown_type", f"{path}.type", "未知供应商类型", safe_account_id
+                )
+            )
+            continue
+        if template_type is not None and provider_type.value != template_type:
+            errors.append(
+                ConfigDiagnostic(
+                    "template_type_mismatch",
+                    f"{path}.type",
+                    "账户模板与供应商类型不一致",
+                    safe_account_id,
                 )
             )
             continue
@@ -752,8 +970,28 @@ def load_settings(
         env_references: list[EnvironmentReference] = []
         auth = _resolve_secrets(auth_raw, env, missing_env, env_references)
         endpoint_raw = record.get("endpoint")
-        endpoint = endpoint_raw if isinstance(endpoint_raw, Mapping) else None
-        if endpoint_raw is not None and endpoint is None:
+        # Native Grsai chooses a documented node by region. Stale Host fields
+        # from earlier versions are ignored, including endpoint.url.
+        endpoint = (
+            {}
+            if provider_type is ProviderType.GRSAI
+            else endpoint_raw
+            if isinstance(endpoint_raw, Mapping)
+            else None
+        )
+        prefer_split_endpoint = (
+            template_key == ProviderType.OPENAI_COMPATIBLE.value
+            and isinstance(endpoint, Mapping)
+            and all(
+                isinstance(endpoint.get(key), str) and endpoint[key].strip()
+                for key in ("base_url", "path")
+            )
+        )
+        if (
+            provider_type is not ProviderType.GRSAI
+            and endpoint_raw is not None
+            and endpoint is None
+        ):
             errors.append(
                 ConfigDiagnostic(
                     "invalid_endpoint",
@@ -790,6 +1028,111 @@ def load_settings(
                 value = response_mapping.get(mapping_key)
                 if isinstance(value, str) and not value.strip():
                     response_mapping.pop(mapping_key)
+        service_profile = "generic"
+        balance_scope = (
+            "account"
+            if provider_type in {ProviderType.DEEPSEEK, ProviderType.ALIBABA_BAILIAN}
+            else "generic"
+        )
+        balance_kind = (
+            "cash"
+            if provider_type in {ProviderType.DEEPSEEK, ProviderType.ALIBABA_BAILIAN}
+            else "custom"
+        )
+        capability_issue: tuple[str, str] | None = None
+        region = "china"
+        if provider_type is ProviderType.GRSAI:
+            service_profile = "grsai"
+            balance_scope = "account"
+            balance_kind = "credits"
+            raw_region = record.get("region")
+            if raw_region is None:
+                legacy_host = (
+                    endpoint_raw.get("base_url")
+                    if isinstance(endpoint_raw, Mapping)
+                    else None
+                )
+                if isinstance(legacy_host, str) and legacy_host.strip():
+                    raw_region = next(
+                        (
+                            key
+                            for key, host in GRSAI_REGION_HOSTS.items()
+                            if legacy_host.rstrip("/") == host
+                        ),
+                        None,
+                    )
+                elif isinstance(endpoint_raw, Mapping) and endpoint_raw.get("url"):
+                    # A stale full URL cannot identify the chosen region safely.
+                    raw_region = None
+                else:
+                    raw_region = "china"
+            if isinstance(raw_region, str) and raw_region in GRSAI_REGION_HOSTS:
+                region = raw_region
+            else:
+                capability_issue = (
+                    "invalid_grsai_region",
+                    "Grsai 节点只能选择国内直连或海外",
+                )
+            raw_scope = record.get("balance_scope", "account")
+            if raw_scope != "account":
+                balance_scope = raw_scope if isinstance(raw_scope, str) else "generic"
+                capability_issue = (
+                    "invalid_balance_scope",
+                    "Grsai 当前仅支持账户积分，API Key 积分预设尚未实现",
+                )
+        if provider_type is ProviderType.OPENAI_COMPATIBLE:
+            raw_profile = record.get("service_profile", "generic")
+            raw_scope = record.get("balance_scope", "generic")
+            if not isinstance(raw_profile, str) or raw_profile not in {
+                "generic",
+                "grsai",
+            }:
+                capability_issue = (
+                    "invalid_service_profile",
+                    "兼容服务类型只能是 generic 或 grsai",
+                )
+            elif not isinstance(raw_scope, str) or raw_scope not in {
+                "generic",
+                "account",
+                "api_key",
+            }:
+                capability_issue = (
+                    "invalid_balance_scope",
+                    "余额范围只能是 generic、account 或 api_key",
+                )
+            elif raw_profile == "grsai" and raw_scope == "generic":
+                capability_issue = (
+                    "invalid_balance_scope",
+                    "Grsai 当前仅支持账户积分预设",
+                )
+            elif raw_profile == "grsai" and raw_scope == "api_key":
+                service_profile = raw_profile
+                balance_scope = raw_scope
+                capability_issue = (
+                    "invalid_balance_scope",
+                    "Grsai API Key 积分预设尚未实现，请选择账户积分",
+                )
+            elif raw_profile != "grsai" and raw_scope != "generic":
+                capability_issue = (
+                    "invalid_balance_scope",
+                    "账户余额或 API Key 余额范围仅适用于已选择的 Grsai 服务",
+                )
+            else:
+                service_profile = raw_profile
+                balance_scope = raw_scope
+            configured_kind = response_mapping.get("kind", "custom")
+            if service_profile == "grsai" and balance_scope in {"account", "api_key"}:
+                balance_kind = "credits"
+            elif isinstance(configured_kind, str) and configured_kind in {
+                "cash",
+                "quota",
+                "free_quota",
+                "subscription",
+                "credits",
+                "usage",
+                "custom",
+            }:
+                balance_kind = configured_kind
         enabled = record.get("enabled", True) is True
         if "enabled" in record and not isinstance(record["enabled"], bool):
             errors.append(
@@ -816,7 +1159,27 @@ def load_settings(
             safe_account_id,
         )
         reason = None
-        if missing_env:
+        if capability_issue is not None:
+            code, safe_message = capability_issue
+            reason = code
+            diagnostic_field = (
+                "response_mapping.kind"
+                if code == "invalid_balance_kind"
+                else "service_profile"
+                if code == "invalid_service_profile"
+                else "region"
+                if code == "invalid_grsai_region"
+                else "balance_scope"
+            )
+            errors.append(
+                ConfigDiagnostic(
+                    code,
+                    f"{path}.{diagnostic_field}",
+                    safe_message,
+                    safe_account_id,
+                )
+            )
+        elif missing_env:
             reason = "missing_environment_variable"
             errors.append(
                 ConfigDiagnostic(
@@ -850,21 +1213,53 @@ def load_settings(
                     safe_account_id,
                 )
             )
-        elif provider_type is ProviderType.OPENAI_COMPATIBLE:
-            issue = _compatible_config_error(auth, endpoint, response_mapping)
+        elif provider_type in {ProviderType.OPENAI_COMPATIBLE, ProviderType.GRSAI}:
+            issue = (
+                (
+                    ("missing_grsai_token", "missing_grsai_token")
+                    if not _has_fields(auth, ("token",))
+                    else None
+                )
+                if provider_type is ProviderType.GRSAI
+                else _compatible_config_error(
+                    auth,
+                    endpoint,
+                    response_mapping,
+                    service_profile,
+                    balance_scope,
+                    prefer_split_endpoint,
+                )
+            )
             if issue is not None:
                 code, reason = issue
-                field_path = (
-                    f"{path}.endpoint"
-                    if code in {"missing_endpoint", "invalid_endpoint"}
-                    else f"{path}.response_mapping"
-                    if code == "invalid_response_mapping"
-                    else f"{path}.auth"
-                )
+                field_path = {
+                    "missing_credentials": f"{path}.auth",
+                    "missing_grsai_token": f"{path}.auth.token",
+                    "missing_endpoint": f"{path}.endpoint",
+                    "missing_base_url": f"{path}.endpoint.base_url",
+                    "missing_api_path": f"{path}.endpoint.path",
+                    "invalid_endpoint": f"{path}.endpoint",
+                    "grsai_method_must_post": f"{path}.endpoint.method",
+                    "grsai_account_path_mismatch": f"{path}.endpoint.path",
+                    "grsai_balance_scope_mismatch": f"{path}.balance_scope",
+                    "invalid_balance_kind": f"{path}.response_mapping.kind",
+                    "invalid_base_url": f"{path}.endpoint.base_url",
+                    "invalid_api_path": f"{path}.endpoint.path",
+                    "invalid_response_mapping": f"{path}.response_mapping",
+                }.get(code, f"{path}.endpoint")
                 messages = {
                     "missing_credentials": "兼容接口需要配置 API 密钥",
+                    "missing_grsai_token": "Grsai 账户积分需要用户信息中的请求令牌 token",
                     "missing_endpoint": "缺少余额查询端点",
+                    "missing_base_url": "请填写 HTTPS 服务根地址 Host",
+                    "missing_api_path": "请填写以 / 开头的相对 API Path",
                     "invalid_endpoint": "余额端点必须是安全的 HTTPS GET 或 POST 配置",
+                    "grsai_method_must_post": "该 Grsai 积分端点要求使用 POST",
+                    "grsai_account_path_mismatch": "Grsai 账户积分仅支持 /client/openapi/getCredits",
+                    "grsai_balance_scope_mismatch": "Grsai getCredits 端点应选择 account；getAPIKeyCredits 端点应选择 api_key",
+                    "invalid_balance_kind": "Grsai 积分查询必须将 kind 固定映射为 credits",
+                    "invalid_base_url": "Host 必须是没有路径、查询参数或片段的 HTTPS 服务根地址",
+                    "invalid_api_path": "API Path 必须以单个 / 开头，且不能包含完整 URL、查询参数或片段",
                     "invalid_response_mapping": "兼容接口必须配置有效的 amount_path 映射",
                 }
                 errors.append(
@@ -891,6 +1286,10 @@ def load_settings(
             endpoint,
             response_mapping,
             account_timeout,
+            service_profile,
+            balance_scope,
+            prefer_split_endpoint,
+            region,
         )
         candidate = AccountSettings(
             id=account_id,
@@ -907,6 +1306,11 @@ def load_settings(
             endpoint=frozen_endpoint,
             response_mapping=frozen_response_mapping,
             config_fingerprint=fingerprint,
+            balance_kind=balance_kind,
+            balance_scope=balance_scope,
+            service_profile=service_profile,
+            prefer_split_endpoint=prefer_split_endpoint,
+            region=region,
         )
         parsed.append(candidate)
         parsed_paths.append(path)
@@ -942,6 +1346,9 @@ def load_settings(
             account.queryable,
             account.unavailable_reason,
             account.env_references,
+            account.balance_kind,
+            account.balance_scope,
+            account.service_profile,
         )
         for account in accounts
     )

@@ -30,13 +30,458 @@
     "default": []
   },
   "providers": {
-    "description": "配置多个供应商账户；凭据建议使用 ${ENV_VAR} 环境变量引用。DeepSeek 用 API Key；百炼现金余额用独立阿里云 AccessKey，DashScope Key 不可替代；兼容接口仅接受 HTTPS 余额端点。",
+    "description": "查询账户",
     "type": "template_list",
     "default": [],
     "templates": {
+      "deepseek": {
+        "name": "DeepSeek",
+        "hint": "官方余额",
+        "display_item": "display_name",
+        "hide_hint_in_list": true,
+        "items": {
+          "id": {
+            "description": "账户唯一 ID",
+            "type": "string",
+            "default": ""
+          },
+          "display_name": {
+            "description": "显示名称",
+            "type": "string",
+            "default": ""
+          },
+          "aliases": {
+            "description": "用于命令和自然语言匹配的其他名称",
+            "type": "list",
+            "default": []
+          },
+          "enabled": {
+            "description": "启用此账户",
+            "type": "bool",
+            "default": true
+          },
+          "timeout_seconds": {
+            "description": "账户查询超时秒数",
+            "type": "float",
+            "default": 8.0
+          },
+          "cache_ttl_seconds": {
+            "description": "账户成功结果缓存秒数",
+            "type": "float",
+            "default": 60.0
+          },
+          "type": {
+            "description": "供应商类型",
+            "type": "string",
+            "default": "deepseek",
+            "invisible": true
+          },
+          "auth": {
+            "description": "余额查询 API Key",
+            "type": "object",
+            "items": {
+              "api_key": {
+                "description": "DeepSeek API Key",
+                "type": "string",
+                "default": "",
+                "secret": true
+              }
+            }
+          }
+        }
+      },
+      "alibaba_bailian": {
+        "name": "阿里云百炼",
+        "hint": "账户现金余额",
+        "display_item": "display_name",
+        "hide_hint_in_list": true,
+        "items": {
+          "id": {
+            "description": "账户唯一 ID",
+            "type": "string",
+            "default": ""
+          },
+          "display_name": {
+            "description": "显示名称",
+            "type": "string",
+            "default": ""
+          },
+          "aliases": {
+            "description": "用于命令和自然语言匹配的其他名称",
+            "type": "list",
+            "default": []
+          },
+          "enabled": {
+            "description": "启用此账户",
+            "type": "bool",
+            "default": true
+          },
+          "timeout_seconds": {
+            "description": "账户查询超时秒数",
+            "type": "float",
+            "default": 8.0
+          },
+          "cache_ttl_seconds": {
+            "description": "账户成功结果缓存秒数",
+            "type": "float",
+            "default": 60.0
+          },
+          "type": {
+            "description": "供应商类型",
+            "type": "string",
+            "default": "alibaba_bailian",
+            "invisible": true
+          },
+          "auth": {
+            "description": "阿里云 RAM 只读查询凭据",
+            "type": "object",
+            "items": {
+              "access_key_id": {
+                "description": "RAM AccessKey ID",
+                "hint": "查询阿里云账户现金余额（BSS），不是百炼模型额度。RAM 身份至少需 AliyunBSSReadOnlyAccess；不能用 DashScope 模型 API Key。",
+                "type": "string",
+                "default": "",
+                "secret": true
+              },
+              "access_key_secret": {
+                "description": "RAM AccessKey Secret",
+                "type": "string",
+                "default": "",
+                "secret": true
+              },
+              "security_token": {
+                "description": "STS Security Token",
+                "hint": "可选；仅临时凭据需要。",
+                "type": "string",
+                "default": "",
+                "secret": true
+              }
+            }
+          }
+        }
+      },
+      "grsai": {
+        "name": "Grsai",
+        "hint": "账户积分",
+        "display_item": "display_name",
+        "hide_hint_in_list": true,
+        "items": {
+          "id": {
+            "description": "账户唯一 ID",
+            "type": "string",
+            "default": ""
+          },
+          "display_name": {
+            "description": "显示名称",
+            "type": "string",
+            "default": ""
+          },
+          "aliases": {
+            "description": "用于命令和自然语言匹配的其他名称",
+            "type": "list",
+            "default": []
+          },
+          "enabled": {
+            "description": "启用此账户",
+            "type": "bool",
+            "default": true
+          },
+          "timeout_seconds": {
+            "description": "账户查询超时秒数",
+            "type": "float",
+            "default": 8.0
+          },
+          "cache_ttl_seconds": {
+            "description": "账户成功结果缓存秒数",
+            "type": "float",
+            "default": 60.0
+          },
+          "type": {
+            "description": "供应商类型",
+            "type": "string",
+            "default": "grsai",
+            "invisible": true
+          },
+          "service_profile": {
+            "description": "Grsai 账户积分预设",
+            "type": "string",
+            "default": "grsai",
+            "invisible": true
+          },
+          "balance_scope": {
+            "description": "账户积分",
+            "type": "string",
+            "default": "account",
+            "invisible": true
+          },
+          "auth": {
+            "description": "Grsai 账户积分请求令牌",
+            "type": "object",
+            "items": {
+              "token": {
+                "description": "请求令牌 token",
+                "hint": "从 Grsai 用户信息栏取得；不是模型 API Key 或 Bearer 令牌。插件固定 POST /client/openapi/getCredits，读取 data.credits。",
+                "type": "string",
+                "default": "",
+                "secret": true
+              }
+            }
+          },
+          "region": {
+            "description": "连接区域",
+            "hint": "国内与海外均使用内置官方节点，无需手填服务器地址。",
+            "type": "string",
+            "default": "china",
+            "options": ["china", "global"],
+            "labels": ["国内直连", "海外节点"]
+          }
+        }
+      },
+      "openai_compatible": {
+        "name": "其他兼容服务",
+        "hint": "自定义余额接口",
+        "display_item": "display_name",
+        "hide_hint_in_list": true,
+        "items": {
+          "id": {
+            "description": "账户唯一 ID",
+            "type": "string",
+            "default": ""
+          },
+          "display_name": {
+            "description": "显示名称",
+            "type": "string",
+            "default": ""
+          },
+          "aliases": {
+            "description": "用于命令和自然语言匹配的其他名称",
+            "type": "list",
+            "default": []
+          },
+          "enabled": {
+            "description": "启用此账户",
+            "type": "bool",
+            "default": true
+          },
+          "timeout_seconds": {
+            "description": "账户查询超时秒数",
+            "type": "float",
+            "default": 8.0
+          },
+          "cache_ttl_seconds": {
+            "description": "账户成功结果缓存秒数",
+            "type": "float",
+            "default": 60.0
+          },
+          "type": {
+            "description": "供应商类型",
+            "type": "string",
+            "default": "openai_compatible",
+            "invisible": true
+          },
+          "service_profile": {
+            "description": "服务类型",
+            "hint": "模型接口兼容不代表余额接口通用。新 Grsai 账户请直接添加 Grsai 模板；本模板旧条目可切换账户积分预设。",
+            "type": "string",
+            "default": "generic",
+            "options": ["generic", "grsai"],
+            "labels": ["OpenAI 兼容服务 / 第三方服务", "Grsai"]
+          },
+          "balance_scope": {
+            "description": "积分范围",
+            "hint": "账户积分已支持；API Key 积分暂不可查询。",
+            "type": "string",
+            "default": "generic",
+            "options": ["generic", "account", "api_key"],
+            "labels": ["请选择积分范围", "账户积分（已支持预设）", "API Key 积分（暂不可查询）"],
+            "condition": {"service_profile": "grsai"}
+          },
+          "auth": {
+            "description": "余额查询凭据",
+            "hint": "Grsai 账户积分填请求令牌 token；其他兼容服务按余额文档填写 API Key。",
+            "type": "object",
+            "items": {
+              "token": {
+                "description": "Grsai 请求令牌 token",
+                "hint": "从 Grsai 用户信息栏取得；不是模型 API Key 或 Bearer 令牌。",
+                "type": "string",
+                "default": "",
+                "secret": true,
+                "condition": {"service_profile": "grsai", "balance_scope": "account"}
+              },
+              "api_key": {
+                "description": "兼容服务 API Key",
+                "hint": "Grsai 账户积分预设忽略此栏；旧 Key 不会用于账户积分请求。",
+                "type": "string",
+                "default": "",
+                "secret": true
+              }
+            }
+          },
+          "endpoint": {
+            "description": "余额接口",
+            "hint": "请依据服务商余额文档填写；模型接口兼容不代表余额接口通用。",
+            "type": "object",
+            "items": {
+              "base_url": {
+                "description": "Host",
+                "hint": "HTTPS 服务根地址，不含 API 路径。https://api.example.invalid 仅为不可访问的格式示例。",
+                "type": "string",
+                "default": ""
+              },
+              "path": {
+                "description": "API Path",
+                "hint": "通用服务按文档填写。Grsai 账户积分留空或填 /client/openapi/getCredits；旧条目切换时清除原路径。/account/balance 仅为占位示例。",
+                "type": "string",
+                "default": ""
+              },
+              "method": {
+                "description": "请求方法",
+                "hint": "通用服务按文档填写。Grsai 账户积分固定 POST；旧条目切换时清除原 GET。",
+                "type": "string",
+                "default": "",
+                "options": [
+                  "GET",
+                  "POST"
+                ],
+                "condition": {"advanced_options": true}
+              },
+              "auth_mode": {
+                "description": "认证方式",
+                "hint": "按余额文档确认；Grsai 账户积分忽略此栏，token 固定放入 JSON 请求体。",
+                "type": "string",
+                "default": "",
+                "options": [
+                  "bearer",
+                  "header",
+                  "query"
+                ],
+                "condition": {"advanced_options": true}
+              },
+              "auth_name": {
+                "description": "认证参数名",
+                "hint": "仅 auth_mode 为 header 或 query 时使用。",
+                "type": "string",
+                "default": "",
+                "condition": {"advanced_options": true}
+              },
+              "json_body": {
+                "description": "静态 JSON 请求体",
+                "hint": "仅供通用服务使用，不支持模板或凭据。Grsai 账户积分留空；旧条目切换时清除旧请求体。",
+                "type": "dict",
+                "items": {},
+                "default": {},
+                "condition": {"advanced_options": true}
+              }
+            }
+          },
+          "advanced_options": {
+            "description": "高级设置",
+            "hint": "通用服务配置认证、方法与响应映射；Grsai 账户积分使用固定协议并忽略旧映射。",
+            "type": "bool",
+            "default": false
+          },
+          "response_mapping": {
+            "description": "响应映射",
+            "hint": "通用服务按文档填写 JSON Pointer，amount_path 必需；Grsai 账户积分忽略旧映射，固定解析 code=0 与 data.credits。",
+            "type": "dict",
+            "items": {
+              "amount_path": {
+                "description": "主余额路径",
+                "hint": "必需的 JSON Pointer，例如 /data/remaining。",
+                "type": "string",
+                "default": ""
+              },
+              "total_path": {
+                "description": "可选总量路径",
+                "type": "string",
+                "default": ""
+              },
+              "remaining_path": {
+                "description": "可选剩余量路径",
+                "type": "string",
+                "default": ""
+              },
+              "used_path": {
+                "description": "可选已用量路径",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "固定单位",
+                "hint": "可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；设置 unit_path 时必填。",
+                "type": "string",
+                "default": "custom"
+              },
+              "unit_path": {
+                "description": "单位路径",
+                "hint": "可选 JSON Pointer；运行时值必须与固定 unit 一致。",
+                "type": "string",
+                "default": ""
+              },
+              "kind": {
+                "description": "固定余额类别",
+                "type": "string",
+                "default": "custom"
+              },
+              "kind_path": {
+                "description": "余额类别路径",
+                "hint": "可选 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom。",
+                "type": "string",
+                "default": ""
+              },
+              "status_path": {
+                "description": "可选账户状态 JSON Pointer",
+                "type": "string",
+                "default": ""
+              },
+              "status_values": {
+                "description": "状态值映射",
+                "hint": "将供应商状态值映射到 available/unavailable/partial/unknown。",
+                "type": "dict",
+                "items": {},
+                "default": {}
+              },
+              "expires_at_path": {
+                "description": "可选到期时间 JSON Pointer",
+                "type": "string",
+                "default": ""
+              },
+              "expiry_path": {
+                "description": "到期时间别名",
+                "hint": "兼容旧版 expires_at_path。",
+                "type": "string",
+                "default": ""
+              },
+              "success_path": {
+                "description": "可选业务成功字段路径",
+                "type": "string",
+                "default": ""
+              },
+              "success_value": {
+                "description": "success_path 对应的成功值",
+                "type": "string",
+                "default": ""
+              },
+              "failure_path": {
+                "description": "可选业务失败字段路径",
+                "type": "string",
+                "default": ""
+              },
+              "failure_value": {
+                "description": "failure_path 对应的失败值",
+                "type": "string",
+                "default": ""
+              }
+            },
+            "default": {},
+            "condition": {"advanced_options": true}
+          }
+        }
+      },
       "provider_account": {
-        "name": "API 账户",
-        "hint": "Grsai 余额接口的目标节点、认证和响应结构仍待确认；请先按对应文档填写通用兼容配置。不要把聊天端点用作余额端点。",
+        "name": "旧版通用账户",
+        "hint": "仅供旧配置编辑",
         "display_item": "display_name",
         "items": {
           "id": {
@@ -46,9 +491,14 @@
           },
           "type": {
             "description": "供应商类型",
+            "hint": "本旧模板没有 Grsai 账户积分的切换字段。迁移时请新建 Grsai 条目并禁用旧条目。",
             "type": "string",
             "default": "deepseek",
-            "options": ["alibaba_bailian", "deepseek", "openai_compatible"]
+            "options": [
+              "alibaba_bailian",
+              "deepseek",
+              "openai_compatible"
+            ]
           },
           "display_name": {
             "description": "显示名称",
@@ -80,25 +530,28 @@
             "type": "object",
             "items": {
               "api_key": {
-                "description": "DeepSeek 或兼容余额接口 API Key；不要用于阿里云 BSS",
+                "description": "余额 API Key",
+                "hint": "用于 DeepSeek 或兼容余额接口，不用于阿里云 BSS。",
                 "type": "string",
                 "default": "",
                 "secret": true
               },
               "access_key_id": {
-                "description": "阿里云 RAM AccessKey ID（独立于 DashScope API Key）",
+                "description": "RAM AccessKey ID",
+                "hint": "与 DashScope 模型 API Key 不同。",
                 "type": "string",
                 "default": "",
                 "secret": true
               },
               "access_key_secret": {
-                "description": "阿里云 RAM AccessKey Secret",
+                "description": "RAM AccessKey Secret",
                 "type": "string",
                 "default": "",
                 "secret": true
               },
               "security_token": {
-                "description": "可选的阿里云 STS Security Token",
+                "description": "STS Security Token",
+                "hint": "可选；仅临时凭据需要。",
                 "type": "string",
                 "default": "",
                 "secret": true
@@ -106,16 +559,19 @@
             }
           },
           "endpoint": {
-            "description": "兼容供应商的只读余额端点；必须使用 HTTPS",
+            "description": "余额接口",
+            "hint": "只读余额端点，必须使用 HTTPS。",
             "type": "object",
             "items": {
               "url": {
-                "description": "完整 HTTPS 余额 URL（不含 query、凭据或 fragment）",
+                "description": "余额 URL",
+                "hint": "完整 HTTPS 地址，不含 query、凭据或 fragment。",
                 "type": "string",
                 "default": ""
               },
               "base_url": {
-                "description": "HTTPS 服务根地址；可与 path 配合",
+                "description": "Host",
+                "hint": "HTTPS 服务根地址，可与 API Path 配合。",
                 "type": "string",
                 "default": ""
               },
@@ -125,54 +581,137 @@
                 "default": ""
               },
               "method": {
-                "description": "只允许 GET 或已确认无副作用的 POST",
+                "description": "请求方法",
+                "hint": "只允许 GET 或已确认无副作用的 POST。",
                 "type": "string",
                 "default": "GET",
-                "options": ["GET", "POST"]
+                "options": [
+                  "GET",
+                  "POST"
+                ]
               },
               "auth_mode": {
                 "description": "API Key 认证位置",
                 "type": "string",
                 "default": "bearer",
-                "options": ["bearer", "header", "query"]
+                "options": [
+                  "bearer",
+                  "header",
+                  "query"
+                ]
               },
               "auth_name": {
-                "description": "auth_mode 为 header 或 query 时的名称",
+                "description": "认证参数名",
+                "hint": "仅 auth_mode 为 header 或 query 时使用。",
                 "type": "string",
                 "default": ""
               },
               "json_body": {
-                "description": "仅用于有文档依据的只读 POST；静态 JSON 对象，不支持模板或凭据",
-                "type": "object",
+                "description": "静态 JSON 请求体",
+                "hint": "仅用于有文档依据的只读 POST，不支持模板或凭据。",
+                "type": "dict",
                 "items": {},
                 "default": {}
               }
             }
           },
           "response_mapping": {
-            "description": "使用 JSON Pointer 映射供应商的余额和可选状态字段；amount_path 必需",
+            "description": "响应映射",
+            "hint": "使用 JSON Pointer 映射余额和可选状态字段；amount_path 必需。",
             "type": "dict",
             "items": {
-              "amount_path": {"description": "必需的主余额路径，例如 /data/remaining", "type": "string", "default": ""},
-              "total_path": {"description": "可选总量路径", "type": "string", "default": ""},
-              "remaining_path": {"description": "可选剩余量路径", "type": "string", "default": ""},
-              "used_path": {"description": "可选已用量路径", "type": "string", "default": ""},
-              "unit": {"description": "固定单位标签：CNY/USD/JPY/credit/credits/tokens/requests/custom；unit_path 存在时必填", "type": "string", "default": "custom"},
-              "unit_path": {"description": "可选 JSON Pointer；运行时值必须与固定 unit 一致", "type": "string", "default": ""},
-              "kind": {"description": "固定余额类别", "type": "string", "default": "custom"},
-              "kind_path": {"description": "可选余额类别 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom", "type": "string", "default": ""},
-              "status_path": {"description": "可选账户状态 JSON Pointer", "type": "string", "default": ""},
-              "status_values": {"description": "供应商状态值到 available/unavailable/partial/unknown 的映射", "type": "dict", "items": {}, "default": {}},
-              "expires_at_path": {"description": "可选到期时间 JSON Pointer", "type": "string", "default": ""},
-              "expiry_path": {"description": "expires_at_path 的兼容别名", "type": "string", "default": ""},
-              "success_path": {"description": "可选业务成功字段路径", "type": "string", "default": ""},
-              "success_value": {"description": "success_path 对应的成功值", "type": "string", "default": ""},
-              "failure_path": {"description": "可选业务失败字段路径", "type": "string", "default": ""},
-              "failure_value": {"description": "failure_path 对应的失败值", "type": "string", "default": ""}
+              "amount_path": {
+                "description": "主余额路径",
+                "hint": "必需的 JSON Pointer，例如 /data/remaining。",
+                "type": "string",
+                "default": ""
+              },
+              "total_path": {
+                "description": "可选总量路径",
+                "type": "string",
+                "default": ""
+              },
+              "remaining_path": {
+                "description": "可选剩余量路径",
+                "type": "string",
+                "default": ""
+              },
+              "used_path": {
+                "description": "可选已用量路径",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "固定单位",
+                "hint": "可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；设置 unit_path 时必填。",
+                "type": "string",
+                "default": "custom"
+              },
+              "unit_path": {
+                "description": "单位路径",
+                "hint": "可选 JSON Pointer；运行时值必须与固定 unit 一致。",
+                "type": "string",
+                "default": ""
+              },
+              "kind": {
+                "description": "固定余额类别",
+                "type": "string",
+                "default": "custom"
+              },
+              "kind_path": {
+                "description": "余额类别路径",
+                "hint": "可选 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom。",
+                "type": "string",
+                "default": ""
+              },
+              "status_path": {
+                "description": "可选账户状态 JSON Pointer",
+                "type": "string",
+                "default": ""
+              },
+              "status_values": {
+                "description": "状态值映射",
+                "hint": "将供应商状态值映射到 available/unavailable/partial/unknown。",
+                "type": "dict",
+                "items": {},
+                "default": {}
+              },
+              "expires_at_path": {
+                "description": "可选到期时间 JSON Pointer",
+                "type": "string",
+                "default": ""
+              },
+              "expiry_path": {
+                "description": "到期时间别名",
+                "hint": "兼容旧版 expires_at_path。",
+                "type": "string",
+                "default": ""
+              },
+              "success_path": {
+                "description": "可选业务成功字段路径",
+                "type": "string",
+                "default": ""
+              },
+              "success_value": {
+                "description": "success_path 对应的成功值",
+                "type": "string",
+                "default": ""
+              },
+              "failure_path": {
+                "description": "可选业务失败字段路径",
+                "type": "string",
+                "default": ""
+              },
+              "failure_value": {
+                "description": "failure_path 对应的失败值",
+                "type": "string",
+                "default": ""
+              }
             },
             "default": {}
           }
-        }
+        },
+        "hide_hint_in_list": true
       }
     }
   }

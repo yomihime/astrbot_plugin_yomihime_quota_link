@@ -70,6 +70,90 @@ def test_natural_language_resolves_provider_and_account_names():
     assert account.target == "grsai-work"
 
 
+def test_builtin_synonyms_match_natural_language_case_insensitively():
+    directory = _settings().directory
+
+    for target_text in (
+        "DS 还剩多少？",
+        "dS 还剩多少？",
+        "深度求索 还剩多少？",
+    ):
+        result = _request(parse_natural_language(target_text, directory))
+        assert result.kind is QueryRequestKind.PROVIDER
+        assert result.target == ProviderType.DEEPSEEK.value
+
+    deepseek_account = _request(
+        parse_natural_language("deepseek 还剩多少？", directory)
+    )
+    assert deepseek_account.kind is QueryRequestKind.ACCOUNT
+    assert deepseek_account.target == "deepseek-account"
+
+    for target_text in ("阿里云百炼余额是多少？", "阿里百炼余额是多少？"):
+        result = _request(parse_natural_language(target_text, directory))
+        assert result.kind is QueryRequestKind.PROVIDER
+        assert result.target == ProviderType.ALIBABA_BAILIAN.value
+
+
+def test_account_id_or_alias_wins_over_builtin_provider_synonym():
+    settings = load_settings(
+        {
+            "providers": [
+                {
+                    "id": "DS",
+                    "type": "deepseek",
+                    "display_name": "Dedicated DS account",
+                    "aliases": ["DeepSeek"],
+                    "auth": {"api_key": "account-secret"},
+                }
+            ]
+        }
+    )
+
+    for target_text in ("DS 还剩多少？", "DeepSeek 还剩多少？"):
+        result = _request(parse_natural_language(target_text, settings.directory))
+        assert result.kind is QueryRequestKind.ACCOUNT
+        assert result.target == "DS"
+    assert (
+        _request(parse_command("DS", settings.directory)).kind
+        is QueryRequestKind.ACCOUNT
+    )
+
+
+def test_standalone_grsai_provider_name_targets_only_grsai_accounts():
+    settings = load_settings(
+        {
+            "providers": [
+                {
+                    "id": "grsai-primary",
+                    "type": "grsai",
+                    "display_name": "中转站主账户",
+                    "auth": {"token": "request-token"},
+                    "endpoint": {"base_url": "https://example.invalid"},
+                },
+                {
+                    "id": "other-relay",
+                    "type": "openai_compatible",
+                    "display_name": "其他中转站",
+                    "auth": {"api_key": "other-key"},
+                    "endpoint": {
+                        "base_url": "https://other.invalid",
+                        "path": "/balance",
+                        "auth_mode": "bearer",
+                    },
+                    "response_mapping": {"amount_path": "/remaining"},
+                },
+            ]
+        }
+    )
+    for text in ("GRSAI 还剩多少积分？", "grsai 还剩多少积分？"):
+        request = _request(parse_natural_language(text, settings.directory))
+        assert request.kind is QueryRequestKind.PROVIDER
+        assert request.target == ProviderType.GRSAI.value
+    explicit = _request(parse_command("provider grsai", settings.directory))
+    assert explicit.kind is QueryRequestKind.PROVIDER
+    assert explicit.target == ProviderType.GRSAI.value
+
+
 def test_natural_language_returns_candidates_for_multiple_targets():
     settings = _settings()
     result = parse_natural_language(

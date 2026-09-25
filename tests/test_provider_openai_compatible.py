@@ -23,6 +23,7 @@ from quota_link.http_client import (
 from quota_link.models import (
     BalanceItemKind,
     ProviderErrorCategory,
+    ProviderType,
     QueryRequest,
     QueryRequestKind,
     QueryResult,
@@ -193,6 +194,251 @@ def test_webui_default_fields_with_base_url_path_query_successfully():
         "https://provider.example/v1/account/balance",
     )
     assert client.calls[0][2]["json"] is None
+
+
+def test_split_endpoint_marker_overrides_stale_legacy_url():
+    account = {
+        **_ACCOUNT,
+        "prefer_split_endpoint": True,
+        "endpoint": {
+            **_ACCOUNT["endpoint"],
+            "base_url": "https://new.example.invalid",
+            "path": "/account/balance",
+        },
+    }
+
+    snapshot, client = _query(account)
+
+    assert snapshot.error is None
+    assert client.calls[0][1] == "https://new.example.invalid/account/balance"
+
+
+def test_legacy_url_precedes_split_fields_without_marker():
+    account = {
+        **_ACCOUNT,
+        "endpoint": {
+            **_ACCOUNT["endpoint"],
+            "base_url": "https://new.example.invalid",
+            "path": "/account/balance",
+        },
+    }
+
+    snapshot, client = _query(account)
+
+    assert snapshot.error is None
+    assert client.calls[0][1] == _ACCOUNT["endpoint"]["url"]
+
+
+def _grsai_account(**overrides):
+    account = {
+        "id": "grsai-account",
+        "display_name": "Grsai account credits",
+        "service_profile": "grsai",
+        "balance_scope": "account",
+        "auth": {"token": "request-token-secret"},
+        "endpoint": {
+            "base_url": "https://provider.example.invalid",
+            "path": "/client/openapi/getCredits",
+            "method": "POST",
+            "json_body": {},
+        },
+        "response_mapping": {},
+        "timeout_seconds": 4.0,
+    }
+    account.update(overrides)
+    return account
+
+
+def test_grsai_account_credits_documented_success_shape_and_body_auth():
+    # Offline payload mirrors the documented success example, not a live response.
+    payload = {"code": 0, "data": {"credits": 10000}, "msg": "success"}
+    fake = FakeClient(FakeResponse(payload))
+
+    snapshot, client = _query(_grsai_account(), fake)
+
+    assert client.calls == [
+        (
+            "POST",
+            "https://provider.example.invalid/client/openapi/getCredits",
+            {
+                "headers": {"Accept": "application/json"},
+                "params": {},
+                "json": {"token": "request-token-secret"},
+                "timeout": 4.0,
+            },
+        )
+    ]
+    assert snapshot.status is SnapshotStatus.AVAILABLE
+    assert snapshot.balances[0].amount == Decimal("10000")
+    assert snapshot.balances[0].unit == "credit"
+    assert snapshot.balances[0].kind is BalanceItemKind.CREDITS
+    assert "request-token-secret" not in repr(snapshot)
+
+
+def test_native_grsai_type_uses_fixed_account_protocol_and_typed_snapshot():
+    account = _grsai_account(
+        type="grsai",
+        endpoint={
+            "base_url": "https://wrong.example.invalid",
+            "url": "https://wrong.example.invalid/stale",
+        },
+        response_mapping={"amount_path": "/stale/path"},
+    )
+    fake = FakeClient(FakeResponse({"code": 0, "data": {"credits": "2.5"}}))
+
+    snapshot, client = _query(account, fake)
+
+    assert snapshot.provider_type is ProviderType.GRSAI
+    assert snapshot.balances[0].amount == Decimal("2.5")
+    assert client.calls[0][0:2] == (
+        "POST",
+        "https://grsai.dakka.com.cn/client/openapi/getCredits",
+    )
+    assert client.calls[0][2]["headers"] == {"Accept": "application/json"}
+    assert client.calls[0][2]["json"] == {"token": "request-token-secret"}
+
+
+def test_native_grsai_global_region_uses_documented_global_host_only():
+    account = _grsai_account(
+        type="grsai",
+        region="global",
+        endpoint={"base_url": "https://wrong.example.invalid"},
+    )
+    fake = FakeClient(FakeResponse({"code": 0, "data": {"credits": 3}}))
+
+    snapshot, client = _query(account, fake)
+
+    assert snapshot.status is SnapshotStatus.AVAILABLE
+    assert client.calls[0] == (
+        "POST",
+        "https://grsaiapi.com/client/openapi/getCredits",
+        {
+            "headers": {"Accept": "application/json"},
+            "params": {},
+            "json": {"token": "request-token-secret"},
+            "timeout": 4.0,
+        },
+    )
+
+
+def test_native_grsai_invalid_region_makes_no_request():
+    snapshot, client = _query(_grsai_account(type="grsai", region="bad"))
+
+    assert client.calls == []
+    assert snapshot.error.category is ProviderErrorCategory.CONFIGURATION
+
+
+def test_native_grsai_error_snapshot_keeps_provider_type_without_request():
+    account = _grsai_account(type="grsai", auth={"api_key": "old-model-key"})
+
+    snapshot, client = _query(account)
+
+    assert client.calls == []
+    assert snapshot.provider_type is ProviderType.GRSAI
+    assert snapshot.error.category is ProviderErrorCategory.CONFIGURATION
+    assert "old-model-key" not in repr(snapshot)
+
+
+def test_grsai_ignores_stale_legacy_url_and_generic_auth_mode():
+    endpoint = {
+        **_grsai_account()["endpoint"],
+        "url": "https://legacy.example.invalid/wrong",
+        "auth_mode": "bearer",
+    }
+    fake = FakeClient(FakeResponse({"code": 0, "data": {"credits": "1.25"}}))
+
+    snapshot, client = _query(_grsai_account(endpoint=endpoint), fake)
+
+    assert snapshot.error is None
+    assert client.calls[0][1] == (
+        "https://provider.example.invalid/client/openapi/getCredits"
+    )
+    assert client.calls[0][2]["headers"] == {"Accept": "application/json"}
+    assert client.calls[0][2]["json"] == {"token": "request-token-secret"}
+
+
+def test_grsai_optional_path_and_method_are_assembled_at_runtime():
+    account = _grsai_account(
+        endpoint={"base_url": "https://provider.example.invalid"},
+        response_mapping={
+            "amount_path": "/old/field",
+            "kind": "custom",
+            "unit": "custom",
+        },
+    )
+    fake = FakeClient(FakeResponse({"code": 0, "data": {"credits": 12}}))
+
+    snapshot, client = _query(account, fake)
+
+    assert snapshot.error is None
+    assert snapshot.balances[0].amount == Decimal("12")
+    assert snapshot.balances[0].kind is BalanceItemKind.CREDITS
+    assert snapshot.balances[0].unit == "credit"
+    assert client.calls[0][0:2] == (
+        "POST",
+        "https://provider.example.invalid/client/openapi/getCredits",
+    )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"balance_scope": "api_key"},
+        {"auth": {"api_key": "model-key"}},
+        {"endpoint": {"base_url": "http://provider.example.invalid"}},
+        {"endpoint": {"base_url": "https://provider.example.invalid/leak"}},
+        {
+            "endpoint": {
+                "base_url": "https://provider.example.invalid",
+                "path": "/wrong",
+            }
+        },
+        {
+            "endpoint": {
+                "base_url": "https://provider.example.invalid",
+                "json_body": {"token": "embedded-secret"},
+            }
+        },
+    ],
+)
+def test_grsai_invalid_configuration_makes_no_request(changes):
+    snapshot, client = _query(_grsai_account(**changes))
+
+    assert client.calls == []
+    assert snapshot.status is SnapshotStatus.UNAVAILABLE
+    assert snapshot.error.category is ProviderErrorCategory.CONFIGURATION
+    assert "secret" not in repr(snapshot)
+
+
+@pytest.mark.parametrize(
+    "payload,category",
+    [
+        ({"code": 7, "msg": "request-token-secret"}, ProviderErrorCategory.ENDPOINT),
+        ({"code": 0, "data": {}}, ProviderErrorCategory.PARSE),
+        ({"code": "0", "data": {"credits": 1}}, ProviderErrorCategory.PARSE),
+        ({"code": 0, "data": {"credits": -1}}, ProviderErrorCategory.PARSE),
+    ],
+)
+def test_grsai_failure_response_is_safely_classified(payload, category):
+    fake = FakeClient(FakeResponse(payload))
+
+    snapshot, _ = _query(_grsai_account(), fake)
+
+    assert snapshot.status is SnapshotStatus.UNAVAILABLE
+    assert snapshot.error.category is category
+    assert "request-token-secret" not in repr(snapshot)
+
+
+@pytest.mark.parametrize("status", [401, 403, 404, 429, 500])
+def test_grsai_unknown_http_mapping_stays_generic(status):
+    fake = FakeClient(FakeResponse({"msg": "request-token-secret"}, status))
+
+    snapshot, _ = _query(_grsai_account(), fake)
+
+    assert snapshot.error.category is ProviderErrorCategory.TEMPORARILY_UNAVAILABLE
+    assert snapshot.error.diagnostic_code == f"http_{status}"
+    assert "request-token-secret" not in repr(snapshot)
+    assert snapshot.source == "Grsai 账户积分接口"
 
 
 @pytest.mark.parametrize(

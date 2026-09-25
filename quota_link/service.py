@@ -224,7 +224,17 @@ class QueryService:
                 provider = ProviderType(request.target)
             except ValueError:
                 return ()
-            return tuple(item for item in accounts if item.provider_type is provider)
+            return tuple(
+                item
+                for item in accounts
+                if (
+                    ProviderType.GRSAI
+                    if item.provider_type is ProviderType.OPENAI_COMPATIBLE
+                    and item.service_profile == "grsai"
+                    else item.provider_type
+                )
+                is provider
+            )
         return ()
 
     @staticmethod

@@ -33,6 +33,10 @@ from .base import AsyncProviderClient
 
 _BALANCE_URL = "https://business.aliyuncs.com/"
 _SOURCE = "阿里云账户现金余额"
+_PERMISSION_ERROR_MESSAGE = (
+    "阿里云拒绝访问账户现金余额。请为查询当前 BSS 现金余额的 RAM 身份至少授予 "
+    "AliyunBSSReadOnlyAccess；DashScope 模型 API Key 不能替代此 RAM 授权。无需授予 BSS FullAccess。"
+)
 _CURRENCIES = frozenset({"CNY", "USD", "JPY"})
 _SAFE_CODE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _BUSINESS_ERRORS: dict[str, tuple[ProviderErrorCategory, str]] = {
@@ -270,7 +274,7 @@ def _business_error(code: str | None) -> NormalizedProviderError:
     if code in _BUSINESS_ERRORS:
         category, diagnostic = _BUSINESS_ERRORS[code]
         messages = {
-            ProviderErrorCategory.PERMISSION: "阿里云拒绝访问账户现金余额",
+            ProviderErrorCategory.PERMISSION: _PERMISSION_ERROR_MESSAGE,
             ProviderErrorCategory.AUTHENTICATION: "阿里云访问密钥认证失败",
             ProviderErrorCategory.ENDPOINT: "阿里云账户现金余额查询失败",
             ProviderErrorCategory.TEMPORARILY_UNAVAILABLE: "阿里云余额服务暂时不可用",
@@ -292,7 +296,7 @@ def _status_error(status_code: int) -> NormalizedProviderError:
     elif status_code == 403:
         category, message = (
             ProviderErrorCategory.PERMISSION,
-            "阿里云拒绝访问账户现金余额",
+            _PERMISSION_ERROR_MESSAGE,
         )
     elif status_code == 429:
         category, message = (

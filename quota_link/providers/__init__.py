@@ -14,6 +14,7 @@ IMPLEMENTED_ADAPTERS: Mapping[ProviderType, ProviderAdapter] = MappingProxyType(
     {
         ProviderType.ALIBABA_BAILIAN: AlibabaBailianAdapter(),
         ProviderType.DEEPSEEK: DeepSeekAdapter(),
+        ProviderType.GRSAI: OpenAICompatibleAdapter(),
         ProviderType.OPENAI_COMPATIBLE: OpenAICompatibleAdapter(),
     }
 )

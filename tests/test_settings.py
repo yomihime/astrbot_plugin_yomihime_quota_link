@@ -3,12 +3,14 @@ from pathlib import Path
 
 import pytest
 
+from quota_link.capabilities import describe_capabilities
+from quota_link.formatter import format_status
 from quota_link.models import (
     ProviderType,
     QueryParseErrorCode,
     QueryRequestKind,
 )
-from quota_link.settings import load_settings
+from quota_link.settings import load_settings, migrate_account_templates
 
 _DEFAULT_ENDPOINT = object()
 
@@ -131,7 +133,9 @@ def test_provider_aliases_are_public_normalized_and_read_only():
 
     assert aliases["deepseek"] is ProviderType.DEEPSEEK
     assert aliases["深度求索"] is ProviderType.DEEPSEEK
+    assert aliases["ds"] is ProviderType.DEEPSEEK
     assert aliases["阿里百炼"] is ProviderType.ALIBABA_BAILIAN
+    assert aliases["阿里云百炼"] is ProviderType.ALIBABA_BAILIAN
     assert aliases["openai-compatible"] is ProviderType.OPENAI_COMPATIBLE
     with pytest.raises(TypeError):
         aliases["custom"] = ProviderType.DEEPSEEK
@@ -343,6 +347,172 @@ def test_query_fingerprint_tracks_auth_endpoint_and_response_mapping_only():
     assert "secret-a" not in repr(load_settings({"providers": [base]}))
 
 
+def test_query_fingerprint_tracks_compatible_service_profile_and_balance_scope():
+    base = account(
+        provider_type="openai_compatible",
+        service_profile="grsai",
+        balance_scope="account",
+    )
+    original = load_settings({"providers": [base]}).accounts[0].config_fingerprint
+    changed_scope = (
+        load_settings({"providers": [{**base, "balance_scope": "api_key"}]})
+        .accounts[0]
+        .config_fingerprint
+    )
+    changed_profile = (
+        load_settings({"providers": [{**base, "service_profile": "generic"}]})
+        .accounts[0]
+        .config_fingerprint
+    )
+
+    assert changed_scope != original
+    assert changed_profile != original
+
+
+def test_compatible_profile_and_scope_are_safe_directory_metadata():
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    service_profile="grsai",
+                    balance_scope="api_key",
+                    response_mapping={"amount_path": "/balance", "kind": "credits"},
+                )
+            ]
+        }
+    )
+    entry = settings.directory.entries[0]
+
+    assert entry.service_profile == "grsai"
+    assert entry.balance_scope == "api_key"
+    assert entry.balance_kind == "credits"
+
+
+def test_grsai_requires_explicit_balance_scope_but_generic_compatible_still_works():
+    grsai = account(
+        provider_type="openai_compatible",
+        service_profile="grsai",
+        balance_scope="generic",
+    )
+    generic = account(
+        "generic",
+        "Generic service",
+        provider_type="openai_compatible",
+    )
+    settings = load_settings({"providers": [grsai, generic]})
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == "invalid_balance_scope"
+    diagnostic = next(
+        error for error in settings.errors if error.code == "invalid_balance_scope"
+    )
+    assert diagnostic.path.endswith(".balance_scope")
+    assert settings.accounts[1].queryable
+    assert settings.accounts[1].balance_scope == "generic"
+    assert settings.accounts[1].service_profile == "generic"
+
+
+def test_invalid_compatible_service_profile_diagnostic_points_to_profile():
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    service_profile="unsupported-profile",
+                )
+            ]
+        }
+    )
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == "invalid_service_profile"
+    diagnostic = next(
+        error for error in settings.errors if error.code == "invalid_service_profile"
+    )
+    assert diagnostic.path.endswith(".service_profile")
+
+
+def test_unknown_compatible_kind_is_not_projected_into_safe_directory():
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    response_mapping={
+                        "amount_path": "/balance",
+                        "kind": "sensitive-secret-value",
+                    },
+                )
+            ]
+        }
+    )
+
+    assert settings.accounts[0].balance_kind == "custom"
+    assert "sensitive-secret-value" not in repr(settings.directory)
+
+
+@pytest.mark.parametrize(
+    "endpoint,reason,field_path",
+    [
+        (
+            {
+                "base_url": "https://balance.example.test/v1",
+                "path": "/balance",
+                "auth_mode": "bearer",
+            },
+            "invalid_base_url",
+            "endpoint.base_url",
+        ),
+        (
+            {
+                "base_url": "https://balance.example.test",
+                "path": "https://balance.example.test/balance",
+                "auth_mode": "bearer",
+            },
+            "invalid_api_path",
+            "endpoint.path",
+        ),
+        (
+            {
+                "base_url": "https://balance.example.test",
+                "path": "//balance",
+                "auth_mode": "bearer",
+            },
+            "invalid_api_path",
+            "endpoint.path",
+        ),
+        (
+            {
+                "base_url": "https://balance.example.test",
+                "path": "/balance?token=x",
+                "auth_mode": "bearer",
+            },
+            "invalid_api_path",
+            "endpoint.path",
+        ),
+    ],
+)
+def test_compatible_split_endpoint_fields_are_strictly_validated(
+    endpoint, reason, field_path
+):
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    endpoint=endpoint,
+                    response_mapping={"amount_path": "/balance"},
+                )
+            ]
+        }
+    )
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == reason
+    assert any(error.path.endswith(field_path) for error in settings.errors)
+
+
 def test_account_response_mapping_is_immutable_and_hidden_from_repr():
     settings = load_settings(
         {
@@ -462,6 +632,583 @@ def test_webui_default_fields_accept_empty_optional_values_with_base_url():
     assert settings.accounts[0].endpoint["url"] == ""
     assert settings.accounts[0].response_mapping["amount_path"] == "/data/remaining"
     assert "remaining_path" not in settings.accounts[0].response_mapping
+
+
+def test_provider_templates_only_expose_fields_for_their_provider():
+    root = Path(__file__).resolve().parents[1]
+    schema = json.loads((root / "_conf_schema.json").read_text(encoding="utf-8"))
+    templates = schema["providers"]["templates"]
+
+    for provider_type in ("deepseek", "alibaba_bailian", "openai_compatible"):
+        items = templates[provider_type]["items"]
+        assert items["type"]["default"] == provider_type
+        assert items["type"]["invisible"] is True
+        assert items["auth"]["items"]
+    assert set(templates["deepseek"]["items"]["auth"]["items"]) == {"api_key"}
+    assert set(templates["alibaba_bailian"]["items"]["auth"]["items"]) == {
+        "access_key_id",
+        "access_key_secret",
+        "security_token",
+    }
+    compatible_auth = templates["openai_compatible"]["items"]["auth"]["items"]
+    assert set(compatible_auth) == {"api_key", "token"}
+    assert compatible_auth["token"]["secret"] is True
+    assert compatible_auth["token"]["condition"] == {
+        "service_profile": "grsai",
+        "balance_scope": "account",
+    }
+    for provider_type in ("deepseek", "alibaba_bailian"):
+        assert "endpoint" not in templates[provider_type]["items"]
+        assert "response_mapping" not in templates[provider_type]["items"]
+    assert "endpoint" in templates["openai_compatible"]["items"]
+    assert "response_mapping" in templates["openai_compatible"]["items"]
+    assert "provider_account" in templates  # Already-saved entries remain editable.
+
+
+def test_template_type_is_inferred_and_mismatch_is_rejected():
+    inferred = account("inferred", "Inferred")
+    inferred.pop("type")
+    inferred["__template_key"] = "deepseek"
+    mismatched = account("mismatch", "Mismatch", provider_type="deepseek")
+    mismatched["__template_key"] = "alibaba_bailian"
+    settings = load_settings({"providers": [inferred, mismatched]})
+
+    assert [item.id for item in settings.accounts] == ["inferred"]
+    assert any(error.code == "template_type_mismatch" for error in settings.errors)
+
+
+def test_legacy_compatible_template_keeps_full_url_field_editable():
+    legacy_url = "https://balance.example.invalid/legacy"
+    config = {
+        "providers": [
+            account(
+                "legacy-compatible",
+                "Legacy compatible",
+                provider_type="openai_compatible",
+                endpoint={
+                    "url": legacy_url,
+                    "method": "GET",
+                    "auth_mode": "bearer",
+                    "json_body": {},
+                },
+            ),
+            account("deepseek", "DeepSeek", provider_type="deepseek"),
+        ]
+    }
+    for provider in config["providers"]:
+        provider["__template_key"] = "provider_account"
+
+    changed = migrate_account_templates(config)
+    settings = load_settings(config)
+
+    assert changed
+    assert config["providers"][0]["__template_key"] == "provider_account"
+    assert config["providers"][1]["__template_key"] == "deepseek"
+    legacy = next(item for item in settings.accounts if item.id == "legacy-compatible")
+    assert legacy.endpoint["url"] == legacy_url
+    assert legacy.queryable
+
+
+def test_already_migrated_compatible_full_url_restores_legacy_template():
+    legacy_url = "https://balance.example.invalid/client/openapi/getCredits"
+    endpoint = {
+        "url": legacy_url,
+        "base_url": "",
+        "path": "",
+        "method": "POST",
+        "auth_mode": "bearer",
+        "json_body": {},
+    }
+    provider = account(
+        "grsai",
+        "Grsai",
+        provider_type="openai_compatible",
+        endpoint=endpoint,
+    )
+    provider["__template_key"] = "openai_compatible"
+    config = {"providers": [provider]}
+
+    assert migrate_account_templates(config)
+    assert provider["__template_key"] == "provider_account"
+    assert provider["endpoint"] == endpoint
+    assert load_settings(config).accounts[0].queryable
+    assert not migrate_account_templates(config)
+
+
+@pytest.mark.parametrize(
+    "endpoint,expected_template",
+    [
+        (
+            {
+                "url": "",
+                "base_url": "https://balance.example.invalid",
+                "path": "/balance",
+            },
+            "openai_compatible",
+        ),
+        (
+            {"base_url": "https://balance.example.invalid", "path": "/balance"},
+            "openai_compatible",
+        ),
+        (
+            {
+                "url": "https://balance.example.invalid/old",
+                "base_url": "https://balance.example.invalid",
+                "path": "/balance",
+            },
+            "openai_compatible",
+        ),
+        (
+            {
+                "url": "https://balance.example.invalid/old",
+                "base_url": "https://balance.example.invalid",
+                "path": "",
+            },
+            "provider_account",
+        ),
+        (
+            {"url": "https://balance.example.invalid/old", "path": "/balance"},
+            "provider_account",
+        ),
+    ],
+)
+def test_compatible_template_handles_host_path_and_ambiguous_endpoint(
+    endpoint, expected_template
+):
+    provider = account(provider_type="openai_compatible", endpoint=endpoint)
+    provider["__template_key"] = "openai_compatible"
+
+    assert migrate_account_templates({"providers": [provider]}) is (
+        expected_template == "provider_account"
+    )
+    assert provider["__template_key"] == expected_template
+    assert provider["endpoint"] == endpoint
+
+
+def test_compatible_template_prefers_complete_split_endpoint_over_stale_url():
+    endpoint = {
+        "url": "/old/relative/path",
+        "base_url": "https://balance.example.invalid",
+        "path": "/client/openapi/getCredits",
+        "method": "POST",
+        "auth_mode": "bearer",
+        "json_body": {},
+    }
+    provider = account(
+        provider_type="openai_compatible",
+        endpoint=endpoint,
+        service_profile="grsai",
+        balance_scope="account",
+        auth={"token": "request-token"},
+    )
+    provider["response_mapping"]["kind"] = "credits"
+    provider["__template_key"] = "openai_compatible"
+
+    settings = load_settings({"providers": [provider]})
+    loaded = settings.accounts[0]
+
+    assert loaded.queryable
+    assert loaded.prefer_split_endpoint
+    assert loaded.endpoint["url"] == "/old/relative/path"
+    assert not settings.errors
+    assert not migrate_account_templates({"providers": [provider]})
+
+
+def test_legacy_template_keeps_url_priority_when_split_endpoint_is_present():
+    endpoint = {
+        "url": "/old/relative/path",
+        "base_url": "https://balance.example.invalid",
+        "path": "/client/openapi/getCredits",
+        "method": "POST",
+        "auth_mode": "bearer",
+        "json_body": {},
+    }
+    provider = account(provider_type="openai_compatible", endpoint=endpoint)
+    provider["__template_key"] = "provider_account"
+
+    settings = load_settings({"providers": [provider]})
+    loaded = settings.accounts[0]
+
+    assert not loaded.queryable
+    assert loaded.unavailable_reason == "invalid_endpoint"
+    assert not loaded.prefer_split_endpoint
+    assert loaded.endpoint["url"] == "/old/relative/path"
+
+
+def test_native_grsai_type_has_account_credit_defaults_and_no_mapping_requirement():
+    native = account(
+        "native-grsai",
+        "Grsai",
+        provider_type="grsai",
+        auth={"token": "request-token-secret"},
+        endpoint=None,
+    )
+
+    settings = load_settings({"providers": [native]})
+
+    assert settings.errors == ()
+    loaded = settings.accounts[0]
+    assert loaded.provider_type is ProviderType.GRSAI
+    assert loaded.queryable
+    assert loaded.service_profile == "grsai"
+    assert loaded.balance_scope == "account"
+    assert loaded.balance_kind == "credits"
+    assert loaded.region == "china"
+    assert loaded.endpoint == {}
+    assert settings.resolve_target("grsai").request.target == "native-grsai"
+    assert "request-token-secret" not in repr(loaded)
+
+
+def test_native_grsai_region_switches_without_a_host_and_invalid_region_is_safe():
+    base = account(
+        "grsai-region",
+        "Grsai",
+        provider_type="grsai",
+        auth={"token": "request-token-secret"},
+        endpoint=None,
+        region="china",
+    )
+    china = load_settings({"providers": [base]})
+    global_node = load_settings({"providers": [{**base, "region": "global"}]})
+    invalid = load_settings({"providers": [{**base, "region": "unknown"}]})
+
+    assert china.accounts[0].queryable
+    assert global_node.accounts[0].queryable
+    assert china.accounts[0].endpoint == global_node.accounts[0].endpoint == {}
+    assert (
+        china.accounts[0].config_fingerprint
+        != global_node.accounts[0].config_fingerprint
+    )
+    assert not invalid.accounts[0].queryable
+    assert invalid.accounts[0].unavailable_reason == "invalid_grsai_region"
+    assert invalid.errors[0].path == "providers[0].region"
+    assert "request-token-secret" not in repr(invalid)
+
+
+@pytest.mark.parametrize(
+    ("old_host", "expected_region"),
+    [
+        ("https://grsai.dakka.com.cn", "china"),
+        ("https://grsaiapi.com", "global"),
+    ],
+)
+def test_native_grsai_old_host_migrates_to_exact_region(old_host, expected_region):
+    old = account(
+        "old-grsai",
+        "Grsai",
+        provider_type="grsai",
+        auth={"token": "request-token-secret"},
+        endpoint={"base_url": old_host, "path": "/client/openapi/getCredits"},
+    )
+
+    loaded = load_settings({"providers": [old]})
+
+    assert loaded.accounts[0].region == expected_region
+    assert loaded.accounts[0].queryable
+    assert loaded.accounts[0].endpoint == {}
+
+
+def test_native_grsai_unknown_old_host_is_not_silently_switched():
+    old = account(
+        "old-grsai",
+        "Grsai",
+        provider_type="grsai",
+        auth={"token": "request-token-secret"},
+        endpoint={"base_url": "https://other.example.invalid"},
+    )
+
+    loaded = load_settings({"providers": [old]})
+
+    assert not loaded.accounts[0].queryable
+    assert loaded.accounts[0].unavailable_reason == "invalid_grsai_region"
+    assert loaded.errors[0].path == "providers[0].region"
+
+
+@pytest.mark.parametrize("template_key", ["provider_account", "grsai"])
+def test_migrated_overseas_grsai_survives_webui_defaults(template_key):
+    old = account(
+        "old-overseas-grsai",
+        "Grsai",
+        provider_type="grsai",
+        auth={"token": "request-token-secret"},
+        endpoint={"base_url": "https://grsaiapi.com"},
+    )
+    old["__template_key"] = template_key
+    config = {"providers": [old]}
+
+    assert migrate_account_templates(config)
+    # Simulates Dashboard applyDefaults on the new Grsai template.
+    if old["__template_key"] == "grsai":
+        old.setdefault("region", "china")
+    loaded = load_settings(config)
+
+    assert old["__template_key"] == "grsai"
+    assert old["region"] == "global"
+    assert loaded.accounts[0].region == "global"
+    assert loaded.accounts[0].queryable
+    assert not migrate_account_templates(config)
+
+
+@pytest.mark.parametrize("template_key", ["provider_account", "grsai"])
+def test_unknown_old_grsai_host_stays_unavailable_after_webui_defaults(template_key):
+    old = account(
+        "old-unknown-grsai",
+        "Grsai",
+        provider_type="grsai",
+        auth={"token": "request-token-secret"},
+        endpoint={"base_url": "https://other.example.invalid"},
+    )
+    old["__template_key"] = template_key
+    config = {"providers": [old]}
+
+    migrate_account_templates(config)
+    if old["__template_key"] == "grsai":
+        old.setdefault("region", "china")
+    loaded = load_settings(config)
+
+    assert not loaded.accounts[0].queryable
+    assert loaded.accounts[0].unavailable_reason == "invalid_grsai_region"
+    assert loaded.errors[0].path == "providers[0].region"
+    assert not migrate_account_templates(config)
+
+
+def test_native_grsai_type_rejects_api_key_scope_and_missing_request_token():
+    base = account(
+        "native-grsai",
+        "Grsai",
+        provider_type="grsai",
+        auth={"token": "request-token-secret"},
+        endpoint={"base_url": "https://provider.example.invalid"},
+        region="china",
+    )
+
+    api_key = load_settings({"providers": [{**base, "balance_scope": "api_key"}]})
+    missing_token = load_settings(
+        {"providers": [{**base, "auth": {"api_key": "model-secret"}}]}
+    )
+
+    assert api_key.accounts[0].unavailable_reason == "invalid_balance_scope"
+    assert api_key.errors[0].path == "providers[0].balance_scope"
+    assert missing_token.accounts[0].unavailable_reason == "missing_grsai_token"
+    assert missing_token.errors[0].path == "providers[0].auth.token"
+    assert "model-secret" not in repr(missing_token.errors)
+
+
+def test_grsai_account_endpoint_rejects_get_and_accepts_post():
+    def configured(method):
+        endpoint = {
+            "base_url": "https://balance.example.invalid",
+            "path": "/client/openapi/getCredits",
+            "method": method,
+            "auth_mode": "bearer",
+            "json_body": {},
+        }
+        return account(
+            provider_type="openai_compatible",
+            service_profile="grsai",
+            balance_scope="account",
+            auth={"token": "request-token"},
+            endpoint=endpoint,
+            response_mapping={},
+        )
+
+    get_settings = load_settings({"providers": [configured("GET")]})
+    post_settings = load_settings({"providers": [configured("POST")]})
+
+    assert not get_settings.accounts[0].queryable
+    assert get_settings.accounts[0].unavailable_reason == "grsai_method_must_post"
+    assert any(
+        error.path.endswith(".endpoint.method")
+        for error in get_settings.errors
+        if error.code == "grsai_method_must_post"
+    )
+    assert post_settings.accounts[0].queryable
+
+
+@pytest.mark.parametrize("split_endpoint", [False, True])
+def test_grsai_api_key_scope_is_unavailable_even_with_endpoint(split_endpoint):
+    path = "/client/openapi/getAPIKeyCredits"
+    endpoint = {
+        "method": "POST",
+        "auth_mode": "bearer",
+        "json_body": {},
+    }
+    if split_endpoint:
+        endpoint.update(base_url="https://balance.example.invalid", path=path)
+    else:
+        endpoint["url"] = f"https://balance.example.invalid{path}"
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    service_profile="grsai",
+                    balance_scope="api_key",
+                    endpoint=endpoint,
+                    response_mapping={"amount_path": "/credits", "kind": "credits"},
+                )
+            ]
+        }
+    )
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == "invalid_balance_scope"
+    diagnostic = next(
+        error for error in settings.errors if error.code == "invalid_balance_scope"
+    )
+    assert diagnostic.path.endswith(".balance_scope")
+    assert "尚未实现" in diagnostic.safe_message
+    assert settings.directory.entries[0].service_profile == "grsai"
+    assert settings.directory.entries[0].balance_scope == "api_key"
+    assert not settings.directory.entries[0].queryable
+    assert "secret-key" not in repr(settings.errors)
+
+
+def test_grsai_api_key_unknown_credit_path_is_unavailable():
+    settings = load_settings(
+        {
+            "providers": [
+                account(
+                    provider_type="openai_compatible",
+                    service_profile="grsai",
+                    balance_scope="api_key",
+                    endpoint={
+                        "url": "https://balance.example.invalid/custom/credits",
+                        "method": "GET",
+                        "auth_mode": "bearer",
+                    },
+                    response_mapping={"amount_path": "/credits", "kind": "credits"},
+                )
+            ]
+        }
+    )
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == "invalid_balance_scope"
+    capability = describe_capabilities(settings.directory)[0]
+    assert capability["provider"] == "Grsai"
+    assert capability["balance_scope"] == "api_key"
+    assert capability["queryable"] is False
+    assert capability["reason"]
+    status = format_status(settings)
+    assert "可查询 0 个" in status
+    assert "不可查询" in status
+    assert "尚未实现" in status
+
+
+@pytest.mark.parametrize(
+    "mapping",
+    [
+        {"amount_path": "/balance", "kind": "cash"},
+        {"amount_path": "/balance", "kind": "credits", "kind_path": "/kind"},
+    ],
+)
+def test_grsai_account_ignores_old_response_mapping_and_fixes_credits(mapping):
+    grsai = account(
+        provider_type="openai_compatible",
+        service_profile="grsai",
+        balance_scope="account",
+        auth={"token": "request-token"},
+        endpoint={"base_url": "https://balance.example.invalid"},
+        response_mapping=mapping,
+    )
+    generic = account(
+        "generic-cash",
+        "Generic cash service",
+        provider_type="openai_compatible",
+        response_mapping={"amount_path": "/balance", "kind": "cash"},
+    )
+    settings = load_settings({"providers": [grsai, generic]})
+
+    assert settings.accounts[0].queryable
+    assert settings.accounts[0].balance_kind == "credits"
+    assert settings.accounts[1].queryable
+    assert settings.accounts[1].balance_kind == "cash"
+
+
+def test_grsai_account_requires_request_token_not_api_key():
+    provider = account(
+        provider_type="openai_compatible",
+        service_profile="grsai",
+        balance_scope="account",
+        endpoint={"base_url": "https://balance.example.invalid"},
+        response_mapping={},
+    )
+
+    settings = load_settings({"providers": [provider]})
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == "missing_grsai_token"
+    assert any(error.path.endswith(".auth.token") for error in settings.errors)
+    assert "secret-key" not in repr(settings.errors)
+
+
+def test_grsai_account_token_environment_reference_and_empty_mapping():
+    provider = account(
+        provider_type="openai_compatible",
+        service_profile="grsai",
+        balance_scope="account",
+        auth={"token": "${GRSAI_REQUEST_TOKEN}", "api_key": "old-api-key"},
+        endpoint={"url": "/stale", "base_url": "https://balance.example.invalid"},
+        response_mapping={},
+    )
+
+    missing = load_settings({"providers": [provider]}, environ={})
+    loaded = load_settings(
+        {"providers": [provider]}, environ={"GRSAI_REQUEST_TOKEN": "request-token"}
+    )
+
+    assert missing.accounts[0].unavailable_reason == "missing_environment_variable"
+    assert loaded.accounts[0].queryable
+    assert loaded.accounts[0].auth["token"] == "request-token"
+    assert loaded.accounts[0].auth["api_key"] == "old-api-key"
+    assert loaded.accounts[0].endpoint["url"] == "/stale"
+    assert loaded.accounts[0].balance_kind == "credits"
+    assert "request-token" not in repr(loaded)
+
+
+@pytest.mark.parametrize(
+    "endpoint,reason",
+    [
+        ({}, "missing_base_url"),
+        ({"base_url": "http://balance.example.invalid"}, "invalid_base_url"),
+        ({"base_url": "https://balance.example.invalid/x"}, "invalid_base_url"),
+        ({"base_url": "https://balance.example.invalid\\evil"}, "invalid_base_url"),
+        ({"base_url": "https://balance.example.invalid\x7f"}, "invalid_base_url"),
+        (
+            {
+                "base_url": "https://balance.example.invalid",
+                "path": "/client/openapi/getAPIKeyCredits",
+            },
+            "grsai_account_path_mismatch",
+        ),
+        (
+            {"base_url": "https://balance.example.invalid", "method": "GET"},
+            "grsai_method_must_post",
+        ),
+        (
+            {
+                "base_url": "https://balance.example.invalid",
+                "json_body": {"token": "request-token"},
+            },
+            "invalid_endpoint",
+        ),
+    ],
+)
+def test_grsai_account_rejects_conflicting_endpoint_fields(endpoint, reason):
+    provider = account(
+        provider_type="openai_compatible",
+        service_profile="grsai",
+        balance_scope="account",
+        auth={"token": "request-token"},
+        endpoint=endpoint,
+        response_mapping={},
+    )
+
+    settings = load_settings({"providers": [provider]})
+
+    assert not settings.accounts[0].queryable
+    assert settings.accounts[0].unavailable_reason == reason
 
 
 def test_empty_required_amount_path_is_invalid():

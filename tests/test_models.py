@@ -25,6 +25,7 @@ def test_provider_type_recognition_is_not_adapter_implementation():
     assert SUPPORTED_PROVIDER_TYPES == {
         ProviderType.ALIBABA_BAILIAN,
         ProviderType.DEEPSEEK,
+        ProviderType.GRSAI,
         ProviderType.OPENAI_COMPATIBLE,
     }
 

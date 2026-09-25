@@ -24,9 +24,12 @@ from ..models import (
     ProviderType,
     SnapshotStatus,
 )
+from ..settings import GRSAI_REGION_HOSTS
 from .base import AsyncProviderClient
 
 _SOURCE = "OpenAI-compatible 余额接口"
+_GRSAI_SOURCE = "Grsai 账户积分接口"
+_GRSAI_ACCOUNT_PATH = "/client/openapi/getCredits"
 _SEGMENT_ESCAPE = re.compile(r"~(?![01])")
 _SAFE_HEADER = re.compile(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
 _SAFE_DYNAMIC_KINDS = frozenset(kind.value for kind in BalanceItemKind)
@@ -52,10 +55,19 @@ class OpenAICompatibleAdapter:
     async def fetch_balance(
         self, account: Any, client: AsyncProviderClient
     ) -> BalanceSnapshot:
+        provider_type = _account_provider_type(account)
         try:
             account_id, display_name, auth, endpoint, mapping, timeout = (
                 _account_fields(account)
             )
+            service_profile = _account_option(account, "service_profile", "generic")
+            balance_scope = _account_option(account, "balance_scope", "generic")
+            prefer_split_endpoint = _account_option(
+                account, "prefer_split_endpoint", False
+            )
+            if provider_type is ProviderType.GRSAI:
+                service_profile = "grsai"
+                balance_scope = _account_option(account, "balance_scope", "account")
         except Exception:
             account_id, display_name = _fallback_identity(account)
             return _error_snapshot(
@@ -66,11 +78,26 @@ class OpenAICompatibleAdapter:
                     "兼容平台余额查询配置无效",
                     "invalid_configuration",
                 ),
+                provider_type=provider_type,
             )
         try:
-            method, url, headers, params, body = _request_config(
-                auth, endpoint, mapping
-            )
+            if service_profile == "grsai":
+                if balance_scope != "account":
+                    raise ValueError("unsupported Grsai balance scope")
+                method, url, headers, params, body = _grsai_account_request_config(
+                    auth,
+                    endpoint,
+                    region=_account_option(account, "region", "china")
+                    if provider_type is ProviderType.GRSAI
+                    else None,
+                )
+            else:
+                method, url, headers, params, body = _request_config(
+                    auth,
+                    endpoint,
+                    mapping,
+                    prefer_split_endpoint=prefer_split_endpoint is True,
+                )
         except (TypeError, ValueError):
             return _error_snapshot(
                 account_id,
@@ -80,6 +107,8 @@ class OpenAICompatibleAdapter:
                     "兼容平台余额查询配置无效",
                     "invalid_configuration",
                 ),
+                source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
+                provider_type=provider_type,
             )
 
         try:
@@ -99,7 +128,18 @@ class OpenAICompatibleAdapter:
             HttpResponseParseError,
             HttpRequestError,
         ) as exc:
-            return _error_snapshot(account_id, display_name, _transport_error(exc))
+            error = (
+                _grsai_transport_error(exc)
+                if service_profile == "grsai"
+                else _transport_error(exc)
+            )
+            return _error_snapshot(
+                account_id,
+                display_name,
+                error,
+                source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
+                provider_type=provider_type,
+            )
         except Exception:
             # Third-party clients can attach URLs or request details to arbitrary
             # exceptions. Never forward their text into logs or user-facing data.
@@ -111,10 +151,20 @@ class OpenAICompatibleAdapter:
                     "余额接口请求暂时失败",
                     "request_error",
                 ),
+                source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
+                provider_type=provider_type,
             )
 
         status_code = response.status_code
         if status_code != 200:
+            if service_profile == "grsai":
+                return _error_snapshot(
+                    account_id,
+                    display_name,
+                    _grsai_http_error(status_code),
+                    source=_GRSAI_SOURCE,
+                    provider_type=provider_type,
+                )
             category, message, diagnostic = _HTTP_ERRORS.get(
                 status_code,
                 (
@@ -129,11 +179,15 @@ class OpenAICompatibleAdapter:
                 account_id,
                 display_name,
                 NormalizedProviderError(category, message, diagnostic),
+                provider_type=provider_type,
             )
 
         try:
             payload = response.json()
-            item, status = _parse_payload(payload, mapping)
+            if service_profile == "grsai":
+                item, status = _parse_grsai_account_payload(payload)
+            else:
+                item, status = _parse_payload(payload, mapping)
         except BusinessFailure:
             return _error_snapshot(
                 account_id,
@@ -143,6 +197,8 @@ class OpenAICompatibleAdapter:
                     "余额服务报告查询失败",
                     "business_failure",
                 ),
+                source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
+                provider_type=provider_type,
             )
         except HttpResponseParseError:
             return _error_snapshot(
@@ -153,6 +209,8 @@ class OpenAICompatibleAdapter:
                     "余额接口返回的数据格式无法识别",
                     "invalid_json",
                 ),
+                source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
+                provider_type=provider_type,
             )
         except (KeyError, TypeError, ValueError, InvalidOperation, OverflowError):
             return _error_snapshot(
@@ -163,15 +221,17 @@ class OpenAICompatibleAdapter:
                     "余额接口返回的数据格式无法识别",
                     "invalid_balance_response",
                 ),
+                source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
+                provider_type=provider_type,
             )
 
         return BalanceSnapshot(
             account_id=account_id,
-            provider_type=ProviderType.OPENAI_COMPATIBLE,
+            provider_type=provider_type,
             display_name=display_name,
             status=status,
             balances=(item,),
-            source=_SOURCE,
+            source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
             fetched_at=datetime.now(UTC),
         )
 
@@ -232,16 +292,106 @@ def _fallback_identity(account: Any) -> tuple[str, str]:
     )
 
 
+def _account_option(account: Any, name: str, default: Any) -> Any:
+    if isinstance(account, Mapping):
+        return account.get(name, default)
+    return getattr(account, name, default)
+
+
+def _account_provider_type(account: Any) -> ProviderType:
+    """Keep legacy compatible records distinct from the native Grsai type."""
+    raw = _account_option(account, "provider_type", None)
+    if raw is None:
+        raw = _account_option(account, "type", None)
+    return (
+        ProviderType.GRSAI
+        if raw == ProviderType.GRSAI.value
+        else ProviderType.OPENAI_COMPATIBLE
+    )
+
+
+def _grsai_account_request_config(
+    auth: Mapping[str, Any], endpoint: Mapping[str, Any], *, region: str | None = None
+) -> tuple[str, str, dict[str, str], dict[str, str], dict[str, str]]:
+    """Build the documented account-credit request from a secret field."""
+    token = auth.get("token")
+    if not isinstance(token, str) or not token.strip():
+        raise ValueError("missing Grsai request token")
+    if region is not None and region not in GRSAI_REGION_HOSTS:
+        raise ValueError("unsupported Grsai region")
+    base_url = (
+        GRSAI_REGION_HOSTS[region] if region is not None else endpoint.get("base_url")
+    )
+    if (
+        not isinstance(base_url, str)
+        or not base_url
+        or base_url != base_url.strip()
+        or any(ord(char) < 32 or ord(char) == 127 for char in base_url)
+    ):
+        raise ValueError("missing or malformed Grsai Host")
+    parsed = urlsplit(base_url)
+    try:
+        _ = parsed.port
+    except ValueError as exc:
+        raise ValueError("malformed Grsai Host") from exc
+    if (
+        parsed.scheme.casefold() != "https"
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in {"", "/"}
+        or parsed.query
+        or parsed.fragment
+        or "\\" in base_url
+    ):
+        raise ValueError("Grsai Host must be a clean HTTPS root")
+    if region is None:
+        configured_path = endpoint.get("path")
+        if configured_path not in (None, "", _GRSAI_ACCOUNT_PATH):
+            raise ValueError("unsupported Grsai account path")
+        if endpoint.get("json_body") not in (None, {}):
+            raise ValueError("Grsai JSON body is assembled from the secret field")
+        configured_method = endpoint.get("method")
+        if configured_method not in (None, "") and (
+            not isinstance(configured_method, str)
+            or configured_method.upper() != "POST"
+        ):
+            raise ValueError("Grsai account request must use POST")
+    # Legacy endpoint.url and generic auth_mode are deliberately not consulted.
+    url = base_url.rstrip("/") + _GRSAI_ACCOUNT_PATH
+    return "POST", url, {"Accept": "application/json"}, {}, {"token": token.strip()}
+
+
+def _parse_grsai_account_payload(payload: Any) -> tuple[BalanceItem, SnapshotStatus]:
+    if not isinstance(payload, Mapping):
+        raise ValueError("Grsai response must be an object")
+    code = payload.get("code")
+    if isinstance(code, bool) or not isinstance(code, int):
+        raise ValueError("Grsai response code is invalid")
+    if code != 0:
+        raise BusinessFailure
+    data = payload.get("data")
+    if not isinstance(data, Mapping):
+        raise ValueError("Grsai response data is invalid")
+    amount = _decimal(data["credits"])
+    return (
+        BalanceItem(kind=BalanceItemKind.CREDITS, amount=amount, unit="credit"),
+        SnapshotStatus.AVAILABLE,
+    )
+
+
 def _request_config(
     auth: Mapping[str, Any],
     endpoint: Mapping[str, Any],
     mapping: Mapping[str, Any],
+    *,
+    prefer_split_endpoint: bool = False,
 ) -> tuple[str, str, dict[str, str], dict[str, str], Mapping[str, Any] | None]:
     method = endpoint.get("method", "GET")
     if not isinstance(method, str) or method.upper() not in {"GET", "POST"}:
         raise ValueError("unsupported method")
     method = method.upper()
-    raw_url = endpoint.get("url")
+    raw_url = None if prefer_split_endpoint else endpoint.get("url")
     if not isinstance(raw_url, str) or not raw_url.strip():
         base_url = endpoint.get("base_url")
         path = endpoint.get("path")
@@ -625,16 +775,37 @@ def _transport_error(exc: Exception) -> NormalizedProviderError:
     )
 
 
+def _grsai_http_error(status: int) -> NormalizedProviderError:
+    # No provider-specific failure response or HTTP mapping has been verified.
+    diagnostic = f"http_{status}" if 400 <= status <= 599 else "http_error"
+    return NormalizedProviderError(
+        ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
+        "账户积分接口请求失败",
+        diagnostic,
+    )
+
+
+def _grsai_transport_error(exc: Exception) -> NormalizedProviderError:
+    if isinstance(exc, HttpStatusError):
+        return _grsai_http_error(exc.status_code)
+    return _transport_error(exc)
+
+
 def _error_snapshot(
-    account_id: str, display_name: str, error: NormalizedProviderError
+    account_id: str,
+    display_name: str,
+    error: NormalizedProviderError,
+    *,
+    source: str = _SOURCE,
+    provider_type: ProviderType = ProviderType.OPENAI_COMPATIBLE,
 ) -> BalanceSnapshot:
     return BalanceSnapshot(
         account_id=account_id,
-        provider_type=ProviderType.OPENAI_COMPATIBLE,
+        provider_type=provider_type,
         display_name=display_name,
         status=SnapshotStatus.UNAVAILABLE,
         balances=(),
-        source=_SOURCE,
+        source=source,
         fetched_at=datetime.now(UTC),
         error=error,
     )

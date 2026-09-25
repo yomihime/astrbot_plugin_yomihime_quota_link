@@ -228,6 +228,38 @@ def test_help_and_status_are_local_and_never_disclose_credentials():
     assert secret not in help_text + status_text
 
 
+def test_grsai_account_status_is_queryable_without_exposing_request_token_or_old_key():
+    token = "private-grsai-request-token"
+    old_key = "old-model-api-key"
+    settings = load_settings(
+        {
+            "providers": [
+                {
+                    "id": "grsai-account",
+                    "type": "openai_compatible",
+                    "service_profile": "grsai",
+                    "balance_scope": "account",
+                    "display_name": "Grsai 账户积分",
+                    "auth": {"token": token, "api_key": old_key},
+                    "endpoint": {"base_url": "https://api.example.invalid"},
+                    "response_mapping": {
+                        "amount_path": "/old/amount",
+                        "kind": "custom",
+                    },
+                }
+            ]
+        },
+        environ={},
+    )
+
+    assert settings.accounts[0].queryable is True
+    status_text = format_status(settings)
+    help_text = format_help(settings)
+    assert "Grsai 账户积分：已配置，可查询" in status_text
+    assert token not in status_text + help_text
+    assert old_key not in status_text + help_text
+
+
 def test_status_handles_no_configuration_and_reports_safe_diagnostics():
     settings = load_settings(None, environ={})
     text = format_status(settings)
@@ -235,6 +267,31 @@ def test_status_handles_no_configuration_and_reports_safe_diagnostics():
     assert "账户：共 0 个，启用 0 个，可查询 0 个" in text
     assert "尚未配置账户。" in text
     assert "群聊查询：已关闭" in text
+
+
+def test_help_explains_service_boundaries_and_status_marks_incomplete_accounts():
+    settings = load_settings(
+        {
+            "providers": [
+                {
+                    "id": "third-party",
+                    "type": "openai_compatible",
+                    "display_name": "第三方服务",
+                    "auth": {"api_key": "example-key"},
+                    "endpoint": {},
+                }
+            ]
+        },
+        environ={},
+    )
+
+    help_text = format_help(settings)
+    status_text = format_status(settings)
+
+    assert "模型接口兼容不代表余额接口通用" in help_text
+    assert "阿里云账户现金余额（BSS）" in help_text
+    assert "AliyunBSSReadOnlyAccess" in help_text
+    assert "第三方服务：不可查询：配置不全" in status_text
 
 
 def test_status_folds_control_characters_in_configured_account_names():

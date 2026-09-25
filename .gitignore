@@ -21,6 +21,9 @@ env/
 !.env.example
 config.local.*
 
+# Local planning notes (never publish)
+/.planning/
+
 # IDE and OS files
 .idea/
 .vscode/

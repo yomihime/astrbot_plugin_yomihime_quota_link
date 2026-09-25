@@ -209,6 +209,11 @@ def test_business_permission_errors_are_safe_and_not_exposed(
     assert snapshot.error.category is category
     assert snapshot.error.diagnostic_code == diagnostic
     assert "secret details" not in snapshot.error.safe_message
+    assert "AliyunBSSReadOnlyAccess" in snapshot.error.safe_message
+    assert "当前 BSS 现金余额" in snapshot.error.safe_message
+    assert "DashScope 模型 API Key 不能替代" in snapshot.error.safe_message
+    assert "无需授予 BSS FullAccess" in snapshot.error.safe_message
+    assert "secret details from provider" not in snapshot.error.safe_message
 
 
 @pytest.mark.parametrize(
@@ -233,6 +238,11 @@ def test_http_status_errors_map_to_safe_categories(
     assert snapshot.error is not None
     assert snapshot.error.category is category
     assert snapshot.error.diagnostic_code == f"http_{status_code}"
+    if status_code == 403:
+        assert "AliyunBSSReadOnlyAccess" in snapshot.error.safe_message
+        assert "当前 BSS 现金余额" in snapshot.error.safe_message
+        assert "DashScope 模型 API Key 不能替代" in snapshot.error.safe_message
+        assert "无需授予 BSS FullAccess" in snapshot.error.safe_message
 
 
 def test_real_transport_http_400_permission_code_is_mapped_without_echoing_message():

@@ -1,6 +1,7 @@
 import asyncio
 import importlib
 import importlib.abc
+import json
 import sys
 import types
 from datetime import UTC, datetime
@@ -77,6 +78,14 @@ def _identity_decorator(*args, **kwargs):
     return lambda function: function
 
 
+def _tool_decorator(*args, **kwargs):
+    def decorate(function):
+        function._llm_tool_name = kwargs.get("name")
+        return function
+
+    return decorate
+
+
 @pytest.fixture
 def entrypoint(monkeypatch):
     for name in tuple(sys.modules):
@@ -97,8 +106,7 @@ def entrypoint(monkeypatch):
     star_module = types.ModuleType("astrbot.api.star")
     filter_api = types.SimpleNamespace(
         command=_identity_decorator,
-        event_message_type=_identity_decorator,
-        EventMessageType=types.SimpleNamespace(ALL=object()),
+        llm_tool=_tool_decorator,
     )
     event_module.AstrMessageEvent = FakeEvent
     event_module.filter = filter_api
@@ -183,19 +191,41 @@ def test_all_command_forms_keep_the_complete_multiword_argument(entrypoint):
         assert expected in event.replies[0]
 
 
-def test_natural_language_queries_use_implemented_adapters_without_network(entrypoint):
+def test_llm_tool_returns_json_facts_without_sending_a_message(entrypoint):
     plugin = entrypoint(None, _config())
-    messages = (
-        "余额都还剩多少？",
-        "当前模型余额还剩多少？",
-        "DeepSeek 的余额还剩多少？",
-        "grsai-work 还剩多少积分？",
-    )
-    for message in messages:
-        event = FakeEvent(message)
-        asyncio.run(_collect(plugin.natural_language_query(event)))
-        assert len(event.replies) == 1
-        assert "查询失败" in event.replies[0]
+    assert plugin.query_balance_tool.__func__._llm_tool_name == "yql_query_balance"
+    assert "operation(string):" in plugin.query_balance_tool.__doc__
+    assert "target(string):" in plugin.query_balance_tool.__doc__
+
+    event = FakeEvent("请帮我查一下")
+    returned = asyncio.run(plugin.query_balance_tool(event, "query", "grsai-work"))
+
+    payload = json.loads(returned)
+    assert payload["schema_version"] == 1
+    assert payload["operation"] == "query"
+    assert payload["target"] == {"kind": "account", "name": "grsai-work"}
+    assert payload["accounts"][0]["status"] == "unavailable"
+    assert payload["accounts"][0]["error"]["category"] == "authentication"
+    assert event.replies == []
+    assert len(FakeHttpClient.instances[-1].requests) == 1
+
+
+def test_list_tool_returns_local_capabilities_without_network_or_message(entrypoint):
+    plugin = entrypoint(None, _config())
+    event = FakeEvent("我能查什么")
+
+    returned = asyncio.run(plugin.query_balance_tool(event, "list", "ignored"))
+
+    payload = json.loads(returned)
+    assert payload["schema_version"] == 1
+    assert payload["operation"] == "list"
+    assert [account["id"] for account in payload["accounts"]] == [
+        "grsai-work",
+        "openai-main",
+    ]
+    assert payload["accounts"][0]["balance_scope"] == "account"
+    assert FakeHttpClient.instances[-1].requests == []
+    assert event.replies == []
 
 
 def test_permission_gate_precedes_local_account_disclosure(entrypoint):
@@ -206,23 +236,115 @@ def test_permission_gate_precedes_local_account_disclosure(entrypoint):
     assert "DeepSeek Work" not in event.replies[0]
 
 
-def test_natural_language_listener_skips_commands_and_does_not_double_reply(entrypoint):
+def test_tool_has_no_message_listener_and_command_still_works(entrypoint):
     plugin = entrypoint(None, _config())
-    command_event = FakeEvent("/yql provider openai compatible")
-    asyncio.run(_collect(plugin.quota_link(command_event)))
-    asyncio.run(_collect(plugin.natural_language_query(command_event)))
-    assert len(command_event.replies) == 1
-
-    other_command = FakeEvent("/help balance quota")
-    asyncio.run(_collect(plugin.natural_language_query(other_command)))
-    assert other_command.replies == []
+    assert not hasattr(plugin, "natural_language_query")
+    event = FakeEvent("/yql provider openai compatible")
+    asyncio.run(_collect(plugin.quota_link(event)))
+    assert len(event.replies) == 1
 
 
-def test_ordinary_chat_is_ignored(entrypoint):
+def test_tool_permission_gate_and_unknown_target(entrypoint):
     plugin = entrypoint(None, _config())
-    event = FakeEvent("今天天气怎么样？")
-    asyncio.run(_collect(plugin.natural_language_query(event)))
+    denied = FakeEvent("任意文本", private=False)
+    denied_result = asyncio.run(plugin.query_balance_tool(denied, "query", "DeepSeek"))
+    assert json.loads(denied_result) == {
+        "schema_version": 1,
+        "operation": "query",
+        "error": {
+            "category": "permission",
+            "message": "当前会话无权查询额度信息。",
+        },
+    }
+    assert denied.replies == []
+    unknown = FakeEvent("任意文本")
+    unknown_result = asyncio.run(plugin.query_balance_tool(unknown, "query", "missing"))
+    assert json.loads(unknown_result)["error"]["category"] == "unknown_target"
+    assert "未找到匹配" in json.loads(unknown_result)["error"]["message"]
+    assert unknown.replies == []
+
+
+def test_permission_denial_happens_before_directory_access(entrypoint, monkeypatch):
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+
+    class DeniedSettings:
+        allow_group_queries = False
+
+        @property
+        def directory(self):
+            raise AssertionError("directory was read before permission passed")
+
+    plugin.settings = DeniedSettings()
+    monkeypatch.setattr(module, "can_query", lambda context, settings: False)
+    event = FakeEvent("任意文本", private=False)
+
+    result = asyncio.run(plugin.query_balance_tool(event, "list", "all"))
+
+    assert json.loads(result)["error"]["category"] == "permission"
     assert event.replies == []
+
+
+@pytest.mark.parametrize("operation", [None, 12, [], {}])
+def test_invalid_operation_type_returns_tool_error_after_permission(
+    entrypoint, operation
+):
+    plugin = entrypoint(None, _config())
+    event = FakeEvent("查余额")
+
+    result = asyncio.run(plugin.query_balance_tool(event, operation, "all"))
+
+    payload = json.loads(result)
+    assert payload["operation"] == "query"
+    assert payload["error"]["category"] == "invalid_operation"
+    assert event.replies == []
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+@pytest.mark.parametrize("target", [None, 12, [], {}])
+def test_invalid_target_type_returns_tool_error(entrypoint, target):
+    plugin = entrypoint(None, _config())
+    event = FakeEvent("查余额")
+
+    result = asyncio.run(plugin.query_balance_tool(event, "query", target))
+
+    payload = json.loads(result)
+    assert payload["error"]["category"] == "invalid_target"
+    assert event.replies == []
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+@pytest.mark.parametrize("target", ["help", "status"])
+def test_llm_query_rejects_command_only_targets_without_calling_service(
+    entrypoint, target
+):
+    plugin = entrypoint(None, _config())
+    event = FakeEvent("查余额")
+
+    result = asyncio.run(plugin.query_balance_tool(event, "query", target))
+
+    payload = json.loads(result)
+    assert payload["error"]["category"] == "invalid_target"
+    assert event.replies == []
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+def test_old_template_is_retagged_without_changing_credentials(entrypoint):
+    class SavedConfig(dict):
+        saves = 0
+
+        def save_config(self):
+            self.saves += 1
+
+    config = SavedConfig(_config())
+    config["providers"][0]["__template_key"] = "provider_account"
+    original_auth = config["providers"][0]["auth"].copy()
+
+    entrypoint(None, config)
+
+    assert config.saves == 1
+    assert config["providers"][0]["__template_key"] == "deepseek"
+    assert config["providers"][0]["auth"] == original_auth
 
 
 def test_empty_configuration_starts_and_shutdown_clears_service_cache(entrypoint):
