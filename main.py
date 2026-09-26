@@ -43,7 +43,7 @@ _COMMAND_START = re.compile(r"^\s*(?:/\s*)?yql\b\s*(.*)$", re.IGNORECASE | re.DO
     "astrbot_plugin_yomihime_quota_link",
     "yomihime",
     "如月怜的额度连结：多平台 AI API 余额 / 用量监控。",
-    "0.1.1",
+    "0.1.2",
 )
 class YomihimeQuotaLink(Star):
     """Monitor balances and usage across AI API providers."""
