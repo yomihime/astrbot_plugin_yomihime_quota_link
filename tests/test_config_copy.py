@@ -104,3 +104,11 @@ def test_public_schema_does_not_embed_grsai_host():
     assert "grsai.ai" not in schema_text
     assert "grsaiapi.com" not in schema_text
     assert "grsai.dakka.com.cn" not in schema_text
+
+
+def test_access_form_defaults_to_admin_and_documents_private_identity_format():
+    schema = _schema()
+
+    assert schema["command_admin_only"]["default"] is True
+    assert schema["private_allowed_user_ids"]["default"] == []
+    assert "平台名:用户ID" in schema["private_allowed_user_ids"]["hint"]

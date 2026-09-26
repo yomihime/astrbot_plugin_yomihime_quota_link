@@ -149,8 +149,10 @@ class PluginSettings:
     cache_ttl_seconds: float = _DEFAULT_CACHE_TTL
     max_concurrency: int = _DEFAULT_MAX_CONCURRENCY
     total_timeout_seconds: float = _DEFAULT_TOTAL_TIMEOUT
+    command_admin_only: bool = True
     allow_group_queries: bool = False
     group_allowed_user_ids: tuple[str, ...] = ()
+    private_allowed_user_ids: tuple[str, ...] = ()
 
     @property
     def enabled_accounts(self) -> tuple[AccountSettings, ...]:
@@ -820,6 +822,16 @@ def load_settings(
         "total_timeout_seconds",
         errors,
     )
+    command_admin_only = raw.get("command_admin_only", True)
+    if not isinstance(command_admin_only, bool):
+        errors.append(
+            ConfigDiagnostic(
+                "invalid_boolean",
+                "command_admin_only",
+                "command_admin_only 必须为布尔值；已使用默认值",
+            )
+        )
+        command_admin_only = True
     allow_group_queries = raw.get("allow_group_queries", False)
     if not isinstance(allow_group_queries, bool):
         errors.append(
@@ -845,6 +857,28 @@ def load_settings(
     else:
         group_allowed_user_ids = tuple(
             dict.fromkeys(user_id.strip() for user_id in group_ids_raw)
+        )
+    private_ids_raw = raw.get("private_allowed_user_ids", ())
+    if not isinstance(private_ids_raw, (list, tuple)) or any(
+        not isinstance(user_id, str)
+        or not user_id.strip()
+        or ":" not in user_id
+        or not all(
+            part and part == part.strip() for part in user_id.strip().split(":", 1)
+        )
+        for user_id in private_ids_raw
+    ):
+        errors.append(
+            ConfigDiagnostic(
+                "invalid_private_user_ids",
+                "private_allowed_user_ids",
+                "private_allowed_user_ids 必须为 平台名:用户ID 文本列表；已使用空列表",
+            )
+        )
+        private_allowed_user_ids: tuple[str, ...] = ()
+    else:
+        private_allowed_user_ids = tuple(
+            dict.fromkeys(user_id.strip() for user_id in private_ids_raw)
         )
     records = raw.get("providers", ())
     if not isinstance(records, (list, tuple)):
@@ -1370,6 +1404,8 @@ def load_settings(
         cache_ttl_seconds=ttl,
         max_concurrency=max_concurrency,
         total_timeout_seconds=total_timeout,
+        command_admin_only=command_admin_only,
         allow_group_queries=allow_group_queries,
         group_allowed_user_ids=group_allowed_user_ids,
+        private_allowed_user_ids=private_allowed_user_ids,
     )

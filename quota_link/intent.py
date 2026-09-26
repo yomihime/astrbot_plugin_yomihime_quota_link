@@ -23,6 +23,7 @@ class PermissionContext:
     is_admin: bool
     user_id: str
     group_id: str | None
+    platform_name: str = ""
 
 
 _COMMANDS = {
@@ -118,10 +119,18 @@ def parse_natural_language(
     return QueryParseResult(request=QueryRequest(QueryRequestKind.ALL))
 
 
-def can_query(context: PermissionContext, settings: PluginSettings) -> bool:
+def can_query(
+    context: PermissionContext, settings: PluginSettings, *, is_command: bool = False
+) -> bool:
     """Enforce query access before any account details are disclosed."""
+    if is_command and settings.command_admin_only and not context.is_admin:
+        return False
     if context.is_private:
-        return True
+        return context.is_admin or (
+            bool(context.platform_name)
+            and f"{context.platform_name}:{context.user_id}"
+            in settings.private_allowed_user_ids
+        )
     if not settings.allow_group_queries:
         return False
     return context.is_admin or context.user_id in settings.group_allowed_user_ids

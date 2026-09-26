@@ -43,7 +43,7 @@ _COMMAND_START = re.compile(r"^\s*(?:/\s*)?yql\b\s*(.*)$", re.IGNORECASE | re.DO
     "astrbot_plugin_yomihime_quota_link",
     "yomihime",
     "如月怜的额度连结：多平台 AI API 余额 / 用量监控。",
-    "0.1.0",
+    "0.1.1",
 )
 class YomihimeQuotaLink(Star):
     """Monitor balances and usage across AI API providers."""
@@ -84,7 +84,7 @@ class YomihimeQuotaLink(Star):
     async def quota_link(self, event: AstrMessageEvent):
         """Run one full-argument /yql request."""
         context = self._permission_context(event)
-        if not can_query(context, self.settings):
+        if not can_query(context, self.settings, is_command=True):
             yield event.plain_result("当前会话无权查询额度信息。")
             return
 
@@ -208,9 +208,14 @@ class YomihimeQuotaLink(Star):
     @staticmethod
     def _permission_context(event: AstrMessageEvent) -> PermissionContext:
         is_private = bool(event.is_private_chat())
+        get_platform_name = getattr(event, "get_platform_name", None)
+        platform_name = (
+            str(get_platform_name() or "") if callable(get_platform_name) else ""
+        )
         return PermissionContext(
             is_private=is_private,
             is_admin=bool(event.is_admin()),
             user_id=str(event.get_sender_id() or ""),
             group_id=(None if is_private else str(event.get_group_id() or "")),
+            platform_name=platform_name,
         )

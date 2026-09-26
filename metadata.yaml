@@ -2,7 +2,7 @@ name: astrbot_plugin_yomihime_quota_link
 display_name: 如月怜的额度连结
 short_desc: 多平台 AI API 余额 / 用量监控
 desc: 监控多平台 AI API 的余额、用量与额度状态，支持统一查询与后续告警扩展。
-version: v0.1.0
+version: v0.1.1
 author: yomihime
 repo: https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 astrbot_version: ">=4.16,<5"

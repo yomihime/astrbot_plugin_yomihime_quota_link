@@ -24,7 +24,9 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 在启用函数工具且聊天模型支持工具调用的 AstrBot AI 对话中，也可以说“余额还剩多少”“查 DeepSeek 余额”或“查看 <账户名> 的额度”。模型按需要调用 `yql_query_balance`，并传入账户名、供应商名或 `all`；插件不再监听固定关键词自动回复。工具是否被调用由模型和 AstrBot 的函数工具设置决定；需要确定执行时可使用 `/yql`。命令前缀和唤醒方式以 AstrBot 配置为准。[AstrBot 函数工具说明](https://docs.astrbot.app/use/function-calling.html)
 
-私聊默认允许查询。群聊查询默认关闭；只有设置 `allow_group_queries` 为 `true` 后才开放给管理员及 `group_allowed_user_ids` 中的用户。
+`/yql` 命令默认仅管理员可用，包括 `/yql help` 和 `/yql status`。需要开放命令时，可将 `command_admin_only` 设为 `false`；此开关不会放宽自然语言工具调用的私聊权限。
+
+私聊中的自然语言工具查询默认仅管理员可用。可在 `private_allowed_user_ids` 中明确加入非管理员，格式必须是完整的 `平台名:用户ID`（例如 `aiocqhttp:123456`），避免不同平台的相同用户 ID 混用。白名单不会绕过 `/yql` 的管理员限制；若关闭 `command_admin_only`，白名单用户也可在私聊使用命令。群聊查询仍默认关闭；只有设置 `allow_group_queries` 为 `true` 后才开放给管理员及 `group_allowed_user_ids` 中的用户。
 
 ## 配置账户
 
@@ -147,10 +149,10 @@ ruff format --check .
 本地构建需要 Python 3.12+。构建脚本会检查指定 tag 与 `metadata.yaml` 中的 `version` 完全一致，并生成以 tag 命名的 ZIP；ZIP 根目录直接是插件文件。
 
 ```bash
-python scripts/build_plugin.py --tag v0.1.0 --output-dir dist
+python scripts/build_plugin.py --tag v0.1.1 --output-dir dist
 ```
 
-示例产物为 `dist/astrbot_plugin_yomihime_quota_link-v0.1.0.zip`。推送新的 `v*` tag 后，GitHub Actions 会运行代码检查和测试，构建相同的 ZIP，将其上传到该次工作流的 **Artifacts**，并创建附带 ZIP 的 GitHub Release。Release 说明取自 `CHANGELOG.md` 中对应版本的小节。工作流不会自动创建或修改 tag、更新元数据版本。创建 tag 前，请先提交与该 tag 完全一致的 `metadata.yaml` 版本和更新记录。构建通过只表示代码检查与打包通过；已完成的 Grsai 账户积分实测不覆盖海外节点和失败响应语义。
+示例产物为 `dist/astrbot_plugin_yomihime_quota_link-v0.1.1.zip`。推送新的 `v*` tag 后，GitHub Actions 会运行代码检查和测试，构建相同的 ZIP，将其上传到该次工作流的 **Artifacts**，并创建附带 ZIP 的 GitHub Release。Release 说明取自 `CHANGELOG.md` 中对应版本的小节。工作流不会自动创建或修改 tag、更新元数据版本。创建 tag 前，请先提交与该 tag 完全一致的 `metadata.yaml` 版本和更新记录。构建通过只表示代码检查与打包通过；已完成的 Grsai 账户积分实测不覆盖海外节点和失败响应语义。
 
 插件持久化数据应写入 AstrBot 的 `data` 目录，不要写入插件源码目录。
 

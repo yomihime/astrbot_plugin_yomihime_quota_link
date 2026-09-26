@@ -19,6 +19,17 @@
     "type": "int",
     "default": 4
   },
+  "command_admin_only": {
+    "description": "仅管理员可用 /yql 命令",
+    "type": "bool",
+    "default": true
+  },
+  "private_allowed_user_ids": {
+    "description": "私聊白名单",
+    "type": "list",
+    "default": [],
+    "hint": "填写完整 平台名:用户ID，例如 aiocqhttp:123456；管理员无需加入。/yql 还受上方管理员开关限制。"
+  },
   "allow_group_queries": {
     "description": "是否允许在群聊查询",
     "type": "bool",

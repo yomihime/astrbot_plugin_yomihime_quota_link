@@ -10,11 +10,19 @@ from quota_link.models import ProviderType, QueryParseErrorCode, QueryRequestKin
 from quota_link.settings import AccountDirectory, load_settings
 
 
-def _settings(*, allow_group_queries=False, group_allowed_user_ids=()):
+def _settings(
+    *,
+    allow_group_queries=False,
+    group_allowed_user_ids=(),
+    private_allowed_user_ids=(),
+    command_admin_only=True,
+):
     return load_settings(
         {
             "allow_group_queries": allow_group_queries,
             "group_allowed_user_ids": list(group_allowed_user_ids),
+            "private_allowed_user_ids": list(private_allowed_user_ids),
+            "command_admin_only": command_admin_only,
             "providers": [
                 {
                     "id": "grsai-work",
@@ -225,14 +233,43 @@ def test_provider_aliases_are_taken_from_the_directory_contract():
 
 def test_private_group_and_admin_permissions():
     settings = _settings()
-    private = PermissionContext(True, False, "user-1", None)
+    private = PermissionContext(True, False, "user-1", None, "telegram")
+    private_admin = PermissionContext(True, True, "admin", None)
     group = PermissionContext(False, False, "user-1", "group-1")
     admin = PermissionContext(False, True, "admin", "group-1")
-    assert can_query(private, settings)
+    assert not can_query(private, settings)
+    assert can_query(private_admin, settings)
+    assert not can_query(private, settings, is_command=True)
+    assert can_query(private_admin, settings, is_command=True)
     assert not can_query(group, settings)
     assert not can_query(admin, settings)
 
-    enabled = _settings(allow_group_queries=True, group_allowed_user_ids=("user-1",))
+    enabled = _settings(
+        allow_group_queries=True,
+        group_allowed_user_ids=("user-1",),
+        private_allowed_user_ids=("telegram:user-1",),
+    )
+    assert can_query(private, enabled)
+    assert not can_query(
+        PermissionContext(True, False, "user-1", None, "discord"), enabled
+    )
+    assert not can_query(private, enabled, is_command=True)
     assert can_query(group, enabled)
+    assert not can_query(group, enabled, is_command=True)
     assert can_query(admin, enabled)
+    assert can_query(admin, enabled, is_command=True)
     assert not can_query(PermissionContext(False, False, "other", "group-1"), enabled)
+
+    command_opt_out = _settings(
+        allow_group_queries=True,
+        group_allowed_user_ids=("user-1",),
+        private_allowed_user_ids=("telegram:user-1",),
+        command_admin_only=False,
+    )
+    assert can_query(private, command_opt_out, is_command=True)
+    assert can_query(group, command_opt_out, is_command=True)
+    assert not can_query(
+        PermissionContext(True, False, "other", None),
+        command_opt_out,
+        is_command=True,
+    )

@@ -1345,3 +1345,59 @@ def test_global_query_settings_validate_boundaries_and_group_defaults():
         "invalid_boolean",
         "invalid_user_ids",
     }
+
+
+def test_access_settings_default_to_admin_only_and_empty_private_allowlist():
+    settings = load_settings({})
+
+    assert settings.command_admin_only is True
+    assert settings.private_allowed_user_ids == ()
+
+
+def test_private_allowlist_accepts_only_complete_platform_user_identity():
+    settings = load_settings(
+        {
+            "command_admin_only": False,
+            "private_allowed_user_ids": [
+                " aiocqhttp:123456 ",
+                "aiocqhttp:123456",
+                "telegram:123456",
+            ],
+        }
+    )
+
+    assert settings.command_admin_only is False
+    assert settings.private_allowed_user_ids == (
+        "aiocqhttp:123456",
+        "telegram:123456",
+    )
+    assert not settings.errors
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "123456",
+        ":123456",
+        "aiocqhttp:",
+        " aiocqhttp: 123456 ",
+        ["aiocqhttp:123456", "123456"],
+        123456,
+    ],
+)
+def test_invalid_private_allowlist_fails_closed_without_echoing_values(value):
+    settings = load_settings({"private_allowed_user_ids": value})
+
+    assert settings.private_allowed_user_ids == ()
+    assert any(error.code == "invalid_private_user_ids" for error in settings.errors)
+    assert "123456" not in repr(settings.errors)
+
+
+def test_invalid_command_admin_flag_fails_closed():
+    settings = load_settings({"command_admin_only": "false"})
+
+    assert settings.command_admin_only is True
+    assert any(
+        error.code == "invalid_boolean" and error.path == "command_admin_only"
+        for error in settings.errors
+    )

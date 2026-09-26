@@ -15,13 +15,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class FakeEvent:
     def __init__(
-        self, text, *, private=True, admin=False, user="user-1", group="group-1"
+        self,
+        text,
+        *,
+        private=True,
+        admin=False,
+        user="user-1",
+        group="group-1",
+        platform="telegram",
     ):
         self.text = text
         self.private = private
         self.admin = admin
         self.user = user
         self.group = group
+        self.platform = platform
         self.extras = {}
         self.replies = []
 
@@ -39,6 +47,9 @@ class FakeEvent:
 
     def get_group_id(self):
         return self.group
+
+    def get_platform_name(self):
+        return self.platform
 
     def set_extra(self, key, value):
         self.extras[key] = value
@@ -185,7 +196,7 @@ def test_all_command_forms_keep_the_complete_multiword_argument(entrypoint):
         ("/yql status", "账户：共 2 个"),
     )
     for message, expected in cases:
-        event = FakeEvent(message)
+        event = FakeEvent(message, admin=True)
         asyncio.run(_collect(plugin.quota_link(event)))
         assert len(event.replies) == 1
         assert expected in event.replies[0]
@@ -197,7 +208,7 @@ def test_llm_tool_returns_json_facts_without_sending_a_message(entrypoint):
     assert "operation(string):" in plugin.query_balance_tool.__doc__
     assert "target(string):" in plugin.query_balance_tool.__doc__
 
-    event = FakeEvent("请帮我查一下")
+    event = FakeEvent("请帮我查一下", admin=True)
     returned = asyncio.run(plugin.query_balance_tool(event, "query", "grsai-work"))
 
     payload = json.loads(returned)
@@ -212,7 +223,7 @@ def test_llm_tool_returns_json_facts_without_sending_a_message(entrypoint):
 
 def test_list_tool_returns_local_capabilities_without_network_or_message(entrypoint):
     plugin = entrypoint(None, _config())
-    event = FakeEvent("我能查什么")
+    event = FakeEvent("我能查什么", admin=True)
 
     returned = asyncio.run(plugin.query_balance_tool(event, "list", "ignored"))
 
@@ -236,10 +247,56 @@ def test_permission_gate_precedes_local_account_disclosure(entrypoint):
     assert "DeepSeek Work" not in event.replies[0]
 
 
+def test_private_defaults_to_admin_only_for_command_and_tool(entrypoint):
+    plugin = entrypoint(None, _config())
+    event = FakeEvent("/yql status")
+
+    asyncio.run(_collect(plugin.quota_link(event)))
+    listed = asyncio.run(plugin.query_balance_tool(event, "list", "all"))
+
+    assert event.replies == ["当前会话无权查询额度信息。"]
+    assert json.loads(listed)["error"]["category"] == "permission"
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+def test_private_platform_whitelist_allows_tool_but_not_command_by_default(entrypoint):
+    config = _config()
+    config["private_allowed_user_ids"] = ["telegram:user-1"]
+    plugin = entrypoint(None, config)
+    allowed = FakeEvent("/yql status")
+    other_platform = FakeEvent("查余额", platform="discord")
+
+    asyncio.run(_collect(plugin.quota_link(allowed)))
+    listed = asyncio.run(plugin.query_balance_tool(allowed, "list", "all"))
+    denied = asyncio.run(plugin.query_balance_tool(other_platform, "list", "all"))
+
+    assert allowed.replies == ["当前会话无权查询额度信息。"]
+    assert [item["id"] for item in json.loads(listed)["accounts"]] == [
+        "grsai-work",
+        "openai-main",
+    ]
+    assert json.loads(denied)["error"]["category"] == "permission"
+
+
+def test_command_admin_switch_keeps_private_whitelist_gate(entrypoint):
+    config = _config()
+    config["command_admin_only"] = False
+    config["private_allowed_user_ids"] = ["telegram:user-1"]
+    plugin = entrypoint(None, config)
+    allowed = FakeEvent("/yql status")
+    denied = FakeEvent("/yql status", user="other")
+
+    asyncio.run(_collect(plugin.quota_link(allowed)))
+    asyncio.run(_collect(plugin.quota_link(denied)))
+
+    assert "账户：共 2 个" in allowed.replies[0]
+    assert denied.replies == ["当前会话无权查询额度信息。"]
+
+
 def test_tool_has_no_message_listener_and_command_still_works(entrypoint):
     plugin = entrypoint(None, _config())
     assert not hasattr(plugin, "natural_language_query")
-    event = FakeEvent("/yql provider openai compatible")
+    event = FakeEvent("/yql provider openai compatible", admin=True)
     asyncio.run(_collect(plugin.quota_link(event)))
     assert len(event.replies) == 1
 
@@ -257,7 +314,7 @@ def test_tool_permission_gate_and_unknown_target(entrypoint):
         },
     }
     assert denied.replies == []
-    unknown = FakeEvent("任意文本")
+    unknown = FakeEvent("任意文本", admin=True)
     unknown_result = asyncio.run(plugin.query_balance_tool(unknown, "query", "missing"))
     assert json.loads(unknown_result)["error"]["category"] == "unknown_target"
     assert "未找到匹配" in json.loads(unknown_result)["error"]["message"]
@@ -276,7 +333,7 @@ def test_permission_denial_happens_before_directory_access(entrypoint, monkeypat
             raise AssertionError("directory was read before permission passed")
 
     plugin.settings = DeniedSettings()
-    monkeypatch.setattr(module, "can_query", lambda context, settings: False)
+    monkeypatch.setattr(module, "can_query", lambda context, settings, **kwargs: False)
     event = FakeEvent("任意文本", private=False)
 
     result = asyncio.run(plugin.query_balance_tool(event, "list", "all"))
@@ -290,7 +347,7 @@ def test_invalid_operation_type_returns_tool_error_after_permission(
     entrypoint, operation
 ):
     plugin = entrypoint(None, _config())
-    event = FakeEvent("查余额")
+    event = FakeEvent("查余额", admin=True)
 
     result = asyncio.run(plugin.query_balance_tool(event, operation, "all"))
 
@@ -304,7 +361,7 @@ def test_invalid_operation_type_returns_tool_error_after_permission(
 @pytest.mark.parametrize("target", [None, 12, [], {}])
 def test_invalid_target_type_returns_tool_error(entrypoint, target):
     plugin = entrypoint(None, _config())
-    event = FakeEvent("查余额")
+    event = FakeEvent("查余额", admin=True)
 
     result = asyncio.run(plugin.query_balance_tool(event, "query", target))
 
@@ -319,7 +376,7 @@ def test_llm_query_rejects_command_only_targets_without_calling_service(
     entrypoint, target
 ):
     plugin = entrypoint(None, _config())
-    event = FakeEvent("查余额")
+    event = FakeEvent("查余额", admin=True)
 
     result = asyncio.run(plugin.query_balance_tool(event, "query", target))
 
@@ -356,7 +413,7 @@ def test_empty_configuration_starts_and_shutdown_clears_service_cache(entrypoint
     assert FakeHttpClient.instances[-2].closed
     assert not plugin.http_client.closed
 
-    event = FakeEvent("/yql")
+    event = FakeEvent("/yql", admin=True)
     asyncio.run(_collect(plugin.quota_link(event)))
     assert len(event.replies) == 1
     assert "当前没有配置可查询的账户" in event.replies[0]
