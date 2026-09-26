@@ -17,6 +17,7 @@ VERSION = next(
 )
 EXPECTED_ROOT_FILES = {
     "metadata.yaml",
+    "logo.png",
     "main.py",
     "__init__.py",
     "_conf_schema.json",
@@ -69,6 +70,7 @@ def test_build_contains_only_plugin_sources_and_is_reproducible(tmp_path: Path) 
         expected = EXPECTED_ROOT_FILES | EXPECTED_PACKAGE_FILES
         assert set(names) == expected
         assert package.read("metadata.yaml") == (ROOT / "metadata.yaml").read_bytes()
+        assert package.read("logo.png") == (ROOT / "logo.png").read_bytes()
         assert all(
             info.date_time == (1980, 1, 1, 0, 0, 0) for info in package.infolist()
         )
@@ -136,6 +138,17 @@ def _fixture_source(tmp_path: Path) -> Path:
             encoding="utf-8",
         )
     return source
+
+
+def test_build_rejects_missing_logo(tmp_path: Path) -> None:
+    source = _fixture_source(tmp_path)
+    (source / "logo.png").unlink()
+    destination = tmp_path / "dist"
+
+    with pytest.raises(ValueError, match="required source is missing"):
+        build_plugin.build(VERSION, destination, root=source)
+
+    assert not destination.exists()
 
 
 def test_build_excludes_extra_local_python_and_secret_files(tmp_path: Path) -> None:

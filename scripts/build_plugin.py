@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ROOT_FILES = (
     "metadata.yaml",
+    "logo.png",
     "main.py",
     "__init__.py",
     "_conf_schema.json",

@@ -146,7 +146,7 @@ ruff format --check .
 
 ### 构建插件包
 
-本地构建需要 Python 3.12+。构建脚本会检查指定 tag 与 `metadata.yaml` 中的 `version` 完全一致，并生成以 tag 命名的 ZIP；ZIP 根目录直接是插件文件。
+本地构建需要 Python 3.12+。构建脚本会检查指定 tag 与 `metadata.yaml` 中的 `version` 完全一致，并生成以 tag 命名的 ZIP；ZIP 根目录直接是插件文件。根目录的 `logo.png` 是 256×256 透明插件图标，也会随包安装。
 
 ```bash
 python scripts/build_plugin.py --tag v0.1.1 --output-dir dist
