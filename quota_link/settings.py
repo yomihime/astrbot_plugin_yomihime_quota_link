@@ -689,6 +689,7 @@ def _provider_aliases() -> dict[str, ProviderType]:
         ),
         "deepseek": ("deepseek", "ds", "深度求索"),
         "grsai": ("grsai",),
+        "meinianda": ("meinianda", "meinianda.top"),
         "openai_compatible": (
             "openai_compatible",
             "openai compatible",
@@ -1065,7 +1066,12 @@ def load_settings(
         service_profile = "generic"
         balance_scope = (
             "account"
-            if provider_type in {ProviderType.DEEPSEEK, ProviderType.ALIBABA_BAILIAN}
+            if provider_type
+            in {
+                ProviderType.DEEPSEEK,
+                ProviderType.ALIBABA_BAILIAN,
+                ProviderType.MEINIANDA,
+            }
             else "generic"
         )
         balance_kind = (
@@ -1075,6 +1081,8 @@ def load_settings(
         )
         capability_issue: tuple[str, str] | None = None
         region = "china"
+        if provider_type is ProviderType.MEINIANDA:
+            balance_kind = "credits"
         if provider_type is ProviderType.GRSAI:
             service_profile = "grsai"
             balance_scope = "account"
@@ -1223,9 +1231,10 @@ def load_settings(
                     safe_account_id,
                 )
             )
-        elif provider_type is ProviderType.DEEPSEEK and not _has_fields(
-            auth, ("api_key",)
-        ):
+        elif provider_type in {
+            ProviderType.DEEPSEEK,
+            ProviderType.MEINIANDA,
+        } and not _has_fields(auth, ("api_key",)):
             reason = "missing_credentials"
             errors.append(
                 ConfigDiagnostic(

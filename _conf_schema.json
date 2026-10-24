@@ -248,6 +248,64 @@
           }
         }
       },
+      "meinianda": {
+        "name": "Meinianda",
+        "hint": "账户站内额度",
+        "display_item": "display_name",
+        "hide_hint_in_list": true,
+        "items": {
+          "id": {
+            "description": "账户唯一 ID",
+            "type": "string",
+            "default": ""
+          },
+          "display_name": {
+            "description": "显示名称",
+            "type": "string",
+            "default": ""
+          },
+          "aliases": {
+            "description": "用于命令和自然语言匹配的其他名称",
+            "type": "list",
+            "default": []
+          },
+          "enabled": {
+            "description": "启用此账户",
+            "type": "bool",
+            "default": true
+          },
+          "timeout_seconds": {
+            "description": "账户查询超时秒数",
+            "type": "float",
+            "default": 8.0
+          },
+          "cache_ttl_seconds": {
+            "description": "账户成功结果缓存秒数",
+            "hint": "站点建议每分钟查询一次，默认缓存 60 秒。",
+            "type": "float",
+            "default": 60.0
+          },
+          "type": {
+            "description": "供应商类型",
+            "type": "string",
+            "default": "meinianda",
+            "invisible": true
+          },
+          "auth": {
+            "description": "余额查询 API Key",
+            "type": "object",
+            "items": {
+              "api_key": {
+                "description": "Meinianda API Key",
+                "hint": "查询 meinianda.top 的账户站内额度（site_credit），不是 Key 限额。地址与解析已内置，无需填写。",
+                "type": "string",
+                "default": "",
+                "secret": true
+              }
+            }
+          }
+        }
+      },
       "openai_compatible": {
         "name": "其他兼容服务",
         "hint": "自定义余额接口",

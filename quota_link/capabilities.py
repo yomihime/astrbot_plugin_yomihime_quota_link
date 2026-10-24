@@ -9,6 +9,7 @@ _PROVIDER_NAMES = {
     ProviderType.DEEPSEEK: "DeepSeek",
     ProviderType.ALIBABA_BAILIAN: "阿里云百炼",
     ProviderType.GRSAI: "Grsai",
+    ProviderType.MEINIANDA: "Meinianda",
     ProviderType.OPENAI_COMPATIBLE: "OpenAI 兼容服务",
 }
 _BALANCE_KIND_NAMES = {
@@ -56,6 +57,8 @@ def describe_capabilities(
             balance_kind = "多币种账户余额"
         elif entry.provider_type is ProviderType.ALIBABA_BAILIAN:
             balance_kind = "阿里云账户现金余额（BSS）"
+        elif entry.provider_type is ProviderType.MEINIANDA:
+            balance_kind = "账户站内额度（site_credit）"
         else:
             balance_kind = _BALANCE_KIND_NAMES.get(
                 entry.balance_kind, "用户配置的余额类别"

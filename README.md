@@ -1,6 +1,6 @@
 # 如月怜的额度连结
 
-AstrBot 插件，用于查询已配置 AI 服务账户的余额或用量。当前提供 DeepSeek、阿里云百炼（查询阿里云账户现金余额 BSS）、Grsai 账户积分预设和 OpenAI 兼容服务 / 第三方服务配置。结果保留各接口的数据含义，不做货币换算。
+AstrBot 插件，用于查询已配置 AI 服务账户的余额或用量。当前提供 DeepSeek、阿里云百炼（查询阿里云账户现金余额 BSS）、Grsai 账户积分、Meinianda 账户站内额度预设和 OpenAI 兼容服务 / 第三方服务配置。结果保留各接口的数据含义，不做货币换算。
 
 ## 安装
 
@@ -30,7 +30,7 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 ## 配置账户
 
-在 AstrBot 插件配置的 `providers` 列表中选择供应商添加账户：DeepSeek、阿里云百炼是原生 AI 厂商；Grsai 和其他兼容服务属于中转站。菜单展示供应商名称，账户的具体填写说明在展开后的字段小字中。AstrBot 的模板菜单目前由宿主界面绘制，插件配置 schema 不能为它增加分类筛选、搜索或悬停提示。Grsai 账户积分直接选独立的 **Grsai** 模板。每个账户应有唯一 `id`、`display_name` 和凭据；模板会固定对应的 `type`。`aliases` 可添加供命令和工具解析的名称。密钥字段支持 `${ENV_VAR}` 引用，插件从 AstrBot 进程环境读取对应变量。请在运行 AstrBot 的环境中设置变量，不要把真实密钥写进公开文件或聊天。
+在 AstrBot 插件配置的 `providers` 列表中选择供应商添加账户：DeepSeek、阿里云百炼是原生 AI 厂商；Grsai、Meinianda 和其他兼容服务属于中转站。菜单展示供应商名称，账户的具体填写说明在展开后的字段小字中。AstrBot 的模板菜单目前由宿主界面绘制，插件配置 schema 不能为它增加分类筛选、搜索或悬停提示。Grsai 账户积分和 Meinianda 站内额度分别选择独立的 **Grsai**、**Meinianda** 模板。每个账户应有唯一 `id`、`display_name` 和凭据；模板会固定对应的 `type`。`aliases` 可添加供命令和工具解析的名称。密钥字段支持 `${ENV_VAR}` 引用，插件从 AstrBot 进程环境读取对应变量。请在运行 AstrBot 的环境中设置变量，不要把真实密钥写进公开文件或聊天。
 
 其他兼容服务模板把 **Host** 和 **API Path** 分开填写。Host 是 HTTPS 服务根地址；API Path 是以 `/` 开头的路径。配置页中的 `https://api.example.invalid` 与 `/account/balance` 仅展示填写格式；域名不可访问，路径也是占位值。Grsai 独立模板只需填写请求令牌并选择国内或海外连接区域，官方服务器地址由插件内置，路径、方法和响应解析也由插件固定。模型 API 兼容不代表余额 API 兼容；其他服务须依据余额接口文档配置。认证方式、请求方法和响应映射位于“高级设置”中；通用服务缺少协议资料时会在 `/yql status` 标为不可查询。
 
@@ -116,6 +116,23 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 官方文档还列出 API Key 积分 `POST /client/openapi/getAPIKeyCredits`，但它与账户积分是不同范围；当前该范围暂不可查询，独立 Grsai 模板只支持账户积分。旧兼容模板中的 API Key 积分选项仅用于识别旧配置范围，不提供请求预设。用户已在 AstrBot ChatUI 得到 Grsai 账户积分成功结果，并验证自然语言工具回复；海外节点及失败响应的业务码、HTTP 状态含义尚未实测，插件只做保守的失败归类，不据此推断认证或权限原因。两种积分范围互不替代，也不能换算为货币。[Grsai 官方中文其他 API 文档](https://grsai.ai/zh/dashboard/documents/other)
 
+### Meinianda 账户站内额度
+
+新建账户时选择 **Meinianda**，填写账户唯一 ID、显示名称及 API Key（`auth.api_key`），无需填写服务器地址、路径或响应映射。插件按站点提供的余额查询示例调用 `GET https://meinianda.top/api/balance`，通过 `Authorization: Bearer <API Key>` 认证；仅接受 `success=true` 且 `data.unit=site_credit` 的余额响应，读取 `data.balance`。
+
+查询结果是**账户站内额度，不是 API Key 限额**，保留 `site_credit` 单位，不换算为货币。站点说明该查询不扣费，并建议每分钟查询一次；默认缓存为 60 秒。可使用 `/yql meinianda`、`/yql meinianda.top` 或在自然语言查询中指定 Meinianda。
+
+```json
+{
+  "id": "meinianda-main",
+  "type": "meinianda",
+  "display_name": "Meinianda 主账户",
+  "auth": { "api_key": "${MEINIANDA_API_KEY}" }
+}
+```
+
+协议依据为 [Meinianda 站点](https://meinianda.top/) 的余额查询 API 示例（用户提供的截图）；自动化测试使用模拟响应，尚未以真实 API Key 验证账户查询或 AstrBot WebUI。业务失败响应不推断认证或权限原因，也不会将缺失余额补成零。
+
 ## 数据、缓存与错误
 
 - 每个账户独立查询。成功结果按账户和配置缓存，默认 60 秒；失败结果不缓存。查询结果会标注获取时间和数据来源。
@@ -149,10 +166,10 @@ ruff format --check .
 本地构建需要 Python 3.12+。构建脚本会检查指定 tag 与 `metadata.yaml` 中的 `version` 完全一致，并生成以 tag 命名的 ZIP；ZIP 根目录直接是插件文件。根目录的 `logo.png` 是 256×256 透明插件图标，也会随包安装。
 
 ```bash
-python scripts/build_plugin.py --tag v0.1.2 --output-dir dist
+python scripts/build_plugin.py --tag v0.1.3 --output-dir dist
 ```
 
-示例产物为 `dist/astrbot_plugin_yomihime_quota_link-v0.1.2.zip`。推送新的 `v*` tag 后，GitHub Actions 会运行代码检查和测试，构建相同的 ZIP，将其上传到该次工作流的 **Artifacts**，并创建附带 ZIP 的 GitHub Release。Release 说明取自 `CHANGELOG.md` 中对应版本的小节。工作流不会自动创建或修改 tag、更新元数据版本。创建 tag 前，请先提交与该 tag 完全一致的 `metadata.yaml` 版本和更新记录。构建通过只表示代码检查与打包通过；已完成的 Grsai 账户积分实测不覆盖海外节点和失败响应语义。
+示例产物为 `dist/astrbot_plugin_yomihime_quota_link-v0.1.3.zip`。推送新的 `v*` tag 后，GitHub Actions 会运行代码检查和测试，构建相同的 ZIP，将其上传到该次工作流的 **Artifacts**，并创建附带 ZIP 的 GitHub Release。Release 说明取自 `CHANGELOG.md` 中对应版本的小节。工作流不会自动创建或修改 tag、更新元数据版本。创建 tag 前，请先提交与该 tag 完全一致的 `metadata.yaml` 版本和更新记录。构建通过只表示代码检查与打包通过；已完成的 Grsai 账户积分实测不覆盖海外节点和失败响应语义。
 
 插件持久化数据应写入 AstrBot 的 `data` 目录，不要写入插件源码目录。
 

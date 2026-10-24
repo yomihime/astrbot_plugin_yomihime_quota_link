@@ -639,7 +639,12 @@ def test_provider_templates_only_expose_fields_for_their_provider():
     schema = json.loads((root / "_conf_schema.json").read_text(encoding="utf-8"))
     templates = schema["providers"]["templates"]
 
-    for provider_type in ("deepseek", "alibaba_bailian", "openai_compatible"):
+    for provider_type in (
+        "deepseek",
+        "alibaba_bailian",
+        "meinianda",
+        "openai_compatible",
+    ):
         items = templates[provider_type]["items"]
         assert items["type"]["default"] == provider_type
         assert items["type"]["invisible"] is True
@@ -657,7 +662,7 @@ def test_provider_templates_only_expose_fields_for_their_provider():
         "service_profile": "grsai",
         "balance_scope": "account",
     }
-    for provider_type in ("deepseek", "alibaba_bailian"):
+    for provider_type in ("deepseek", "alibaba_bailian", "meinianda"):
         assert "endpoint" not in templates[provider_type]["items"]
         assert "response_mapping" not in templates[provider_type]["items"]
     assert "endpoint" in templates["openai_compatible"]["items"]

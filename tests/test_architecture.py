@@ -211,6 +211,7 @@ def test_astrbot_boundary_stays_in_main_and_schema_has_safe_templates():
         "deepseek",
         "alibaba_bailian",
         "grsai",
+        "meinianda",
         "openai_compatible",
         "provider_account",
     }

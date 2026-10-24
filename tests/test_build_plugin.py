@@ -40,6 +40,7 @@ EXPECTED_PACKAGE_FILES = {
     "quota_link/providers/__init__.py",
     "quota_link/providers/base.py",
     "quota_link/providers/deepseek.py",
+    "quota_link/providers/meinianda.py",
     "quota_link/providers/alibaba_bailian.py",
     "quota_link/providers/openai_compatible.py",
 }

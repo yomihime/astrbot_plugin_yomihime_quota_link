@@ -26,6 +26,7 @@ def test_provider_type_recognition_is_not_adapter_implementation():
         ProviderType.ALIBABA_BAILIAN,
         ProviderType.DEEPSEEK,
         ProviderType.GRSAI,
+        ProviderType.MEINIANDA,
         ProviderType.OPENAI_COMPATIBLE,
     }
 

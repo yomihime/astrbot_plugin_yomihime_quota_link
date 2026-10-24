@@ -22,6 +22,7 @@ def test_provider_menu_has_plain_short_names_and_hints():
         "deepseek",
         "alibaba_bailian",
         "grsai",
+        "meinianda",
         "openai_compatible",
         "provider_account",
     ]
@@ -29,6 +30,7 @@ def test_provider_menu_has_plain_short_names_and_hints():
         "DeepSeek",
         "阿里云百炼",
         "Grsai",
+        "Meinianda",
         "其他兼容服务",
         "旧版通用账户",
     ]
@@ -65,6 +67,21 @@ def test_visible_field_labels_are_short_and_detail_moves_to_hint():
         "新建 Grsai 条目并禁用旧条目"
         in templates["provider_account"]["items"]["type"]["hint"]
     )
+
+
+def test_meinianda_form_uses_secret_api_key_and_account_balance_hint():
+    items = _schema()["providers"]["templates"]["meinianda"]["items"]
+    assert items["type"]["default"] == "meinianda"
+    assert items["type"]["invisible"] is True
+    assert set(items["auth"]["items"]) == {"api_key"}
+    api_key = items["auth"]["items"]["api_key"]
+    assert api_key["secret"] is True
+    assert api_key["default"] == ""
+    assert "site_credit" in api_key["hint"]
+    assert "不是 Key 限额" in api_key["hint"]
+    assert items["cache_ttl_seconds"]["default"] == 60
+    assert "endpoint" not in items
+    assert "response_mapping" not in items
 
 
 def test_grsai_native_form_uses_region_and_token_without_host_field():
