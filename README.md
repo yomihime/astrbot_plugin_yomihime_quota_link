@@ -24,6 +24,14 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 在启用函数工具且聊天模型支持工具调用的 AstrBot AI 对话中，也可以说“余额还剩多少”“查 DeepSeek 余额”或“查看 <账户名> 的额度”。模型按需要调用 `yql_query_balance`，并传入账户名、供应商名或 `all`；插件不再监听固定关键词自动回复。工具是否被调用由模型和 AstrBot 的函数工具设置决定；需要确定执行时可使用 `/yql`。命令前缀和唤醒方式以 AstrBot 配置为准。[AstrBot 函数工具说明](https://docs.astrbot.app/use/function-calling.html)
 
+### 查询卡片
+
+`/yql`、`/yql all`、账户查询与供应商查询默认返回与 Game Link 同系列的暖纸色图片卡片。每个账户使用独立面板，主数值突出展示，其余余额以属性分栏排列；币种、积分和站内额度保留各自单位，状态、缓存、来源与时间作为辅助信息。内置语义说明采用简洁的肯定式表述，自定义接口说明保留原意。时间统一显示为 UTC（保留到秒）。帮助、配置状态、参数错误和权限拒绝仍使用文字；LLM 工具仍返回原有 JSON 事实，不生成卡片。
+
+卡片在本地生成，不把账户信息发送到外部制图服务，不写临时图片。插件包不包含字体。启动时沿用 Game Link 的固定 Noto 字体下载与缓存方式：先检查 YQL 自己的有效缓存；若同时安装了 YGL 且其字体已就绪，将经过同一大小与 SHA256 校验的字体复制到 YQL 的独立缓存；否则按 YGL 的固定镜像顺序下载。缓存位于插件数据目录的 `resources/fonts/`，不会修改或依赖 YGL 的文件。下载在后台进行，每个来源最多 15 秒、单轮最多 45 秒；查询只读取已就绪的字体，不触发重复下载。字体准备期间或准备失败时使用文字回退，下次插件启动再尝试。字体采用 SIL OFL 1.1，卡片绘制使用 Pillow。若图像依赖/字体不可用、包含字体不支持的字符、内容超出绘制预算或宿主无法准备图像消息，会退回完整文字结果；不会静默省略账户或用量字段，也不会为回退重复查询供应商。超长结果可改用 `/yql <账户名>` 缩小范围。消息已交给宿主后发生的适配器发送错误不自动重试，避免重复发送。
+
+复现不含真实账户数据的卡片：`PYTHONPATH=. python examples/render_cards.py --font-path <已校验字体路径> --output-dir card-previews`。渲染来源、字体许可和离线策略见 [`quota_link/presentation/NOTICE.md`](quota_link/presentation/NOTICE.md)。
+
 `/yql` 命令默认仅管理员可用，包括 `/yql help` 和 `/yql status`。需要开放命令时，可将 `command_admin_only` 设为 `false`；此开关不会放宽自然语言工具调用的私聊权限。
 
 私聊中的自然语言工具查询默认仅管理员可用。可在 `private_allowed_user_ids` 中明确加入非管理员，格式必须是完整的 `平台名:用户ID`（例如 `aiocqhttp:123456`），避免不同平台的相同用户 ID 混用。白名单不会绕过 `/yql` 的管理员限制；若关闭 `command_admin_only`，白名单用户也可在私聊使用命令。群聊查询仍默认关闭；只有设置 `allow_group_queries` 为 `true` 后才开放给管理员及 `group_allowed_user_ids` 中的用户。

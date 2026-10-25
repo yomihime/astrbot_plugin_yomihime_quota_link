@@ -5,12 +5,14 @@ from __future__ import annotations
 import asyncio
 import re
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Star, register
 
 from .quota_link.cache import BalanceCache
+from .quota_link.cards import render_result_card
 from .quota_link.formatter import (
     format_help,
     format_parse_error,
@@ -23,6 +25,7 @@ from .quota_link.intent import (
     can_query,
     parse_command,
 )
+from .quota_link.managed_font import FONT_FILENAME, prepare_font
 from .quota_link.providers import IMPLEMENTED_ADAPTERS
 from .quota_link.service import QueryService
 from .quota_link.settings import (
@@ -56,6 +59,8 @@ class YomihimeQuotaLink(Star):
         self._admin_pages = None
         self._storage_failed = False
         self._cleanup_tasks = set()
+        self._font_task = None
+        self._font_path = None
         self.settings: PluginSettings
         self.cache: BalanceCache
         self.service: QueryService
@@ -71,11 +76,13 @@ class YomihimeQuotaLink(Star):
         )
 
     async def initialize(self) -> None:
+        await self._stop_font()
         if self._admin_pages is not None:
             self._admin_pages.close()
             self._admin_pages = None
         await self._close_runtime()
         raw = self.config
+        root = None
         # Host initialization owns the persistent data directory. Tests without
         # a host context retain an entirely in-memory legacy runtime.
         if self._context is not None:
@@ -109,6 +116,46 @@ class YomihimeQuotaLink(Star):
             )
             self._admin_pages.register()
 
+        if root is not None:
+            ygl_font = None
+            try:
+                # Public Host metadata confirms installation; use the sibling
+                # plugin-data path without creating or importing YGL's runtime.
+                get_star = getattr(self._context, "get_registered_star", None)
+                ygl = (
+                    get_star("astrbot_plugin_yomihime_game_link")
+                    if callable(get_star)
+                    else None
+                )
+                if getattr(ygl, "name", None) == "astrbot_plugin_yomihime_game_link":
+                    ygl_font = (
+                        Path(root).parent
+                        / "astrbot_plugin_yomihime_game_link"
+                        / "resources"
+                        / "fonts"
+                        / FONT_FILENAME
+                    )
+            except Exception:
+                pass
+            self._font_task = asyncio.create_task(
+                self._prepare_command_font(Path(root), ygl_font),
+                name="yql:managed-font",
+            )
+
+    async def _prepare_command_font(self, root, ygl_font) -> None:
+        try:
+            self._font_path = await prepare_font(root, ygl_font)
+        except Exception:
+            self._font_path = None
+
+    async def _stop_font(self) -> None:
+        task, self._font_task = self._font_task, None
+        self._font_path = None
+        if task is not None:
+            if not task.done():
+                task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
     async def _admin_dispatch(self, operation, body, authorize):
         from .quota_link.config_store import ConfigUnavailable
 
@@ -132,6 +179,7 @@ class YomihimeQuotaLink(Star):
         await self._dispose_runtime(old_service, old_client)
 
     async def terminate(self) -> None:
+        await self._stop_font()
         if self._admin_pages is not None:
             self._admin_pages.close()
             self._admin_pages = None
@@ -173,7 +221,33 @@ class YomihimeQuotaLink(Star):
         match = _COMMAND_START.match(message)
         argument = match.group(1) if match else ""
         parsed = parse_command(argument, self.settings.directory)
-        yield event.plain_result(await self._render(parsed))
+        if (
+            parsed.error is not None
+            or parsed.request is None
+            or parsed.request.kind.value in {"help", "status"}
+        ):
+            yield event.plain_result(await self._render(parsed))
+            return
+
+        # Query once: image and text fallback share the same immutable facts.
+        result = await self.service.query(parsed.request)
+        prepared = None
+        try:
+            bitmap = await asyncio.to_thread(
+                render_result_card, result, self._font_path
+            )
+            if bitmap:
+                from astrbot.api.message_components import Image
+
+                prepared = event.chain_result([Image.fromBytes(bitmap)])
+        except Exception:
+            # Optional rendering or image preparation may fail. Do not log
+            # account facts or retry after dispatch, which could send twice.
+            pass
+        if prepared is not None:
+            yield prepared
+        else:
+            yield event.plain_result(format_result(result))
 
     @filter.llm_tool(name="yql_query_balance")
     async def query_balance_tool(

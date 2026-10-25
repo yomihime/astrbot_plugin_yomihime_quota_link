@@ -1,7 +1,9 @@
-from datetime import UTC, datetime
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 
 from quota_link.formatter import (
+    display_semantics,
     format_help,
     format_parse_error,
     format_result,
@@ -74,8 +76,8 @@ def test_format_result_preserves_decimal_precision_and_renders_multiple_items_an
     assert "积分：0 积分" in text
     assert "用量：总量 1000 tokens；剩余 875.25 tokens；已用 124.75 tokens" in text
     assert "语义说明 本周期 token 使用情况" in text
-    assert f"查询时间：{NOW.isoformat()}" in text
-    assert f"获取时间：{NOW.isoformat()}" in text
+    assert f"查询时间：{NOW.strftime('%Y-%m-%d %H:%M:%S UTC')}" in text
+    assert f"获取时间：{NOW.strftime('%Y-%m-%d %H:%M:%S UTC')}" in text
     assert "来源：configured endpoint" in text
 
 
@@ -113,7 +115,7 @@ def test_format_result_handles_all_failures_and_safe_error_text():
 
     assert "未实现账户：不可用" in text
     assert "查询失败：此账户的余额查询适配器尚未实现。" in text
-    assert text.endswith("所有账户查询均失败。")
+    assert text.endswith("查询汇总：失败 1。")
     assert "模拟" not in text
 
 
@@ -123,7 +125,7 @@ def test_unavailable_snapshot_without_error_counts_as_failure():
     )
 
     assert "断线账户：不可用" in text
-    assert "所有账户查询均失败。" in text
+    assert "查询汇总：失败 1。" in text
     assert "查询汇总：成功 1" not in text
 
 
@@ -151,7 +153,7 @@ def test_format_result_reports_partial_failures_alongside_successful_results():
 
     assert "主账户：可用" in text
     assert "备用账户：不可用" in text
-    assert "查询汇总：成功 1，部分成功 0，失败 1。" in text
+    assert "查询汇总：成功 1，失败 1。" in text
 
 
 def test_formatter_folds_control_characters_in_all_free_text_fields():
@@ -184,7 +186,7 @@ def test_formatter_folds_control_characters_in_all_free_text_fields():
         in text
     )
     assert "查询失败：响应异常 伪造状态：成功" in text
-    assert "查询汇总：成功 0，部分成功 1，失败 0。" in text
+    assert "查询汇总：部分成功 1。" in text
     assert "\n群聊查询：已开启" not in text
     assert "\n伪造单位" not in text
     assert "\n伪造账户：管理员" not in text
@@ -193,7 +195,7 @@ def test_formatter_folds_control_characters_in_all_free_text_fields():
 
 def test_format_result_handles_no_configured_accounts():
     assert format_result(_result()) == (
-        f"查询时间：{NOW.isoformat()}\n当前没有配置可查询的账户。"
+        f"查询时间：{NOW.strftime('%Y-%m-%d %H:%M:%S UTC')}\n当前没有配置可查询的账户。"
     )
 
 
@@ -288,7 +290,9 @@ def test_help_explains_service_boundaries_and_status_marks_incomplete_accounts()
     help_text = format_help(settings)
     status_text = format_status(settings)
 
-    assert "模型接口兼容不代表余额接口通用" in help_text
+    assert "余额查询使用服务商专属接口" in help_text
+    assert "不是" not in help_text
+    assert "不代表" not in help_text
     assert "阿里云账户现金余额（BSS）" in help_text
     assert "AliyunBSSReadOnlyAccess" in help_text
     assert "第三方服务：不可查询：配置不全" in status_text
@@ -327,7 +331,7 @@ def test_format_parse_error_shows_safe_ambiguity_candidates():
     )
 
 
-def test_snapshot_and_query_times_and_source_are_formatted_as_iso_and_text():
+def test_snapshot_and_query_times_and_source_are_formatted_as_utc_and_text():
     expires = datetime(2026, 12, 1, 12, 0, tzinfo=UTC)
     text = format_result(
         _result(
@@ -344,7 +348,77 @@ def test_snapshot_and_query_times_and_source_are_formatted_as_iso_and_text():
         )
     )
 
-    assert f"查询时间：{NOW.isoformat()}" in text
-    assert f"获取时间：{NOW.isoformat()}" in text
+    assert f"查询时间：{NOW.strftime('%Y-%m-%d %H:%M:%S UTC')}" in text
+    assert f"获取时间：{NOW.strftime('%Y-%m-%d %H:%M:%S UTC')}" in text
     assert "来源：configured endpoint" in text
-    assert f"到期 {expires.isoformat()}" in text
+    assert f"到期 {expires.strftime('%Y-%m-%d %H:%M:%S UTC')}" in text
+
+
+def test_builtin_meinianda_semantics_use_affirmative_command_copy_only():
+    raw = "账户站内额度，不是 API Key 限额；不换算为货币"
+    item = BalanceItem(
+        BalanceItemKind.CREDITS,
+        amount=Decimal("8.7654321"),
+        unit="site_credit",
+        raw_semantics=raw,
+    )
+    value = replace(_snapshot(balances=(item,)), provider_type=ProviderType.MEINIANDA)
+
+    text = format_result(_result(value))
+
+    assert "账户站内额度以 site_credit 计量。" in text
+    assert "8.7654321 site_credit" in text
+    assert "不是" not in text
+    assert "不换算" not in text
+    assert item.raw_semantics == raw
+    assert display_semantics(item, ProviderType.MEINIANDA) == (
+        "账户站内额度以 site_credit 计量。"
+    )
+
+
+def test_semantic_mapping_requires_exact_provider_unit_and_builtin_text():
+    raw = "账户站内额度，不是 API Key 限额；不换算为货币"
+    item = BalanceItem(BalanceItemKind.CREDITS, unit="site_credit", raw_semantics=raw)
+    assert display_semantics(item) == raw
+    assert display_semantics(item, ProviderType.OPENAI_COMPATIBLE) == raw
+    assert display_semantics(replace(item, unit="USD"), ProviderType.MEINIANDA) == raw
+    custom = "用户定义：不是现金；仅在当前项目可用"
+    assert (
+        display_semantics(replace(item, raw_semantics=custom), ProviderType.MEINIANDA)
+        == custom
+    )
+    spaced = "账户站内额度，不是 API Key 限额；不换算为货币 "
+    assert (
+        display_semantics(replace(item, raw_semantics=spaced), ProviderType.MEINIANDA)
+        == raw
+    )
+
+
+def test_unknown_negative_semantics_are_preserved_and_controls_normalized():
+    custom = "不是现金\n只用于项目\u202e"
+    item = BalanceItem(BalanceItemKind.CUSTOM, unit="points", raw_semantics=custom)
+    assert display_semantics(item, ProviderType.MEINIANDA) == "不是现金 只用于项目"
+    text = format_result(_result(_snapshot(balances=(item,))))
+    assert "语义说明 不是现金 只用于项目" in text
+
+
+def test_compact_text_has_nonzero_counts_and_balances_before_metadata():
+    value = _snapshot(
+        balances=(BalanceItem(BalanceItemKind.CASH, Decimal("1"), "CNY"),)
+    )
+    text = format_result(_result(value))
+    assert "查询汇总：成功 1。" in text
+    assert "部分成功 0" not in text
+    assert "失败 0" not in text
+    assert text.index("现金余额") < text.index("获取时间")
+
+
+def test_text_times_convert_to_utc_with_seconds():
+    local = datetime(2026, 9, 24, 18, 30, 12, 987654, timezone(timedelta(hours=8)))
+    value = replace(_snapshot(), fetched_at=local)
+    facts = replace(_result(value), queried_at=local)
+    text = format_result(facts)
+    assert "查询时间：2026-09-24 10:30:12 UTC" in text
+    assert "获取时间：2026-09-24 10:30:12 UTC" in text
+    assert "987654" not in text
+    assert "+08:00" not in text
