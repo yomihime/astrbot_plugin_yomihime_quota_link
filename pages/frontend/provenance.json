@@ -1,0 +1,37 @@
+{
+  "repository": "https://github.com/yomihime/astrbot_plugin_yomihime_game_link",
+  "commit": "cf755ed4ac455e8be48a9b99c285078cdb696510",
+  "license": "AGPL-3.0",
+  "files": [
+    {
+      "source": "pages/frontend/src/ui/components.ts",
+      "destination": "src/ui/components.ts",
+      "sha256": "1eb90bcad7648ca36cbfd499b2643be49e641dd41dbdc93e3b69d1a4c4e907f7",
+      "change": "byte-for-byte copy"
+    },
+    {
+      "source": "pages/frontend/src/ui/shared-components.ts",
+      "destination": "src/ui/shared-components.ts",
+      "sha256": "8345c577e363bf83cc44c61f18ef830847b3ecc07ef978a9766a043ad4e87193",
+      "change": "byte-for-byte copy"
+    },
+    {
+      "source": "pages/frontend/src/ui/tokens.css",
+      "destination": "src/ui/tokens.css",
+      "sha256": "aa6544e758e25813d88b9b5ba1159955606a43be738e6177bd500dfb7884f23b",
+      "change": "byte-for-byte copy"
+    },
+    {
+      "source": "pages/frontend/src/shell.css",
+      "destination": "src/shell.css",
+      "sha256": "02d3452f28df005c1062768405c6b094e9f805f5f29ae9d66307dec29f9794af",
+      "change": "byte-for-byte copy"
+    },
+    {
+      "source": "pages/frontend/src/confirmation.ts",
+      "destination": "src/confirmation.ts",
+      "sha256": "46ffd9c9b7918ae899ceb87a8c7a3d662f2b51d9baf201662c6a2ed64e44142a",
+      "change": "byte-for-byte copy"
+    }
+  ]
+}

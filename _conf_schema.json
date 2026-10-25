@@ -1,44 +1,58 @@
 {
+  "enable_admin_page": {
+    "description": "启用插件管理页面",
+    "type": "bool",
+    "default": true,
+    "hint": "账户、凭据、查询权限与超时设置均在插件页面管理。旧配置仅保留用于确认迁移，不会自动删除。"
+  },
   "timeout_seconds": {
     "description": "单个账户查询的最长等待秒数",
     "type": "float",
-    "default": 8.0
+    "default": 8.0,
+    "invisible": true
   },
   "total_timeout_seconds": {
     "description": "一次查询所有目标的最长等待秒数",
     "type": "float",
-    "default": 30.0
+    "default": 30.0,
+    "invisible": true
   },
   "cache_ttl_seconds": {
     "description": "成功查询结果的缓存秒数",
     "type": "float",
-    "default": 60.0
+    "default": 60.0,
+    "invisible": true
   },
   "max_concurrency": {
     "description": "同时查询的账户数上限",
     "type": "int",
-    "default": 4
+    "default": 4,
+    "invisible": true
   },
   "command_admin_only": {
     "description": "仅管理员可用 /yql 命令",
     "type": "bool",
-    "default": true
+    "default": true,
+    "invisible": true
   },
   "private_allowed_user_ids": {
     "description": "私聊白名单",
     "type": "list",
     "default": [],
-    "hint": "填写完整 平台名:用户ID，例如 aiocqhttp:123456；管理员无需加入。/yql 还受上方管理员开关限制。"
+    "hint": "填写完整 平台名:用户ID，例如 aiocqhttp:123456；管理员无需加入。/yql 还受上方管理员开关限制。",
+    "invisible": true
   },
   "allow_group_queries": {
     "description": "是否允许在群聊查询",
     "type": "bool",
-    "default": false
+    "default": false,
+    "invisible": true
   },
   "group_allowed_user_ids": {
     "description": "群聊查询白名单用户 ID",
     "type": "list",
-    "default": []
+    "default": [],
+    "invisible": true
   },
   "providers": {
     "description": "查询账户",
@@ -243,8 +257,14 @@
             "hint": "国内与海外均使用内置官方节点，无需手填服务器地址。",
             "type": "string",
             "default": "china",
-            "options": ["china", "global"],
-            "labels": ["国内直连", "海外节点"]
+            "options": [
+              "china",
+              "global"
+            ],
+            "labels": [
+              "国内直连",
+              "海外节点"
+            ]
           }
         }
       },
@@ -353,17 +373,33 @@
             "hint": "模型接口兼容不代表余额接口通用。新 Grsai 账户请直接添加 Grsai 模板；本模板旧条目可切换账户积分预设。",
             "type": "string",
             "default": "generic",
-            "options": ["generic", "grsai"],
-            "labels": ["OpenAI 兼容服务 / 第三方服务", "Grsai"]
+            "options": [
+              "generic",
+              "grsai"
+            ],
+            "labels": [
+              "OpenAI 兼容服务 / 第三方服务",
+              "Grsai"
+            ]
           },
           "balance_scope": {
             "description": "积分范围",
             "hint": "账户积分已支持；API Key 积分暂不可查询。",
             "type": "string",
             "default": "generic",
-            "options": ["generic", "account", "api_key"],
-            "labels": ["请选择积分范围", "账户积分（已支持预设）", "API Key 积分（暂不可查询）"],
-            "condition": {"service_profile": "grsai"}
+            "options": [
+              "generic",
+              "account",
+              "api_key"
+            ],
+            "labels": [
+              "请选择积分范围",
+              "账户积分（已支持预设）",
+              "API Key 积分（暂不可查询）"
+            ],
+            "condition": {
+              "service_profile": "grsai"
+            }
           },
           "auth": {
             "description": "余额查询凭据",
@@ -376,7 +412,10 @@
                 "type": "string",
                 "default": "",
                 "secret": true,
-                "condition": {"service_profile": "grsai", "balance_scope": "account"}
+                "condition": {
+                  "service_profile": "grsai",
+                  "balance_scope": "account"
+                }
               },
               "api_key": {
                 "description": "兼容服务 API Key",
@@ -413,7 +452,9 @@
                   "GET",
                   "POST"
                 ],
-                "condition": {"advanced_options": true}
+                "condition": {
+                  "advanced_options": true
+                }
               },
               "auth_mode": {
                 "description": "认证方式",
@@ -425,14 +466,18 @@
                   "header",
                   "query"
                 ],
-                "condition": {"advanced_options": true}
+                "condition": {
+                  "advanced_options": true
+                }
               },
               "auth_name": {
                 "description": "认证参数名",
                 "hint": "仅 auth_mode 为 header 或 query 时使用。",
                 "type": "string",
                 "default": "",
-                "condition": {"advanced_options": true}
+                "condition": {
+                  "advanced_options": true
+                }
               },
               "json_body": {
                 "description": "静态 JSON 请求体",
@@ -440,7 +485,9 @@
                 "type": "dict",
                 "items": {},
                 "default": {},
-                "condition": {"advanced_options": true}
+                "condition": {
+                  "advanced_options": true
+                }
               }
             }
           },
@@ -544,7 +591,9 @@
               }
             },
             "default": {},
-            "condition": {"advanced_options": true}
+            "condition": {
+              "advanced_options": true
+            }
           }
         }
       },
@@ -782,6 +831,7 @@
         },
         "hide_hint_in_list": true
       }
-    }
+    },
+    "invisible": true
   }
 }

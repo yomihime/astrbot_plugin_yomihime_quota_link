@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile,readdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=resolve(fileURLToPath(new URL('../..',import.meta.url))),pages=resolve(root,'pages');
+test('production is a native Host-discoverable page, no obsolete root entry',async()=>{const html=await readFile(resolve(pages,'00-quota-link/index.html'),'utf8');assert.match(html,/data-page-name="00-quota-link"/);assert.match(html,/\/api\/plugin\/page\/bridge-sdk\.js/);assert.match(html,/\.\/app\.js/);assert.equal((await readdir(pages)).includes('index.html'),false);});
+test('production manifest matches every packaged runtime asset',async()=>{const directory=resolve(pages,'00-quota-link'),manifest=JSON.parse(await readFile(resolve(directory,'assets.json'),'utf8'));assert.equal(manifest.schema_version,1);for(const asset of manifest.assets){assert.match(asset.path,/^(?:index\.html|app\.js|styles\.css|THIRD_PARTY_NOTICES\.txt|licenses\/[A-Za-z0-9@_.-]+\.txt)$/);const bytes=await readFile(resolve(directory,asset.path));assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);}});
+test('client source never persists credentials in browser storage or fetches a secret',async()=>{for(const file of ['controller.js','main.ts','config.js']){const text=await readFile(resolve(pages,'frontend/src',file),'utf8');assert.doesNotMatch(text,/localStorage|sessionStorage|indexedDB|document\.cookie/);assert.doesNotMatch(text,/credential-(?:get|read)|console\.(?:log|error|warn)/);}});
+test('actual copied Game Link reusable UI is pinned and licensed',async()=>{const provenance=JSON.parse(await readFile(resolve(pages,'frontend/provenance.json'),'utf8'));assert.equal(provenance.commit,'cf755ed4ac455e8be48a9b99c285078cdb696510');for(const item of provenance.files){const bytes=await readFile(resolve(pages,'frontend',item.destination));assert.equal(createHash('sha256').update(bytes).digest('hex'),item.sha256,item.destination);}const notices=await readFile(resolve(pages,'00-quota-link/THIRD_PARTY_NOTICES.txt'),'utf8');assert.match(notices,/AGPL-3\.0/);assert.match(notices,/naive-ui 2\.45\.3/);assert.match(notices,/vue 3\.5\.43/);});

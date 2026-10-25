@@ -23,6 +23,14 @@ cd astrbot_plugin_yomihime_quota_link
 ```bash
 ruff check .
 ruff format --check .
+python -m pytest -q
+cd pages/frontend
+npm ci
+npm run typecheck
+npm test
+npm run build
 ```
 
 新增平台适配器或监控逻辑时，请同时补充对应的测试和 README 文档。
+
+安全存储与管理页的移植来源、宿主契约和验证限制见 `docs/SECURITY.md`。只用合成凭据测试；禁止用测试脚本迁移真实实例。原生 Windows I/O 与真实宿主部署需要分别验证，不可由 Linux 单测替代。

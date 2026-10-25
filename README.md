@@ -10,7 +10,7 @@ AstrBot 插件，用于查询已配置 AI 服务账户的余额或用量。当�
 https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 ```
 
-安装并启用插件后，在插件配置中添加账户。修改配置后通过 AstrBot 重载插件使设置生效。
+安装并启用插件后，登录 AstrBot Dashboard，打开本插件的「00-quota-link」页面。插件设置仅展示管理页面启用开关；账户、供应商、全局超时与查询权限都在插件页面管理，保存成功后立即重建运行时与缓存。
 
 ## 查询
 
@@ -30,13 +30,15 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 ## 配置账户
 
-在 AstrBot 插件配置的 `providers` 列表中选择供应商添加账户：DeepSeek、阿里云百炼是原生 AI 厂商；Grsai、Meinianda 和其他兼容服务属于中转站。菜单展示供应商名称，账户的具体填写说明在展开后的字段小字中。AstrBot 的模板菜单目前由宿主界面绘制，插件配置 schema 不能为它增加分类筛选、搜索或悬停提示。Grsai 账户积分和 Meinianda 站内额度分别选择独立的 **Grsai**、**Meinianda** 模板。每个账户应有唯一 `id`、`display_name` 和凭据；模板会固定对应的 `type`。`aliases` 可添加供命令和工具解析的名称。密钥字段支持 `${ENV_VAR}` 引用，插件从 AstrBot 进程环境读取对应变量。请在运行 AstrBot 的环境中设置变量，不要把真实密钥写进公开文件或聊天。
+在插件页面的账户区添加 DeepSeek、阿里云百炼、Grsai、Meinianda 或其他兼容服务。每个账户有唯一 `id`、显示名称和可选别名。现有账户的 ID 与供应商类型不可重绑；需要更换供应商时请新建账户。普通设置保存与凭据替换/清除是不同操作，普通保存不会写入或回显凭据。
+
+凭据区域只显示是否已配置、来源为加密存储或环境变量，不提供读取原值的接口。填写新值后单独确认替换，或选择环境变量并填写变量名称（不是变量的值）；原有 `${ENV_VAR}` 引用在迁移时保持为环境引用。不要把真实密钥写进普通字段、公开文件或聊天。账户页沿用 Game Link 的 Oil 明暗主题、组件与交互。
 
 其他兼容服务模板把 **Host** 和 **API Path** 分开填写。Host 是 HTTPS 服务根地址；API Path 是以 `/` 开头的路径。配置页中的 `https://api.example.invalid` 与 `/account/balance` 仅展示填写格式；域名不可访问，路径也是占位值。Grsai 独立模板只需填写请求令牌并选择国内或海外连接区域，官方服务器地址由插件内置，路径、方法和响应解析也由插件固定。模型 API 兼容不代表余额 API 兼容；其他服务须依据余额接口文档配置。认证方式、请求方法和响应映射位于“高级设置”中；通用服务缺少协议资料时会在 `/yql status` 标为不可查询。
 
-插件启动或重载时，会按 `type` 将旧版通用模板中的 DeepSeek 和阿里云百炼账户改标为对应供应商模板并保存配置，不改动账户 ID 或凭据。旧版 OpenAI 兼容账户保留在 `provider_account` 通用模板中，以便继续编辑原有的 `endpoint.url` 和余额端点设置；此旧模板没有 Grsai 账户积分所需的 `service_profile`、`balance_scope` 和 `auth.token` 栏。无法识别类型的旧条目也保持原样。若账户类型填写有误，先备份配置再人工修正。
+旧版本升级后不会自动移动或删除凭据。页面先展示无凭据内容的迁移预览，必须明确确认才会先写入加密数据和引用，再清理旧插件配置。若旧配置保存失败，页面显示清理待完成，使用确认后的清理重试；不会重新导入覆盖已有保险库。旧字段在宿主 schema 中仅隐藏保留，因为 AstrBot 会在插件启动前删除未知字段。迁移前，旧配置中的明文仍存在，隐藏和 `secret` 标记都不是加密。完整边界、备份与恢复说明见 [安全与迁移](docs/SECURITY.md)。
 
-下面是 DeepSeek 与阿里云账户的结构示意。请在 AstrBot 配置界面填写等价字段；这里的环境变量名称只是示例，不能代替你自己的密钥配置。
+下面是 DeepSeek 与阿里云账户的结构示意。这些是旧配置的结构示意，仅用于理解供应商字段和迁移；新配置请使用插件页面及独立凭据操作，不要把这些 auth 字段粘贴到普通设置中。这里的环境变量名称只是示例。
 
 ```json
 {
@@ -61,7 +63,7 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 }
 ```
 
-账户也可设置 `enabled`、`timeout_seconds` 和 `cache_ttl_seconds`。默认请求超时为 8 秒、成功结果缓存 60 秒；全局配置 `total_timeout_seconds` 默认 30 秒，`max_concurrency` 默认 4。超时和缓存时长必须为正数。
+账户也可设置 `enabled`、`timeout_seconds` 和 `cache_ttl_seconds`。默认请求超时为 8 秒、成功结果缓存 60 秒；全局配置 `total_timeout_seconds` 默认 30 秒，`max_concurrency` 默认 4。超时和缓存时长必须为正数；管理页限制单次超时不超过 120 秒，总超时不超过 300 秒，并发不超过 32，缓存不超过 86400 秒，最多 100 个账户。
 
 ### DeepSeek
 
@@ -148,11 +150,11 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 3. DeepSeek 查询失败时，检查 API Key 和账户 API 可用状态；HTTP 401 表示认证失败，429 表示请求过快。
 4. 阿里云失败时，确认配置的是 RAM AccessKey ID/Secret 而非 DashScope Key，并确认 RAM 身份至少具有 `AliyunBSSReadOnlyAccess`。缺少 `AvailableCashAmount` 不会回退到“可用额度”。
 5. 通用 OpenAI 兼容服务失败时，检查 Host 是否为 HTTPS 服务根地址、API Path 是否以 `/` 开头，再依据文档确认高级认证、方法和响应映射。独立 Grsai 模板失败时，检查请求令牌和连接区域；旧兼容模板的 Grsai 条目还须选 `grsai/account`，并清除非积分 API Path、GET 方法与静态请求体。失败响应细节未核实，不能仅凭状态码断言令牌或权限问题。
-6. 检查端点可达性和账户/全局超时设置。配置调整后重载插件；若显示缓存结果，等待对应缓存时长后再次查询。
+6. 检查端点可达性和账户/全局超时设置。插件页面保存成功会立即重建运行时并清缓存；若结果未知，请先刷新核对，不要重复提交凭据。
 
 ## 开发
 
-本项目面向 Python 3.12+ 和 AstrBot 4.16+。用户已在 AstrBot ChatUI 验证 Grsai 账户积分与自然语言工具回复；这不覆盖海外节点或失败响应语义。阿里云 BSS 查询依赖具备 `AliyunBSSReadOnlyAccess` 的 RAM 凭据。
+本项目面向 Python 3.12+；本版原生插件页与 Dashboard 鉴权契约以 AstrBot 4.29.1（提交 dffe922773725e9c178392c423676ad65044748c）验证，最低版本改为 4.29.1。对未来 4.x 版本不作已验证兼容承诺；宿主契约不匹配时管理路由拒绝访问，不提供自签 JWT 降级。Windows 加密存储仅支持保留自 Game Link 的受限资格矩阵，详见安全文档。用户已在 AstrBot ChatUI 验证 Grsai 账户积分与自然语言工具回复；这不覆盖海外节点或失败响应语义。阿里云 BSS 查询依赖具备 `AliyunBSSReadOnlyAccess` 的 RAM 凭据。
 
 提交前可运行：
 
@@ -163,13 +165,13 @@ ruff format --check .
 
 ### 构建插件包
 
-本地构建需要 Python 3.12+。构建脚本会检查指定 tag 与 `metadata.yaml` 中的 `version` 完全一致，并生成以 tag 命名的 ZIP；ZIP 根目录直接是插件文件。根目录的 `logo.png` 是 256×256 透明插件图标，也会随包安装。
+本地构建需要 Python 3.12+ 和 Node.js 22.12+。先在 pages/frontend 执行 npm ci、npm run typecheck、npm test、npm run build；生成的 pages/00-quota-link 生产资源随插件包提供，不需要目标机器安装 Node.js。构建脚本会检查指定 tag 与 `metadata.yaml` 中的 `version` 完全一致，并生成以 tag 命名的 ZIP；ZIP 根目录直接是插件文件。根目录的 `logo.png` 是 256×256 透明插件图标，也会随包安装。
 
 ```bash
-python scripts/build_plugin.py --tag v0.1.3 --output-dir dist
+python scripts/build_plugin.py --tag v0.2.0 --output-dir dist
 ```
 
-示例产物为 `dist/astrbot_plugin_yomihime_quota_link-v0.1.3.zip`。推送新的 `v*` tag 后，GitHub Actions 会运行代码检查和测试，构建相同的 ZIP，将其上传到该次工作流的 **Artifacts**，并创建附带 ZIP 的 GitHub Release。Release 说明取自 `CHANGELOG.md` 中对应版本的小节。工作流不会自动创建或修改 tag、更新元数据版本。创建 tag 前，请先提交与该 tag 完全一致的 `metadata.yaml` 版本和更新记录。构建通过只表示代码检查与打包通过；已完成的 Grsai 账户积分实测不覆盖海外节点和失败响应语义。
+示例产物为 `dist/astrbot_plugin_yomihime_quota_link-v0.2.0.zip`。推送新的 `v*` tag 后，GitHub Actions 会运行代码检查和测试，构建相同的 ZIP，将其上传到该次工作流的 **Artifacts**，并创建附带 ZIP 的 GitHub Release。Release 说明取自 `CHANGELOG.md` 中对应版本的小节。工作流不会自动创建或修改 tag、更新元数据版本。创建 tag 前，请先提交与该 tag 完全一致的 `metadata.yaml` 版本和更新记录。构建通过只表示代码检查与打包通过；已完成的 Grsai 账户积分实测不覆盖海外节点和失败响应语义。
 
 插件持久化数据应写入 AstrBot 的 `data` 目录，不要写入插件源码目录。
 

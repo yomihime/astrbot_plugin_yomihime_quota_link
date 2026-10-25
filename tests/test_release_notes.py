@@ -72,3 +72,44 @@ def test_cli_writes_only_matching_notes(tmp_path: Path) -> None:
     )
     assert result.returncode == 0, result.stderr
     assert output.read_text(encoding="utf-8") == "## v0.1.0\n- 现在发布。\n"
+
+
+def test_release_versions_and_current_changelog_stay_aligned() -> None:
+    import ast
+    import json
+
+    metadata = (ROOT / "metadata.yaml").read_text(encoding="utf-8")
+    tag = next(
+        line.split(":", 1)[1].strip()
+        for line in metadata.splitlines()
+        if line.startswith("version:")
+    )
+    source = ast.parse((ROOT / "main.py").read_text(encoding="utf-8"))
+    registration = next(
+        decorator
+        for node in source.body
+        if isinstance(node, ast.ClassDef)
+        for decorator in node.decorator_list
+        if isinstance(decorator, ast.Call)
+        and isinstance(decorator.func, ast.Name)
+        and decorator.func.id == "register"
+    )
+    assert ast.literal_eval(registration.args[3]) == tag.removeprefix("v")
+    package = json.loads((ROOT / "pages/frontend/package.json").read_text())
+    lock = json.loads((ROOT / "pages/frontend/package-lock.json").read_text())
+    assert (
+        package["version"]
+        == lock["version"]
+        == lock["packages"][""]["version"]
+        == tag.removeprefix("v")
+    )
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert f"--tag {tag} --output-dir dist" in readme
+    notes = extract_release_notes(
+        (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), tag
+    )
+    assert "4.29.1" in notes
+    assert "Windows" in notes and "失败关闭" in notes
+    assert "真实 Host" in notes and "真实供应商凭据" in notes
+    assert "明确确认迁移" in notes
+    assert "## 未发布" not in notes

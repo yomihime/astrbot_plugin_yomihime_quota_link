@@ -23,7 +23,22 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt pytest ruff
+        run: python -m pip install -r requirements.txt pytest pytest-subtests ruff
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: pages/frontend/package-lock.json
+
+      - name: Check and build native plugin page
+        run: |
+          npm ci --prefix pages/frontend
+          npm run typecheck --prefix pages/frontend
+          npm run build --prefix pages/frontend
+          git diff --exit-code -- pages/00-quota-link
+          npm test --prefix pages/frontend
 
       - name: Check code and run tests
         run: |
