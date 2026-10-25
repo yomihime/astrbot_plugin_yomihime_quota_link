@@ -386,7 +386,9 @@ def test_llm_query_rejects_command_only_targets_without_calling_service(
     assert FakeHttpClient.instances[-1].requests == []
 
 
-def test_old_template_is_retagged_without_changing_credentials(entrypoint):
+def test_old_template_waits_for_explicit_migration_without_changing_credentials(
+    entrypoint,
+):
     class SavedConfig(dict):
         saves = 0
 
@@ -399,8 +401,8 @@ def test_old_template_is_retagged_without_changing_credentials(entrypoint):
 
     entrypoint(None, config)
 
-    assert config.saves == 1
-    assert config["providers"][0]["__template_key"] == "deepseek"
+    assert config.saves == 0
+    assert config["providers"][0]["__template_key"] == "provider_account"
     assert config["providers"][0]["auth"] == original_auth
 
 
@@ -437,3 +439,79 @@ def test_empty_configuration_starts_and_shutdown_clears_service_cache(entrypoint
     assert plugin.service._closed
     assert plugin.http_client.closed
     assert plugin.cache._entries == {}
+
+
+def test_cancelled_runtime_replacement_still_closes_retired_client(entrypoint):
+    async def scenario():
+        plugin = entrypoint(None)
+        entered, release = asyncio.Event(), asyncio.Event()
+        retired_client = plugin.http_client
+
+        class SlowService:
+            async def close(self):
+                entered.set()
+                await release.wait()
+
+        plugin.service = SlowService()
+        task = asyncio.create_task(plugin._replace_runtime({}))
+        await entered.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert not retired_client.closed
+        release.set()
+        await asyncio.gather(*tuple(plugin._cleanup_tasks))
+        assert retired_client.closed
+        assert not plugin.http_client.closed
+        await plugin.terminate()
+        assert plugin.http_client.closed
+
+    asyncio.run(scenario())
+
+
+def test_runtime_cleanup_closes_client_even_when_service_close_fails(entrypoint):
+    async def scenario():
+        plugin = entrypoint(None)
+        client = plugin.http_client
+
+        class BrokenService:
+            async def close(self):
+                raise RuntimeError("synthetic shutdown failure")
+
+        with pytest.raises(RuntimeError, match="synthetic shutdown failure"):
+            await plugin._dispose_runtime(BrokenService(), client)
+        assert client.closed
+
+    asyncio.run(scenario())
+
+
+def test_host_initialization_uses_vault_and_migrates_only_on_confirm(
+    entrypoint, monkeypatch, tmp_path
+):
+    class SavedConfig(dict):
+        def save_config(self):
+            pass
+
+    star_module = sys.modules["astrbot.api.star"]
+    star_module.StarTools = types.SimpleNamespace(get_data_dir=lambda name: tmp_path)
+    config = SavedConfig(_config(), enable_admin_page=False)
+    plugin = entrypoint(object(), config)
+
+    async def scenario():
+        await plugin.initialize()
+        assert plugin._config_store is not None
+        before = await plugin._admin_dispatch("read", {}, lambda: None)
+        assert before["migration"]["pending"]
+        assert "test-placeholder" not in json.dumps(before)
+        result = await plugin._admin_dispatch(
+            "legacy-config-execute",
+            {"revision": 0, "confirm": True, "plan_id": before["migration"]["plan_id"]},
+            lambda: None,
+        )
+        assert not result["migration"]["pending"]
+        assert config["providers"] == []
+        assert plugin.settings.accounts[0].auth["api_key"] == "test-placeholder"
+        assert not plugin.cache._entries
+        await plugin.terminate()
+
+    asyncio.run(scenario())

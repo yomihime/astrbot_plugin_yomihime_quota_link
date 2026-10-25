@@ -40,6 +40,54 @@ PACKAGE_FILES = (
     "quota_link/providers/alibaba_bailian.py",
     "quota_link/providers/openai_compatible.py",
 )
+PACKAGE_FILES += (
+    "quota_link/config_store.py",
+    "quota_link/admin/__init__.py",
+    "quota_link/admin/pages.py",
+    "quota_link/admin/web_admin.py",
+    "quota_link/security/__init__.py",
+    "quota_link/security/key_provider.py",
+    "quota_link/security/managed_key.py",
+    "quota_link/security/managed_key_file.py",
+    "quota_link/security/private_files.py",
+    "quota_link/security/secret_codec.py",
+    "quota_link/security/store.py",
+    "quota_link/security/windows/__init__.py",
+    "quota_link/security/windows/documents.py",
+    "quota_link/security/windows/fs.py",
+    "quota_link/security/windows/maintenance.py",
+    "quota_link/security/windows/managed_key_io.py",
+)
+PAGE_FILES = (
+    "pages/00-quota-link/THIRD_PARTY_NOTICES.txt",
+    "pages/00-quota-link/app.js",
+    "pages/00-quota-link/assets.json",
+    "pages/00-quota-link/index.html",
+    "pages/00-quota-link/licenses/@css-render_plugin-bem.txt",
+    "pages/00-quota-link/licenses/@css-render_vue3-ssr.txt",
+    "pages/00-quota-link/licenses/@emotion_hash.txt",
+    "pages/00-quota-link/licenses/@juggle_resize-observer.txt",
+    "pages/00-quota-link/licenses/@vue_reactivity.txt",
+    "pages/00-quota-link/licenses/@vue_runtime-core.txt",
+    "pages/00-quota-link/licenses/@vue_runtime-dom.txt",
+    "pages/00-quota-link/licenses/@vue_shared.txt",
+    "pages/00-quota-link/licenses/css-render.txt",
+    "pages/00-quota-link/licenses/date-fns.txt",
+    "pages/00-quota-link/licenses/evtd.txt",
+    "pages/00-quota-link/licenses/lodash-es.txt",
+    "pages/00-quota-link/licenses/naive-ui.txt",
+    "pages/00-quota-link/licenses/seemly.txt",
+    "pages/00-quota-link/licenses/vooks.txt",
+    "pages/00-quota-link/licenses/vue.txt",
+    "pages/00-quota-link/licenses/vueuc.txt",
+    "pages/00-quota-link/styles.css",
+)
+DOC_FILES = (
+    "docs/SECURITY.md",
+    "pages/frontend/PROVENANCE.md",
+    "pages/frontend/provenance.json",
+)
+
 TAG_PATTERN = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?\Z")
 ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 MAX_ARCHIVE_BYTES = 16 * 1024 * 1024
@@ -57,7 +105,9 @@ def _metadata_version(path: Path) -> str:
 
 
 def _sources(root: Path) -> list[Path]:
-    sources = [root / name for name in (*ROOT_FILES, *PACKAGE_FILES)]
+    sources = [
+        root / name for name in (*ROOT_FILES, *PACKAGE_FILES, *PAGE_FILES, *DOC_FILES)
+    ]
     for source in sources:
         if not source.is_file() or source.is_symlink():
             raise ValueError(f"required source is missing or is a symlink: {source}")

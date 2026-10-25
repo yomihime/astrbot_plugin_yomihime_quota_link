@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any
 
 from astrbot.api.event import AstrMessageEvent, filter
@@ -27,7 +28,6 @@ from .quota_link.service import QueryService
 from .quota_link.settings import (
     PluginSettings,
     load_settings,
-    migrate_account_templates,
 )
 from .quota_link.tool_facts import (
     encode_tool_result,
@@ -50,19 +50,20 @@ class YomihimeQuotaLink(Star):
 
     def __init__(self, context: Any, config: Mapping[str, Any] | None = None) -> None:
         super().__init__(context, config)
-        self.config = config or {}
-        save_config = getattr(self.config, "save_config", None)
-        if isinstance(self.config, MutableMapping) and callable(save_config):
-            if migrate_account_templates(self.config):
-                save_config()
+        self.config = config if config is not None else {}
+        self._context = context
+        self._config_store = None
+        self._admin_pages = None
+        self._storage_failed = False
+        self._cleanup_tasks = set()
         self.settings: PluginSettings
         self.cache: BalanceCache
         self.service: QueryService
-        self._build_runtime()
+        self._build_runtime({} if context is not None else None)
 
-    def _build_runtime(self) -> None:
+    def _build_runtime(self, raw: Mapping[str, Any] | None = None) -> None:
         """Create per-plugin settings, cache, and query service from config."""
-        self.settings = load_settings(self.config)
+        self.settings = load_settings(self.config if raw is None else raw)
         self.cache = BalanceCache()
         self.http_client = HttpProviderClient(timeout=self.settings.timeout_seconds)
         self.service = QueryService(
@@ -70,15 +71,95 @@ class YomihimeQuotaLink(Star):
         )
 
     async def initialize(self) -> None:
+        if self._admin_pages is not None:
+            self._admin_pages.close()
+            self._admin_pages = None
         await self._close_runtime()
-        self._build_runtime()
+        raw = self.config
+        # Host initialization owns the persistent data directory. Tests without
+        # a host context retain an entirely in-memory legacy runtime.
+        if self._context is not None:
+            from astrbot.api.star import StarTools
+
+            from .quota_link.config_store import ConfigStore
+            from .quota_link.security import SecretStore
+
+            try:
+                root = StarTools.get_data_dir("astrbot_plugin_yomihime_quota_link")
+                self._config_store = ConfigStore(
+                    SecretStore(root), self.config, self._replace_runtime
+                )
+                raw = self._config_store.runtime_config()
+                self._storage_failed = False
+            except Exception:
+                # A failed vault must never reactivate old plaintext secrets.
+                self._storage_failed = True
+                raw = {}
+        self._build_runtime(raw)
+        if self._context is not None and self.config.get("enable_admin_page", True):
+            from astrbot.api.web import json_response, request
+
+            from .quota_link.admin import AdminPages
+
+            self._admin_pages = AdminPages(
+                self._context,
+                self._admin_dispatch,
+                request=request,
+                json_response=json_response,
+            )
+            self._admin_pages.register()
+
+    async def _admin_dispatch(self, operation, body, authorize):
+        from .quota_link.config_store import ConfigUnavailable
+
+        if self._config_store is None:
+            raise ConfigUnavailable()
+        try:
+            result = await self._config_store.dispatch(operation, body, authorize)
+        except ConfigUnavailable:
+            self._storage_failed = True
+            await self._replace_runtime({})
+            raise
+        if self._storage_failed:
+            authorize()
+            await self._replace_runtime(self._config_store.runtime_config())
+            self._storage_failed = False
+        return result
+
+    async def _replace_runtime(self, raw) -> None:
+        old_service, old_client = self.service, self.http_client
+        self._build_runtime(raw)
+        await self._dispose_runtime(old_service, old_client)
 
     async def terminate(self) -> None:
+        if self._admin_pages is not None:
+            self._admin_pages.close()
+            self._admin_pages = None
         await self._close_runtime()
 
+    async def _dispose_runtime(self, service, client) -> None:
+        async def cleanup():
+            try:
+                await service.close()
+            finally:
+                await client.close()
+
+        task = asyncio.create_task(cleanup())
+        self._cleanup_tasks.add(task)
+
+        def finished(completed):
+            self._cleanup_tasks.discard(completed)
+            if not completed.cancelled():
+                completed.exception()
+
+        task.add_done_callback(finished)
+        # Request cancellation must not strand the retired HTTP client/cache.
+        await asyncio.shield(task)
+
     async def _close_runtime(self) -> None:
-        await self.service.close()
-        await self.http_client.close()
+        await self._dispose_runtime(self.service, self.http_client)
+        if self._cleanup_tasks:
+            await asyncio.shield(asyncio.gather(*tuple(self._cleanup_tasks)))
 
     @filter.command("yql")
     async def quota_link(self, event: AstrMessageEvent):

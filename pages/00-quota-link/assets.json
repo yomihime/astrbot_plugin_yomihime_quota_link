@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "assets": [
+    {
+      "path": "index.html",
+      "sha256": "3cd113a0516ace149e1d1b2eb032309565f953e2338ef9b2be22c6d12548562a"
+    },
+    {
+      "path": "app.js",
+      "sha256": "2b682db718d20df36a06125d54f8eccb4f186e3d7d42b9ca278b6acbeec8b3e2"
+    },
+    {
+      "path": "styles.css",
+      "sha256": "895c3657636bef47c0258a62da1b7c985bc21b99513251d81af376db910c70c9"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.txt",
+      "sha256": "0b72c5cd4479634636c0d8b172004a7d63a76fcdbc4de2212de1ee6dbeb8ad6f"
+    },
+    {
+      "path": "licenses/@css-render_plugin-bem.txt",
+      "sha256": "63fb02252d311dd44f37f71e111384db251dec2290d387ac6a2943b04e02b2b7"
+    },
+    {
+      "path": "licenses/@css-render_vue3-ssr.txt",
+      "sha256": "3c98ffbbd5ceeb941d22fa88863d33cb39ca585525b2056b2013a68102de3432"
+    },
+    {
+      "path": "licenses/@emotion_hash.txt",
+      "sha256": "f239a27eaee81ec1c10abdc145ee96f5c9f94288f3dda14bd0070e24b49e5390"
+    },
+    {
+      "path": "licenses/@juggle_resize-observer.txt",
+      "sha256": "db12f1dbbd5a49a4dbc6f7b95f288ea4d743361d57bb58ab213c27022707d273"
+    },
+    {
+      "path": "licenses/@vue_reactivity.txt",
+      "sha256": "8895f03c2f92a03da879e7f4e4791bfab081487fc68d151cd7d249edbe1d09d9"
+    },
+    {
+      "path": "licenses/@vue_runtime-core.txt",
+      "sha256": "bb3736879c7d9a707354ef4978d02028c8b6a797df321acd5b3f4fef5064210d"
+    },
+    {
+      "path": "licenses/@vue_runtime-dom.txt",
+      "sha256": "d58565561a24a8fc3ce17df5ced0d86165cb8c2e1e7b565fe58c86f7372c0c68"
+    },
+    {
+      "path": "licenses/@vue_shared.txt",
+      "sha256": "66865c105c47179097f88460280f45c745089a87f5523f9464c8497c65bff8ee"
+    },
+    {
+      "path": "licenses/css-render.txt",
+      "sha256": "f57fcbbac3dd95044b9852e9eb6fa71c5339794e9b9b5af608249d385338b5ca"
+    },
+    {
+      "path": "licenses/date-fns.txt",
+      "sha256": "090f736914d5719c22a3723186b4aa9d6a01126e14e4c9eafcd0bda07f8cf7eb"
+    },
+    {
+      "path": "licenses/evtd.txt",
+      "sha256": "c32e5d1132a726f58689308d26e7a597b20dcf951930b660176f9dce4b0ccb0e"
+    },
+    {
+      "path": "licenses/lodash-es.txt",
+      "sha256": "5c46527cbcd773117125e11942857e8a69c44d72e820b8653a3ad2f7c1aca9d3"
+    },
+    {
+      "path": "licenses/naive-ui.txt",
+      "sha256": "9fc2fe27511aa7f0053a0e82dac63dce363b0b706869183b7b0934b150e8b977"
+    },
+    {
+      "path": "licenses/seemly.txt",
+      "sha256": "e43a8ed05782d1dde64c08138d4184b0a012faf415b46d1a25dd3443ba2077d6"
+    },
+    {
+      "path": "licenses/vooks.txt",
+      "sha256": "70d572e2de93095560f10a37ad592fc701714a8d1f6becd0518249d87c11ffee"
+    },
+    {
+      "path": "licenses/vue.txt",
+      "sha256": "4b13f3b24a5bb14f99379af8332aa67dc4e3fcb15b45e9c7695356cee8b1d8a1"
+    },
+    {
+      "path": "licenses/vueuc.txt",
+      "sha256": "d2f44308f623c6f866e0516f47d120a6d8051f0f6b80c1157a0b2cc4f2686d5d"
+    }
+  ]
+}

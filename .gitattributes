@@ -1,0 +1,11 @@
+# Preserve audited upstream bytes and license notices, including original CRLF.
+pages/frontend/src/shell.css -text whitespace=cr-at-eol
+pages/frontend/src/ui/tokens.css -text whitespace=cr-at-eol
+pages/frontend/legal/css-render.txt -text whitespace=cr-at-eol
+pages/00-quota-link/THIRD_PARTY_NOTICES.txt -text whitespace=cr-at-eol
+pages/00-quota-link/licenses/@css-render_plugin-bem.txt -text whitespace=cr-at-eol
+pages/00-quota-link/licenses/@css-render_vue3-ssr.txt -text whitespace=cr-at-eol
+pages/00-quota-link/licenses/css-render.txt -text whitespace=cr-at-eol
+# Dependency license text is redistributed verbatim, including final blank lines.
+pages/00-quota-link/licenses/*.txt -text whitespace=cr-at-eol,-blank-at-eof
+pages/00-quota-link/THIRD_PARTY_NOTICES.txt -text whitespace=cr-at-eol,-blank-at-eof
