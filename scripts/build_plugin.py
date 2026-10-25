@@ -58,6 +58,15 @@ PACKAGE_FILES += (
     "quota_link/security/windows/maintenance.py",
     "quota_link/security/windows/managed_key_io.py",
 )
+PACKAGE_FILES += (
+    "quota_link/cards.py",
+    "quota_link/presentation/__init__.py",
+    "quota_link/presentation/bitmap.py",
+    "quota_link/presentation/font.py",
+    "quota_link/presentation/NOTICE.md",
+    "quota_link/managed_font.py",
+    "quota_link/presentation/assets/fonts/OFL.txt",
+)
 PAGE_FILES = (
     "pages/00-quota-link/THIRD_PARTY_NOTICES.txt",
     "pages/00-quota-link/app.js",

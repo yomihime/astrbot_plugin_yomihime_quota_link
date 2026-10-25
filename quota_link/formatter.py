@@ -1,5 +1,6 @@
 """Chinese text presentation for provider-independent query results."""
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from unicodedata import category
 
@@ -7,6 +8,7 @@ from .models import (
     BalanceItem,
     BalanceItemKind,
     BalanceSnapshot,
+    ProviderType,
     QueryParseError,
     QueryParseErrorCode,
     QueryRequestKind,
@@ -50,7 +52,28 @@ def _single_line(value: str) -> str:
     return " ".join(cleaned.split())
 
 
-def _item_text(item: BalanceItem) -> str:
+def display_semantics(
+    item: BalanceItem, provider_type: ProviderType | None = None
+) -> str:
+    """Use affirmative copy only for the exact known built-in semantics.
+
+    Custom/provider facts are otherwise preserved, including negative wording.
+    This is command presentation, never a change to provider or tool facts.
+    """
+    if (
+        provider_type is ProviderType.MEINIANDA
+        and item.unit == "site_credit"
+        and item.raw_semantics == "账户站内额度，不是 API Key 限额；不换算为货币"
+    ):
+        return "账户站内额度以 site_credit 计量。"
+    return _single_line(item.raw_semantics or "")
+
+
+def _display_time(value: datetime) -> str:
+    return value.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+
+def _item_text(item: BalanceItem, provider_type: ProviderType | None = None) -> str:
     label = _single_line(item.label) or _KIND_LABELS[item.kind]
     unit = _single_line(item.unit) or "未知单位"
     values: list[str] = []
@@ -65,9 +88,10 @@ def _item_text(item: BalanceItem) -> str:
     if not values:
         values.append(f"数值未知（单位：{unit}）")
     if item.expires_at is not None:
-        values.append(f"到期 {item.expires_at.isoformat()}")
-    if item.raw_semantics:
-        values.append(f"语义说明 {_single_line(item.raw_semantics)}")
+        values.append(f"到期 {_display_time(item.expires_at)}")
+    semantics = display_semantics(item, provider_type)
+    if semantics:
+        values.append(f"语义说明 {semantics}")
     return f"{label}：" + "；".join(values)
 
 
@@ -82,23 +106,25 @@ def _snapshot_text(snapshot: BalanceSnapshot) -> list[str]:
         status = "状态未知"
 
     cache_mark = "（缓存）" if snapshot.cached else ""
-    lines = [
-        f"{_single_line(snapshot.display_name)}：{status}{cache_mark}",
-        f"  获取时间：{snapshot.fetched_at.isoformat()}",
-        f"  来源：{_single_line(snapshot.source)}",
-    ]
-    lines.extend(f"  {_item_text(item)}" for item in snapshot.balances)
+    lines = [f"{_single_line(snapshot.display_name)}：{status}{cache_mark}"]
+    lines.extend(
+        f"  {_item_text(item, snapshot.provider_type)}" for item in snapshot.balances
+    )
     if not snapshot.balances and snapshot.error is None:
         lines.append("  没有可显示的余额或用量项目")
     if snapshot.error is not None:
         lines.append(f"  查询失败：{_single_line(snapshot.error.safe_message)}")
+    lines.append(
+        f"  获取时间：{_display_time(snapshot.fetched_at)}"
+        f" · 来源：{_single_line(snapshot.source)}"
+    )
     return lines
 
 
 def format_result(result: QueryResult) -> str:
     """Render an aggregate result without interpreting provider-specific fields."""
     request = result.request
-    lines = [f"查询时间：{result.queried_at.isoformat()}"]
+    lines = [f"查询时间：{_display_time(result.queried_at)}"]
     if not result.snapshots:
         if request.kind is QueryRequestKind.ALL:
             lines.append("当前没有配置可查询的账户。")
@@ -114,9 +140,9 @@ def format_result(result: QueryResult) -> str:
         title = "额度与用量查询"
 
     lines.insert(0, title)
-    lines.extend(
-        line for snapshot in result.snapshots for line in _snapshot_text(snapshot)
-    )
+    for snapshot in result.snapshots:
+        lines.append("")
+        lines.extend(_snapshot_text(snapshot))
     successes = sum(
         snapshot.status is SnapshotStatus.AVAILABLE and snapshot.error is None
         for snapshot in result.snapshots
@@ -127,12 +153,16 @@ def format_result(result: QueryResult) -> str:
         for snapshot in result.snapshots
     )
     failures = len(result.snapshots) - successes - partial
-    if partial or (successes and failures):
-        lines.append(
-            f"查询汇总：成功 {successes}，部分成功 {partial}，失败 {failures}。"
+    summary = "，".join(
+        f"{label} {count}"
+        for label, count in (
+            ("成功", successes),
+            ("部分成功", partial),
+            ("失败", failures),
         )
-    elif failures == len(result.snapshots):
-        lines.append("所有账户查询均失败。")
+        if count
+    )
+    lines.extend(("", f"查询汇总：{summary}。"))
     return "\n".join(lines)
 
 
@@ -147,8 +177,8 @@ def format_help(settings: PluginSettings) -> str:
         "  /yql all             查询所有账户\n"
         "  /yql <名称>          查询指定账户或供应商\n"
         "在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。\n"
-        "配置 OpenAI 兼容服务时，模型接口兼容不代表余额接口通用；按余额文档填写 Host、API Path 和高级认证/响应映射。资料不全的账户会标为不可查询。\n"
-        "阿里云百炼模板查询阿里云账户现金余额（BSS），不是模型额度；RAM 身份至少需要 AliyunBSSReadOnlyAccess。"
+        "OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写 Host、API Path 和高级认证/响应映射。配置完整后即可查询。\n"
+        "阿里云百炼模板查询阿里云账户现金余额（BSS）；RAM 身份至少需要 AliyunBSSReadOnlyAccess。"
     ]
     entries = [entry for entry in settings.directory.entries if entry.enabled]
     if entries:

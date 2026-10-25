@@ -64,6 +64,15 @@ EXPECTED_PACKAGE_FILES |= {
     "quota_link/admin/web_admin.py",
     "quota_link/admin/__init__.py",
 }
+EXPECTED_PACKAGE_FILES |= {
+    "quota_link/presentation/bitmap.py",
+    "quota_link/presentation/font.py",
+    "quota_link/presentation/__init__.py",
+    "quota_link/presentation/NOTICE.md",
+    "quota_link/cards.py",
+    "quota_link/presentation/assets/fonts/OFL.txt",
+    "quota_link/managed_font.py",
+}
 EXPECTED_PAGE_FILES = {
     "pages/00-quota-link/licenses/vueuc.txt",
     "pages/00-quota-link/licenses/vue.txt",
