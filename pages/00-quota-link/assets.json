@@ -3,11 +3,11 @@
   "assets": [
     {
       "path": "index.html",
-      "sha256": "3cd113a0516ace149e1d1b2eb032309565f953e2338ef9b2be22c6d12548562a"
+      "sha256": "2ab355cfbaae90489f76a7a5966ef87bcfe90ff3f15ff39b6d8f4d614d660e48"
     },
     {
       "path": "app.js",
-      "sha256": "2b682db718d20df36a06125d54f8eccb4f186e3d7d42b9ca278b6acbeec8b3e2"
+      "sha256": "5afa0201b1cec2ec4e404d163006573a4529ad9a4974c2bbb53ea9aae2f100b6"
     },
     {
       "path": "styles.css",

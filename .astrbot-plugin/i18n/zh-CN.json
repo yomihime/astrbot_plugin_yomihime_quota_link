@@ -1,0 +1,12 @@
+{
+  "views": {
+    "00-quota-link": {
+      "title": "额度查询"
+    }
+  },
+  "pages": {
+    "00-quota-link": {
+      "title": "额度查询"
+    }
+  }
+}

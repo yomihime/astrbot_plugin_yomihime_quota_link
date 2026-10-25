@@ -12,6 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ROOT_FILES = (
+    ".astrbot-plugin/i18n/zh-CN.json",
+    ".astrbot-plugin/i18n/en-US.json",
     "metadata.yaml",
     "logo.png",
     "main.py",

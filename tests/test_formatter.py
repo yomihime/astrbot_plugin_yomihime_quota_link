@@ -422,3 +422,48 @@ def test_text_times_convert_to_utc_with_seconds():
     assert "获取时间：2026-09-24 10:30:12 UTC" in text
     assert "987654" not in text
     assert "+08:00" not in text
+
+
+def test_target_labels_are_presentation_only_for_text_and_cards():
+    from quota_link.cards import build_result_card
+
+    for provider, label in (
+        (ProviderType.DEEPSEEK, "DeepSeek"),
+        (ProviderType.ALIBABA_BAILIAN, "阿里云百炼"),
+        (ProviderType.GRSAI, "Grsai"),
+        (ProviderType.MEINIANDA, "Meinianda"),
+        (ProviderType.OPENAI_COMPATIBLE, "OpenAI 兼容服务"),
+    ):
+        request = QueryRequest(QueryRequestKind.PROVIDER, provider.value)
+        facts = QueryResult(request, (_snapshot(),), NOW)
+        assert f"供应商查询：{label}" in format_result(facts)
+        assert f"目标：{label}\n" in build_result_card(facts).subtitle
+        assert facts.request.target == provider.value
+
+    request = QueryRequest(QueryRequestKind.ACCOUNT, "main")
+    facts = QueryResult(request, (_snapshot(name="主账户\n测试"),), NOW)
+    assert "账户查询：主账户 测试" in format_result(facts)
+    assert "目标：主账户 测试\n" in build_result_card(facts).subtitle
+    assert facts.request.target == "main"
+    assert facts.snapshots[0].display_name == "主账户\n测试"
+
+
+def test_target_labels_preserve_unknown_targets_and_match_account_ids_only():
+    from quota_link.formatter import display_target
+
+    for kind in (QueryRequestKind.ACCOUNT, QueryRequestKind.PROVIDER):
+        facts = QueryResult(QueryRequest(kind, "unknown\n目标"), (_snapshot(),), NOW)
+        assert display_target(facts) == "unknown 目标"
+    # An account whose ID looks like a provider must keep its own display name.
+    account = replace(_snapshot(name="自定义账户"), account_id="deepseek")
+    facts = QueryResult(
+        QueryRequest(QueryRequestKind.ACCOUNT, "deepseek"), (account,), NOW
+    )
+    assert display_target(facts) == "自定义账户"
+    assert display_target(replace(facts, snapshots=())) == "deepseek"
+    assert (
+        display_target(
+            replace(facts, snapshots=(replace(account, display_name="\u202e"),))
+        )
+        == "deepseek"
+    )

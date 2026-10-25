@@ -17,6 +17,8 @@ VERSION = next(
     if line.startswith("version:")
 )
 EXPECTED_ROOT_FILES = {
+    ".astrbot-plugin/i18n/zh-CN.json",
+    ".astrbot-plugin/i18n/en-US.json",
     "metadata.yaml",
     "logo.png",
     "main.py",
@@ -261,3 +263,26 @@ def test_production_page_manifest_matches_packaged_bytes():
         assert hashlib.sha256(source.read_bytes()).hexdigest() == item["sha256"]
         assert "pages/00-quota-link/" + name in EXPECTED_PAGE_FILES
     assert {"index.html", "app.js", "styles.css", "THIRD_PARTY_NOTICES.txt"} <= paths
+
+
+@pytest.mark.parametrize(
+    "locale,title", [("zh-CN", "额度查询"), ("en-US", "Quota Query")]
+)
+def test_packaged_sidebar_locales_match_host_page_contract(tmp_path, locale, title):
+    archive = build_plugin.build(VERSION, tmp_path)
+    name = f".astrbot-plugin/i18n/{locale}.json"
+    with zipfile.ZipFile(archive) as package:
+        content = package.read(name)
+    assert content == (ROOT / name).read_bytes()
+    translations = json.loads(content)
+    for namespace in ("views", "pages"):
+        assert translations[namespace] == {"00-quota-link": {"title": title}}
+    assert (ROOT / "pages/00-quota-link/index.html").is_file()
+
+
+@pytest.mark.parametrize("locale", ["zh-CN", "en-US"])
+def test_build_requires_sidebar_locale_files(tmp_path, locale):
+    source = _fixture_source(tmp_path)
+    (source / f".astrbot-plugin/i18n/{locale}.json").unlink()
+    with pytest.raises(ValueError, match="required source is missing"):
+        build_plugin.build(VERSION, tmp_path / "dist", root=source)

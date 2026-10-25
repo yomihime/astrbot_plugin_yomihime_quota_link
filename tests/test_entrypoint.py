@@ -198,9 +198,9 @@ def test_all_command_forms_keep_the_complete_multiword_argument(entrypoint):
     cases = (
         ("/yql", "额度与用量查询"),
         ("/yql all", "额度与用量查询"),
-        ("/yql provider openai compatible", "供应商查询：openai_compatible"),
-        ("/yql account grsai-work", "账户查询：grsai-work"),
-        ("/yql grsai-work", "账户查询：grsai-work"),
+        ("/yql provider openai compatible", "供应商查询：OpenAI 兼容服务"),
+        ("/yql account grsai-work", "账户查询：DeepSeek Work"),
+        ("/yql grsai-work", "账户查询：DeepSeek Work"),
         ("/yql help", "用法："),
         ("/yql status", "账户：共 2 个"),
     )

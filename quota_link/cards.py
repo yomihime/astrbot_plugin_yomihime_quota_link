@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .formatter import _KIND_LABELS, _single_line, display_semantics
+from .formatter import _KIND_LABELS, _single_line, display_semantics, display_target
 from .models import (
     BalanceItem,
     ProviderType,
@@ -120,11 +120,7 @@ def build_result_card(result: QueryResult) -> CardSpec:
     ):
         if count:
             summary.append(f"{count} 个{label}")
-    target = (
-        f"目标：{_single_line(result.request.target)}\n"
-        if result.request.target
-        else ""
-    )
+    target = f"目标：{display_target(result)}\n" if result.request.target else ""
     return CardSpec(
         title=title,
         subtitle=target + " · ".join(summary),
