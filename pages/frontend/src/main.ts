@@ -57,10 +57,10 @@ const App=defineComponent({setup(){
   controller.dirty()?h(StatusHint,{tone:'warning'},()=> '请先保存或放弃普通设置修改，再操作凭据。'):null,
   ...[...credentialFields(account),...Object.entries(s.snapshot?.credentials[account.id]||{}).filter(([key,status])=>status.configured&&!credentialFields(account).some((item:Dict)=>item.key===key)).map(([key])=>({key,label:'旧版凭据（'+key+'）'}))].map(({key,label}:Dict)=>{const status=s.snapshot?.credentials[account.id]?.[key];const editing=s.secret?.account===account.id&&s.secret?.field===key;return h('section',{class:'quota-credential',key},[
    h('h3',label),h('p',{class:'ui-badge','data-testid':'credential-status'},!status?'状态未读取':!status.configured?'未配置':status.source==='environment'?'已配置 · 环境变量引用':'已配置 · 加密存储'),
-   status?.configured?h(StatusHint,{},()=> '已保存不代表上游凭据有效，余额查询时才会验证。'):null,
+   status?.configured?h(StatusHint,{},()=> '凭据已保存，将在余额查询时验证有效性。'):null,
    editing?h('form',{autocomplete:'off',onSubmit:(e:Event)=>{e.preventDefault();void controller.replace();}},[
     h('div',{class:'ui-segmented','aria-label':'新凭据来源'},[button('输入新凭据',{'aria-pressed':s.secret?.mode==='value',disabled:s.busy,onClick:()=>controller.beginSecret(account.id,key,'value')}),button('引用环境变量',{'aria-pressed':s.secret?.mode==='environment',disabled:s.busy,onClick:()=>controller.beginSecret(account.id,key,'environment')})]),
-    h(FormField,{controlId:'credential-new-value',label:s.secret?.mode==='environment'?'环境变量名':'新凭据',hint:s.secret?.mode==='environment'?'仅填写变量名，例如 QUOTA_API_KEY。不是变量的值。':'空值不会清除已有凭据。提交后立即清空输入。'},{default:({controlAttrs}:FormFieldSlot)=>h('input',{...controlAttrs,class:'ui-control',type:s.secret?.mode==='environment'?'text':'password',value:s.secret?.mode==='environment'?s.secret?.environment:s.secret?.value,autocomplete:'new-password',spellcheck:false,autocapitalize:'none',maxlength:8192,disabled:credentialDisabled(),onInput:(e:Event)=>controller.changeSecret(s.secret?.mode==='environment'?'environment':'value',(e.target as HTMLInputElement).value)})}),
+    h(FormField,{controlId:'credential-new-value',label:s.secret?.mode==='environment'?'环境变量名':'新凭据',hint:s.secret?.mode==='environment'?'仅填写环境变量名，例如 QUOTA_API_KEY；凭据值由运行环境提供。':'空值不会清除已有凭据。提交后立即清空输入。'},{default:({controlAttrs}:FormFieldSlot)=>h('input',{...controlAttrs,class:'ui-control',type:s.secret?.mode==='environment'?'text':'password',value:s.secret?.mode==='environment'?s.secret?.environment:s.secret?.value,autocomplete:'new-password',spellcheck:false,autocapitalize:'none',maxlength:8192,disabled:credentialDisabled(),onInput:(e:Event)=>controller.changeSecret(s.secret?.mode==='environment'?'environment':'value',(e.target as HTMLInputElement).value)})}),
     h(ActionBar,{},()=>[button('保存新凭据',{type:'primary',attrType:'submit','data-action':'credential-save',disabled:credentialDisabled()}),button('取消输入',{disabled:s.busy,onClick:()=>controller.cancelSecret()})]),
    ]):h(ActionBar,{},()=>[button('更换凭据',{'data-action':'credential-replace',disabled:credentialDisabled()||!savedAccount(account.id),onClick:()=>controller.beginSecret(account.id,key)}),button('清除凭据',{'data-action':'credential-clear',disabled:ordinaryDisabled()||controller.dirty()||!status?.configured,onClick:()=>void guard('credential-clear','清除 '+label+'？','将移除账户「'+account.display_name+'」的此项凭据或引用。账户设置保留；之后需重新配置才能查询。','确认清除',()=>controller.clear(account.id,key))})]),
   ]);}),
@@ -75,7 +75,7 @@ const App=defineComponent({setup(){
     field('timeout_seconds',descriptors.timeout_seconds,index),field('cache_ttl_seconds',descriptors.cache_ttl_seconds,index),
    ])}),
    h(SettingsGroup,{title:'供应商设置',number:'02'},{default:()=>[
-    h(StatusHint,{},()=>account.type==='deepseek'?'DeepSeek 官方账户余额，查询地址与解析规则已内置。':account.type==='alibaba_bailian'?'查询阿里云 BSS 账户现金余额，不是百炼模型额度。请使用具有只读 BSS 权限的 RAM AccessKey，不要填写 DashScope API Key。':account.type==='meinianda'?'查询 Meinianda 账户站内额度（site_credit），不是 Key 限额。建议缓存至少 60 秒。':account.type==='grsai'?'Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。':'模型接口兼容不代表余额接口通用。请根据供应商文档设置只读余额接口。'),
+    h(StatusHint,{},()=>account.type==='deepseek'?'DeepSeek 官方账户余额，查询地址与解析规则已内置。':account.type==='alibaba_bailian'?'查询阿里云 BSS 账户现金余额。请使用具有只读 BSS 权限的 RAM AccessKey，不要填写 DashScope API Key。':account.type==='meinianda'?'查询 Meinianda 账户站内额度（site_credit）。建议缓存至少 60 秒。':account.type==='grsai'?'Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。':'余额查询使用供应商专属接口，请按其文档配置只读余额接口。'),
     h(FormGrid,{},()=>[
      ...(descriptors.region?[field('region',descriptors.region,index)]:[]),
      ...(compatible?[field('service_profile',templates.openai_compatible.items.service_profile,index),...(account.service_profile==='grsai'?[field('balance_scope',templates.openai_compatible.items.balance_scope,index)]:[]),
@@ -147,7 +147,7 @@ const App=defineComponent({setup(){
      confirmation.render(),
      s.snapshot&&!s.snapshot.encryption.ready?h('div',{class:'quota-warning',role:'status'},'加密存储不可用。新的明文凭据不能保存，请先检查运行环境；不会改用明文存储。'):null,
      s.snapshot?.migration.pending&&s.route!=='maintenance'?h('div',{class:'quota-warning'},[h('span','有旧版配置等待迁移。普通设置与凭据操作暂时锁定。'),button('前往迁移',{onClick:()=>void navigation('maintenance')})]):null,
-     !s.snapshot?h('section',{class:'shell-empty'},[h('h2',s.ready?'正在读取配置':'需要宿主管理授权'),h('p','请从 AstrBot 插件详情页打开「额度连结」。此页面不会绕过宿主登录。')]):s.route==='global'?globalSettings():s.route==='maintenance'?maintenance():accounts(),
+     !s.snapshot?h('section',{class:'shell-empty'},[h('h2',s.ready?'正在读取配置':'需要宿主管理授权'),h('p','请先登录 AstrBot，再从插件详情页打开「额度查询」。')]):s.route==='global'?globalSettings():s.route==='maintenance'?maintenance():accounts(),
     ]),
     h('footer',{class:'shell-footer'},[h('a',{class:'shell-project-link',href:'https://github.com/yomihime/astrbot_plugin_yomihime_quota_link',target:'_blank',rel:'noopener noreferrer'},[h('span','如月怜的额度连结'),h('span',{class:'shell-project-english'},[' / Yomihime Quota Link ',h('span',{class:'shell-project-spark','aria-hidden':'true'},'✧')])])]),
    ]),

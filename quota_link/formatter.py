@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from unicodedata import category
 
+from .capabilities import _PROVIDER_NAMES
 from .models import (
     BalanceItem,
     BalanceItemKind,
@@ -30,12 +31,12 @@ _KIND_LABELS = {
 _UNAVAILABLE_REASONS = {
     "missing_environment_variable": "凭据环境变量未设置",
     "missing_credentials": "缺少可用凭据",
-    "missing_endpoint": "配置不全：请按服务商文档补齐 Host 与 API Path",
-    "missing_base_url": "配置不全：请填写 HTTPS 服务根地址 Host",
-    "missing_api_path": "配置不全：请填写以 / 开头的 API Path",
-    "invalid_endpoint": "Host 或 API Path 配置无效；Host 填 HTTPS 服务根地址，API Path 以 / 开头",
-    "invalid_base_url": "Host 配置无效；请填写不含路径、参数或凭据的 HTTPS 服务根地址",
-    "invalid_api_path": "API Path 配置无效；请填写以 / 开头且不含参数的相对路径",
+    "missing_endpoint": "配置不全：请按服务商文档补齐服务地址与接口路径",
+    "missing_base_url": "配置不全：请填写 HTTPS 服务根地址",
+    "missing_api_path": "配置不全：请填写以 / 开头的接口路径",
+    "invalid_endpoint": "服务地址或接口路径配置无效；服务地址填 HTTPS 服务根地址，接口路径以 / 开头",
+    "invalid_base_url": "服务地址配置无效；请填写不含路径、参数或凭据的 HTTPS 服务根地址",
+    "invalid_api_path": "接口路径配置无效；请填写以 / 开头且不含参数的相对路径",
     "invalid_response_mapping": "配置不全：请在高级设置中按服务商响应文档填写余额映射",
 }
 
@@ -67,6 +68,21 @@ def display_semantics(
     ):
         return "账户站内额度以 site_credit 计量。"
     return _single_line(item.raw_semantics or "")
+
+
+def display_target(result: QueryResult) -> str:
+    """Label only the selected target; retain canonical IDs in query/tool facts."""
+    target = result.request.target or ""
+    if result.request.kind is QueryRequestKind.PROVIDER:
+        try:
+            return _PROVIDER_NAMES[ProviderType(target)]
+        except ValueError:
+            pass
+    elif result.request.kind is QueryRequestKind.ACCOUNT:
+        for snapshot in result.snapshots:
+            if snapshot.account_id == target:
+                return _single_line(snapshot.display_name) or _single_line(target)
+    return _single_line(target)
 
 
 def _display_time(value: datetime) -> str:
@@ -133,9 +149,9 @@ def format_result(result: QueryResult) -> str:
         return "\n".join(lines)
 
     if request.kind is QueryRequestKind.ACCOUNT:
-        title = f"账户查询：{_single_line(request.target or '')}"
+        title = f"账户查询：{display_target(result)}"
     elif request.kind is QueryRequestKind.PROVIDER:
-        title = f"供应商查询：{_single_line(request.target or '')}"
+        title = f"供应商查询：{display_target(result)}"
     else:
         title = "额度与用量查询"
 
@@ -177,7 +193,7 @@ def format_help(settings: PluginSettings) -> str:
         "  /yql all             查询所有账户\n"
         "  /yql <名称>          查询指定账户或供应商\n"
         "在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。\n"
-        "OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写 Host、API Path 和高级认证/响应映射。配置完整后即可查询。\n"
+        "OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写服务地址、接口路径和高级认证/响应映射。配置完整后即可查询。\n"
         "阿里云百炼模板查询阿里云账户现金余额（BSS）；RAM 身份至少需要 AliyunBSSReadOnlyAccess。"
     ]
     entries = [entry for entry in settings.directory.entries if entry.enabled]

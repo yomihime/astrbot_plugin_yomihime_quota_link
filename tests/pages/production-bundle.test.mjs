@@ -50,4 +50,12 @@ await test('Invalid global whitelist and over-budget numeric values do not submi
 await test('Pagehide removes all mounted controls and prevents late response revival',async h=>{await h.click('a[href="#/accounts/deepseek-main"]');await h.click('[data-action="credential-replace"]');await h.fill('#credential-new-value','FAKE_QA_CLOSE');h.mode('defer');await h.click('[data-action="credential-save"]');h.w.dispatchEvent(new h.w.Event('pagehide'));await flush();await h.release();assert.equal(h.q('#app').textContent,'');assert.equal(h.q('#credential-new-value'),null);assert.equal(h.calls.filter(c=>c.op==='admin/credential-replace').length,1)});
 for(const provider of ['deepseek','alibaba_bailian','grsai','meinianda','openai_compatible'])await test('Production provider form creates '+provider,async h=>{const select=h.q('#new-provider');select.value=provider;select.dispatchEvent(new h.w.Event('change',{bubbles:true}));await flush();await h.textClick('button','添加账户');assert.ok(h.q('#field-1-id'));await h.fill('#field-1-display_name','QA '+provider);await h.click('[data-action="save"]');assert.equal(h.snap().config.providers[1].type,provider);assert.equal(h.q('#field-1-id').disabled,true)});
 
+await test('Localized credential and protocol copy preserves submitted machine values',async h=>{
+ await h.click('a[href="#/accounts/deepseek-main"]');assert.match(h.body(),/凭据已保存，将在余额查询时验证有效性/);
+ await h.click('[data-action="credential-replace"]');await h.textClick('button','引用环境变量');assert.match(h.body(),/仅填写环境变量名，例如 QUOTA_API_KEY；凭据值由运行环境提供/);await h.textClick('button','取消输入');
+ await h.textClick('button','返回账户');const select=h.q('#new-provider');select.value='openai_compatible';select.dispatchEvent(new h.w.Event('change',{bubbles:true}));await flush();await h.textClick('button','添加账户');
+ await h.click('#field-1-advanced_options');const auth=h.q('#field-1-endpoint-auth_mode');assert.deepEqual([...auth.options].filter(o=>o.value).map(o=>[o.value,o.textContent]),[['bearer','Bearer 令牌'],['header','请求头'],['query','查询参数']]);
+ auth.value='header';auth.dispatchEvent(new h.w.Event('change',{bubbles:true}));await flush();await h.click('[data-action="save"]');assert.equal(h.snap().config.providers[1].endpoint.auth_mode,'header');assert.match(h.body(),/服务地址/);assert.match(h.body(),/接口路径/);
+});
+
 assert.deepEqual(logs, [], "Production bundle console must contain zero runtime warnings/errors across all cases");

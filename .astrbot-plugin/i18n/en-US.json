@@ -1,0 +1,12 @@
+{
+  "views": {
+    "00-quota-link": {
+      "title": "Quota Query"
+    }
+  },
+  "pages": {
+    "00-quota-link": {
+      "title": "Quota Query"
+    }
+  }
+}

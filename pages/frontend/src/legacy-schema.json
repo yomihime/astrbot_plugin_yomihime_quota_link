@@ -149,7 +149,7 @@
             "items": {
               "access_key_id": {
                 "description": "RAM AccessKey ID",
-                "hint": "查询阿里云账户现金余额（BSS），不是百炼模型额度。RAM 身份至少需 AliyunBSSReadOnlyAccess；不能用 DashScope 模型 API Key。",
+                "hint": "查询阿里云账户现金余额（BSS）。RAM 身份至少需 AliyunBSSReadOnlyAccess；不能用 DashScope 模型 API Key。",
                 "type": "string",
                 "default": "",
                 "secret": true
@@ -231,7 +231,7 @@
             "items": {
               "token": {
                 "description": "请求令牌 token",
-                "hint": "从 Grsai 用户信息栏取得；不是模型 API Key 或 Bearer 令牌。插件固定 POST /client/openapi/getCredits，读取 data.credits。",
+                "hint": "从 Grsai 用户信息栏取得请求令牌 token；请勿填写模型 API Key 或 Bearer 令牌。插件固定 POST /client/openapi/getCredits，读取 data.credits。",
                 "type": "string",
                 "default": "",
                 "secret": true
@@ -297,7 +297,7 @@
             "items": {
               "api_key": {
                 "description": "Meinianda API Key",
-                "hint": "查询 meinianda.top 的账户站内额度（site_credit），不是 Key 限额。地址与解析已内置，无需填写。",
+                "hint": "查询 meinianda.top 的账户站内额度（site_credit）。地址与解析已内置，无需填写。",
                 "type": "string",
                 "default": "",
                 "secret": true
@@ -350,7 +350,7 @@
           },
           "service_profile": {
             "description": "服务类型",
-            "hint": "模型接口兼容不代表余额接口通用。新 Grsai 账户请直接添加 Grsai 模板；本模板旧条目可切换账户积分预设。",
+            "hint": "余额查询使用服务商专属接口。新 Grsai 账户请直接添加 Grsai 模板；本模板旧条目可切换账户积分预设。",
             "type": "string",
             "default": "generic",
             "options": ["generic", "grsai"],
@@ -372,7 +372,7 @@
             "items": {
               "token": {
                 "description": "Grsai 请求令牌 token",
-                "hint": "从 Grsai 用户信息栏取得；不是模型 API Key 或 Bearer 令牌。",
+                "hint": "从 Grsai 用户信息栏取得请求令牌 token；请勿填写模型 API Key 或 Bearer 令牌。",
                 "type": "string",
                 "default": "",
                 "secret": true,
@@ -389,17 +389,17 @@
           },
           "endpoint": {
             "description": "余额接口",
-            "hint": "请依据服务商余额文档填写；模型接口兼容不代表余额接口通用。",
+            "hint": "余额查询使用服务商专属接口，请依据其余额文档填写。",
             "type": "object",
             "items": {
               "base_url": {
-                "description": "Host",
+                "description": "服务地址",
                 "hint": "HTTPS 服务根地址，不含 API 路径。https://api.example.invalid 仅为不可访问的格式示例。",
                 "type": "string",
                 "default": ""
               },
               "path": {
-                "description": "API Path",
+                "description": "接口路径",
                 "hint": "通用服务按文档填写。Grsai 账户积分留空或填 /client/openapi/getCredits；旧条目切换时清除原路径。/account/balance 仅为占位示例。",
                 "type": "string",
                 "default": ""
@@ -425,11 +425,12 @@
                   "header",
                   "query"
                 ],
+                "labels": ["Bearer 令牌", "请求头", "查询参数"],
                 "condition": {"advanced_options": true}
               },
               "auth_name": {
                 "description": "认证参数名",
-                "hint": "仅 auth_mode 为 header 或 query 时使用。",
+                "hint": "仅认证方式为「请求头」或「查询参数」时使用。",
                 "type": "string",
                 "default": "",
                 "condition": {"advanced_options": true}
@@ -639,8 +640,8 @@
                 "default": ""
               },
               "base_url": {
-                "description": "Host",
-                "hint": "HTTPS 服务根地址，可与 API Path 配合。",
+                "description": "服务地址",
+                "hint": "HTTPS 服务根地址，可与接口路径配合。",
                 "type": "string",
                 "default": ""
               },
@@ -667,11 +668,12 @@
                   "bearer",
                   "header",
                   "query"
-                ]
+                ],
+                "labels": ["Bearer 令牌", "请求头", "查询参数"]
               },
               "auth_name": {
                 "description": "认证参数名",
-                "hint": "仅 auth_mode 为 header 或 query 时使用。",
+                "hint": "仅认证方式为「请求头」或「查询参数」时使用。",
                 "type": "string",
                 "default": ""
               },

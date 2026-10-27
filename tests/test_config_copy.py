@@ -53,7 +53,7 @@ def test_visible_field_labels_are_short_and_detail_moves_to_hint():
     assert "AliyunBSSReadOnlyAccess" in bailian_key["hint"]
     assert "DashScope" in bailian_key["hint"]
     compatible = templates["openai_compatible"]["items"]
-    assert "模型接口兼容不代表余额接口通用" in compatible["service_profile"]["hint"]
+    assert "余额查询使用服务商专属接口" in compatible["service_profile"]["hint"]
     assert (
         "https://api.example.invalid"
         in compatible["endpoint"]["items"]["base_url"]["hint"]
@@ -78,7 +78,7 @@ def test_meinianda_form_uses_secret_api_key_and_account_balance_hint():
     assert api_key["secret"] is True
     assert api_key["default"] == ""
     assert "site_credit" in api_key["hint"]
-    assert "不是 Key 限额" in api_key["hint"]
+    assert "账户站内额度" in api_key["hint"]
     assert items["cache_ttl_seconds"]["default"] == 60
     assert "endpoint" not in items
     assert "response_mapping" not in items
@@ -129,3 +129,27 @@ def test_access_form_defaults_to_admin_and_documents_private_identity_format():
     assert schema["command_admin_only"]["default"] is True
     assert schema["private_allowed_user_ids"]["default"] == []
     assert "平台名:用户ID" in schema["private_allowed_user_ids"]["hint"]
+
+
+def test_localized_auth_labels_preserve_protocol_values_in_both_schemas():
+    frontend = json.loads(
+        Path("pages/frontend/src/legacy-schema.json").read_text(encoding="utf-8")
+    )
+    for schema in (_schema(), frontend):
+        for name in ("openai_compatible", "provider_account"):
+            endpoint = schema["providers"]["templates"][name]["items"]["endpoint"][
+                "items"
+            ]
+            assert endpoint["auth_mode"]["options"] == ["bearer", "header", "query"]
+            assert endpoint["auth_mode"]["labels"] == [
+                "Bearer 令牌",
+                "请求头",
+                "查询参数",
+            ]
+            assert endpoint["base_url"]["description"] == "服务地址"
+            assert endpoint["path"]["description"] == (
+                "接口路径"
+                if name == "openai_compatible"
+                else "经文档确认的只读余额路径"
+            )
+            assert "auth_mode" not in endpoint["auth_name"]["hint"]
