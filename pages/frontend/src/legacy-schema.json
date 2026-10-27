@@ -127,9 +127,10 @@
                 "default": ""
               },
               "unit": {
-                "description": "预警单位（须与查询结果一致）",
+                "description": "旧版单位参考（自动识别后验证）",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "invisible": true
               },
               "threshold": {
                 "description": "触发阈值",
@@ -239,9 +240,10 @@
                 "default": ""
               },
               "unit": {
-                "description": "预警单位（须与查询结果一致）",
+                "description": "旧版单位参考（自动识别后验证）",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "invisible": true
               },
               "threshold": {
                 "description": "触发阈值",
@@ -364,9 +366,10 @@
                 "default": ""
               },
               "unit": {
-                "description": "预警单位（须与查询结果一致）",
+                "description": "旧版单位参考（自动识别后验证）",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "invisible": true
               },
               "threshold": {
                 "description": "触发阈值",
@@ -464,9 +467,10 @@
                 "default": ""
               },
               "unit": {
-                "description": "预警单位（须与查询结果一致）",
+                "description": "旧版单位参考（自动识别后验证）",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "invisible": true
               },
               "threshold": {
                 "description": "触发阈值",
@@ -782,9 +786,10 @@
                 "default": ""
               },
               "unit": {
-                "description": "预警单位（须与查询结果一致）",
+                "description": "旧版单位参考（自动识别后验证）",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "invisible": true
               },
               "threshold": {
                 "description": "触发阈值",
@@ -1062,9 +1067,10 @@
                 "default": ""
               },
               "unit": {
-                "description": "预警单位（须与查询结果一致）",
+                "description": "旧版单位参考（自动识别后验证）",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "invisible": true
               },
               "threshold": {
                 "description": "触发阈值",
@@ -1105,24 +1111,26 @@
     "invisible": true
   },
   "balance_alert_llm": {
-    "description": "额度预警提示模型",
+    "description": "智能提示",
     "type": "object",
     "invisible": true,
     "items": {
       "enabled": {
-        "description": "使用模型润色简短提示",
+        "description": "智能提示",
         "type": "bool",
         "default": true
       },
       "provider_id": {
-        "description": "模型提供商 ID（空为目标会话选择）",
+        "description": "旧版配置（不再使用）",
         "type": "string",
-        "default": ""
+        "default": "",
+        "invisible": true
       },
       "persona_id": {
-        "description": "人格 ID（空为不附加人格）",
+        "description": "旧版配置（不再使用）",
         "type": "string",
-        "default": ""
+        "default": "",
+        "invisible": true
       }
     }
   }

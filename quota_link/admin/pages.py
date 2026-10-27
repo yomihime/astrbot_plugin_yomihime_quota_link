@@ -22,6 +22,8 @@ from .web_admin import (
 PLUGIN_NAME = "astrbot_plugin_yomihime_quota_link"
 OPERATIONS = (
     "alert-status",
+    "alert-units",
+    "alert-bind-unit",
     "read",
     "update",
     "credential-status",
@@ -31,7 +33,13 @@ OPERATIONS = (
     "legacy-config-execute",
 )
 _MUTATIONS = frozenset(
-    {"update", "credential-replace", "credential-clear", "legacy-config-execute"}
+    {
+        "update",
+        "credential-replace",
+        "credential-clear",
+        "legacy-config-execute",
+        "alert-bind-unit",
+    }
 )
 _ERRORS = {
     "admin_authorization_denied": 403,
@@ -54,8 +62,16 @@ _SECRET_FIELDS = frozenset(
 
 
 def _validate_body(operation, body):
-    if operation in {"read", "credential-status", "legacy-config-plan", "alert-status"}:
+    if operation in {
+        "read",
+        "credential-status",
+        "legacy-config-plan",
+        "alert-status",
+        "alert-units",
+    }:
         expected = set()
+    elif operation == "alert-bind-unit":
+        expected = {"revision", "account_id", "choice_id"}
     elif operation == "update":
         expected = {"revision", "config"}
     elif operation == "credential-clear":
@@ -76,6 +92,14 @@ def _validate_body(operation, body):
         type(body["revision"]) is not int or not 0 <= body["revision"] <= 2**53 - 1
     ):
         raise ValueError("invalid management revision")
+    if operation == "alert-bind-unit" and (
+        type(body["account_id"]) is not str
+        or not 1 <= len(body["account_id"]) <= 128
+        or type(body["choice_id"]) is not str
+        or len(body["choice_id"]) != 64
+        or any(c not in "0123456789abcdef" for c in body["choice_id"])
+    ):
+        raise ValueError("invalid unit confirmation")
     if operation == "update" and type(body["config"]) is not dict:
         raise ValueError("invalid configuration")
     if operation.startswith("credential-") and operation != "credential-status":

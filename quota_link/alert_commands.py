@@ -14,24 +14,20 @@ from dataclasses import dataclass
 
 from .config_store import ConfigValidation
 
-HELP = """额度预警管理（不会因保存命令而测试发送）
+HELP = """额度预警管理
 /yql alert status
-/yql alert on|off \"账户名\"
-/yql alert interval \"账户名\" 15
-/yql alert threshold \"账户名\" 10 CNY [指标ID]
-/yql alert recovery \"账户名\" 12（auto 使用默认迟滞）
-/yql alert repeat \"账户名\" 0（0 不持续重复）
-/yql alert retry \"账户名\"（解除查询认证暂停，不重发结果未知消息）
-/yql alert targets list
-/yql alert targets addhere @123 @456
-/yql alert targets add 平台:GroupMessage:群号 @123 @456
-/yql alert targets remove 目标ID
+/yql alert on|off "账户名"
+/yql alert interval "账户名" 15
+/yql alert threshold "账户名" 10 [指标ID]
+/yql alert units "账户名"
+/yql alert bind "账户名" 候选ID
+/yql alert recovery "账户名" 12|auto
+/yql alert repeat "账户名" 0
+/yql alert retry "账户名"
+/yql alert targets list|addhere @123|add UMO @123|remove 目标ID
 /yql alert admins list|add QQ号|remove QQ号
-/yql alert llm on|off|provider 模型ID|persona 人格ID
-模型 auto 使用目标会话模型；人格 none 不附加人格。
-阈值必须指定单位；指标默认随供应商，兼容服务为 mapped_balance。
-仅可信 QQ 白名单成员或 AstrBot 内置管理员可管理；群内不展示详细配置。
-低于或等于阈值触发，恢复阈值之上才结束本轮；默认不持续重复。
+/yql alert llm on|off
+单位自动获取；确认新单位前请核对阈值。智能提示跟随目标会话。
 """
 
 
@@ -88,6 +84,8 @@ def parse_alert_command(argument: str) -> AlertCommand:
         "recovery",
         "repeat",
         "retry",
+        "units",
+        "bind",
         "targets",
         "admins",
         "llm",
@@ -159,14 +157,55 @@ class AlertCommands:
                     else "预警管理：请私聊机器人使用 /yql alert help 查看详细配置用法。"
                 )
             if (
-                command.operation in {"status", "targets", "admins"}
-                and (command.operation == "status" or command.arguments == ("list",))
+                command.operation in {"status", "targets", "admins", "units"}
+                and (
+                    command.operation in {"status", "units"}
+                    or command.arguments == ("list",)
+                )
                 and not private
             ):
                 return "预警详细状态和目标名单仅在私聊显示，请私聊机器人执行此命令。"
             dto = await self._dispatch("read", {}, authorize)
             authorize()
             config = copy.deepcopy(dto["config"])
+            if command.operation in {"units", "bind"}:
+                args = list(command.arguments)
+                if not args or command.operation == "bind" and len(args) < 2:
+                    raise ConfigValidation("请指定账户与候选 ID。")
+                choice = args.pop() if command.operation == "bind" else None
+                account = _account(config, " ".join(args))
+                if choice is not None:
+                    if not re.fullmatch(r"[0-9a-f]{64}", choice):
+                        raise ConfigValidation("请选择最新单位候选 ID。")
+                    await self._dispatch(
+                        "alert-bind-unit",
+                        {
+                            "revision": dto["revision"],
+                            "account_id": account["id"],
+                            "choice_id": choice,
+                        },
+                        authorize,
+                    )
+                    authorize()
+                    return "单位已确认。"
+                data = await self._dispatch("alert-units", {}, authorize)
+                authorize()
+                row = next(
+                    (
+                        item
+                        for item in data.get("accounts", [])
+                        if item["account_id"] == account["id"]
+                    ),
+                    {},
+                )
+                lines = ["单位：" + (row.get("unit") or "待获取")]
+                lines.extend(
+                    f"{item['id']}  {item['unit']} · {item['metric']}"
+                    for item in row.get("choices", [])
+                )
+                if not row.get("choices"):
+                    lines.append("查询余额后自动识别。")
+                return "\n".join(lines)
             if command.operation == "status":
                 status = self._status()
                 lines = [
@@ -175,14 +214,13 @@ class AlertCommands:
                 ]
                 for row in status.get("accounts", []):
                     lines.append(f"{row['account_id']}：{row['message']}")
-                lines.append("提交到平台不代表最终送达；结果未知不会自动重发。")
                 return "\n".join(lines)
             if command.operation == "targets" and command.arguments == ("list",):
                 targets = config.get("balance_alert_targets", [])
                 return (
                     "\n".join(
                         [
-                            "额度预警目标（保存不测试发送）：",
+                            "预警目标：",
                             *[
                                 f"{target_id(t['umo'])}  {t['umo']}"
                                 + "".join(f" @{qq}" for qq in t["mentions"])
@@ -206,7 +244,7 @@ class AlertCommands:
                 authorize()
                 if self._retry is not None:
                     self._retry(account["id"])
-                return "已解除该账户的查询认证暂停，等待下一次预警检查；未重发任何结果未知的通知。"
+                return "已恢复检查。"
             self._mutate(config, command, event)
             authorize()
             await self._dispatch(
@@ -214,7 +252,7 @@ class AlertCommands:
             )
             authorize()
             return (
-                "预警配置已保存；未执行测试发送。"
+                "预警配置已保存。"
                 if private
                 else "预警配置已保存。详细状态请私聊查看。"
             )
@@ -241,10 +279,8 @@ class AlertCommands:
             if op in {"on", "off"}:
                 name, values = " ".join(args), []
             elif op == "threshold":
-                if len(args) not in {3, 4}:
-                    raise ConfigValidation(
-                        '用法：threshold "账户名" 金额 单位 [指标ID]。'
-                    )
+                if len(args) not in {2, 3}:
+                    raise ConfigValidation('用法：threshold "账户名" 金额 [指标ID]。')
                 name, values = args[0], args[1:]
             else:
                 if len(args) < 2:
@@ -261,9 +297,9 @@ class AlertCommands:
             elif op == "repeat":
                 alert["repeat_minutes"] = _integer(values[0], 0, 4320)
             elif op == "threshold":
-                alert["threshold"], alert["unit"] = values[:2]
-                if len(values) == 3:
-                    alert["metric"] = values[2]
+                alert["threshold"] = values[0]
+                if len(values) == 2:
+                    alert["metric"] = values[1]
             elif op == "recovery":
                 alert["recovery_threshold"] = None if values[0] == "auto" else values[0]
             return
@@ -304,12 +340,5 @@ class AlertCommands:
             )
             if len(args) == 1 and args[0] in {"on", "off"}:
                 llm["enabled"] = args[0] == "on"
-                return
-            if len(args) == 2 and args[0] in {"provider", "persona"}:
-                llm[args[0] + "_id"] = (
-                    ""
-                    if args[1] == ("auto" if args[0] == "provider" else "none")
-                    else args[1]
-                )
                 return
         raise ConfigValidation("预警命令参数无效；请私聊使用 /yql alert help。")

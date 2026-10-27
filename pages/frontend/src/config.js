@@ -10,7 +10,7 @@ export const globalGroups = [
   {title:'查询权限',number:'02',keys:['command_admin_only','private_allowed_user_ids','allow_group_queries','group_allowed_user_ids']},
 ];
 export function clone(value){return JSON.parse(JSON.stringify(value));}
-export function defaults(fields){return Object.fromEntries(Object.entries(fields).filter(([key,field])=>key!=='auth'&&!field.secret).map(([key,field])=>[key,field.items&&field.type==='object'?defaults(field.items):clone(Object.hasOwn(field,'default')?field.default:'')]));}
+export function defaults(fields){return Object.fromEntries(Object.entries(fields).filter(([key,field])=>key!=='auth'&&!field.secret&&!(['provider_id','persona_id'].includes(key)&&field.invisible)).map(([key,field])=>[key,field.items&&field.type==='object'?defaults(field.items):clone(Object.hasOwn(field,'default')?field.default:'')]));}
 export function newAccount(type){const account={...defaults(templates[type].items),__template_key:type,id:'',display_name:templates[type].name};account.balance_alert=normalizeAlert(account.balance_alert,account);return account;}
 export function templateFor(account){return (Object.hasOwn(templates,account?.__template_key)?templates[account.__template_key]:null)||(Object.hasOwn(templates,account?.type)?templates[account.type]:null)||templates.provider_account;}
 export function credentialFields(account){

@@ -83,7 +83,7 @@ def test_broken_host_admin_getter_can_still_allow_independent_qq_branch():
 @pytest.mark.parametrize(
     "text",
     [
-        'threshold "Synthetic Work" -0.01 CNY',
+        'threshold "Synthetic Work" -0.01',
         "off Synthetic Work",
         'interval "Synthetic Work" 15',
     ],
@@ -153,6 +153,8 @@ def execute(harness, text, event=None):
         "on work",
         "targets addhere",
         "retry work",
+        "units work",
+        "bind work " + "a" * 64,
     ],
 )
 def test_entire_tree_authorized_before_read_or_side_effect(harness, text):
@@ -173,13 +175,11 @@ def test_query_permission_not_needed_for_whitelisted_alert_manager(harness):
     )
 
 
-def test_enable_requires_threshold_unit_target_and_does_not_partial_save(harness):
+def test_enable_requires_threshold_target_and_does_not_partial_save(harness):
     before = harness[0].runtime_config()
     assert "已保存" not in execute(harness, "on work")
     assert harness[0].runtime_config() == before
-    assert "已保存" in execute(
-        harness, 'threshold "Synthetic Work" 10 CNY total_balance'
-    )
+    assert "已保存" in execute(harness, 'threshold "Synthetic Work" 10 total_balance')
     assert "已保存" in execute(
         harness, "targets add synthetic:GroupMessage:42 @123 @123 @456"
     )
@@ -193,7 +193,7 @@ def test_enable_requires_threshold_unit_target_and_does_not_partial_save(harness
 
 def test_group_read_privacy_and_short_confirmation(harness):
     event = Event(private=False)
-    for text in ["status", "targets list", "admins list"]:
+    for text in ["status", "targets list", "admins list", "units work"]:
         reply = execute(harness, text, event)
         assert "私聊" in reply and "synthetic" not in reply and "123" not in reply
     assert execute(harness, "off work", event) == "预警配置已保存。详细状态请私聊查看。"
@@ -239,16 +239,14 @@ def test_stable_id_remove_and_other_platform_targets(harness):
 
 def test_retry_is_explicit_local_no_config_write(harness):
     before = harness[0].runtime_config()
-    assert "未重发" in execute(harness, "retry work")
+    assert "恢复检查" in execute(harness, "retry work")
     assert harness[2] == ["synthetic"] and harness[0].runtime_config() == before
 
 
 def test_llm_admin_repeat_recovery_commands(harness):
     for text in [
-        "threshold work 10 CNY",
+        "threshold work 10",
         "llm off",
-        "llm provider synthetic-model",
-        "llm persona synthetic-persona",
         "admins add 456",
         "repeat work 60",
         "recovery work 12",
@@ -257,13 +255,11 @@ def test_llm_admin_repeat_recovery_commands(harness):
     raw = harness[0].runtime_config()
     assert raw["balance_alert_llm"] == {
         "enabled": False,
-        "provider_id": "synthetic-model",
-        "persona_id": "synthetic-persona",
+        "provider_id": "",
+        "persona_id": "",
     }
     assert raw["balance_alert_admin_qq_ids"] == ["123", "456"]
     for text in [
-        "llm provider auto",
-        "llm persona none",
         "admins remove 456",
         "repeat work 0",
         "recovery work auto",
@@ -305,3 +301,58 @@ def test_concurrent_web_update_is_cas_conflict_not_overwrite(harness):
     )
     assert "配置已改变" in asyncio.run(command.execute(Event(), "off work"))
     assert store.runtime_config()["cache_ttl_seconds"] == 123
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "threshold work 10 CNY",
+        "threshold work 10 USD total_balance",
+        "llm provider synthetic",
+        "llm persona synthetic",
+    ],
+)
+def test_manual_unit_and_independent_model_persona_commands_are_removed(harness, text):
+    before = harness[0].runtime_config()
+    assert "已保存" not in execute(harness, text)
+    assert harness[0].runtime_config() == before
+
+
+def test_unit_candidates_and_binding_share_authorized_revision(harness):
+    store, _, _ = harness
+    calls = []
+
+    async def dispatch(operation, body, authorize):
+        authorize()
+        calls.append((operation, body))
+        if operation == "alert-units":
+            return {
+                "accounts": [
+                    {
+                        "account_id": "synthetic",
+                        "unit": None,
+                        "choices": [
+                            {"id": "a" * 64, "unit": "USD", "metric": "total_balance"}
+                        ],
+                    }
+                ]
+            }
+        if operation == "alert-bind-unit":
+            assert body == {
+                "revision": 1,
+                "account_id": "synthetic",
+                "choice_id": "a" * 64,
+            }
+            return {"accounts": []}
+        return await store.dispatch(operation, body, authorize)
+
+    commands = AlertCommands(
+        lambda: load_settings(store.runtime_config()), dispatch, lambda: {}
+    )
+    assert "USD" in asyncio.run(commands.execute(Event(), "units work"))
+    assert (
+        asyncio.run(commands.execute(Event(), "bind work " + "a" * 64))
+        == "单位已确认。"
+    )
+    assert not any(op == "update" for op, _ in calls)
+    assert "候选" in asyncio.run(commands.execute(Event(), "bind work USD"))

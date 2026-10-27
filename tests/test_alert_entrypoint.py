@@ -248,3 +248,110 @@ def test_overlapping_initialization_obeys_latest_lifecycle_generation(
             await plugin.terminate()
 
     asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("revision", [0, True, "1", None])
+def test_bind_unit_requires_exact_config_revision(entrypoint, tmp_path, revision):
+    ConfigConflict = importlib.import_module(
+        entrypoint.__module__.rsplit(".", 1)[0] + ".quota_link.config_store"
+    ).ConfigConflict
+
+    plugin = host_plugin(entrypoint, tmp_path)
+    calls = []
+
+    class Store:
+        async def dispatch(self, operation, body, authorize):
+            authorize()
+            return {"revision": 1}
+
+    plugin._config_store = Store()
+    plugin._alert_engine = SimpleNamespace(
+        confirm_unit=lambda *args: calls.append(args),
+        unit_status=lambda: {"accounts": []},
+    )
+
+    async def scenario():
+        with pytest.raises(ConfigConflict):
+            await plugin._admin_dispatch(
+                "alert-bind-unit",
+                {
+                    "revision": revision,
+                    "account_id": "synthetic",
+                    "choice_id": "a" * 64,
+                },
+                lambda: None,
+            )
+        assert not calls
+        plugin._alert_engine = None
+        await plugin.terminate()
+
+    asyncio.run(scenario())
+
+
+def test_bind_unit_rechecks_authority_after_revision_read(entrypoint, tmp_path):
+    plugin = host_plugin(entrypoint, tmp_path)
+    revoked = False
+    calls = []
+
+    class Store:
+        async def dispatch(self, operation, body, authorize):
+            nonlocal revoked
+            authorize()
+            revoked = True
+            return {"revision": 1}
+
+    def authorize():
+        if revoked:
+            raise PermissionError
+
+    plugin._config_store = Store()
+    plugin._alert_engine = SimpleNamespace(
+        confirm_unit=lambda *args: calls.append(args)
+    )
+
+    async def scenario():
+        with pytest.raises(PermissionError):
+            await plugin._admin_dispatch(
+                "alert-bind-unit",
+                {"revision": 1, "account_id": "synthetic", "choice_id": "a" * 64},
+                authorize,
+            )
+        assert not calls
+        plugin._alert_engine = None
+        await plugin.terminate()
+
+    asyncio.run(scenario())
+
+
+def test_units_read_and_bind_do_not_query_or_restart_engine(entrypoint, tmp_path):
+    plugin = host_plugin(entrypoint, tmp_path)
+    calls = []
+
+    class Store:
+        async def dispatch(self, operation, body, authorize):
+            authorize()
+            assert operation == "read"
+            return {"revision": 7}
+
+    plugin._config_store = Store()
+    engine = SimpleNamespace(
+        confirm_unit=lambda *args: calls.append(args),
+        unit_status=lambda: {"accounts": [{"account_id": "synthetic", "unit": "USD"}]},
+    )
+    plugin._alert_engine = engine
+
+    async def scenario():
+        result = await plugin._admin_dispatch("alert-units", {}, lambda: None)
+        assert result["accounts"][0]["unit"] == "USD" and not calls
+        result = await plugin._admin_dispatch(
+            "alert-bind-unit",
+            {"revision": 7, "account_id": "synthetic", "choice_id": "a" * 64},
+            lambda: None,
+        )
+        assert result["accounts"][0]["unit"] == "USD"
+        assert calls == [("synthetic", "a" * 64)]
+        assert plugin._alert_engine is engine
+        plugin._alert_engine = None
+        await plugin.terminate()
+
+    asyncio.run(scenario())

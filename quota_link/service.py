@@ -63,6 +63,7 @@ class QueryService:
         self._auth_paused: dict[str, NormalizedProviderError] = {}
         self._closed = False
         self._auth_pause_observer: Callable[[str], None] | None = None
+        self._snapshot_observer: Callable[[BalanceSnapshot], None] | None = None
 
     async def query(
         self, request: QueryRequest, *, max_age_seconds: float | None = None
@@ -70,7 +71,10 @@ class QueryService:
         if max_age_seconds is not None and (
             isinstance(max_age_seconds, bool)
             or not isinstance(max_age_seconds, (int, float))
-            or not math.isfinite(max_age_seconds)
+            or (
+                isinstance(max_age_seconds, float)
+                and not math.isfinite(max_age_seconds)
+            )
             or max_age_seconds < 0
         ):
             raise ValueError("max_age_seconds must be finite and nonnegative")
@@ -124,6 +128,62 @@ class QueryService:
                 )
         return self._result(request, tuple(snapshots))
 
+    def peek_snapshot(
+        self, account_id: str, max_age_seconds: float = 60
+    ) -> BalanceSnapshot | None:
+        """Read verified facts only; never query, refresh cache or touch budgets.
+
+        Inspection has a hard sixty-second cap. Disabled accounts may still
+        expose an existing matching-fingerprint manual result, never credentials.
+        """
+        if self._closed or (
+            isinstance(max_age_seconds, bool)
+            or not isinstance(max_age_seconds, (int, float))
+            or (
+                isinstance(max_age_seconds, float)
+                and not math.isfinite(max_age_seconds)
+            )
+            or max_age_seconds <= 0
+        ):
+            return None
+        account = next((a for a in self._settings.accounts if a.id == account_id), None)
+        if account is None:
+            return None
+        age_limit = min(60.0, max_age_seconds, account.cache_ttl_seconds)
+        snapshot = self._cache.peek(account.id, account.config_fingerprint, age_limit)
+        if (
+            snapshot is None
+            or snapshot.account_id != account.id
+            or snapshot.provider_type is not account.provider_type
+            or not self._fresh_facts(snapshot, age_limit)
+        ):
+            return None
+        return snapshot
+
+    def _fresh_facts(self, snapshot: BalanceSnapshot, max_age: float = 60) -> bool:
+        if (
+            snapshot.error is not None
+            or not snapshot.balances
+            or snapshot.status
+            not in (
+                SnapshotStatus.AVAILABLE,
+                SnapshotStatus.PARTIAL,
+                SnapshotStatus.UNAVAILABLE,
+            )
+        ):
+            return False
+        age = (self._wall_clock() - snapshot.fetched_at).total_seconds()
+        return -5 <= age <= max_age
+
+    def set_snapshot_observer(
+        self, observer: Callable[[BalanceSnapshot], None] | None
+    ) -> None:
+        """Observe new validated facts synchronously, never cache reads."""
+        if observer is not None and not callable(observer):
+            raise TypeError("snapshot observer must be callable or None")
+        if not self._closed:
+            self._snapshot_observer = observer
+
     def set_auth_pause_observer(self, observer: Callable[[str], None] | None) -> None:
         """Attach lifecycle-owned persistence notification without provider IO."""
         if observer is not None and not callable(observer):
@@ -163,6 +223,7 @@ class QueryService:
         """Revoke first; never await an adapter that ignores cancellation."""
         self._closed = True
         self._auth_pause_observer = None
+        self._snapshot_observer = None
         tasks = tuple(self._tasks)
         for task in (
             *tasks,
@@ -338,6 +399,13 @@ class QueryService:
                     account, ProviderErrorCategory.PARSE, "供应商返回的账户结果无效"
                 )
             self._record_outcome(account, snapshot.error)
+            if self._snapshot_observer is not None and self._fresh_facts(snapshot):
+                try:
+                    self._snapshot_observer(snapshot)
+                except Exception:
+                    # The observer owns fail-closed monitoring state. It cannot
+                    # expose errors, alter facts, or break the manual query.
+                    pass
             return snapshot
 
     def _record_outcome(

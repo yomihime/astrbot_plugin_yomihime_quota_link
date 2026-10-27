@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sqlite3
 import stat
 import time
@@ -21,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from .alert_delivery import AlertDelivery, AlertFact
+from .alert_units import observe_units, request_identity, transition, valid_unit
 from .models import (
     ProviderErrorCategory,
     QueryRequest,
@@ -44,6 +46,9 @@ _MESSAGES = {
     "unknown": "发送结果未知；为避免重复不自动重发",
     "failed": "平台未接受发送；冷却后可重试",
     "storage_unavailable": "预警状态存储不可用；已停止检查和发送",
+    "unit_unidentified": "等待有效查询识别额度单位",
+    "units_ambiguous": "存在多个或重复单位，请确认实际候选单位",
+    "unit_changed": "单位或查询身份变化，请确认后继续",
 }
 
 
@@ -60,7 +65,7 @@ def _decimal_identity(value: Decimal | None) -> str | None:
         return str(value.normalize())
 
 
-def _rule_key(account: Any) -> str:
+def _rule_key(account: Any, *, legacy_unit: bool = False) -> str:
     rule = account.balance_alert
     return hashlib.sha256(
         json.dumps(
@@ -74,7 +79,7 @@ def _rule_key(account: Any) -> str:
                 account.region,
                 getattr(account, "prefer_split_endpoint", False),
                 rule.metric,
-                rule.unit,
+                *([rule.unit] if legacy_unit else []),
                 _decimal_identity(rule.threshold),
                 _decimal_identity(rule.effective_recovery_threshold),
             ],
@@ -136,13 +141,19 @@ class AlertEngine:
         self.storage_available = False
         self._statuses: dict[str, str] = {}
         self._times: dict[str, tuple[float | None, float | None]] = {}
+        self._detail_codes: dict[tuple[str, str], str] = {}
+        self._observation_tokens: dict[str, tuple] = {}
         try:
             self._open_state(Path(state_path))
             self._initialize_accounts()
+            self._initialize_units()
             self.storage_available = True
             observer = getattr(self.service, "set_auth_pause_observer", None)
             if callable(observer):
                 observer(self._on_auth_pause)
+            snapshot_observer = getattr(self.service, "set_snapshot_observer", None)
+            if callable(snapshot_observer):
+                snapshot_observer(self._on_snapshot)
         except Exception:
             self._fail_storage()
 
@@ -198,9 +209,35 @@ class AlertEngine:
             CREATE TABLE IF NOT EXISTS auth_pauses (
                 auth_key TEXT PRIMARY KEY
             );
+            CREATE TABLE IF NOT EXISTS unit_bindings (
+                account_id TEXT PRIMARY KEY, identity TEXT NOT NULL,
+                metric TEXT NOT NULL, unit TEXT, confirmed INTEGER NOT NULL DEFAULT 0,
+                state TEXT NOT NULL DEFAULT 'unidentified', observed_at REAL,
+                active INTEGER NOT NULL DEFAULT 1, threshold_set INTEGER NOT NULL DEFAULT 0,
+                revision INTEGER NOT NULL DEFAULT 0, verified_at REAL,
+                semantic_reset INTEGER NOT NULL DEFAULT 0
+            );
             PRAGMA user_version=1;
             """
         )
+        if "revision" not in {
+            row[1] for row in self._db.execute("PRAGMA table_info(unit_bindings)")
+        }:
+            self._db.execute(
+                "ALTER TABLE unit_bindings ADD COLUMN revision INTEGER NOT NULL DEFAULT 0"
+            )
+        unit_columns = {
+            row[1] for row in self._db.execute("PRAGMA table_info(unit_bindings)")
+        }
+        if "verified_at" not in unit_columns:
+            self._db.execute("ALTER TABLE unit_bindings ADD COLUMN verified_at REAL")
+            self._db.execute(
+                "UPDATE unit_bindings SET verified_at=observed_at WHERE state='verified'"
+            )
+        if "semantic_reset" not in unit_columns:
+            self._db.execute(
+                "ALTER TABLE unit_bindings ADD COLUMN semantic_reset INTEGER NOT NULL DEFAULT 0"
+            )
         for row in self._db.execute("SELECT * FROM accounts"):
             if (
                 row["low"] not in (0, 1)
@@ -241,20 +278,28 @@ class AlertEngine:
                     (account.id, _rule_key(account)),
                 )
                 row = self._row(account.id)
-                if row["rule_key"] == _rule_key(account) and row["status"] == "paused":
+                compatible_keys = {
+                    _rule_key(account),
+                    _rule_key(account, legacy_unit=True),
+                }
+                if row["rule_key"] in compatible_keys and row["status"] == "paused":
                     # Upgrade the earlier local state format without discarding
                     # a known authentication failure.
                     self._db.execute(
                         "INSERT OR IGNORE INTO auth_pauses VALUES(?)",
                         (_auth_key(account),),
                     )
-                if row["rule_key"] != _rule_key(account):
+                if row["rule_key"] not in compatible_keys:
                     self._db.execute(
                         "UPDATE accounts SET rule_key=?,low=0,next_check=0,"
                         "sample_at=NULL,status='waiting' WHERE account_id=?",
                         (_rule_key(account), account.id),
                     )
                 else:
+                    self._db.execute(
+                        "UPDATE accounts SET rule_key=? WHERE account_id=?",
+                        (_rule_key(account), account.id),
+                    )
                     # A shortened interval should take effect without resetting
                     # the low episode or its durable send reservations.
                     self._db.execute(
@@ -319,6 +364,270 @@ class AlertEngine:
             "SELECT * FROM accounts WHERE account_id=?", (account_id,)
         ).fetchone()
 
+    def _binding(self, account_id: str) -> sqlite3.Row:
+        return self._db.execute(
+            "SELECT * FROM unit_bindings WHERE account_id=?", (account_id,)
+        ).fetchone()
+
+    def _initialize_units(self) -> None:
+        current = {account.id for account in self.settings.accounts}
+        with self._db:
+            for row in self._db.execute("SELECT * FROM unit_bindings").fetchall():
+                if (
+                    row["state"]
+                    not in {"unidentified", "verified", "ambiguous", "changed"}
+                    or row["confirmed"] not in {0, 1}
+                    or row["active"] not in {0, 1}
+                    or row["threshold_set"] not in {0, 1}
+                    or row["semantic_reset"] not in {0, 1}
+                    or type(row["revision"]) is not int
+                    or row["revision"] < 0
+                    or (row["unit"] is not None and not valid_unit(row["unit"]))
+                    or (row["state"] == "verified" and row["unit"] is None)
+                ):
+                    raise ValueError("invalid unit binding")
+                for time_key in ("observed_at", "verified_at"):
+                    value = row[time_key]
+                    if value is not None and (
+                        not isinstance(value, (int, float))
+                        or not math.isfinite(value)
+                        or not -62135596800 <= value <= 253402300799
+                    ):
+                        raise ValueError("invalid unit observation time")
+                if row["account_id"] not in current:
+                    self._db.execute(
+                        "UPDATE unit_bindings SET active=0,revision=revision+1 WHERE account_id=? AND active=1",
+                        (row["account_id"],),
+                    )
+            for account in self.settings.accounts:
+                identity = request_identity(account)
+                row = self._binding(account.id)
+                threshold_set = int(account.balance_alert.threshold is not None)
+                if row is None:
+                    legacy = account.balance_alert.unit
+                    self._db.execute(
+                        "INSERT INTO unit_bindings(account_id,identity,metric,unit,threshold_set) VALUES(?,?,?,?,?)",
+                        (
+                            account.id,
+                            identity,
+                            account.balance_alert.metric,
+                            legacy if valid_unit(legacy) else None,
+                            threshold_set,
+                        ),
+                    )
+                elif row["identity"] != identity or not row["active"]:
+                    # New credentials/metric or a deleted-and-readded ID must
+                    # not silently reinterpret an existing numeric threshold.
+                    needs_confirmation = (
+                        not row["active"]
+                        or row["unit"] is not None
+                        or row["threshold_set"]
+                    )
+                    self._db.execute(
+                        "UPDATE unit_bindings SET identity=?,metric=?,confirmed=0,state=?,observed_at=NULL,active=1,threshold_set=?,revision=revision+1,semantic_reset=? WHERE account_id=?",
+                        (
+                            identity,
+                            account.balance_alert.metric,
+                            "changed" if needs_confirmation else "unidentified",
+                            threshold_set,
+                            int(needs_confirmation),
+                            account.id,
+                        ),
+                    )
+                else:
+                    self._db.execute(
+                        "UPDATE unit_bindings SET threshold_set=? WHERE account_id=?",
+                        (threshold_set, account.id),
+                    )
+
+    def _observe_units(self, account: Any, snapshot: Any):
+        observation = observe_units(account, snapshot, self.clock())
+        row = self._binding(account.id)
+        if observation is None or not observation.units:
+            return None, (
+                "unit_unidentified" if row["state"] == "unidentified" else "stale"
+            )
+        if (
+            row["observed_at"] is not None
+            and observation.observed_at < row["observed_at"]
+        ):
+            return None, "stale"
+        self._observation_tokens[account.id] = (
+            observation.observed_at,
+            tuple(choice.id for choice in observation.choices),
+        )
+        state, choice = transition(row, observation)
+        unit = choice.unit if choice is not None else row["unit"]
+        changed = int(state != row["state"] or unit != row["unit"])
+        with self._db:
+            self._db.execute(
+                "UPDATE unit_bindings SET unit=?,state=?,observed_at=?,revision=revision+?,verified_at=? WHERE account_id=?",
+                (
+                    unit,
+                    state,
+                    observation.observed_at,
+                    changed,
+                    observation.observed_at
+                    if choice is not None
+                    else row["verified_at"],
+                    account.id,
+                ),
+            )
+        failure = {
+            "changed": "unit_changed",
+            "ambiguous": "units_ambiguous",
+            "stale": "stale",
+        }.get(state, "")
+        return choice, failure
+
+    def _on_snapshot(self, snapshot: Any) -> None:
+        if not self._active():
+            return
+        account = next(
+            (item for item in self.settings.accounts if item.id == snapshot.account_id),
+            None,
+        )
+        if account is None:
+            return
+        try:
+            self._observe_units(account, snapshot)
+        except Exception:
+            self._fail_storage()
+
+    def _peek_units(self, account: Any):
+        peek = getattr(self.service, "peek_snapshot", None)
+        snapshot = peek(account.id, max_age_seconds=60) if callable(peek) else None
+        observation = observe_units(account, snapshot, self.clock())
+        row = self._binding(account.id)
+        if (
+            observation is not None
+            and row["observed_at"] is not None
+            and observation.observed_at < row["observed_at"]
+        ):
+            return None
+        return observation
+
+    @staticmethod
+    def _choice_id(binding, choice) -> str:
+        return hashlib.sha256(
+            json.dumps(
+                [
+                    choice.id,
+                    binding["identity"],
+                    binding["revision"],
+                    binding["unit"],
+                    binding["confirmed"],
+                    binding["state"],
+                    binding["active"],
+                ],
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+
+    def unit_status(self) -> dict[str, Any]:
+        """Read existing fresh facts only; this method never binds or queries."""
+        accounts = []
+        for account in self.settings.accounts:
+            dto = {
+                "account_id": account.id,
+                "unit_state": "unidentified",
+                "unit": None,
+                "observed_at": None,
+                "choices": [],
+            }
+            if not self._active():
+                accounts.append(dto)
+                continue
+            row = self._binding(account.id)
+            observation = self._peek_units(account)
+            state = row["state"]
+            observed_at = row["verified_at"]
+            if observation is not None and observation.units:
+                projected, _ = transition(row, observation)
+                state = (
+                    "unidentified"
+                    if state == "unidentified" and projected == "verified"
+                    else projected
+                )
+                if projected == "verified" and row["verified_at"] is not None:
+                    observed_at = observation.observed_at
+                dto["choices"] = [
+                    {**choice.dto(), "id": self._choice_id(row, choice)}
+                    for choice in observation.choices[:20]
+                ]
+            elif state == "verified":
+                state = "stale"
+            dto.update(
+                unit_state=state,
+                unit=row["unit"] if row["verified_at"] is not None else None,
+                observed_at=datetime.fromtimestamp(observed_at, UTC).isoformat()
+                if observed_at is not None
+                else None,
+            )
+            accounts.append(dto)
+        return {"accounts": accounts}
+
+    def confirm_unit(self, account_id: str, choice_id: str) -> dict[str, Any]:
+        if (
+            not self._active()
+            or not isinstance(choice_id, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", choice_id)
+        ):
+            raise ValueError("单位候选无效或预警运行时已更新，请刷新后重试。")
+        account = next(
+            (item for item in self.settings.accounts if item.id == account_id), None
+        )
+        if account is None:
+            raise ValueError("未找到该预警账户。")
+        observation = self._peek_units(account)
+        row = self._binding(account.id)
+        choice = (
+            next(
+                (
+                    item
+                    for item in observation.choices[:20]
+                    if self._choice_id(row, item) == choice_id
+                ),
+                None,
+            )
+            if observation is not None
+            else None
+        )
+        if choice is None:
+            raise ValueError("候选已过期或不再匹配；请先查询余额，再刷新单位候选。")
+        reset = row["unit"] != choice.unit or bool(row["semantic_reset"])
+        paused = self._db.execute(
+            "SELECT 1 FROM auth_pauses WHERE auth_key=?", (_auth_key(account),)
+        ).fetchone()
+        with self._db:
+            self._db.execute(
+                "UPDATE unit_bindings SET unit=?,confirmed=1,state='verified',observed_at=?,verified_at=?,revision=revision+1,semantic_reset=0 WHERE account_id=?",
+                (
+                    choice.unit,
+                    observation.observed_at,
+                    observation.observed_at,
+                    account.id,
+                ),
+            )
+            if reset:
+                self._db.execute(
+                    "UPDATE accounts SET low=0,sample_at=NULL WHERE account_id=?",
+                    (account.id,),
+                )
+            self._db.execute(
+                "UPDATE accounts SET next_check=0,status=? WHERE account_id=?",
+                ("paused" if paused else "waiting", account.id),
+            )
+        self._statuses[account.id] = self._configuration_status(account) or (
+            "paused" if paused else "waiting"
+        )
+        self._wakeup.set()  # Do not clear authentication pauses or send anything.
+        return next(
+            item
+            for item in self.unit_status()["accounts"]
+            if item["account_id"] == account.id
+        )
+
     def _configuration_status(self, account: Any) -> str | None:
         rule = account.balance_alert
         if not account.enabled or not rule.enabled:
@@ -327,7 +636,6 @@ class AlertEngine:
             not account.queryable
             or rule.threshold is None
             or not rule.metric
-            or not rule.unit
             or not self.settings.balance_alert_targets
         ):
             return "blocked"
@@ -359,6 +667,9 @@ class AlertEngine:
         observer = getattr(self.service, "set_auth_pause_observer", None)
         if callable(observer):
             observer(None)
+        snapshot_observer = getattr(self.service, "set_snapshot_observer", None)
+        if callable(snapshot_observer):
+            snapshot_observer(None)
         self._wakeup.set()
         current = asyncio.current_task()
         tasks = {
@@ -429,6 +740,16 @@ class AlertEngine:
                 waiter.cancel()
                 await asyncio.gather(sleeper, waiter, return_exceptions=True)
 
+    def _detail_code(self, account_id: str, status: str) -> str:
+        codes = {
+            code for (key, _), code in self._detail_codes.items() if key == account_id
+        }
+        if status == "blocked" and "session_disabled" in codes:
+            return "session_disabled"
+        if status == "submitted" and "fixed_hint" in codes:
+            return "fixed_hint"
+        return ""
+
     def status(self) -> dict[str, Any]:
         accounts = []
         for account in self.settings.accounts:
@@ -439,6 +760,7 @@ class AlertEngine:
                     "account_id": account.id,
                     "status": status,
                     "message": _MESSAGES.get(status, _MESSAGES["waiting"]),
+                    "detail_code": self._detail_code(account.id, status),
                     "last_checked_at": datetime.fromtimestamp(checked, UTC).isoformat()
                     if checked is not None
                     else None,
@@ -486,32 +808,16 @@ class AlertEngine:
         age = now - snapshot.fetched_at.timestamp()
         if not -5 <= age <= min(account.balance_alert.check_interval_minutes * 60, 60):
             return None, "stale"
-        rule = account.balance_alert
-        matches = [
-            item
-            for item in snapshot.balances
-            if item.metric == rule.metric and item.unit == rule.unit
-        ]
-        if len(matches) != 1:
-            return None, "stale"
-        item = matches[0]
-        amount = (
-            item.remaining
-            if rule.metric == "mapped_balance" and item.remaining is not None
-            else item.amount
-        )
-        if not isinstance(amount, Decimal) or not amount.is_finite():
-            return None, "stale"
-        amount = Decimal(0) if amount.is_zero() else amount
-        if len(amount.as_tuple().digits) + abs(amount.as_tuple().exponent) > 128:
-            return None, "stale"
+        choice, failure = self._observe_units(account, snapshot)
+        if failure or choice is None:
+            return None, failure or "unit_unidentified"
         return AlertFact(
             account.id,
             account.display_name,
-            rule.metric,
-            amount,
-            rule.threshold,
-            rule.unit,
+            account.balance_alert.metric,
+            choice.amount,
+            account.balance_alert.threshold,
+            choice.unit,
             snapshot.fetched_at.timestamp(),
         ), ""
 
@@ -572,6 +878,8 @@ class AlertEngine:
                 if not self._active():
                     return
                 candidates: list[tuple[Any, AlertFact, int]] = []
+                binding_revisions = {}
+                observation_tokens = {}
                 due = []
                 for account in self.settings.accounts:
                     state = self._configuration_status(account)
@@ -643,6 +951,7 @@ class AlertEngine:
                                 (failure, account.id),
                             )
                         continue
+                    row = self._row(account.id)
                     sample_at = result.snapshots[0].fetched_at.timestamp()
                     if row["sample_at"] is not None and sample_at < row["sample_at"]:
                         self._statuses[account.id] = "stale"
@@ -669,6 +978,12 @@ class AlertEngine:
                     self._statuses[account.id] = state
                     if low and fact.amount <= rule.threshold:
                         candidates.append((account, fact, episode))
+                        binding_revisions[account.id] = self._binding(account.id)[
+                            "revision"
+                        ]
+                        observation_tokens[account.id] = self._observation_tokens.get(
+                            account.id
+                        )
                 targets = sorted(
                     self.settings.balance_alert_targets,
                     key=lambda target: min(
@@ -703,7 +1018,18 @@ class AlertEngine:
                             and target in self.settings.balance_alert_targets
                             and all(
                                 -5 <= self.clock() - fact.fetched_at <= 60
-                                for _, fact, _ in chosen
+                                and self._observation_tokens.get(account.id)
+                                == observation_tokens[account.id]
+                                and self._binding(account.id)["state"] == "verified"
+                                and self._binding(account.id)["revision"]
+                                == binding_revisions[account.id]
+                                and self._binding(account.id)["identity"]
+                                == request_identity(account)
+                                and self._binding(account.id)["metric"] == fact.metric
+                                and self._binding(account.id)["unit"] == fact.unit
+                                and self._row(account.id)["low"]
+                                and self._row(account.id)["episode"] == episode
+                                for account, fact, episode in chosen
                             )
                         )
 
@@ -742,6 +1068,12 @@ class AlertEngine:
                         return
                     with self._db:
                         for account, _, episode in chosen:
+                            code = getattr(outcome, "reason_code", "")
+                            self._detail_codes[(account.id, _target_key(target))] = (
+                                code
+                                if code in {"session_disabled", "fixed_hint"}
+                                else ""
+                            )
                             if outcome.status in {"submitted", "failed", "unknown"}:
                                 self._db.execute(
                                     "UPDATE deliveries SET status=? WHERE account_id=? AND episode=? AND target_key=?",

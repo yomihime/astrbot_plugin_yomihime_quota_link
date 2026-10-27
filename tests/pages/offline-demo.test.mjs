@@ -13,7 +13,7 @@ test('standalone HTML uses current production UI with only synthetic memory and 
  const dir=mkdtempSync(join(tmpdir(),'yql-offline-demo-'));let dom;
  try{
   const evidence=JSON.parse(execFileSync(process.execPath,[fileURLToPath(new URL('../../pages/frontend/build-demo.mjs',import.meta.url)),dir],{encoding:'utf8'}));
-  const html=readFileSync(evidence.path,'utf8');assert.match(html,/connect-src 'none'/);assert.match(html,/不会真实查询或发送/);assert.match(html,/仅更新当前页面内存/);assert.doesNotMatch(html,/<script[^>]+src=/);
+  const html=readFileSync(evidence.path,'utf8');assert.match(html,/connect-src 'none'/);assert.match(html,/不会真实查询或发送/);assert.match(html,/仅内存保存/);assert.doesNotMatch(html,/<script[^>]+src=/);
   const network=[],errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));vc.on('error',e=>errors.push(String(e)));vc.on('warn',e=>errors.push(String(e)));
   dom=new JSDOM(html,{url:'https://offline-synthetic.invalid/',runScripts:'dangerously',resources:{interceptors:[requestInterceptor(request=>{network.push(request.url);return new Response('',{status:403});})]},pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}});w.ResizeObserver=class{observe(){}unobserve(){}disconnect(){}};w.fetch=async(...args)=>{network.push(args[0]);throw Error('network blocked');};}});
   await flush();const w=dom.window,q=s=>w.document.querySelector(s);
@@ -26,6 +26,6 @@ test('standalone HTML uses current production UI with only synthetic memory and 
   q('#demo-runtime').value='unknown';q('#demo-runtime').dispatchEvent(new w.Event('change',{bubbles:true}));q('[data-action="alert-status"]').click();await flush();
   q('.shell-sidebar a[href="#/accounts"]').click();await flush();q('a[href="#/accounts/demo-aliyun"]').click();await flush();assert.equal(q('#field-0-balance_alert-metric').value,'AvailableAmount');assert.equal(q('#field-0-balance_alert-check_interval_minutes').value,'15');assert.equal(q('#field-0-balance_alert-enabled').checked,false);
   await fill('#field-0-balance_alert-check_interval_minutes','4320');q('[data-action="save"]').click();await flush();assert.equal(w.__YQL_DEMO__.snapshot().config.providers[1].balance_alert.check_interval_minutes,15);
-  assert.equal(w.localStorage.length,0);assert.equal(w.sessionStorage.length,0);assert.deepEqual(network,[]);assert.deepEqual(errors,[]);assert.ok(w.__YQL_DEMO__.calls().every(op=>['admin/read','admin/update','admin/alert-status'].includes(op)));
+  assert.equal(w.localStorage.length,0);assert.equal(w.sessionStorage.length,0);assert.deepEqual(network,[]);assert.deepEqual(errors,[]);assert.ok(w.__YQL_DEMO__.calls().every(op=>['admin/read','admin/update','admin/alert-status','admin/alert-units'].includes(op)));
  }finally{dom?.window.close();rmSync(dir,{recursive:true,force:true});}
 });

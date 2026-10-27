@@ -3,24 +3,21 @@ const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)
 const controls=/[\p{Cc}\p{Cf}\p{Cs}]/u;
 const positiveId=/^[1-9][0-9]{0,19}$/;
 export const alertDefaults=()=>({enabled:false,check_interval_minutes:15,metric:'',unit:'',threshold:null,recovery_threshold:null,repeat_minutes:0});
-export const llmDefaults=()=>({enabled:true,provider_id:'',persona_id:''});
+export const llmDefaults=()=>({enabled:true});
 export function defaultMetric(account){return account.type==='alibaba_bailian'?'AvailableAmount':account.type==='deepseek'?'total_balance':account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?'credit':account.type==='meinianda'?'site_credit':account.type==='openai_compatible'?'mapped_balance':'';}
 export function metricOptions(account){return account.type==='alibaba_bailian'?['AvailableAmount','AvailableCashAmount','CreditAmount']:account.type==='deepseek'?['total_balance','granted_balance','topped_up_balance']:account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?['credit']:account.type==='meinianda'?['site_credit']:account.type==='openai_compatible'?['mapped_balance']:[];}
 export const metricLabels={AvailableAmount:'可用额度',AvailableCashAmount:'现金余额',CreditAmount:'信用额度',total_balance:'总余额',granted_balance:'赠送余额',topped_up_balance:'充值余额',credit:'积分',site_credit:'站内额度',mapped_balance:'已配置映射余额'};
-// UI suggestions only: normalizers never inject a currency into stored rules.
-export function defaultAlertUnit(account){
- const metric=defaultMetric(account);
- if(metric==='credit')return 'credit';
- if(metric==='site_credit')return 'site_credit';
- if(account.type==='alibaba_bailian'||account.type==='deepseek')return 'CNY';
- const mapped=account.type==='openai_compatible'?account.response_mapping?.unit:undefined;
- return typeof mapped==='string'&&mapped.trim()&&mapped.trim()!=='custom'&&!controls.test(mapped)&&!(/\s/u).test(mapped.trim())&&[...mapped.trim()].length<=32?mapped.trim():'';
-}
-export function alertUnitHint(account){
- if(account.type==='alibaba_bailian'||account.type==='deepseek')return '默认人民币 CNY，可改为实际币种（如 USD）。仅严格匹配查询单位，不换汇；阿里云也可能返回 JPY。';
- if(defaultMetric(account)==='credit')return 'Grsai 的固定积分单位为 credit；查询结果须严格匹配。';
- if(defaultMetric(account)==='site_credit')return 'Meinianda 的固定站内额度单位为 site_credit。';
- return defaultAlertUnit(account)?'已从显式响应映射单位带入，可按实际结果修改；不自动换算。':'通用接口请先明确响应映射单位或手动填写；不会猜测 USD、token 或隐式 custom。';
+export function fixedAlertUnit(account){const metric=defaultMetric(account);return metric==='credit'?'credit':metric==='site_credit'?'site_credit':null;}
+export function validateAlertUnits(value){
+ const text=(v,max)=>typeof v==='string'&&v.length>0&&[...v].length<=max&&!controls.test(v);
+ const unit=v=>text(v,32)&&!(/\s/u).test(v);
+ const date=v=>v===null||typeof v==='string'&&v.length<=64&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v)&&Number.isFinite(Date.parse(v));
+ if(!record(value)||!Array.isArray(value.accounts)||value.accounts.length>100)throw Error('invalid_response');
+ const accounts=new Set();return {accounts:value.accounts.map(a=>{
+  if(!record(a)||!text(a.account_id,128)||accounts.has(a.account_id)||!['unidentified','verified','ambiguous','changed','stale'].includes(a.unit_state)||!(a.unit===null||unit(a.unit))||!date(a.observed_at)||!Array.isArray(a.choices)||a.choices.length>20)throw Error('invalid_response');
+  if(a.unit_state==='verified'&&!a.unit)throw Error('invalid_response');accounts.add(a.account_id);const choices=new Set();
+  return {account_id:a.account_id,unit_state:a.unit_state,unit:a.unit,observed_at:a.observed_at,choices:a.choices.map(c=>{if(!record(c)||(typeof c.id!=='string'||!(/^[0-9a-f]{64}$/).test(c.id))||choices.has(c.id)||!text(c.metric,64)||(/\s/u).test(c.metric)||!unit(c.unit))throw Error('invalid_response');choices.add(c.id);return {id:c.id,metric:c.metric,unit:c.unit};})};
+ })};
 }
 export function parseUmo(value){
  if(typeof value!=='string'||controls.test(value))throw Error('UMO 不允许控制字符或不可见字符。');
@@ -84,19 +81,19 @@ export function normalizeAlert(value,account){
 }
 export function normalizeLlm(value){
  if(value===undefined)return llmDefaults();
- if(!record(value)||Object.keys(value).some(k=>!Object.hasOwn(llmDefaults(),k)))throw Error('提示模型配置无效。');
+ if(!record(value)||Object.keys(value).some(k=>!['enabled','provider_id','persona_id'].includes(k)))throw Error('提示模型配置无效。');
  const output={...llmDefaults(),...value};if(typeof output.enabled!=='boolean')throw Error('提示模型开关无效。');
- for(const key of ['provider_id','persona_id']){if(typeof output[key]!=='string'||[...output[key].trim()].length>128||controls.test(output[key]))throw Error('模型与人格 ID 须为不超过 128 字的文本。');output[key]=output[key].trim();}return output;
+ for(const key of ['provider_id','persona_id']){if(!Object.hasOwn(output,key))continue;if(typeof output[key]!=='string'||[...output[key].trim()].length>128||controls.test(output[key]))throw Error('模型与人格 ID 须为不超过 128 字的文本。');output[key]=output[key].trim();}return output;
 }
 export function alertDraftErrors(config){
  const errors=[];let targets=[];
  try{targets=normalizeTargets(config.balance_alert_targets===undefined?[]:config.balance_alert_targets);}catch(error){errors.push(error.message);}
  try{normalizeIds(config.balance_alert_admin_qq_ids===undefined?[]:config.balance_alert_admin_qq_ids);}catch(error){errors.push(error.message);}
  try{normalizeLlm(config.balance_alert_llm);}catch(error){errors.push(error.message);}
- for(const account of config.providers||[]){try{const a=normalizeAlert(account.balance_alert,account);if(a.enabled&&((account.enabled!==undefined&&account.enabled!==true)||a.threshold===null||!a.metric||!a.unit||targets.length===0))throw Error('启用预警前，请启用账户并填写阈值、单位和至少一个全局推送目标。');}catch(error){errors.push(`${account.display_name||account.id}：${error.message}`);}}
+ for(const account of config.providers||[]){try{const a=normalizeAlert(account.balance_alert,account);if(a.enabled&&((account.enabled!==undefined&&account.enabled!==true)||a.threshold===null||!a.metric||targets.length===0))throw Error('启用预警前，请启用账户并填写阈值和至少一个全局推送目标。');}catch(error){errors.push(`${account.display_name||account.id}：${error.message}`);}}
  return errors;
 }
 export function validateAlertStatus(value){
  if(!record(value)||typeof value.running!=='boolean'||typeof value.storage_available!=='boolean'||!Array.isArray(value.accounts)||value.accounts.length>100)throw Error('invalid_response');
- return {running:value.running,storage_available:value.storage_available,accounts:value.accounts.map(a=>{if(!record(a)||typeof a.account_id!=='string'||a.account_id.length>128||typeof a.status!=='string'||!/^[a-z_]{1,64}$/.test(a.status))throw Error('invalid_response');return {account_id:a.account_id,status:a.status,...Object.fromEntries(['last_checked_at','last_sent_at'].filter(k=>typeof a[k]==='string'&&a[k].length<=64&&!controls.test(a[k])).map(k=>[k,a[k]]))};})};
+ return {running:value.running,storage_available:value.storage_available,accounts:value.accounts.map(a=>{if(!record(a)||typeof a.account_id!=='string'||a.account_id.length>128||typeof a.status!=='string'||!/^[a-z_]{1,64}$/.test(a.status))throw Error('invalid_response');if(a.detail_code!==undefined&&!['','session_disabled','fixed_hint'].includes(a.detail_code))throw Error('invalid_response');return {account_id:a.account_id,status:a.status,...(a.detail_code?{detail_code:a.detail_code}:{}),...Object.fromEntries(['last_checked_at','last_sent_at'].filter(k=>typeof a[k]==='string'&&a[k].length<=64&&!controls.test(a[k])).map(k=>[k,a[k]]))};})};
 }

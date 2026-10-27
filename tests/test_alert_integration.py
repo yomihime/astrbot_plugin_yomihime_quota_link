@@ -79,8 +79,15 @@ def test_manual_and_alert_share_one_request_and_valid_unavailable_zero_triggers(
         service = QueryService(
             settings, {ProviderType.DEEPSEEK: Adapter()}, object(), BalanceCache()
         )
+
+        async def session_enabled(umo):
+            return True
+
         delivery = AlertDelivery(
-            context, component_factory=lambda mentions, text: (mentions, text)
+            context,
+            component_factory=lambda mentions, text: (mentions, text),
+            session_enabled=session_enabled,
+            session_llm_enabled=session_enabled,
         )
         engine = AlertEngine(
             settings, service, context, tmp_path / "alerts.sqlite3", delivery=delivery

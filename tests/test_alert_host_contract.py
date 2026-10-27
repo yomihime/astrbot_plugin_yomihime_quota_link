@@ -17,6 +17,9 @@ from quota_link.alert_commands import can_manage_alert
 from quota_link.alert_config import parse_umo
 
 HASHES = {
+    "astrbot/core/persona_mgr.py": "78f31f5c5c8b580fa2a4f4c888c64ea451c6d19880f607c2ae9a8707a9571cb1",
+    "astrbot/core/conversation_mgr.py": "18f515affb12f38f62b72b0b5d300e568bdaa84340239b88de8d79825d1639c0",
+    "astrbot/core/star/session_llm_manager.py": "ca3395f3ebe1fc1f457e3d733d122ca99903fcdf71141d0260891e995882191b",
     "astrbot/core/platform/astr_message_event.py": "1c51db0b7e78e8cf6c8aa0f64c621d87e2af72a21fee0ff1524b68e6b5850954",
     "astrbot/core/platform/message_session.py": "86563844e9a0322cfaf475fda4f3699017c6747232c065298264b541af5a9ca3",
     "astrbot/core/message/components.py": "5a8dbf0ffb62cf83dcd333feb48e17acdf1a757ffcb63848423cf42585bc327f",
@@ -232,4 +235,233 @@ def test_real_context_true_means_platform_found_not_final_delivery_ack():
             ns["send_message"](context, "missing:GroupMessage:42", "synthetic-chain")
         )
         is False
+    )
+
+
+@pytest.mark.parametrize(
+    "forced,conversation,configured,platform,expected,special",
+    [
+        ("forced", "conversation", "configured", "aiocqhttp", "forced", False),
+        (None, "conversation", "configured", "aiocqhttp", "conversation", False),
+        (None, "[%None]", "configured", "aiocqhttp", "[%None]", False),
+        ("[%None]", "conversation", "configured", "aiocqhttp", "[%None]", False),
+        (None, None, "configured", "aiocqhttp", "configured", False),
+        (None, None, "default", "webchat", "_chatui_default_", True),
+        (None, "[%None]", "default", "webchat", "[%None]", False),
+    ],
+)
+def test_official_persona_priority_and_none_selection_not_reimplemented(
+    forced, conversation, configured, platform, expected, special
+):
+    reads = []
+
+    async def get_async(**kwargs):
+        reads.append(kwargs)
+        return {"persona_id": forced} if forced is not None else {}
+
+    ns = {
+        "sp": SimpleNamespace(get_async=get_async),
+        "SYSTEM_DEFAULT_PERSONA_ID": "default",
+        "logger": SimpleNamespace(debug=lambda *args: None),
+    }
+    execute(
+        [
+            method(
+                "astrbot/core/persona_mgr.py",
+                "PersonaManager",
+                "resolve_selected_persona",
+            )
+        ],
+        ns,
+    )
+    umo = "arbitrary:GroupMessage:sender_123"
+    config = {
+        "agent_runner": {
+            "runner_type": "local",
+            "config": {"persona": {"persona_id": configured}},
+        }
+    }
+    manager = SimpleNamespace(
+        acm=SimpleNamespace(
+            get_conf=lambda value: config if value == umo else pytest.fail("wrong UMO")
+        ),
+        personas_v3=[
+            {"name": name, "prompt": "prompt:" + name}
+            for name in ("forced", "conversation", "configured", "default")
+        ],
+    )
+    selected, persona, force, webchat = asyncio.run(
+        ns["resolve_selected_persona"](
+            manager,
+            umo=umo,
+            conversation_persona_id=conversation,
+            platform_name=platform,
+            provider_settings={"enable": True},
+        )
+    )
+    assert selected == expected and webchat is special and force == forced
+    if expected == "[%None]" or special:
+        assert persona is None
+    else:
+        assert persona["prompt"] == "prompt:" + expected
+    assert reads == [
+        {
+            "scope": "umo",
+            "scope_id": umo,
+            "key": "session_service_config",
+            "default": {},
+        }
+    ]
+
+
+def test_official_target_config_and_model_resolution_receive_exact_umo():
+    ns = {"ProviderNotFoundError": RuntimeError}
+    for name in ("get_config", "get_current_chat_provider_id"):
+        execute([method("astrbot/core/star/context.py", "Context", name)], ns)
+    umo = "arbitrary:GroupMessage:sender_123"
+    seen = []
+
+    async def provider(value):
+        seen.append(value)
+        return SimpleNamespace(meta=lambda: SimpleNamespace(id="target-model"))
+
+    config = {"agent_runner": {"runner_type": "local"}}
+    context = SimpleNamespace(
+        _config={"wrong": "global"},
+        astrbot_config_mgr=SimpleNamespace(
+            get_conf=lambda value: config if value == umo else pytest.fail("wrong UMO")
+        ),
+        get_using_provider_async=provider,
+    )
+    assert ns["get_config"](context, umo=umo) is config
+    assert (
+        asyncio.run(ns["get_current_chat_provider_id"](context, umo)) == "target-model"
+    )
+    assert seen == [umo]
+
+
+def test_official_existing_conversation_read_never_creates_when_missing():
+    ns = {}
+    execute(
+        [
+            method(
+                "astrbot/core/conversation_mgr.py",
+                "ConversationManager",
+                "get_conversation",
+            )
+        ],
+        ns,
+    )
+    reads = []
+
+    async def existing(*, cid):
+        reads.append(cid)
+        return None
+
+    async def create(*args):
+        pytest.fail("must not create conversation")
+
+    manager = SimpleNamespace(
+        db=SimpleNamespace(get_conversation_by_id=existing), new_conversation=create
+    )
+    assert (
+        asyncio.run(
+            ns["get_conversation"](
+                manager,
+                "custom:FriendMessage:123",
+                "existing-id",
+                create_if_not_exists=False,
+            )
+        )
+        is None
+    )
+    assert reads == ["existing-id"]
+
+
+@pytest.mark.parametrize(
+    "name,key",
+    [
+        ("is_session_enabled", "session_enabled"),
+        ("is_llm_enabled_for_session", "llm_enabled"),
+    ],
+)
+@pytest.mark.parametrize(
+    "configured,expected",
+    [(None, True), (False, False), (True, True), (1, 1), ("true", "true")],
+)
+def test_official_session_switches_read_only_umo_state(name, key, configured, expected):
+    calls = []
+
+    async def get_async(**kwargs):
+        calls.append(kwargs)
+        return {} if configured is None else {key: configured}
+
+    ns = {"sp": SimpleNamespace(get_async=get_async)}
+    execute(
+        [
+            method(
+                "astrbot/core/star/session_llm_manager.py",
+                "SessionServiceManager",
+                name,
+            )
+        ],
+        ns,
+    )
+    assert asyncio.run(ns[name]("custom:GroupMessage:sender_123")) == expected
+    assert calls == [
+        {
+            "scope": "umo",
+            "scope_id": "custom:GroupMessage:sender_123",
+            "key": "session_service_config",
+            "default": {},
+        }
+    ]
+
+
+def test_main_session_boundaries_call_public_methods_and_fail_closed(monkeypatch):
+    import sys
+    from types import ModuleType
+
+    calls = []
+
+    async def session(umo):
+        calls.append(("session", umo))
+        return True
+
+    async def llm(umo):
+        calls.append(("llm", umo))
+        return False
+
+    module = ModuleType("astrbot.core.star.session_llm_manager")
+    module.SessionServiceManager = SimpleNamespace(
+        is_session_enabled=session, is_llm_enabled_for_session=llm
+    )
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    tree = ast.parse((Path(__file__).parents[1] / "main.py").read_text())
+    ns = {}
+    execute(
+        [
+            n
+            for n in tree.body
+            if isinstance(n, ast.AsyncFunctionDef)
+            and n.name in {"_alert_session_enabled", "_alert_session_llm_enabled"}
+        ],
+        ns,
+    )
+    assert asyncio.run(ns["_alert_session_enabled"]("custom:FriendMessage:123")) is True
+    assert (
+        asyncio.run(ns["_alert_session_llm_enabled"]("custom:FriendMessage:123"))
+        is False
+    )
+    assert calls == [
+        ("session", "custom:FriendMessage:123"),
+        ("llm", "custom:FriendMessage:123"),
+    ]
+
+    async def broken(umo):
+        raise RuntimeError("private session storage detail")
+
+    module.SessionServiceManager.is_session_enabled = broken
+    assert (
+        asyncio.run(ns["_alert_session_enabled"]("custom:FriendMessage:123")) is False
     )

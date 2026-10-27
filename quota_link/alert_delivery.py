@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import re
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -43,6 +44,11 @@ class AlertFact:
 class DeliveryResult:
     status: str
     message: str
+    reason_code: str = ""
+
+    def __post_init__(self) -> None:
+        if self.reason_code not in {"", "session_disabled", "fixed_hint"}:
+            raise ValueError("unknown delivery reason code")
 
 
 def _exact_decimal(value: Decimal) -> str:
@@ -83,11 +89,17 @@ class AlertDelivery:
         component_factory: Callable | None = None,
         llm_timeout: float = 10.0,
         send_timeout: float = 15.0,
+        session_enabled: Callable[[str], Awaitable[bool]] | None = None,
+        session_llm_enabled: Callable[[str], Awaitable[bool]] | None = None,
+        session_check_timeout: float = 3.0,
     ) -> None:
         self.context = context
         self.component_factory = component_factory
         self.llm_timeout = llm_timeout
         self.send_timeout = send_timeout
+        self.session_enabled = session_enabled
+        self.session_llm_enabled = session_llm_enabled
+        self.session_check_timeout = session_check_timeout
 
     def validate_target(self, target: Any) -> bool:
         """Resolve the actual instance; names such as 'NapCat' prove nothing."""
@@ -135,51 +147,161 @@ class AlertDelivery:
             if not task.done():
                 task.cancel()
 
-    async def _hint(self, target: Any, llm: Any, active: Callable[[], bool]) -> str:
-        if not llm.enabled or not active():
-            return ""
+    @staticmethod
+    def _alive(active: Callable[[], bool]) -> bool:
+        # A timed-out SDK coroutine may suppress cancellation. It must not
+        # continue into another API call after its owning task was cancelled.
+        task = asyncio.current_task()
+        return active() and (task is None or task.cancelling() == 0)
 
-        async def generate():
-            provider_id = llm.provider_id
-            if not provider_id:
-                if not active():
-                    return ""
-                provider_id = await self.context.get_current_chat_provider_id(
-                    target.umo
-                )
-            if not provider_id or not active():
-                return ""
-            persona_prompt = ""
-            if llm.persona_id:
-                persona = await self.context.persona_manager.get_persona(llm.persona_id)
-                if not active():
-                    return ""
-                persona_prompt = str(getattr(persona, "system_prompt", ""))[:4000]
-            # No balances, account names, endpoints, recipients, keys or history
-            # enter this request. A persona can affect tone only, not facts.
-            response = await self.context.llm_generate(
-                chat_provider_id=provider_id,
-                prompt="为额度预警选择一句合适的提醒，只能原样返回下列一句：\n"
-                + "\n".join(_HINTS),
-                system_prompt=(
-                    "只选择给定短句，不输出解释、数字、链接、工具调用或其他文字。\n"
-                    + persona_prompt
-                ),
-                contexts=[],
-                tools=None,
-            )
-            if not active():
-                return ""
-            content = getattr(response, "completion_text", "")
-            return content.strip() if isinstance(content, str) else ""
-
+    async def _session_allows(
+        self, callback: Callable | None, umo: str, active: Callable[[], bool]
+    ) -> bool:
+        if callback is None or not self._alive(active):
+            return False
         try:
-            hint = await self._bounded(generate(), self.llm_timeout)
-            return hint if hint in _HINTS else ""
+            enabled = await self._bounded(callback(umo), self.session_check_timeout)
+            return self._alive(active) and enabled is True
         except asyncio.CancelledError:
             raise
         except Exception:
-            return ""
+            return False
+
+    def _target_llm_settings(self, umo: str) -> tuple[Mapping, str]:
+        config = self.context.get_config(umo=umo)
+        if not isinstance(config, Mapping):
+            return {}, "会话 AI 配置不可用，已用固定提醒"
+        provider_settings = config.get("provider_settings", {})
+        runner = config.get("agent_runner", {})
+        if (
+            not isinstance(provider_settings, Mapping)
+            or provider_settings.get("enable", True) is not True
+        ):
+            return {}, "会话 AI 已关闭，已用固定提醒"
+        if not isinstance(runner, Mapping) or runner.get("runner_type") != "local":
+            return {}, "当前会话非本地 Agent，已用固定提醒"
+        return provider_settings, ""
+
+    async def _resolve_target_llm(
+        self, target: Any, active: Callable[[], bool]
+    ) -> tuple[tuple | None, str, str]:
+        """Read host routing only, preserving exact UMO and host persona priority."""
+        provider_settings, note = self._target_llm_settings(target.umo)
+        if note:
+            return None, "", note
+        if not await self._session_allows(self.session_llm_enabled, target.umo, active):
+            return None, "", "会话 AI 已关闭或状态不可用，已用固定提醒"
+        if not self._alive(active):
+            return None, "", ""
+        provider_id = await self.context.get_current_chat_provider_id(target.umo)
+        if not self._alive(active):
+            return None, "", ""
+        if not isinstance(provider_id, str) or not provider_id.strip():
+            return None, "", "会话模型不可用，已用固定提醒"
+        manager = self.context.conversation_manager
+        conversation_id = await manager.get_curr_conversation_id(target.umo)
+        if not self._alive(active):
+            return None, "", ""
+        conversation_persona_id = None
+        if conversation_id:
+            conversation = await manager.get_conversation(
+                target.umo, conversation_id, create_if_not_exists=False
+            )
+            if not self._alive(active):
+                return None, "", ""
+            conversation_persona_id = getattr(conversation, "persona_id", None)
+        if not self.validate_target(target) or not self._alive(active):
+            return None, "", ""
+        platform_name = (
+            self.context.get_platform_inst(target.umo.split(":", 2)[0]).meta().name
+        )
+        (
+            selected_id,
+            persona,
+            forced_id,
+            webchat_special,
+        ) = await self.context.persona_manager.resolve_selected_persona(
+            umo=target.umo,
+            conversation_persona_id=conversation_persona_id,
+            platform_name=platform_name,
+            provider_settings=provider_settings,
+        )
+        if not self._alive(active):
+            return None, "", ""
+        if webchat_special:
+            return None, "", "会话使用专用 WebChat 人格，已用固定提醒"
+        if persona is None:
+            if selected_id not in (None, "[%None]"):
+                return None, "", "会话人格不可用，已用固定提醒"
+            full_prompt = ""
+        elif isinstance(persona, Mapping) and isinstance(persona.get("prompt"), str):
+            full_prompt = persona["prompt"]
+        else:
+            return None, "", "会话人格不可用，已用固定提醒"
+        _, note = self._target_llm_settings(target.umo)
+        if note:
+            return None, "", note
+        if not await self._session_allows(self.session_llm_enabled, target.umo, active):
+            return None, "", "会话 AI 已关闭或状态不可用，已用固定提醒"
+        if not self._alive(active):
+            return None, "", ""
+        if not await self._session_allows(self.session_enabled, target.umo, active):
+            return None, "", "目标会话已停用或状态不可用，未调用 AI"
+        if not self._alive(active):
+            return None, "", ""
+        # Fingerprint contains no account credentials, history or raw persona
+        # text, and remains local to this attempt (never persisted or logged).
+        signature = (
+            provider_id,
+            selected_id,
+            forced_id,
+            conversation_id,
+            conversation_persona_id,
+            platform_name,
+            hashlib.sha256(full_prompt.encode()).hexdigest(),
+        )
+        return signature, full_prompt[:4000], ""
+
+    async def _hint(
+        self, target: Any, llm: Any, active: Callable[[], bool]
+    ) -> tuple[str, str]:
+        if not llm.enabled or not self._alive(active):
+            return "", ""
+
+        async def generate():
+            signature, persona_prompt, note = await self._resolve_target_llm(
+                target, active
+            )
+            if signature is None or not self._alive(active):
+                return "", note
+            # No balances, names, endpoints, recipients, credentials, history or
+            # tools enter this request. Persona only selects controlled tone.
+            response = await self.context.llm_generate(
+                chat_provider_id=signature[0],
+                prompt="为额度预警选择一句合适的提醒，只能原样返回下列一句：\n"
+                + "\n".join(_HINTS),
+                system_prompt=persona_prompt
+                + "\n只选择给定短句，不输出解释、数字、链接、工具调用或其他文字。",
+                contexts=[],
+                tools=None,
+            )
+            if not self._alive(active):
+                return "", ""
+            current, _prompt, note = await self._resolve_target_llm(target, active)
+            if not self._alive(active):
+                return "", ""
+            if current != signature:
+                return "", note or "会话模型或人格已变更，已用固定提醒"
+            content = getattr(response, "completion_text", "")
+            hint = content.strip() if isinstance(content, str) else ""
+            return (hint, "") if hint in _HINTS else ("", "AI 润色不可用，已用固定提醒")
+
+        try:
+            return await self._bounded(generate(), self.llm_timeout)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            return "", "AI 润色不可用，已用固定提醒"
 
     async def deliver(
         self,
@@ -190,12 +312,19 @@ class AlertDelivery:
         active: Callable[[], bool],
         reserve: Callable[[], bool],
     ) -> DeliveryResult:
-        if not active():
+        if not self._alive(active):
             return DeliveryResult("cancelled", "配置已变更或预警已停止")
         if not self.validate_target(target):
             return DeliveryResult("blocked", "目标平台未就绪或不支持该提及配置")
-        hint = await self._hint(target, llm, active)
-        if not active() or not self.validate_target(target):
+        allowed = await self._session_allows(self.session_enabled, target.umo, active)
+        if not self._alive(active):
+            return DeliveryResult("cancelled", "配置已变更或预警已停止")
+        if not allowed:
+            return DeliveryResult(
+                "blocked", "目标会话已停用或状态不可用，未发送", "session_disabled"
+            )
+        hint, note = await self._hint(target, llm, active)
+        if not self._alive(active) or not self.validate_target(target):
             return DeliveryResult("cancelled", "配置已变更或目标已不可用")
         try:
             message = self.component_factory(
@@ -203,13 +332,26 @@ class AlertDelivery:
             )
         except Exception:
             return DeliveryResult("blocked", "消息组件暂不可用")
-        # Durable reservation is the final operation before entering transport.
-        if not active() or not reserve():
-            return DeliveryResult("cancelled", "配置已变更或发送预算暂不可用")
+
+        blocked, cancelled = object(), object()
+        transport_started = False
 
         async def send():
-            if not active():
-                return None
+            nonlocal transport_started
+            if not self._alive(active):
+                return cancelled
+            allowed = await self._session_allows(
+                self.session_enabled, target.umo, active
+            )
+            if not self._alive(active) or not self.validate_target(target):
+                return cancelled
+            if not allowed:
+                return blocked
+            # Durable reservation remains the final synchronous operation before
+            # entering transport, after the last session/permission await.
+            if not reserve():
+                return cancelled
+            transport_started = True
             return await self.context.send_message(target.umo, message)
 
         try:
@@ -217,9 +359,22 @@ class AlertDelivery:
         except asyncio.CancelledError:
             raise
         except Exception:
+            if not transport_started:
+                return DeliveryResult("blocked", "会话状态检查未完成，未发送")
             return DeliveryResult("unknown", "发送结果未知；为避免重复不自动重发")
+        if result is blocked:
+            return DeliveryResult(
+                "blocked", "目标会话已停用或状态不可用，未发送", "session_disabled"
+            )
+        if result is cancelled:
+            return DeliveryResult("cancelled", "配置已变更或发送预算暂不可用")
         if result is True:
-            return DeliveryResult("submitted", "已提交平台；不代表最终送达")
+            suffix = f"；{note}" if note else ""
+            return DeliveryResult(
+                "submitted",
+                "已提交平台；不代表最终送达" + suffix,
+                "fixed_hint" if note else "",
+            )
         if result is False:
             return DeliveryResult("failed", "平台未接受发送；冷却后可重试")
         return DeliveryResult("unknown", "发送结果未知；为避免重复不自动重发")

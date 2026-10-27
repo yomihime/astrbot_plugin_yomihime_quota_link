@@ -578,3 +578,28 @@ def test_cancellation_retires_authority_and_does_not_retry(monkeypatch):
     assert len(captured) == 1
     with pytest.raises(AdminAuthorizationDenied):
         captured[0]()
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"revision": True, "account_id": "synthetic", "choice_id": "a" * 64},
+        {"revision": 1, "account_id": "synthetic", "choice_id": "USD"},
+        {
+            "revision": 1,
+            "account_id": "synthetic",
+            "choice_id": "a" * 64,
+            "unit": "USD",
+        },
+    ],
+)
+def test_unit_binding_operation_rejects_manual_units_and_invalid_cas(monkeypatch, body):
+    request = Request("alert-bind-unit", json.dumps(body).encode())
+    result, _ = invoke(monkeypatch, request, successful)
+    assert result.status_code == 400
+
+
+def test_unit_status_read_only_route_available(monkeypatch):
+    request = Request("alert-units", b"{}")
+    result, _ = invoke(monkeypatch, request, successful)
+    assert result.status_code == 200

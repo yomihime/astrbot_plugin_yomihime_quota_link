@@ -29,6 +29,19 @@ class BalanceCache:
             return None
         return replace(snapshot, cached=True)
 
+    def peek(
+        self, account_id: str, config_fingerprint: str, ttl_seconds: float
+    ) -> BalanceSnapshot | None:
+        """Read an entry without refreshing, evicting or creating any state."""
+        entry = self._entries.get((account_id, config_fingerprint))
+        if entry is None:
+            return None
+        inserted_at, snapshot = entry
+        age = self._monotonic() - inserted_at
+        if ttl_seconds <= 0 or age < 0 or age >= ttl_seconds:
+            return None
+        return replace(snapshot, cached=True)
+
     def put(
         self,
         account_id: str,

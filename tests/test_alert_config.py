@@ -232,7 +232,7 @@ def test_readiness_and_runtime_safe_disable_legacy_preview():
 
 @pytest.mark.parametrize(
     "mutation",
-    ["missing_targets", "disabled_account", "missing_threshold", "missing_unit"],
+    ["missing_targets", "disabled_account", "missing_threshold"],
 )
 def test_new_enabling_requires_complete_explicit_configuration(mutation):
     raw = configured()
@@ -474,3 +474,12 @@ def test_authorization_is_rechecked_before_alert_persistence(tmp_path):
             authorize,
         )
     assert dispatch(store)["revision"] == 0
+
+
+def test_unknown_unit_allows_enable_intent_without_fabricating_currency():
+    raw = configured(unit="")
+    normalized = normalize_alert_config(raw)
+    assert normalized["providers"][0]["balance_alert"]["unit"] == ""
+    settings = load_settings(raw)
+    assert settings.accounts[0].balance_alert.enabled
+    assert settings.accounts[0].balance_alert.unit == ""

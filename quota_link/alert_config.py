@@ -259,8 +259,8 @@ def alert_configuration_error(
         return None
     if not account_enabled:
         return "启用预警前须先启用账户。"
-    if alert.threshold is None or not alert.metric or not alert.unit:
-        return "启用预警前须设置明确的阈值、指标和单位。"
+    if alert.threshold is None or not alert.metric:
+        return "请设置阈值和指标。"
     if not targets:
         return "启用预警前须设置至少一个推送目标。"
     return None

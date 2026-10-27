@@ -46,6 +46,25 @@ from .quota_link.tool_facts import (
     serialize_query_result,
 )
 
+
+async def _alert_session_enabled(umo):
+    try:
+        from astrbot.core.star.session_llm_manager import SessionServiceManager
+
+        return await SessionServiceManager.is_session_enabled(umo) is True
+    except Exception:
+        return False
+
+
+async def _alert_session_llm_enabled(umo):
+    try:
+        from astrbot.core.star.session_llm_manager import SessionServiceManager
+
+        return await SessionServiceManager.is_llm_enabled_for_session(umo) is True
+    except Exception:
+        return False
+
+
 _COMMAND_START = re.compile(r"^\s*(?:/\s*)?yql\b\s*(.*)$", re.IGNORECASE | re.DOTALL)
 
 
@@ -203,6 +222,11 @@ class YomihimeQuotaLink(Star):
             "accounts": [],
         }
 
+    def _alert_units(self):
+        if self._alert_engine is not None:
+            return self._alert_engine.unit_status()
+        return {"accounts": []}
+
     def _start_alerts(self):
         if (
             self._terminated
@@ -221,7 +245,10 @@ class YomihimeQuotaLink(Star):
             self._context,
             self._alert_root / "alerts.sqlite3",
             delivery=AlertDelivery(
-                self._context, component_factory=_alert_message_chain
+                self._context,
+                component_factory=_alert_message_chain,
+                session_enabled=_alert_session_enabled,
+                session_llm_enabled=_alert_session_llm_enabled,
             ),
             is_current=lambda: self._alert_engine is engine and not self._terminated,
         )
@@ -241,7 +268,11 @@ class YomihimeQuotaLink(Star):
             self._alert_engine.wake(account_id)
 
     async def _admin_dispatch(self, operation, body, authorize):
-        from .quota_link.config_store import ConfigUnavailable
+        from .quota_link.config_store import (
+            ConfigConflict,
+            ConfigUnavailable,
+            ConfigValidation,
+        )
 
         async with self._management_lock:
             authorize()
@@ -249,8 +280,30 @@ class YomihimeQuotaLink(Star):
                 result = self._alert_status()
                 authorize()
                 return result
+            if operation == "alert-units":
+                result = self._alert_units()
+                authorize()
+                return result
             if self._config_store is None or self._terminated:
                 raise ConfigUnavailable()
+            if operation == "alert-bind-unit":
+                dto = await self._config_store.dispatch("read", {}, authorize)
+                authorize()
+                if (
+                    type(body.get("revision")) is not int
+                    or body["revision"] != dto["revision"]
+                ):
+                    raise ConfigConflict()
+                if self._alert_engine is None:
+                    raise ConfigUnavailable()
+                try:
+                    self._alert_engine.confirm_unit(
+                        body.get("account_id"), body.get("choice_id")
+                    )
+                except ValueError as error:
+                    raise ConfigValidation(str(error)) from None
+                authorize()
+                return self._alert_units()
             mutation = operation in {
                 "update",
                 "credential-replace",

@@ -26,6 +26,7 @@ ROOT_FILES = (
 )
 PACKAGE_FILES = (
     "quota_link/alert_config.py",
+    "quota_link/alert_units.py",
     "quota_link/alert_commands.py",
     "quota_link/alerts.py",
     "quota_link/alert_delivery.py",

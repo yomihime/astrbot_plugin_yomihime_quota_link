@@ -11662,11 +11662,7 @@ var Xv = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prot
 	threshold: null,
 	recovery_threshold: null,
 	repeat_minutes: 0
-}), ey = () => ({
-	enabled: !0,
-	provider_id: "",
-	persona_id: ""
-});
+}), ey = () => ({ enabled: !0 });
 function ty(e) {
 	return e.type === "alibaba_bailian" ? "AvailableAmount" : e.type === "deepseek" ? "total_balance" : e.type === "grsai" || e.type === "openai_compatible" && e.service_profile === "grsai" ? "credit" : e.type === "meinianda" ? "site_credit" : e.type === "openai_compatible" ? "mapped_balance" : "";
 }
@@ -11694,14 +11690,37 @@ var ry = {
 };
 function iy(e) {
 	let t = ty(e);
-	if (t === "credit") return "credit";
-	if (t === "site_credit") return "site_credit";
-	if (e.type === "alibaba_bailian" || e.type === "deepseek") return "CNY";
-	let n = e.type === "openai_compatible" ? e.response_mapping?.unit : void 0;
-	return typeof n == "string" && n.trim() && n.trim() !== "custom" && !Zv.test(n) && !/\s/u.test(n.trim()) && [...n.trim()].length <= 32 ? n.trim() : "";
+	return t === "credit" ? "credit" : t === "site_credit" ? "site_credit" : null;
 }
 function ay(e) {
-	return e.type === "alibaba_bailian" || e.type === "deepseek" ? "默认人民币 CNY，可改为实际币种（如 USD）。仅严格匹配查询单位，不换汇；阿里云也可能返回 JPY。" : ty(e) === "credit" ? "Grsai 的固定积分单位为 credit；查询结果须严格匹配。" : ty(e) === "site_credit" ? "Meinianda 的固定站内额度单位为 site_credit。" : iy(e) ? "已从显式响应映射单位带入，可按实际结果修改；不自动换算。" : "通用接口请先明确响应映射单位或手动填写；不会猜测 USD、token 或隐式 custom。";
+	let t = (e, t) => typeof e == "string" && e.length > 0 && [...e].length <= t && !Zv.test(e), n = (e) => t(e, 32) && !/\s/u.test(e), r = (e) => e === null || typeof e == "string" && e.length <= 64 && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(e) && Number.isFinite(Date.parse(e));
+	if (!Xv(e) || !Array.isArray(e.accounts) || e.accounts.length > 100) throw Error("invalid_response");
+	let i = /* @__PURE__ */ new Set();
+	return { accounts: e.accounts.map((e) => {
+		if (!Xv(e) || !t(e.account_id, 128) || i.has(e.account_id) || ![
+			"unidentified",
+			"verified",
+			"ambiguous",
+			"changed",
+			"stale"
+		].includes(e.unit_state) || !(e.unit === null || n(e.unit)) || !r(e.observed_at) || !Array.isArray(e.choices) || e.choices.length > 20 || e.unit_state === "verified" && !e.unit) throw Error("invalid_response");
+		i.add(e.account_id);
+		let a = /* @__PURE__ */ new Set();
+		return {
+			account_id: e.account_id,
+			unit_state: e.unit_state,
+			unit: e.unit,
+			observed_at: e.observed_at,
+			choices: e.choices.map((e) => {
+				if (!Xv(e) || typeof e.id != "string" || !/^[0-9a-f]{64}$/.test(e.id) || a.has(e.id) || !t(e.metric, 64) || /\s/u.test(e.metric) || !n(e.unit)) throw Error("invalid_response");
+				return a.add(e.id), {
+					id: e.id,
+					metric: e.metric,
+					unit: e.unit
+				};
+			})
+		};
+	}) };
 }
 function oy(e) {
 	if (typeof e != "string" || Zv.test(e)) throw Error("UMO 不允许控制字符或不可见字符。");
@@ -11803,13 +11822,17 @@ function my(e, t) {
 }
 function hy(e) {
 	if (e === void 0) return ey();
-	if (!Xv(e) || Object.keys(e).some((e) => !Object.hasOwn(ey(), e))) throw Error("提示模型配置无效。");
+	if (!Xv(e) || Object.keys(e).some((e) => ![
+		"enabled",
+		"provider_id",
+		"persona_id"
+	].includes(e))) throw Error("提示模型配置无效。");
 	let t = {
 		...ey(),
 		...e
 	};
 	if (typeof t.enabled != "boolean") throw Error("提示模型开关无效。");
-	for (let e of ["provider_id", "persona_id"]) {
+	for (let e of ["provider_id", "persona_id"]) if (Object.hasOwn(t, e)) {
 		if (typeof t[e] != "string" || [...t[e].trim()].length > 128 || Zv.test(t[e])) throw Error("模型与人格 ID 须为不超过 128 字的文本。");
 		t[e] = t[e].trim();
 	}
@@ -11834,7 +11857,7 @@ function gy(e) {
 	}
 	for (let r of e.providers || []) try {
 		let e = my(r.balance_alert, r);
-		if (e.enabled && (r.enabled !== void 0 && r.enabled !== !0 || e.threshold === null || !e.metric || !e.unit || n.length === 0)) throw Error("启用预警前，请启用账户并填写阈值、单位和至少一个全局推送目标。");
+		if (e.enabled && (r.enabled !== void 0 && r.enabled !== !0 || e.threshold === null || !e.metric || n.length === 0)) throw Error("启用预警前，请启用账户并填写阈值和至少一个全局推送目标。");
 	} catch (e) {
 		t.push(`${r.display_name || r.id}：${e.message}`);
 	}
@@ -11846,10 +11869,15 @@ function _y(e) {
 		running: e.running,
 		storage_available: e.storage_available,
 		accounts: e.accounts.map((e) => {
-			if (!Xv(e) || typeof e.account_id != "string" || e.account_id.length > 128 || typeof e.status != "string" || !/^[a-z_]{1,64}$/.test(e.status)) throw Error("invalid_response");
+			if (!Xv(e) || typeof e.account_id != "string" || e.account_id.length > 128 || typeof e.status != "string" || !/^[a-z_]{1,64}$/.test(e.status) || e.detail_code !== void 0 && ![
+				"",
+				"session_disabled",
+				"fixed_hint"
+			].includes(e.detail_code)) throw Error("invalid_response");
 			return {
 				account_id: e.account_id,
 				status: e.status,
+				...e.detail_code ? { detail_code: e.detail_code } : {},
 				...Object.fromEntries(["last_checked_at", "last_sent_at"].filter((t) => typeof e[t] == "string" && e[t].length <= 64 && !Zv.test(e[t])).map((t) => [t, e[t]]))
 			};
 		})
@@ -11905,7 +11933,7 @@ var vy = {
 		default: [],
 		invisible: !0
 	},
-	providers: /* @__PURE__ */ JSON.parse("{\"description\":\"查询账户\",\"type\":\"template_list\",\"default\":[],\"templates\":{\"deepseek\":{\"name\":\"DeepSeek\",\"hint\":\"官方余额\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"deepseek\",\"invisible\":true},\"auth\":{\"description\":\"余额查询 API Key\",\"type\":\"object\",\"items\":{\"api_key\":{\"description\":\"DeepSeek API Key\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"预警单位（须与查询结果一致）\",\"type\":\"string\",\"default\":\"\"},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"alibaba_bailian\":{\"name\":\"阿里云百炼\",\"hint\":\"账户现金余额\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"alibaba_bailian\",\"invisible\":true},\"auth\":{\"description\":\"阿里云 RAM 只读查询凭据\",\"type\":\"object\",\"items\":{\"access_key_id\":{\"description\":\"RAM AccessKey ID\",\"hint\":\"查询阿里云 BSS 现金余额、可用额度、信用额度。RAM 身份至少需 AliyunBSSReadOnlyAccess；不能用 DashScope 模型 API Key。\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"access_key_secret\":{\"description\":\"RAM AccessKey Secret\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"security_token\":{\"description\":\"STS Security Token\",\"hint\":\"可选；仅临时凭据需要。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"预警单位（须与查询结果一致）\",\"type\":\"string\",\"default\":\"\"},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"grsai\":{\"name\":\"Grsai\",\"hint\":\"账户积分\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"grsai\",\"invisible\":true},\"service_profile\":{\"description\":\"Grsai 账户积分预设\",\"type\":\"string\",\"default\":\"grsai\",\"invisible\":true},\"balance_scope\":{\"description\":\"账户积分\",\"type\":\"string\",\"default\":\"account\",\"invisible\":true},\"auth\":{\"description\":\"Grsai 账户积分请求令牌\",\"type\":\"object\",\"items\":{\"token\":{\"description\":\"请求令牌 token\",\"hint\":\"从 Grsai 用户信息栏取得请求令牌 token；请勿填写模型 API Key 或 Bearer 令牌。插件固定 POST /client/openapi/getCredits，读取 data.credits。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"region\":{\"description\":\"连接区域\",\"hint\":\"国内与海外均使用内置官方节点，无需手填服务器地址。\",\"type\":\"string\",\"default\":\"china\",\"options\":[\"china\",\"global\"],\"labels\":[\"国内直连\",\"海外节点\"]},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"预警单位（须与查询结果一致）\",\"type\":\"string\",\"default\":\"\"},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"meinianda\":{\"name\":\"Meinianda\",\"hint\":\"账户站内额度\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"hint\":\"站点建议每分钟查询一次，默认缓存 60 秒。\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"meinianda\",\"invisible\":true},\"auth\":{\"description\":\"余额查询 API Key\",\"type\":\"object\",\"items\":{\"api_key\":{\"description\":\"Meinianda API Key\",\"hint\":\"查询 meinianda.top 的账户站内额度（site_credit）。地址与解析已内置，无需填写。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"预警单位（须与查询结果一致）\",\"type\":\"string\",\"default\":\"\"},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"openai_compatible\":{\"name\":\"其他兼容服务\",\"hint\":\"自定义余额接口\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"openai_compatible\",\"invisible\":true},\"service_profile\":{\"description\":\"服务类型\",\"hint\":\"余额查询使用服务商专属接口。新 Grsai 账户请直接添加 Grsai 模板；本模板旧条目可切换账户积分预设。\",\"type\":\"string\",\"default\":\"generic\",\"options\":[\"generic\",\"grsai\"],\"labels\":[\"OpenAI 兼容服务 / 第三方服务\",\"Grsai\"]},\"balance_scope\":{\"description\":\"积分范围\",\"hint\":\"账户积分已支持；API Key 积分暂不可查询。\",\"type\":\"string\",\"default\":\"generic\",\"options\":[\"generic\",\"account\",\"api_key\"],\"labels\":[\"请选择积分范围\",\"账户积分（已支持预设）\",\"API Key 积分（暂不可查询）\"],\"condition\":{\"service_profile\":\"grsai\"}},\"auth\":{\"description\":\"余额查询凭据\",\"hint\":\"Grsai 账户积分填请求令牌 token；其他兼容服务按余额文档填写 API Key。\",\"type\":\"object\",\"items\":{\"token\":{\"description\":\"Grsai 请求令牌 token\",\"hint\":\"从 Grsai 用户信息栏取得请求令牌 token；请勿填写模型 API Key 或 Bearer 令牌。\",\"type\":\"string\",\"default\":\"\",\"secret\":true,\"condition\":{\"service_profile\":\"grsai\",\"balance_scope\":\"account\"}},\"api_key\":{\"description\":\"兼容服务 API Key\",\"hint\":\"Grsai 账户积分预设忽略此栏；旧 Key 不会用于账户积分请求。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"endpoint\":{\"description\":\"余额接口\",\"hint\":\"余额查询使用服务商专属接口，请依据其余额文档填写。\",\"type\":\"object\",\"items\":{\"base_url\":{\"description\":\"服务地址\",\"hint\":\"HTTPS 服务根地址，不含 API 路径。https://api.example.invalid 仅为不可访问的格式示例。\",\"type\":\"string\",\"default\":\"\"},\"path\":{\"description\":\"接口路径\",\"hint\":\"通用服务按文档填写。Grsai 账户积分留空或填 /client/openapi/getCredits；旧条目切换时清除原路径。/account/balance 仅为占位示例。\",\"type\":\"string\",\"default\":\"\"},\"method\":{\"description\":\"请求方法\",\"hint\":\"通用服务按文档填写。Grsai 账户积分固定 POST；旧条目切换时清除原 GET。\",\"type\":\"string\",\"default\":\"\",\"options\":[\"GET\",\"POST\"],\"condition\":{\"advanced_options\":true}},\"auth_mode\":{\"description\":\"认证方式\",\"hint\":\"按余额文档确认；Grsai 账户积分忽略此栏，token 固定放入 JSON 请求体。\",\"type\":\"string\",\"default\":\"\",\"options\":[\"bearer\",\"header\",\"query\"],\"labels\":[\"Bearer 令牌\",\"请求头\",\"查询参数\"],\"condition\":{\"advanced_options\":true}},\"auth_name\":{\"description\":\"认证参数名\",\"hint\":\"仅认证方式为「请求头」或「查询参数」时使用。\",\"type\":\"string\",\"default\":\"\",\"condition\":{\"advanced_options\":true}},\"json_body\":{\"description\":\"静态 JSON 请求体\",\"hint\":\"仅供通用服务使用，不支持模板或凭据。Grsai 账户积分留空；旧条目切换时清除旧请求体。\",\"type\":\"dict\",\"items\":{},\"default\":{},\"condition\":{\"advanced_options\":true}}}},\"advanced_options\":{\"description\":\"高级设置\",\"hint\":\"通用服务配置认证、方法与响应映射；Grsai 账户积分使用固定协议并忽略旧映射。\",\"type\":\"bool\",\"default\":false},\"response_mapping\":{\"description\":\"响应映射\",\"hint\":\"通用服务按文档填写 JSON Pointer，amount_path 必需；Grsai 账户积分忽略旧映射，固定解析 code=0 与 data.credits。\",\"type\":\"dict\",\"items\":{\"amount_path\":{\"description\":\"主余额路径\",\"hint\":\"必需的 JSON Pointer，例如 /data/remaining。\",\"type\":\"string\",\"default\":\"\"},\"total_path\":{\"description\":\"可选总量路径\",\"type\":\"string\",\"default\":\"\"},\"remaining_path\":{\"description\":\"可选剩余量路径\",\"type\":\"string\",\"default\":\"\"},\"used_path\":{\"description\":\"可选已用量路径\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"固定单位\",\"hint\":\"可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；设置 unit_path 时必填。\",\"type\":\"string\",\"default\":\"custom\"},\"unit_path\":{\"description\":\"单位路径\",\"hint\":\"可选 JSON Pointer；运行时值必须与固定 unit 一致。\",\"type\":\"string\",\"default\":\"\"},\"kind\":{\"description\":\"固定余额类别\",\"type\":\"string\",\"default\":\"custom\"},\"kind_path\":{\"description\":\"余额类别路径\",\"hint\":\"可选 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom。\",\"type\":\"string\",\"default\":\"\"},\"status_path\":{\"description\":\"可选账户状态 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"status_values\":{\"description\":\"状态值映射\",\"hint\":\"将供应商状态值映射到 available/unavailable/partial/unknown。\",\"type\":\"dict\",\"items\":{},\"default\":{}},\"expires_at_path\":{\"description\":\"可选到期时间 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"expiry_path\":{\"description\":\"到期时间别名\",\"hint\":\"兼容旧版 expires_at_path。\",\"type\":\"string\",\"default\":\"\"},\"success_path\":{\"description\":\"可选业务成功字段路径\",\"type\":\"string\",\"default\":\"\"},\"success_value\":{\"description\":\"success_path 对应的成功值\",\"type\":\"string\",\"default\":\"\"},\"failure_path\":{\"description\":\"可选业务失败字段路径\",\"type\":\"string\",\"default\":\"\"},\"failure_value\":{\"description\":\"failure_path 对应的失败值\",\"type\":\"string\",\"default\":\"\"}},\"default\":{},\"condition\":{\"advanced_options\":true}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"预警单位（须与查询结果一致）\",\"type\":\"string\",\"default\":\"\"},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"provider_account\":{\"name\":\"旧版通用账户\",\"hint\":\"仅供旧配置编辑\",\"display_item\":\"display_name\",\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"type\":{\"description\":\"供应商类型\",\"hint\":\"本旧模板没有 Grsai 账户积分的切换字段。迁移时请新建 Grsai 条目并禁用旧条目。\",\"type\":\"string\",\"default\":\"deepseek\",\"options\":[\"alibaba_bailian\",\"deepseek\",\"openai_compatible\"]},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"auth\":{\"description\":\"账户凭据\",\"type\":\"object\",\"items\":{\"api_key\":{\"description\":\"余额 API Key\",\"hint\":\"用于 DeepSeek 或兼容余额接口，不用于阿里云 BSS。\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"access_key_id\":{\"description\":\"RAM AccessKey ID\",\"hint\":\"与 DashScope 模型 API Key 不同。\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"access_key_secret\":{\"description\":\"RAM AccessKey Secret\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"security_token\":{\"description\":\"STS Security Token\",\"hint\":\"可选；仅临时凭据需要。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"endpoint\":{\"description\":\"余额接口\",\"hint\":\"只读余额端点，必须使用 HTTPS。\",\"type\":\"object\",\"items\":{\"url\":{\"description\":\"余额 URL\",\"hint\":\"完整 HTTPS 地址，不含 query、凭据或 fragment。\",\"type\":\"string\",\"default\":\"\"},\"base_url\":{\"description\":\"服务地址\",\"hint\":\"HTTPS 服务根地址，可与接口路径配合。\",\"type\":\"string\",\"default\":\"\"},\"path\":{\"description\":\"经文档确认的只读余额路径\",\"type\":\"string\",\"default\":\"\"},\"method\":{\"description\":\"请求方法\",\"hint\":\"只允许 GET 或已确认无副作用的 POST。\",\"type\":\"string\",\"default\":\"GET\",\"options\":[\"GET\",\"POST\"]},\"auth_mode\":{\"description\":\"API Key 认证位置\",\"type\":\"string\",\"default\":\"bearer\",\"options\":[\"bearer\",\"header\",\"query\"],\"labels\":[\"Bearer 令牌\",\"请求头\",\"查询参数\"]},\"auth_name\":{\"description\":\"认证参数名\",\"hint\":\"仅认证方式为「请求头」或「查询参数」时使用。\",\"type\":\"string\",\"default\":\"\"},\"json_body\":{\"description\":\"静态 JSON 请求体\",\"hint\":\"仅用于有文档依据的只读 POST，不支持模板或凭据。\",\"type\":\"dict\",\"items\":{},\"default\":{}}}},\"response_mapping\":{\"description\":\"响应映射\",\"hint\":\"使用 JSON Pointer 映射余额和可选状态字段；amount_path 必需。\",\"type\":\"dict\",\"items\":{\"amount_path\":{\"description\":\"主余额路径\",\"hint\":\"必需的 JSON Pointer，例如 /data/remaining。\",\"type\":\"string\",\"default\":\"\"},\"total_path\":{\"description\":\"可选总量路径\",\"type\":\"string\",\"default\":\"\"},\"remaining_path\":{\"description\":\"可选剩余量路径\",\"type\":\"string\",\"default\":\"\"},\"used_path\":{\"description\":\"可选已用量路径\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"固定单位\",\"hint\":\"可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；设置 unit_path 时必填。\",\"type\":\"string\",\"default\":\"custom\"},\"unit_path\":{\"description\":\"单位路径\",\"hint\":\"可选 JSON Pointer；运行时值必须与固定 unit 一致。\",\"type\":\"string\",\"default\":\"\"},\"kind\":{\"description\":\"固定余额类别\",\"type\":\"string\",\"default\":\"custom\"},\"kind_path\":{\"description\":\"余额类别路径\",\"hint\":\"可选 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom。\",\"type\":\"string\",\"default\":\"\"},\"status_path\":{\"description\":\"可选账户状态 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"status_values\":{\"description\":\"状态值映射\",\"hint\":\"将供应商状态值映射到 available/unavailable/partial/unknown。\",\"type\":\"dict\",\"items\":{},\"default\":{}},\"expires_at_path\":{\"description\":\"可选到期时间 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"expiry_path\":{\"description\":\"到期时间别名\",\"hint\":\"兼容旧版 expires_at_path。\",\"type\":\"string\",\"default\":\"\"},\"success_path\":{\"description\":\"可选业务成功字段路径\",\"type\":\"string\",\"default\":\"\"},\"success_value\":{\"description\":\"success_path 对应的成功值\",\"type\":\"string\",\"default\":\"\"},\"failure_path\":{\"description\":\"可选业务失败字段路径\",\"type\":\"string\",\"default\":\"\"},\"failure_value\":{\"description\":\"failure_path 对应的失败值\",\"type\":\"string\",\"default\":\"\"}},\"default\":{}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"预警单位（须与查询结果一致）\",\"type\":\"string\",\"default\":\"\"},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}},\"hide_hint_in_list\":true}},\"invisible\":true}"),
+	providers: /* @__PURE__ */ JSON.parse("{\"description\":\"查询账户\",\"type\":\"template_list\",\"default\":[],\"templates\":{\"deepseek\":{\"name\":\"DeepSeek\",\"hint\":\"官方余额\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"deepseek\",\"invisible\":true},\"auth\":{\"description\":\"余额查询 API Key\",\"type\":\"object\",\"items\":{\"api_key\":{\"description\":\"DeepSeek API Key\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"旧版单位参考（自动识别后验证）\",\"type\":\"string\",\"default\":\"\",\"invisible\":true},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"alibaba_bailian\":{\"name\":\"阿里云百炼\",\"hint\":\"账户现金余额\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"alibaba_bailian\",\"invisible\":true},\"auth\":{\"description\":\"阿里云 RAM 只读查询凭据\",\"type\":\"object\",\"items\":{\"access_key_id\":{\"description\":\"RAM AccessKey ID\",\"hint\":\"查询阿里云 BSS 现金余额、可用额度、信用额度。RAM 身份至少需 AliyunBSSReadOnlyAccess；不能用 DashScope 模型 API Key。\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"access_key_secret\":{\"description\":\"RAM AccessKey Secret\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"security_token\":{\"description\":\"STS Security Token\",\"hint\":\"可选；仅临时凭据需要。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"旧版单位参考（自动识别后验证）\",\"type\":\"string\",\"default\":\"\",\"invisible\":true},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"grsai\":{\"name\":\"Grsai\",\"hint\":\"账户积分\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"grsai\",\"invisible\":true},\"service_profile\":{\"description\":\"Grsai 账户积分预设\",\"type\":\"string\",\"default\":\"grsai\",\"invisible\":true},\"balance_scope\":{\"description\":\"账户积分\",\"type\":\"string\",\"default\":\"account\",\"invisible\":true},\"auth\":{\"description\":\"Grsai 账户积分请求令牌\",\"type\":\"object\",\"items\":{\"token\":{\"description\":\"请求令牌 token\",\"hint\":\"从 Grsai 用户信息栏取得请求令牌 token；请勿填写模型 API Key 或 Bearer 令牌。插件固定 POST /client/openapi/getCredits，读取 data.credits。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"region\":{\"description\":\"连接区域\",\"hint\":\"国内与海外均使用内置官方节点，无需手填服务器地址。\",\"type\":\"string\",\"default\":\"china\",\"options\":[\"china\",\"global\"],\"labels\":[\"国内直连\",\"海外节点\"]},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"旧版单位参考（自动识别后验证）\",\"type\":\"string\",\"default\":\"\",\"invisible\":true},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"meinianda\":{\"name\":\"Meinianda\",\"hint\":\"账户站内额度\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"hint\":\"站点建议每分钟查询一次，默认缓存 60 秒。\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"meinianda\",\"invisible\":true},\"auth\":{\"description\":\"余额查询 API Key\",\"type\":\"object\",\"items\":{\"api_key\":{\"description\":\"Meinianda API Key\",\"hint\":\"查询 meinianda.top 的账户站内额度（site_credit）。地址与解析已内置，无需填写。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"旧版单位参考（自动识别后验证）\",\"type\":\"string\",\"default\":\"\",\"invisible\":true},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"openai_compatible\":{\"name\":\"其他兼容服务\",\"hint\":\"自定义余额接口\",\"display_item\":\"display_name\",\"hide_hint_in_list\":true,\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"type\":{\"description\":\"供应商类型\",\"type\":\"string\",\"default\":\"openai_compatible\",\"invisible\":true},\"service_profile\":{\"description\":\"服务类型\",\"hint\":\"余额查询使用服务商专属接口。新 Grsai 账户请直接添加 Grsai 模板；本模板旧条目可切换账户积分预设。\",\"type\":\"string\",\"default\":\"generic\",\"options\":[\"generic\",\"grsai\"],\"labels\":[\"OpenAI 兼容服务 / 第三方服务\",\"Grsai\"]},\"balance_scope\":{\"description\":\"积分范围\",\"hint\":\"账户积分已支持；API Key 积分暂不可查询。\",\"type\":\"string\",\"default\":\"generic\",\"options\":[\"generic\",\"account\",\"api_key\"],\"labels\":[\"请选择积分范围\",\"账户积分（已支持预设）\",\"API Key 积分（暂不可查询）\"],\"condition\":{\"service_profile\":\"grsai\"}},\"auth\":{\"description\":\"余额查询凭据\",\"hint\":\"Grsai 账户积分填请求令牌 token；其他兼容服务按余额文档填写 API Key。\",\"type\":\"object\",\"items\":{\"token\":{\"description\":\"Grsai 请求令牌 token\",\"hint\":\"从 Grsai 用户信息栏取得请求令牌 token；请勿填写模型 API Key 或 Bearer 令牌。\",\"type\":\"string\",\"default\":\"\",\"secret\":true,\"condition\":{\"service_profile\":\"grsai\",\"balance_scope\":\"account\"}},\"api_key\":{\"description\":\"兼容服务 API Key\",\"hint\":\"Grsai 账户积分预设忽略此栏；旧 Key 不会用于账户积分请求。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"endpoint\":{\"description\":\"余额接口\",\"hint\":\"余额查询使用服务商专属接口，请依据其余额文档填写。\",\"type\":\"object\",\"items\":{\"base_url\":{\"description\":\"服务地址\",\"hint\":\"HTTPS 服务根地址，不含 API 路径。https://api.example.invalid 仅为不可访问的格式示例。\",\"type\":\"string\",\"default\":\"\"},\"path\":{\"description\":\"接口路径\",\"hint\":\"通用服务按文档填写。Grsai 账户积分留空或填 /client/openapi/getCredits；旧条目切换时清除原路径。/account/balance 仅为占位示例。\",\"type\":\"string\",\"default\":\"\"},\"method\":{\"description\":\"请求方法\",\"hint\":\"通用服务按文档填写。Grsai 账户积分固定 POST；旧条目切换时清除原 GET。\",\"type\":\"string\",\"default\":\"\",\"options\":[\"GET\",\"POST\"],\"condition\":{\"advanced_options\":true}},\"auth_mode\":{\"description\":\"认证方式\",\"hint\":\"按余额文档确认；Grsai 账户积分忽略此栏，token 固定放入 JSON 请求体。\",\"type\":\"string\",\"default\":\"\",\"options\":[\"bearer\",\"header\",\"query\"],\"labels\":[\"Bearer 令牌\",\"请求头\",\"查询参数\"],\"condition\":{\"advanced_options\":true}},\"auth_name\":{\"description\":\"认证参数名\",\"hint\":\"仅认证方式为「请求头」或「查询参数」时使用。\",\"type\":\"string\",\"default\":\"\",\"condition\":{\"advanced_options\":true}},\"json_body\":{\"description\":\"静态 JSON 请求体\",\"hint\":\"仅供通用服务使用，不支持模板或凭据。Grsai 账户积分留空；旧条目切换时清除旧请求体。\",\"type\":\"dict\",\"items\":{},\"default\":{},\"condition\":{\"advanced_options\":true}}}},\"advanced_options\":{\"description\":\"高级设置\",\"hint\":\"通用服务配置认证、方法与响应映射；Grsai 账户积分使用固定协议并忽略旧映射。\",\"type\":\"bool\",\"default\":false},\"response_mapping\":{\"description\":\"响应映射\",\"hint\":\"通用服务按文档填写 JSON Pointer，amount_path 必需；Grsai 账户积分忽略旧映射，固定解析 code=0 与 data.credits。\",\"type\":\"dict\",\"items\":{\"amount_path\":{\"description\":\"主余额路径\",\"hint\":\"必需的 JSON Pointer，例如 /data/remaining。\",\"type\":\"string\",\"default\":\"\"},\"total_path\":{\"description\":\"可选总量路径\",\"type\":\"string\",\"default\":\"\"},\"remaining_path\":{\"description\":\"可选剩余量路径\",\"type\":\"string\",\"default\":\"\"},\"used_path\":{\"description\":\"可选已用量路径\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"固定单位\",\"hint\":\"可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；设置 unit_path 时必填。\",\"type\":\"string\",\"default\":\"custom\"},\"unit_path\":{\"description\":\"单位路径\",\"hint\":\"可选 JSON Pointer；运行时值必须与固定 unit 一致。\",\"type\":\"string\",\"default\":\"\"},\"kind\":{\"description\":\"固定余额类别\",\"type\":\"string\",\"default\":\"custom\"},\"kind_path\":{\"description\":\"余额类别路径\",\"hint\":\"可选 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom。\",\"type\":\"string\",\"default\":\"\"},\"status_path\":{\"description\":\"可选账户状态 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"status_values\":{\"description\":\"状态值映射\",\"hint\":\"将供应商状态值映射到 available/unavailable/partial/unknown。\",\"type\":\"dict\",\"items\":{},\"default\":{}},\"expires_at_path\":{\"description\":\"可选到期时间 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"expiry_path\":{\"description\":\"到期时间别名\",\"hint\":\"兼容旧版 expires_at_path。\",\"type\":\"string\",\"default\":\"\"},\"success_path\":{\"description\":\"可选业务成功字段路径\",\"type\":\"string\",\"default\":\"\"},\"success_value\":{\"description\":\"success_path 对应的成功值\",\"type\":\"string\",\"default\":\"\"},\"failure_path\":{\"description\":\"可选业务失败字段路径\",\"type\":\"string\",\"default\":\"\"},\"failure_value\":{\"description\":\"failure_path 对应的失败值\",\"type\":\"string\",\"default\":\"\"}},\"default\":{},\"condition\":{\"advanced_options\":true}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"旧版单位参考（自动识别后验证）\",\"type\":\"string\",\"default\":\"\",\"invisible\":true},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}}},\"provider_account\":{\"name\":\"旧版通用账户\",\"hint\":\"仅供旧配置编辑\",\"display_item\":\"display_name\",\"items\":{\"id\":{\"description\":\"账户唯一 ID\",\"type\":\"string\",\"default\":\"\"},\"type\":{\"description\":\"供应商类型\",\"hint\":\"本旧模板没有 Grsai 账户积分的切换字段。迁移时请新建 Grsai 条目并禁用旧条目。\",\"type\":\"string\",\"default\":\"deepseek\",\"options\":[\"alibaba_bailian\",\"deepseek\",\"openai_compatible\"]},\"display_name\":{\"description\":\"显示名称\",\"type\":\"string\",\"default\":\"\"},\"aliases\":{\"description\":\"用于命令和自然语言匹配的其他名称\",\"type\":\"list\",\"default\":[]},\"enabled\":{\"description\":\"启用此账户\",\"type\":\"bool\",\"default\":true},\"timeout_seconds\":{\"description\":\"账户查询超时秒数\",\"type\":\"float\",\"default\":8.0},\"cache_ttl_seconds\":{\"description\":\"账户成功结果缓存秒数\",\"type\":\"float\",\"default\":60.0},\"auth\":{\"description\":\"账户凭据\",\"type\":\"object\",\"items\":{\"api_key\":{\"description\":\"余额 API Key\",\"hint\":\"用于 DeepSeek 或兼容余额接口，不用于阿里云 BSS。\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"access_key_id\":{\"description\":\"RAM AccessKey ID\",\"hint\":\"与 DashScope 模型 API Key 不同。\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"access_key_secret\":{\"description\":\"RAM AccessKey Secret\",\"type\":\"string\",\"default\":\"\",\"secret\":true},\"security_token\":{\"description\":\"STS Security Token\",\"hint\":\"可选；仅临时凭据需要。\",\"type\":\"string\",\"default\":\"\",\"secret\":true}}},\"endpoint\":{\"description\":\"余额接口\",\"hint\":\"只读余额端点，必须使用 HTTPS。\",\"type\":\"object\",\"items\":{\"url\":{\"description\":\"余额 URL\",\"hint\":\"完整 HTTPS 地址，不含 query、凭据或 fragment。\",\"type\":\"string\",\"default\":\"\"},\"base_url\":{\"description\":\"服务地址\",\"hint\":\"HTTPS 服务根地址，可与接口路径配合。\",\"type\":\"string\",\"default\":\"\"},\"path\":{\"description\":\"经文档确认的只读余额路径\",\"type\":\"string\",\"default\":\"\"},\"method\":{\"description\":\"请求方法\",\"hint\":\"只允许 GET 或已确认无副作用的 POST。\",\"type\":\"string\",\"default\":\"GET\",\"options\":[\"GET\",\"POST\"]},\"auth_mode\":{\"description\":\"API Key 认证位置\",\"type\":\"string\",\"default\":\"bearer\",\"options\":[\"bearer\",\"header\",\"query\"],\"labels\":[\"Bearer 令牌\",\"请求头\",\"查询参数\"]},\"auth_name\":{\"description\":\"认证参数名\",\"hint\":\"仅认证方式为「请求头」或「查询参数」时使用。\",\"type\":\"string\",\"default\":\"\"},\"json_body\":{\"description\":\"静态 JSON 请求体\",\"hint\":\"仅用于有文档依据的只读 POST，不支持模板或凭据。\",\"type\":\"dict\",\"items\":{},\"default\":{}}}},\"response_mapping\":{\"description\":\"响应映射\",\"hint\":\"使用 JSON Pointer 映射余额和可选状态字段；amount_path 必需。\",\"type\":\"dict\",\"items\":{\"amount_path\":{\"description\":\"主余额路径\",\"hint\":\"必需的 JSON Pointer，例如 /data/remaining。\",\"type\":\"string\",\"default\":\"\"},\"total_path\":{\"description\":\"可选总量路径\",\"type\":\"string\",\"default\":\"\"},\"remaining_path\":{\"description\":\"可选剩余量路径\",\"type\":\"string\",\"default\":\"\"},\"used_path\":{\"description\":\"可选已用量路径\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"固定单位\",\"hint\":\"可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；设置 unit_path 时必填。\",\"type\":\"string\",\"default\":\"custom\"},\"unit_path\":{\"description\":\"单位路径\",\"hint\":\"可选 JSON Pointer；运行时值必须与固定 unit 一致。\",\"type\":\"string\",\"default\":\"\"},\"kind\":{\"description\":\"固定余额类别\",\"type\":\"string\",\"default\":\"custom\"},\"kind_path\":{\"description\":\"余额类别路径\",\"hint\":\"可选 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom。\",\"type\":\"string\",\"default\":\"\"},\"status_path\":{\"description\":\"可选账户状态 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"status_values\":{\"description\":\"状态值映射\",\"hint\":\"将供应商状态值映射到 available/unavailable/partial/unknown。\",\"type\":\"dict\",\"items\":{},\"default\":{}},\"expires_at_path\":{\"description\":\"可选到期时间 JSON Pointer\",\"type\":\"string\",\"default\":\"\"},\"expiry_path\":{\"description\":\"到期时间别名\",\"hint\":\"兼容旧版 expires_at_path。\",\"type\":\"string\",\"default\":\"\"},\"success_path\":{\"description\":\"可选业务成功字段路径\",\"type\":\"string\",\"default\":\"\"},\"success_value\":{\"description\":\"success_path 对应的成功值\",\"type\":\"string\",\"default\":\"\"},\"failure_path\":{\"description\":\"可选业务失败字段路径\",\"type\":\"string\",\"default\":\"\"},\"failure_value\":{\"description\":\"failure_path 对应的失败值\",\"type\":\"string\",\"default\":\"\"}},\"default\":{}},\"balance_alert\":{\"description\":\"账户额度预警\",\"type\":\"object\",\"items\":{\"enabled\":{\"description\":\"启用预警\",\"type\":\"bool\",\"default\":false},\"check_interval_minutes\":{\"description\":\"检查间隔（1–4320 分钟）\",\"type\":\"int\",\"default\":15},\"metric\":{\"description\":\"指标 ID（空为供应商默认）\",\"type\":\"string\",\"default\":\"\"},\"unit\":{\"description\":\"旧版单位参考（自动识别后验证）\",\"type\":\"string\",\"default\":\"\",\"invisible\":true},\"threshold\":{\"description\":\"触发阈值\",\"type\":\"string\",\"default\":null,\"hint\":\"填写普通十进制文本；未设置为 null，启用前必须明确设置。\"},\"recovery_threshold\":{\"description\":\"恢复阈值（空为自动滞回）\",\"type\":\"string\",\"default\":null},\"repeat_minutes\":{\"description\":\"持续低额重复间隔（0 表示不重复）\",\"type\":\"int\",\"default\":0}}}},\"hide_hint_in_list\":true}},\"invisible\":true}"),
 	balance_alert_targets: {
 		description: "额度预警推送目标",
 		type: "list",
@@ -11921,24 +11949,26 @@ var vy = {
 		invisible: !0
 	},
 	balance_alert_llm: {
-		description: "额度预警提示模型",
+		description: "智能提示",
 		type: "object",
 		invisible: !0,
 		items: {
 			enabled: {
-				description: "使用模型润色简短提示",
+				description: "智能提示",
 				type: "bool",
 				default: !0
 			},
 			provider_id: {
-				description: "模型提供商 ID（空为目标会话选择）",
+				description: "旧版配置（不再使用）",
 				type: "string",
-				default: ""
+				default: "",
+				invisible: !0
 			},
 			persona_id: {
-				description: "人格 ID（空为不附加人格）",
+				description: "旧版配置（不再使用）",
 				type: "string",
-				default: ""
+				default: "",
+				invisible: !0
 			}
 		}
 	}
@@ -11971,7 +12001,7 @@ function Cy(e) {
 	return JSON.parse(JSON.stringify(e));
 }
 function wy(e) {
-	return Object.fromEntries(Object.entries(e).filter(([e, t]) => e !== "auth" && !t.secret).map(([e, t]) => [e, t.items && t.type === "object" ? wy(t.items) : Cy(Object.hasOwn(t, "default") ? t.default : "")]));
+	return Object.fromEntries(Object.entries(e).filter(([e, t]) => e !== "auth" && !t.secret && !(["provider_id", "persona_id"].includes(e) && t.invisible)).map(([e, t]) => [e, t.items && t.type === "object" ? wy(t.items) : Cy(Object.hasOwn(t, "default") ? t.default : "")]));
 }
 function Ty(e) {
 	let t = {
@@ -12226,9 +12256,13 @@ function Uy(e) {
 }
 function Wy(e, t = () => {}) {
 	let n = {
+		units: null,
+		unitsBusy: !1,
+		unitsUnknown: !1,
+		unitsNotice: "",
 		alertStatus: null,
 		alertBusy: !1,
-		alertNotice: "尚未读取预警运行状态。",
+		alertNotice: "",
 		ready: !1,
 		theme: "light",
 		locale: "zh-CN",
@@ -12244,126 +12278,151 @@ function Wy(e, t = () => {}) {
 		edit: 0,
 		route: "accounts",
 		selected: null
-	}, r = /* @__PURE__ */ new Map(), i = 0, a = 0, o = null, s = !1, c = !1, l, u = null, d = () => t(), f = (e, t = "neutral") => {
+	}, r = 0, i = 0, a = 0, o = null, s = !1, c = !1, l, u = null, d = () => t(), f = (e, t = "neutral") => {
 		n.notice = e, n.tone = t;
 	}, p = () => !!n.snapshot && !!n.draft && JSON.stringify(n.snapshot.config) !== JSON.stringify(n.draft);
-	function m(e) {
-		let t = n.draft?.providers.find((t) => t.id === e);
-		if (!t) return;
-		let i = t.balance_alert, a = r.get(e), o = a && i.unit === a.suggested && i.threshold === null && i.recovery_threshold === null && !i.enabled;
-		if (i.unit && !o) return;
-		let s = iy(t);
-		(s || o) && (s ? r.set(e, {
-			original: a?.original ?? i.unit,
-			suggested: s
-		}) : r.delete(e), i.unit = s);
+	function m() {
+		n.snapshot && (n.draft = Cy(n.snapshot.config));
 	}
-	function h(e, t) {
-		if (r.has(e)) {
-			let n = r.get(e);
-			r.delete(e), r.set(t, n);
-		}
-	}
-	function g(e = !0) {
-		r.clear(), n.snapshot && (n.draft = Cy(n.snapshot.config)), e && n.route === "accounts" && n.selected && m(n.selected);
-	}
-	function _(e) {
-		r.delete(e);
-	}
-	function v() {
+	function h() {
 		n.secret && (n.secret.value = "", n.secret.environment = ""), n.secret = null;
 	}
-	function y() {
-		r.clear(), n.alertStatus = null, n.alertBusy = !1, n.alertNotice = "尚未读取预警运行状态。", v(), n.plan = null, n.draft = null, n.edit++;
+	function g() {
+		r++, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertBusy = !1, n.alertNotice = "", h(), n.plan = null, n.draft = null, n.edit++;
 	}
-	function b(e) {
-		i++, u = null, n.busy = !1, y(), n.snapshot = null, n.ready = !1, n.stale = !0, o = null, f(e, "error"), d();
+	function _(e) {
+		i++, u = null, n.busy = !1, g(), n.snapshot = null, n.ready = !1, n.stale = !0, o = null, f(e, "error"), d();
 	}
-	let x = (e) => !c && n.ready && e.epoch === i && u === e;
-	function S(e, t = !0) {
-		n.alertStatus = null, n.alertNotice = "配置已更新，请刷新预警运行状态。", n.snapshot = e, g(t), n.stale = !1, n.unknown = !1, n.plan = null, n.edit++;
+	let v = (e) => !c && n.ready && e.epoch === i && u === e;
+	function y(e) {
+		r++, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertNotice = "", n.snapshot = e, m(), n.stale = !1, n.unknown = !1, n.plan = null, n.edit++;
 	}
-	async function C(t, n, r) {
-		if (!Vy.has(t) || !x(r)) throw Error("stale_context");
+	async function b(t, n, r) {
+		if (!Vy.has(t) || !v(r)) throw Error("stale_context");
 		let i = await e.apiPost("admin/" + t, n);
-		if (!x(r)) throw Error("stale_context");
+		if (!v(r)) throw Error("stale_context");
 		return i;
 	}
-	async function w(e, t, { write: r = !1, plan: o = !1 } = {}) {
+	async function x(e, t, { write: r = !1, plan: o = !1 } = {}) {
 		if (c || !n.ready || n.busy || r && (n.stale || !n.snapshot || n.snapshot.migration.pending && e !== "legacy-config-execute")) return !1;
 		let s = {
 			epoch: i,
 			serial: ++a,
 			write: r
 		};
-		u = s, n.busy = !0, v(), n.plan = null, f(r ? "正在提交，请勿重复操作…" : "正在读取最新状态…"), d();
+		u = s, n.busy = !0, h(), n.plan = null, f(r ? "正在提交，请勿重复操作…" : "正在读取最新状态…"), d();
 		try {
-			let i = await C(e, t, s);
-			if (!x(s)) return !1;
+			let i = await b(e, t, s);
+			if (!v(s)) return !1;
 			if (o) n.plan = Ry(i), f(n.plan.legacy_conflict ? "旧配置与当前存储不一致。不会覆盖现有存储或清理新的旧配置。" : n.plan.cleanup_pending ? "迁移已保存，可重试清理原来的宿主旧字段。" : n.plan.pending ? "迁移预览已就绪。执行前请核对下方范围。" : "没有待迁移的旧配置。");
 			else {
 				let n = Ly(i);
 				if (r && (n.revision < t.revision || e !== "legacy-config-execute" && n.revision === t.revision)) throw Error("invalid_response");
-				S(n, !r), f(n.migration.cleanup_pending ? "配置已迁移，但宿主旧字段清理尚未完成，请在配置维护中重新预览并完成清理。" : r ? "已保存，当前状态已重新核对。" : "已读取最新配置。", n.migration.cleanup_pending ? "warning" : "success");
+				y(n), f(n.migration.cleanup_pending ? "配置已迁移，但宿主旧字段清理尚未完成，请在配置维护中重新预览并完成清理。" : r ? "已保存，当前状态已重新核对。" : "已读取最新配置。", n.migration.cleanup_pending ? "warning" : "success");
 			}
 			return !0;
 		} catch (e) {
-			if (!x(s)) return !1;
+			if (!v(s)) return !1;
 			let t = Hy(e);
-			return v(), t === "auth" ? (b("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unknown = !1, f("配置已被其他页面修改。请重新读取，再核对并提交；不会自动重试。", "warning")) : t === "validation" ? f("提交未通过校验。请检查字段和凭据类型；敏感输入已清空。", "error") : (n.stale = !0, n.unknown = r, f(r ? "提交结果尚未确认，敏感输入已清空。请重新读取状态后再决定，切勿直接重复提交。" : "无法读取可信的配置状态。请重新读取，或从宿主重新打开。", "warning")), !1);
+			return h(), t === "auth" ? (_("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unknown = !1, f("配置已被其他页面修改。请重新读取，再核对并提交；不会自动重试。", "warning")) : t === "validation" ? f("提交未通过校验。请检查字段和凭据类型；敏感输入已清空。", "error") : (n.stale = !0, n.unknown = r, f(r ? "提交结果尚未确认，敏感输入已清空。请重新读取状态后再决定，切勿直接重复提交。" : "无法读取可信的配置状态。请重新读取，或从宿主重新打开。", "warning")), !1);
 		} finally {
-			x(s) && (n.busy = !1, u = null, d());
+			v(s) && (n.busy = !1, u = null, d());
 		}
 	}
-	async function T() {
-		return !n.ready || n.busy ? !1 : (v(), w("read", {}));
+	async function S() {
+		return !n.ready || n.busy ? !1 : (h(), x("read", {}));
 	}
-	async function E() {
+	async function C() {
 		if (c || !n.ready || n.busy || n.alertBusy) return !1;
 		let t = i, r = n.snapshot?.revision;
 		n.alertBusy = !0, n.alertNotice = "正在读取预警运行状态…", d();
 		try {
 			let a = await e.apiPost("admin/alert-status", {});
-			return c || !n.ready || t !== i || r !== n.snapshot?.revision ? !1 : (n.alertStatus = _y(a), n.alertNotice = "已读取预警运行状态；不触发查询或发送。", !0);
+			return c || !n.ready || t !== i || r !== n.snapshot?.revision ? !1 : (n.alertStatus = _y(a), n.alertNotice = "", !0);
 		} catch (e) {
-			return c || t !== i ? !1 : Hy(e) === "auth" ? (b("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (n.alertStatus = null, n.alertNotice = "无法读取可信的预警运行状态，请稍后重试。", !1);
+			return c || t !== i ? !1 : Hy(e) === "auth" ? (_("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (n.alertStatus = null, n.alertNotice = "无法读取可信的预警运行状态，请稍后重试。", !1);
 		} finally {
 			!c && t === i && (n.alertBusy = !1, d());
 		}
 	}
-	function D(e) {
+	async function w() {
+		if (c || !n.ready || !n.snapshot || n.busy || n.unitsBusy) return !1;
+		let t = {
+			epoch: i,
+			revision: n.snapshot.revision,
+			serial: ++r,
+			selected: n.selected
+		};
+		n.unitsBusy = !0, n.unitsNotice = "", d();
+		let a = () => !c && n.ready && t.epoch === i && t.serial === r && t.revision === n.snapshot?.revision && t.selected === n.selected;
+		try {
+			let t = await e.apiPost("admin/alert-units", {});
+			return a() ? (n.units = ay(t), n.unitsUnknown = !1, !0) : !1;
+		} catch (e) {
+			return a() ? (n.units = null, Hy(e) === "auth" ? _("管理授权已失效，请重新打开。") : n.unitsNotice = "单位获取失败，请刷新。", !1) : !1;
+		} finally {
+			a() && (n.unitsBusy = !1, d());
+		}
+	}
+	async function T(t, o) {
+		if (c || !n.ready || n.stale || n.busy || n.unitsBusy || n.unitsUnknown || !n.snapshot || p() || n.route !== "accounts" || n.selected !== t) return !1;
+		let s = n.snapshot.config.providers.find((e) => e.id === t), l = n.units?.accounts.find((e) => e.account_id === t), m = l?.choices.find((e) => e.id === o && e.metric === s?.balance_alert?.metric);
+		if (!l || !(["ambiguous", "changed"].includes(l.unit_state) || l.unit_state === "unidentified" && l.choices.filter((e) => e.metric === s?.balance_alert?.metric).length === 1) || !m || n.snapshot.migration.pending) return !1;
+		let g = {
+			epoch: i,
+			serial: ++a,
+			write: !0
+		};
+		u = g, r++, n.busy = !0, n.unitsBusy = !0, n.unitsNotice = "", h(), d();
+		try {
+			let r = await e.apiPost("admin/alert-bind-unit", {
+				revision: n.snapshot.revision,
+				account_id: t,
+				choice_id: m.id
+			});
+			return v(g) ? (n.units = ay(r), n.unitsUnknown = !1, n.unitsNotice = "单位已确认。", !0) : !1;
+		} catch (e) {
+			if (!v(g)) return !1;
+			n.units = null;
+			let t = Hy(e);
+			return t === "auth" ? (_("管理授权已失效，请重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unitsNotice = "配置已改变，请重新读取。", f("配置已改变，请重新读取。", "warning")) : t === "validation" ? n.unitsNotice = "单位已变化，请刷新后重试。" : (n.unitsUnknown = !0, n.unitsNotice = "确认结果未知，请刷新单位后再操作。"), !1);
+		} finally {
+			v(g) && (n.busy = !1, n.unitsBusy = !1, u = null, d());
+		}
+	}
+	function E(e) {
 		if (c) return;
 		s = !0, n.theme = e?.isDark === !0 || e?.theme === "dark" ? "dark" : "light", n.locale = typeof e?.locale == "string" ? e.locale : "zh-CN";
 		let t;
 		try {
 			t = Uy(e);
 		} catch {
-			b("宿主管理上下文无效。请从 AstrBot 插件管理打开此页。");
+			_("宿主管理上下文无效。请从 AstrBot 插件管理打开此页。");
 			return;
 		}
 		if (n.ready && t === o) {
 			d();
 			return;
 		}
-		i++, u = null, n.busy = !1, y(), n.snapshot = null, n.stale = !0, n.unknown = !1, n.ready = !0, o = t, d(), T();
+		i++, u = null, n.busy = !1, g(), n.snapshot = null, n.stale = !0, n.unknown = !1, n.ready = !0, o = t, d(), S();
 	}
-	function O(e) {
+	function D(e) {
 		n.ready && !n.stale && !n.busy && n.draft && (e(n.draft), n.edit++, n.plan = null, d());
 	}
-	function ee(e, t = null) {
-		let r = u?.write;
-		i++, n.alertBusy = !1, u = null, n.busy = !1, v(), n.plan = null, n.edit++, n.route = e, n.selected = t, g(), r && (n.stale = !0, n.unknown = !0, f("已离开原设置。已发出的请求无法撤回，请重新读取确认结果。", "warning")), d();
+	function O(e, t = null) {
+		let a = u?.write;
+		i++, r++, n.units = null, n.unitsBusy = !1, n.unitsNotice = "", n.alertBusy = !1, u = null, n.busy = !1, h(), n.plan = null, n.edit++, n.route = e, n.selected = t, m(), a && (n.stale = !0, n.unknown = !0, f("已离开原设置。已发出的请求无法撤回，请重新读取确认结果。", "warning")), d();
 	}
-	async function te() {
+	async function ee() {
 		if (!n.draft) return !1;
 		let e = zy(n.draft);
-		return e.length ? (f(e.join(" "), "error"), d(), !1) : w("update", {
+		return e.length ? (f(e.join(" "), "error"), d(), !1) : x("update", {
 			revision: n.snapshot?.revision,
 			config: Cy(n.draft)
 		}, { write: !0 });
 	}
-	function ne(e, t, r = "value") {
-		!n.stale && !n.busy && n.ready && n.snapshot && (v(), n.secret = {
+	function te(e, t, r = "value") {
+		!n.stale && !n.busy && n.ready && n.snapshot && (h(), n.secret = {
 			account: e,
 			field: t,
 			mode: r,
@@ -12371,69 +12430,66 @@ function Wy(e, t = () => {}) {
 			environment: ""
 		}, n.edit++, d());
 	}
-	function re(e, t) {
+	function ne(e, t) {
 		n.secret && !n.busy && (n.secret[e] = t, n.edit++, d());
 	}
-	async function ie() {
+	async function re() {
 		let e = n.secret;
 		if (!e || p()) return !1;
 		let t = e.mode === "environment" ? e.environment : e.value;
-		return !t.trim() || e.mode === "environment" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(t) ? (f(e.mode === "environment" ? "请输入有效的环境变量名，不要填写变量的值。" : "请输入新凭据；留空不会执行清除。", "error"), d(), !1) : w("credential-replace", {
+		return !t.trim() || e.mode === "environment" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(t) ? (f(e.mode === "environment" ? "请输入有效的环境变量名，不要填写变量的值。" : "请输入新凭据；留空不会执行清除。", "error"), d(), !1) : x("credential-replace", {
 			revision: n.snapshot.revision,
 			account_id: e.account,
 			field: e.field,
 			...e.mode === "environment" ? { environment: t } : { value: t }
 		}, { write: !0 });
 	}
-	async function ae(e, t) {
-		return !p() && w("credential-clear", {
+	async function ie(e, t) {
+		return !p() && x("credential-clear", {
 			revision: n.snapshot?.revision,
 			account_id: e,
 			field: t
 		}, { write: !0 });
 	}
+	function ae() {
+		h(), n.edit++, d();
+	}
 	function oe() {
-		v(), n.edit++, d();
+		h(), n.plan = null, m(), n.edit++, f("未保存的草稿已丢弃。"), d();
 	}
 	function se() {
-		v(), n.plan = null, g(!1), n.edit++, f("未保存的草稿已丢弃。"), d();
+		c || (c = !0, i++, u = null, n.busy = !1, g(), n.snapshot = null, n.ready = !1, l?.(), d());
 	}
 	function ce() {
-		c || (c = !0, i++, u = null, n.busy = !1, y(), n.snapshot = null, n.ready = !1, l?.(), d());
-	}
-	function le() {
 		if (!e || typeof e.apiPost != "function" || typeof e.ready != "function" || typeof e.onContext != "function") {
 			f("请从 AstrBot 插件管理页面打开此页。", "warning"), d();
 			return;
 		}
-		l = e.onContext(D), Promise.resolve(e.ready()).then((e) => {
-			s || D(e);
+		l = e.onContext(E), Promise.resolve(e.ready()).then((e) => {
+			s || E(e);
 		}).catch(() => {
-			!s && !c && b("宿主管理会话不可用，请重新打开此页。");
+			!s && !c && _("宿主管理会话不可用，请重新打开此页。");
 		});
 	}
 	return {
 		state: n,
-		start: le,
-		accept: D,
-		close: ce,
-		refresh: T,
-		suggestUnit: m,
-		markUnitEdited: _,
-		renameUnitDraft: h,
-		isSuggestedUnit: (e) => r.has(e),
-		hasSuggestedUnits: () => r.size > 0,
-		refreshAlerts: E,
-		save: te,
+		start: ce,
+		accept: E,
+		close: se,
+		refresh: S,
+		refreshUnits: w,
+		bindUnit: T,
+		refreshAlerts: C,
+		save: ee,
 		dirty: p,
-		edit: O,
-		navigate: ee,
-		beginSecret: ne,
-		changeSecret: re,
-		replace: ie,
-		clear: ae,
-		cancelSecret: oe,
-		discard: se,
+		edit: D,
+		navigate: O,
+		beginSecret: te,
+		changeSecret: ne,
+		replace: re,
+		clear: ie,
+		cancelSecret: ae,
+		discard: oe,
 		interactionKey: () => JSON.stringify([
 			i,
 			n.edit,
@@ -12442,10 +12498,11 @@ function Wy(e, t = () => {}) {
 			n.snapshot?.revision,
 			n.busy,
 			n.ready,
-			n.stale
+			n.stale,
+			r
 		]),
-		plan: () => w("legacy-config-plan", {}, { plan: !0 }),
-		migrate: () => (n.plan?.pending || n.plan?.cleanup_pending) && !n.plan?.legacy_conflict && !p() ? w("legacy-config-execute", {
+		plan: () => x("legacy-config-plan", {}, { plan: !0 }),
+		migrate: () => (n.plan?.pending || n.plan?.cleanup_pending) && !n.plan?.legacy_conflict && !p() ? x("legacy-config-execute", {
 			revision: n.snapshot?.revision,
 			plan_id: n.plan.plan_id,
 			confirm: !0
@@ -12453,25 +12510,31 @@ function Wy(e, t = () => {}) {
 	};
 }
 var Gy = Po(/* @__PURE__ */ P({ setup() {
-	let e = /* @__PURE__ */ N(0), t = /* @__PURE__ */ N(null), n = /* @__PURE__ */ N(null), r = /* @__PURE__ */ N("deepseek"), i = /* @__PURE__ */ N({}), a = /* @__PURE__ */ N({}), o = /* @__PURE__ */ N({}), s = Yv(document), c = /* @__PURE__ */ new Set(), l, u = Wy(window.AstrBotPluginView, () => {
-		l !== u.state.draft && (i.value = {}, a.value = {}, o.value = {}, c.clear(), l = u.state.draft), s.invalidate(), e.value++;
-	}), d = u.state, f = (e, t = {}) => R(lg, {
+	let e = /* @__PURE__ */ N(0), t = /* @__PURE__ */ N(null), n = /* @__PURE__ */ N(null), r = /* @__PURE__ */ N("deepseek"), i = /* @__PURE__ */ N({}), a = /* @__PURE__ */ N({}), o = /* @__PURE__ */ N({}), s = Yv(document), c = /* @__PURE__ */ N(Object.create(null)), l, u, d = Wy(window.AstrBotPluginView, () => {
+		l !== d.state.draft && (i.value = {}, a.value = {}, o.value = {}, l = d.state.draft), u !== d.state.units && (c.value = Object.create(null), u = d.state.units), s.invalidate(), e.value++;
+	}), f = d.state, p = (e, t = {}) => R(lg, {
 		size: "large",
 		...t
-	}, () => e), p = () => !d.ready || d.busy || d.stale || !!d.snapshot?.migration.pending, m = () => p() || u.dirty() || !d.snapshot?.encryption.ready, h = async (e, t, n, r, i) => {
-		let a = u.interactionKey();
+	}, () => e), m = () => !f.ready || f.busy || f.stale || !!f.snapshot?.migration.pending, h = () => m() || d.dirty() || !f.snapshot?.encryption.ready, g = async (e, t, n, r, i) => {
+		let a = d.interactionKey();
 		await s.ask({
 			kind: e,
 			title: t,
 			message: n,
 			confirmLabel: r,
-			isCurrent: () => a === u.interactionKey() && d.ready
+			isCurrent: () => a === d.interactionKey() && f.ready
 		}) && await i();
-	}, g = async (e, t = null) => {
-		u.dirty() || d.secret || d.busy ? await h("navigation", "离开当前设置？", "未保存的设置和凭据输入将清空。已发出的请求无法撤回，结果不明时需重新读取，不会自动重试。", "放弃草稿并离开", () => u.navigate(e, t)) : u.navigate(e, t);
-	}, _ = async () => {
-		u.dirty() || d.secret ? await h("navigation", "重新读取配置？", "这会清空当前未保存的设置和凭据输入。", "丢弃草稿并读取", () => u.refresh()) : await u.refresh();
-	}, v = (e) => R("svg", {
+	}, _ = async (e, t = null) => {
+		let n = () => {
+			d.navigate(e, t), e === "accounts" && t && f.snapshot?.config.providers.some((e) => e.id === t) && d.refreshUnits();
+		};
+		d.dirty() || f.secret || f.busy ? await g("navigation", "离开当前设置？", "未保存的设置和凭据输入将清空。已发出的请求无法撤回，结果不明时需重新读取，不会自动重试。", "放弃草稿并离开", n) : n();
+	}, v = async () => {
+		let e = async () => {
+			await d.refresh() && f.route === "accounts" && f.selected && await d.refreshUnits();
+		};
+		d.dirty() || f.secret ? await g("navigation", "重新读取配置？", "这会清空当前未保存的设置和凭据输入。", "丢弃草稿并读取", e) : await e();
+	}, y = (e) => R("svg", {
 		class: "shell-icon",
 		viewBox: "0 0 24 24",
 		fill: "none",
@@ -12488,75 +12551,73 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		cx: 12,
 		cy: 12,
 		r: 4
-	}), R("path", { d: "M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2" })] : [R("path", { d: "M4 12a8 8 0 1 1 2 6M4 12V5m0 7h7" })]), y = (e, t, n) => R("a", {
+	}), R("path", { d: "M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2" })] : [R("path", { d: "M4 12a8 8 0 1 1 2 6M4 12V5m0 7h7" })]), b = (e, t, n) => R("a", {
 		href: "#/" + t,
-		"aria-current": d.route === t ? "page" : void 0,
+		"aria-current": f.route === t ? "page" : void 0,
 		onClick: (e) => {
-			e.preventDefault(), g(t);
+			e.preventDefault(), _(t);
 		}
-	}, [v(n), R("span", e)]), b = () => R("div", { class: "shell-brand" }, [R("span", {
+	}, [y(n), R("span", e)]), x = () => R("div", { class: "shell-brand" }, [R("span", {
 		class: "shell-brand-mark",
 		"aria-hidden": "true"
-	}, "✧"), R("span", [R("span", { class: "shell-brand-line" }, "如月怜的"), R("span", { class: "shell-brand-line" }, "额度连结")])]), x = (e, t) => t.reduce((e, t) => e?.[t], e), S = (e, t, n) => u.edit((r) => {
+	}, "✧"), R("span", [R("span", { class: "shell-brand-line" }, "如月怜的"), R("span", { class: "shell-brand-line" }, "额度连结")])]), S = (e, t) => t.reduce((e, t) => e?.[t], e), C = (e, t, n) => d.edit((r) => {
 		let i = n === null ? r : r.providers[n];
 		for (let t of e.slice(0, -1)) (!i[t] || typeof i[t] != "object") && (i[t] = {}), i = i[t];
-		let a = n !== null && e.length === 1 && e[0] === "id" ? i.id : null;
-		i[e.at(-1)] = t, a !== null && (u.renameUnitDraft(a, String(t)), c.delete(a) && c.add(String(t))), n !== null && e.join(".") === "response_mapping.unit" && !c.has(r.providers[n].id) && u.suggestUnit(r.providers[n].id), n !== null && e.length === 1 && e[0] === "id" && (d.selected = String(t));
-	}), C = async (e, t) => {
-		let n = d.draft?.providers[e];
+		i[e.at(-1)] = t, n !== null && e.length === 1 && e[0] === "id" && (f.selected = String(t));
+	}), w = async (e, t) => {
+		let n = f.draft?.providers[e];
 		if (!n || t === n.service_profile) return;
-		let r = n.balance_alert, i = r?.threshold !== null && r?.threshold !== void 0 || r?.recovery_threshold !== null && r?.recovery_threshold !== void 0 || r?.enabled || !!r?.unit && !u.isSuggestedUnit(n.id), a = () => u.edit((n) => {
+		let r = n.balance_alert, i = r?.threshold !== null && r?.threshold !== void 0 || r?.recovery_threshold !== null && r?.recovery_threshold !== void 0 || r?.enabled, a = () => d.edit((n) => {
 			let r = n.providers[e];
 			r.service_profile = t, r.balance_alert = {
 				...r.balance_alert,
 				enabled: !1,
 				metric: ty(r),
-				unit: "",
 				threshold: null,
 				recovery_threshold: null
-			}, u.markUnitEdited(r.id), c.delete(r.id), u.suggestUnit(r.id);
+			};
 		});
-		i ? await h("maintenance", "更换服务类型并重设预警？", "不同服务的指标与单位含义可能不同。确认后将重设预警指标与单位、清空触发和恢复阈值，并关闭预警；请重新核对阈值后再开启。", "重设指标与单位并清空阈值", a) : a();
+		i ? await g("maintenance", "更换服务类型并重设预警？", "将清空阈值并关闭预警，单位会重新识别。", "更换并清空阈值", a) : a();
 	};
-	function w(e, t, n, r = [e], o = {}) {
-		let s = n === null ? d.draft : d.draft?.providers[n];
+	function T(e, t, n, r = [e], o = {}) {
+		let s = n === null ? f.draft : f.draft?.providers[n];
 		if (!s) return null;
-		let c = "field-" + (n === null ? "global" : n) + "-" + r.join("-"), l = x(s, r) ?? t.default ?? "", u = (n === null ? ky : Oy)[e] || t.description, f = o.locked || p(), m = (t) => {
+		let c = "field-" + (n === null ? "global" : n) + "-" + r.join("-"), l = S(s, r) ?? t.default ?? "", u = (n === null ? ky : Oy)[e] || t.description, d = o.locked || m(), p = (t) => {
 			if (delete a.value[c], n !== null && r.length === 1 && e === "service_profile") {
-				C(n, String(t));
+				w(n, String(t));
 				return;
 			}
-			S(r, t, n);
+			C(r, t, n);
 		}, h;
 		return h = t.type === "bool" ? (e) => R("label", { class: "ui-check-label" }, [R("input", {
 			...e,
 			type: "checkbox",
 			checked: !!l,
-			disabled: f,
-			onChange: (e) => m(e.target.checked)
+			disabled: d,
+			onChange: (e) => p(e.target.checked)
 		}), R("span", l ? "已开启" : "已关闭")]) : t.options ? (e) => R("select", {
 			...e,
 			class: "ui-control",
 			value: l,
-			disabled: f,
-			onChange: (e) => m(e.target.value)
+			disabled: d,
+			onChange: (e) => p(e.target.value)
 		}, [t.options.includes(l) ? [] : [R("option", { value: l }, l || "请选择")], ...t.options.map((e, n) => R("option", { value: e }, t.labels?.[n] || e))]) : t.type === "list" ? (e) => R("textarea", {
 			...e,
 			class: "ui-control",
 			rows: 3,
 			value: i.value[c] ?? (Array.isArray(l) ? l.join("\n") : ""),
-			disabled: f,
+			disabled: d,
 			placeholder: "每行一项",
 			onInput: (e) => {
 				let t = e.target.value;
-				i.value[c] = t, m(t.split("\n").map((e) => e.trim()).filter(Boolean));
+				i.value[c] = t, p(t.split("\n").map((e) => e.trim()).filter(Boolean));
 			}
 		}) : t.type === "dict" ? (e) => R("textarea", {
 			...e,
 			class: "ui-control quota-json",
 			rows: 4,
 			value: i.value[c] ?? JSON.stringify(l || {}, null, 2),
-			disabled: f,
+			disabled: d,
 			spellcheck: !1,
 			onInput: (e) => {
 				let t = e.target.value;
@@ -12564,7 +12625,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				try {
 					let e = JSON.parse(t || "{}");
 					if (!e || typeof e != "object" || Array.isArray(e)) throw Error();
-					m(e);
+					p(e);
 				} catch {
 					a.value[c] = "请输入有效的 JSON 对象，不要填写凭据。";
 				}
@@ -12577,11 +12638,11 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 			max: e === "max_concurrency" ? 32 : e === "total_timeout_seconds" ? 300 : e === "timeout_seconds" ? 120 : e === "cache_ttl_seconds" ? 86400 : void 0,
 			step: t.type === "int" ? 1 : t.type === "float" ? "any" : void 0,
 			value: l,
-			disabled: f,
+			disabled: d,
 			autocomplete: "off",
 			onInput: (e) => {
 				let n = e.target.value;
-				m(["float", "int"].includes(t.type) ? n === "" ? "" : Number(n) : n);
+				p(["float", "int"].includes(t.type) ? n === "" ? "" : Number(n) : n);
 			}
 		}), R(qv, {
 			key: c,
@@ -12592,30 +12653,32 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 			class: t.type === "list" || t.type === "dict" ? "ui-field-wide" : void 0
 		}, { default: ({ controlAttrs: e }) => h(e) });
 	}
-	let T = (e) => d.snapshot?.config.providers.find((t) => t.id === e), E = () => R(Gv, {}, () => [
-		f("保存设置", {
+	let E = (e) => f.snapshot?.config.providers.find((t) => t.id === e), D = () => R(Gv, {}, () => [
+		p("保存设置", {
 			type: "primary",
 			"data-action": "save",
-			disabled: p() || !u.dirty() || Object.keys(a.value).length > 0,
-			onClick: () => void u.save()
+			disabled: m() || !d.dirty() || Object.keys(a.value).length > 0,
+			onClick: async () => {
+				await d.save() && f.route === "accounts" && f.selected && await d.refreshUnits();
+			}
 		}),
-		f("放弃修改", {
-			disabled: p() || !u.dirty(),
-			onClick: () => u.discard()
+		p("放弃修改", {
+			disabled: m() || !d.dirty(),
+			onClick: () => d.discard()
 		}),
-		u.hasSuggestedUnits() ? R("span", { class: "dirty-indicator" }, "已填入默认预警单位（尚未保存）") : u.dirty() ? R("span", { class: "dirty-indicator" }, "有未保存修改") : R("span", { class: "quota-muted" }, "普通设置与凭据分别保存")
-	]), D = (e) => R(Hv, {
+		d.dirty() ? R("span", { class: "dirty-indicator" }, "有未保存修改") : R("span", { class: "quota-muted" }, "普通设置与凭据分别保存")
+	]), O = (e) => R(Hv, {
 		title: "查询凭据",
 		eyebrow: "SOURCE ACCESS"
 	}, { default: () => [
-		R(Kv, {}, () => "仅显示配置状态，不读取或回显原值。更换、清除分别提交。"),
-		T(e.id) ? null : R(Kv, { tone: "warning" }, () => "请先保存新账户，再配置凭据。"),
-		u.dirty() ? R(Kv, { tone: "warning" }, () => "请先保存或放弃普通设置修改，再操作凭据。") : null,
-		...[...Dy(e), ...Object.entries(d.snapshot?.credentials[e.id] || {}).filter(([t, n]) => n.configured && !Dy(e).some((e) => e.key === t)).map(([e]) => ({
+		R(Kv, {}, () => "凭据单独保存。"),
+		E(e.id) ? null : R(Kv, { tone: "warning" }, () => "请先保存新账户，再配置凭据。"),
+		d.dirty() ? R(Kv, { tone: "warning" }, () => "请先保存或放弃普通设置修改，再操作凭据。") : null,
+		...[...Dy(e), ...Object.entries(f.snapshot?.credentials[e.id] || {}).filter(([t, n]) => n.configured && !Dy(e).some((e) => e.key === t)).map(([e]) => ({
 			key: e,
 			label: "旧版凭据（" + e + "）"
 		}))].map(({ key: t, label: n }) => {
-			let r = d.snapshot?.credentials[e.id]?.[t], i = d.secret?.account === e.id && d.secret?.field === t;
+			let r = f.snapshot?.credentials[e.id]?.[t], i = f.secret?.account === e.id && f.secret?.field === t;
 			return R("section", {
 				class: "quota-credential",
 				key: t
@@ -12629,59 +12692,62 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				i ? R("form", {
 					autocomplete: "off",
 					onSubmit: (e) => {
-						e.preventDefault(), u.replace();
+						e.preventDefault(), d.replace();
 					}
 				}, [
 					R("div", {
 						class: "ui-segmented",
 						"aria-label": "新凭据来源"
-					}, [f("输入新凭据", {
-						"aria-pressed": d.secret?.mode === "value",
-						disabled: d.busy,
-						onClick: () => u.beginSecret(e.id, t, "value")
-					}), f("引用环境变量", {
-						"aria-pressed": d.secret?.mode === "environment",
-						disabled: d.busy,
-						onClick: () => u.beginSecret(e.id, t, "environment")
+					}, [p("输入新凭据", {
+						"aria-pressed": f.secret?.mode === "value",
+						disabled: f.busy,
+						onClick: () => d.beginSecret(e.id, t, "value")
+					}), p("引用环境变量", {
+						"aria-pressed": f.secret?.mode === "environment",
+						disabled: f.busy,
+						onClick: () => d.beginSecret(e.id, t, "environment")
 					})]),
 					R(qv, {
 						controlId: "credential-new-value",
-						label: d.secret?.mode === "environment" ? "环境变量名" : "新凭据",
-						hint: d.secret?.mode === "environment" ? "仅填写环境变量名，例如 QUOTA_API_KEY；凭据值由运行环境提供。" : "空值不会清除已有凭据。提交后立即清空输入。"
+						label: f.secret?.mode === "environment" ? "环境变量名" : "新凭据",
+						hint: f.secret?.mode === "environment" ? "仅填写环境变量名，例如 QUOTA_API_KEY；凭据值由运行环境提供。" : "空值不会清除已有凭据。提交后立即清空输入。"
 					}, { default: ({ controlAttrs: e }) => R("input", {
 						...e,
 						class: "ui-control",
-						type: d.secret?.mode === "environment" ? "text" : "password",
-						value: d.secret?.mode === "environment" ? d.secret?.environment : d.secret?.value,
+						type: f.secret?.mode === "environment" ? "text" : "password",
+						value: f.secret?.mode === "environment" ? f.secret?.environment : f.secret?.value,
 						autocomplete: "new-password",
 						spellcheck: !1,
 						autocapitalize: "none",
 						maxlength: 8192,
-						disabled: m(),
-						onInput: (e) => u.changeSecret(d.secret?.mode === "environment" ? "environment" : "value", e.target.value)
+						disabled: h(),
+						onInput: (e) => d.changeSecret(f.secret?.mode === "environment" ? "environment" : "value", e.target.value)
 					}) }),
-					R(Gv, {}, () => [f("保存新凭据", {
+					R(Gv, {}, () => [p("保存新凭据", {
 						type: "primary",
 						attrType: "submit",
 						"data-action": "credential-save",
-						disabled: m()
-					}), f("取消输入", {
-						disabled: d.busy,
-						onClick: () => u.cancelSecret()
+						disabled: h()
+					}), p("取消输入", {
+						disabled: f.busy,
+						onClick: () => d.cancelSecret()
 					})])
-				]) : R(Gv, {}, () => [f("更换凭据", {
+				]) : R(Gv, {}, () => [p("更换凭据", {
 					"data-action": "credential-replace",
-					disabled: m() || !T(e.id),
-					onClick: () => u.beginSecret(e.id, t)
-				}), f("清除凭据", {
+					disabled: h() || !E(e.id),
+					onClick: () => d.beginSecret(e.id, t)
+				}), p("清除凭据", {
 					"data-action": "credential-clear",
-					disabled: p() || u.dirty() || !r?.configured,
-					onClick: () => void h("credential-clear", "清除 " + n + "？", "将移除账户「" + e.display_name + "」的此项凭据或引用。账户设置保留；之后需重新配置才能查询。", "确认清除", () => u.clear(e.id, t))
+					disabled: m() || d.dirty() || !r?.configured,
+					onClick: () => void g("credential-clear", "清除 " + n + "？", "将移除账户「" + e.display_name + "」的此项凭据或引用。账户设置保留；之后需重新配置才能查询。", "确认清除", () => d.clear(e.id, t))
 				})])
 			]);
 		}),
-		R("p", { class: "quota-muted" }, "凭据草稿仅存在当前页面内存。离开、授权失效或结束会话时清空，不写入浏览器存储。")
-	] }), O = {
+		R("p", { class: "quota-muted" }, "")
+	] }), ee = {
+		unit_unidentified: "等待识别单位",
+		units_ambiguous: "多个单位待确认",
+		unit_changed: "单位已变化，请确认",
 		disabled: "预警已关闭",
 		waiting: "等待下次检查",
 		monitoring: "余额监测中",
@@ -12706,16 +12772,16 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		incomplete: "配置不完整，未启动",
 		error: "检查失败，保留上次告警状态",
 		stale: "结果过期或指标、单位不匹配，不用于预警判断"
-	}, ee = (e) => {
-		let t = d.alertStatus, n = e ? t?.accounts.find((t) => t.account_id === e) : null;
+	}, te = (e) => {
+		let t = f.alertStatus, n = e ? t?.accounts.find((t) => t.account_id === e) : null;
 		return R("div", { class: "quota-alert-runtime" }, [
-			R("div", { class: "quota-alert-runtime-heading" }, [R("strong", "运行状态"), f(d.alertBusy ? "读取中…" : "刷新预警状态", {
+			R("div", { class: "quota-alert-runtime-heading" }, [R("strong", "运行状态"), p(f.alertBusy ? "读取中…" : "刷新预警状态", {
 				text: !0,
 				"data-action": "alert-status",
-				disabled: !d.ready || d.busy || d.alertBusy,
-				onClick: () => void u.refreshAlerts()
+				disabled: !f.ready || f.busy || f.alertBusy,
+				onClick: () => void d.refreshAlerts()
 			})]),
-			R("p", { class: "quota-muted" }, d.alertNotice),
+			f.alertNotice ? R("p", { class: "quota-muted" }, f.alertNotice) : null,
 			t ? R(Kv, { tone: !t.storage_available || n?.status === "storage_unavailable" || n?.status === "failed" ? "error" : !t.running || n && [
 				"low",
 				"recovering",
@@ -12723,19 +12789,64 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				"error",
 				"stale",
 				"blocked",
-				"paused"
-			].includes(n.status) ? "warning" : "neutral" }, () => t.storage_available ? t.running ? e ? n ? O[n.status] || "状态已更新，请通过预警命令查看详情。" : "此账户尚无运行记录。" : "检查任务已运行；仅配置完整且单独开启的账户参与。" : "检查任务未运行。" : "告警状态存储不可用，预警未运行。") : null,
+				"paused",
+				"units_ambiguous",
+				"unit_changed"
+			].includes(n.status) ? "warning" : "neutral" }, () => t.storage_available ? t.running ? e ? n ? ee[n.status] || "状态已更新，请通过预警命令查看详情。" : "此账户尚无运行记录。" : "检查任务已运行；仅配置完整且单独开启的账户参与。" : "检查任务未运行。" : "告警状态存储不可用，预警未运行。") : null,
+			n?.detail_code ? R(Kv, { tone: "warning" }, () => n.detail_code === "session_disabled" ? "目标会话已停用" : "已使用固定提示") : null,
 			n?.last_checked_at ? R("p", { class: "quota-muted" }, "最近检查：" + n.last_checked_at) : null,
 			n?.last_sent_at ? R("p", { class: "quota-muted" }, "最近发送尝试：" + n.last_sent_at) : null
 		]);
-	}, te = (e, t) => {
+	}, ne = (e, t) => {
+		let n = E(e.id), r = !!n && [
+			"type",
+			"service_profile",
+			"balance_scope",
+			"prefer_split_endpoint",
+			"response_mapping",
+			"endpoint",
+			"region"
+		].every((t) => JSON.stringify(e[t]) === JSON.stringify(n[t])) && e.balance_alert?.metric === n.balance_alert?.metric, i = r ? f.units?.accounts.find((t) => t.account_id === e.id) : void 0, a = i?.choices.filter((t) => t.metric === (e.balance_alert?.metric || ty(e))) || [], o = !!i && (["ambiguous", "changed"].includes(i.unit_state) || i.unit_state === "unidentified" && a.length === 1), l = i?.unit || iy(e), u = c.value[e.id] || "", h = a.find((e) => e.id === u), _ = i?.unit_state === "ambiguous" ? "发现多个单位，请选择。" : i?.unit_state === "changed" ? "单位已变化，请重新确认。" : i?.unit_state === "stale" ? "已有单位已过期，请先查询余额。" : null;
+		return R("section", {
+			class: "quota-alert-unit",
+			"aria-label": "预警单位"
+		}, [
+			R("div", { class: "quota-alert-runtime-heading" }, [R("strong", { "data-testid": "alert-unit" }, "单位：" + (l || "待获取")), p(f.unitsBusy ? "读取中…" : "刷新", {
+				text: !0,
+				"data-action": "alert-units",
+				disabled: !f.ready || f.busy || f.unitsBusy || !n,
+				onClick: () => void d.refreshUnits()
+			})]),
+			!l && !_ ? R("p", { class: "quota-muted" }, r ? o ? "请确认查询到的单位。" : "查询余额后自动识别。" : n ? "保存设置后重新识别。" : "保存账户后自动识别。") : null,
+			i?.observed_at ? R("p", { class: "quota-muted" }, "更新于 " + i.observed_at) : null,
+			_ ? R(Kv, { tone: "warning" }, () => _) : null,
+			f.unitsNotice ? R(Kv, { tone: f.unitsUnknown ? "warning" : "neutral" }, () => f.unitsNotice) : null,
+			o && a.length ? R(qv, {
+				controlId: "field-" + t + "-unit-choice",
+				label: "选择单位",
+				hint: d.dirty() ? "请先保存设置。" : void 0
+			}, { default: ({ controlAttrs: t }) => R("div", { class: "quota-unit-choice" }, [R("select", {
+				...t,
+				class: "ui-control",
+				value: u,
+				disabled: m() || f.unitsBusy || d.dirty() || f.unitsUnknown,
+				onChange: (t) => {
+					s.cancel(), c.value[e.id] = t.target.value;
+				}
+			}, [R("option", { value: "" }, "请选择"), ...a.map((e) => R("option", { value: e.id }, e.unit))]), p("确认单位", {
+				"data-action": "alert-bind-unit",
+				disabled: m() || f.unitsBusy || f.unitsUnknown || d.dirty() || !h,
+				onClick: () => void g("maintenance", "确认单位 " + h?.unit + "？", e.balance_alert?.threshold !== null && e.balance_alert?.threshold !== void 0 ? "改用 " + h?.unit + "，按阈值 " + e.balance_alert.threshold + " 比较？" : "改用 " + h?.unit + "？阈值尚未设置。", "确认单位", () => d.bindUnit(e.id, u))
+			})]) }) : null
+		]);
+	}, re = (e, t) => {
 		let n = {
 			...$v(),
 			...e.balance_alert
-		}, r = "field-" + t + "-balance_alert-", i = p(), s = (e, n) => S(["balance_alert", e], n, t), l = (t, o, l, d = "") => R(qv, {
+		}, r = "field-" + t + "-balance_alert-", i = m(), s = (e, n) => C(["balance_alert", e], n, t), c = (t, o, c, l = "") => R(qv, {
 			controlId: r + t,
 			label: o,
-			hint: l,
+			hint: c,
 			error: a.value[r + t]
 		}, { default: ({ controlAttrs: o }) => R("input", {
 			...o,
@@ -12743,18 +12854,14 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 			type: "text",
 			inputmode: t.includes("threshold") ? "decimal" : void 0,
 			value: n[t] ?? "",
-			placeholder: d,
+			placeholder: l,
 			disabled: i,
 			autocomplete: "off",
 			spellcheck: !1,
 			onInput: (i) => {
 				let o = i.target.value;
-				t === "unit" && (c.add(e.id), u.markUnitEdited(e.id)), s(t, t.includes("threshold") && o === "" ? null : o);
-				for (let e of [
-					"threshold",
-					"recovery_threshold",
-					"unit"
-				]) delete a.value[r + e];
+				s(t, t.includes("threshold") && o === "" ? null : o);
+				for (let e of ["threshold", "recovery_threshold"]) delete a.value[r + e];
 				try {
 					my({
 						...n,
@@ -12764,13 +12871,13 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					a.value[r + t] = e.message;
 				}
 			}
-		}) }), m = n.check_interval_minutes, h = Number.isInteger(m) && m >= 1 && m <= 4320;
-		h && (o.value[r] = m);
-		let g = h ? m : o.value[r] ?? 15, _ = (e) => {
+		}) }), l = n.check_interval_minutes, u = Number.isInteger(l) && l >= 1 && l <= 4320;
+		u && (o.value[r] = l);
+		let d = u ? l : o.value[r] ?? 15, h = (e) => {
 			let t = /^[0-9]+$/.test(e) ? Number(e) : NaN;
 			Number.isInteger(t) && t >= 1 && t <= 4320 ? (s("check_interval_minutes", t), delete a.value[r + "check_interval_minutes"]) : (s("check_interval_minutes", e), a.value[r + "check_interval_minutes"] = "请输入 1 至 4320 的整数分钟；不会自动截断或夹值。");
-		}, v = gy({
-			...d.draft,
+		}, g = gy({
+			...f.draft,
 			providers: [e]
 		});
 		return R(Wv, {
@@ -12780,19 +12887,19 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 			R(qv, {
 				controlId: r + "enabled",
 				label: "启用此账户预警",
-				hint: "保存后生效。只提醒明确低于或等于阈值的最新结果；查询错误不会被视为零余额。"
+				hint: "保存后生效。"
 			}, { default: ({ controlAttrs: e }) => R("label", { class: "ui-check-label" }, [R("input", {
 				...e,
 				type: "checkbox",
 				checked: n.enabled === !0,
 				disabled: i,
 				onChange: (e) => s("enabled", e.target.checked)
-			}), R("span", n.enabled ? "已选择开启（以保存后运行状态为准）" : "已关闭")]) }),
-			v.length ? R(Kv, { tone: "warning" }, () => v.join(" ")) : null,
+			}), R("span", n.enabled ? "已开启" : "已关闭")]) }),
+			g.length ? R(Kv, { tone: "warning" }, () => g.join(" ")) : null,
 			R(qv, {
 				controlId: r + "check_interval_minutes",
 				label: "检查间隔（分钟）",
-				hint: "1 至 4320 分钟，默认 15。拖动滑条或精确输入；两者修改同一个值。",
+				hint: "1–4320 分钟，默认 15。",
 				error: a.value[r + "check_interval_minutes"]
 			}, { default: ({ controlAttrs: e }) => R("div", { class: "quota-alert-interval" }, [R("div", { class: "quota-alert-interval-controls" }, [
 				R("input", {
@@ -12802,9 +12909,9 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					min: 1,
 					max: 4320,
 					step: 1,
-					value: g,
+					value: d,
 					disabled: i,
-					onInput: (e) => _(e.target.value)
+					onInput: (e) => h(e.target.value)
 				}),
 				R("input", {
 					...e,
@@ -12813,9 +12920,9 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					min: 1,
 					max: 4320,
 					step: 1,
-					value: m,
+					value: l,
 					disabled: i,
-					onInput: (e) => _(e.target.value)
+					onInput: (e) => h(e.target.value)
 				}),
 				R("span", "分钟")
 			]), R("div", { class: "quota-alert-quick-values" }, [
@@ -12824,18 +12931,18 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				60,
 				1440,
 				4320
-			].map((e) => f(String(e), {
+			].map((e) => p(String(e), {
 				size: "small",
 				text: !0,
 				"aria-label": `设为 ${e} 分钟`,
 				disabled: i,
-				onClick: () => _(String(e))
+				onClick: () => h(String(e))
 			})))]) }),
 			R(Jv, {}, () => [
 				R(qv, {
 					controlId: r + "metric",
 					label: "预警指标",
-					hint: "仅比较这一个指标，不累加现金、可用额度或信用额度。"
+					hint: "选择需要监测的余额。"
 				}, { default: ({ controlAttrs: t }) => R("select", {
 					...t,
 					class: "ui-control",
@@ -12843,13 +12950,13 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					disabled: i,
 					onChange: (e) => s("metric", e.target.value)
 				}, ny(e).map((e) => R("option", { value: e }, ry[e] + " · " + e))) }),
-				l("unit", "预警单位", ay(e) + " 更改响应映射或单位后请复核阈值与单位，数值不会自动换算。", "填写实际查询结果的单位"),
-				l("threshold", "触发阈值", "最新余额低于或等于此值时提醒；留空不能启用。", "请输入明确阈值"),
-				l("recovery_threshold", "恢复阈值（可选）", "留空使用：触发阈值 + max(阈值绝对值 × 10%, 0.01)。设置时须高于触发阈值。", "自动滞回阈值"),
+				ne(e, t),
+				c("threshold", "触发阈值", "余额低于或等于此值时提醒。", "请输入明确阈值"),
+				c("recovery_threshold", "恢复阈值（可选）", "留空自动设置，须高于触发阈值。", "自动滞回阈值"),
 				R(qv, {
 					controlId: r + "repeat_minutes",
 					label: "持续低额重复提醒（分钟）",
-					hint: "0 表示同一轮低额只提醒一次；非零为 1 至 4320 分钟。",
+					hint: "0 不重复，最多 4320 分钟。",
 					error: a.value[r + "repeat_minutes"]
 				}, { default: ({ controlAttrs: e }) => R("input", {
 					...e,
@@ -12866,157 +12973,133 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					}
 				}) })
 			]),
-			ee(e.id)
+			te(e.id)
 		] });
-	}, ne = () => R(Wv, {
+	}, ie = () => R(Wv, {
 		title: "额度预警推送目标",
 		number: "03"
-	}, { default: () => [
-		R(qv, {
-			controlId: "field-global-balance_alert_targets",
-			label: "目标 UMO（每行一个）",
-			hint: "每行 UMO 后可用空格追加 @QQ号；不填写 @ 则仅发消息。私聊目标不能附加 @。以下号码仅为合成演示，不是默认收件人。",
-			error: a.value["field-global-balance_alert_targets"]
-		}, { default: ({ controlAttrs: e }) => R("textarea", {
-			...e,
-			class: "ui-control quota-targets",
-			rows: 5,
-			spellcheck: !1,
-			autocomplete: "off",
-			value: i.value["field-global-balance_alert_targets"] ?? uy(d.draft?.balance_alert_targets),
-			placeholder: "Synthetic-QQ:FriendMessage:10001\nSynthetic-QQ:GroupMessage:10002 @10003 @10004",
-			disabled: p(),
-			onInput: (e) => {
-				let t = e.target.value;
-				i.value["field-global-balance_alert_targets"] = t;
-				try {
-					S(["balance_alert_targets"], ly(t), null), delete a.value["field-global-balance_alert_targets"];
-				} catch (e) {
-					S(["balance_alert_targets"], t, null), a.value["field-global-balance_alert_targets"] = e.message;
-				}
+	}, { default: () => [R(qv, {
+		controlId: "field-global-balance_alert_targets",
+		label: "目标 UMO（每行一个）",
+		hint: "每行一个 UMO，群聊可追加 @QQ号。",
+		error: a.value["field-global-balance_alert_targets"]
+	}, { default: ({ controlAttrs: e }) => R("textarea", {
+		...e,
+		class: "ui-control quota-targets",
+		rows: 5,
+		spellcheck: !1,
+		autocomplete: "off",
+		value: i.value["field-global-balance_alert_targets"] ?? uy(f.draft?.balance_alert_targets),
+		placeholder: "Synthetic-QQ:FriendMessage:10001\nSynthetic-QQ:GroupMessage:10002 @10003 @10004",
+		disabled: m(),
+		onInput: (e) => {
+			let t = e.target.value;
+			i.value["field-global-balance_alert_targets"] = t;
+			try {
+				C(["balance_alert_targets"], ly(t), null), delete a.value["field-global-balance_alert_targets"];
+			} catch (e) {
+				C(["balance_alert_targets"], t, null), a.value["field-global-balance_alert_targets"] = e.message;
 			}
-		}) }),
-		R(Kv, {}, () => "仅真实 QQ 群适配器支持群内提及，发送前还会核验平台类型。目标地址不会授予管理权限；保存设置不发送测试消息。"),
-		ee()
-	] }), re = () => R(Wv, {
+		}
+	}) }), te()] }), ae = () => R(Wv, {
 		title: "预警管理权限",
 		number: "04"
 	}, { default: () => [R(qv, {
 		controlId: "field-global-balance_alert_admin_qq_ids",
 		label: "预警管理 QQ 白名单",
-		hint: "每行一个 QQ 号，最多 100 项。可信 QQ 身份命中此名单，或为 AstrBot 内置管理员，任一满足即可管理 /yql alert。",
+		hint: "每行一个 QQ 号；名单成员或 AstrBot 管理员可管理预警。",
 		error: a.value["field-global-balance_alert_admin_qq_ids"]
 	}, { default: ({ controlAttrs: e }) => R("textarea", {
 		...e,
 		class: "ui-control",
 		rows: 3,
-		value: i.value["field-global-balance_alert_admin_qq_ids"] ?? (Array.isArray(d.draft?.balance_alert_admin_qq_ids) ? d.draft?.balance_alert_admin_qq_ids.join("\n") : ""),
+		value: i.value["field-global-balance_alert_admin_qq_ids"] ?? (Array.isArray(f.draft?.balance_alert_admin_qq_ids) ? f.draft?.balance_alert_admin_qq_ids.join("\n") : ""),
 		placeholder: "每行一个 QQ 号；留空仍允许 AstrBot 内置管理员",
-		disabled: p(),
+		disabled: m(),
 		onInput: (e) => {
 			let t = e.target.value;
 			i.value["field-global-balance_alert_admin_qq_ids"] = t;
 			try {
 				if (/[\p{Cc}\p{Cf}\p{Cs}]/u.test(t.replace(/[\r\n\t]/g, ""))) throw Error("不允许控制字符或不可见字符。");
 				let e = sy(t.split(/\s+/u).filter(Boolean));
-				S(["balance_alert_admin_qq_ids"], e, null), delete a.value["field-global-balance_alert_admin_qq_ids"];
+				C(["balance_alert_admin_qq_ids"], e, null), delete a.value["field-global-balance_alert_admin_qq_ids"];
 			} catch (e) {
-				S(["balance_alert_admin_qq_ids"], t, null), a.value["field-global-balance_alert_admin_qq_ids"] = e.message;
+				C(["balance_alert_admin_qq_ids"], t, null), a.value["field-global-balance_alert_admin_qq_ids"] = e.message;
 			}
 		}
-	}) }), R(Kv, {}, () => "普通群管理员不会自动获得此权限。名单仅控制预警命令，不改变已有余额查询权限，也不授予本网页访问权。")] }), ie = () => R(Wv, {
+	}) })] }), oe = () => R(Wv, {
 		title: "预警提示",
 		number: "05"
 	}, { default: () => [R(qv, {
 		controlId: "field-global-balance_alert_llm-enabled",
-		label: "使用模型润色短提示",
-		hint: "金额、单位、阈值和收件人由程序固定。模型失败、超时或无有效文本时使用固定提示。"
+		label: "智能提示",
+		hint: "使用目标会话的模型与人格。"
 	}, { default: ({ controlAttrs: e }) => R("label", { class: "ui-check-label" }, [R("input", {
 		...e,
 		type: "checkbox",
-		checked: d.draft?.balance_alert_llm?.enabled !== !1,
-		disabled: p(),
-		onChange: (e) => S(["balance_alert_llm", "enabled"], e.target.checked, null)
-	}), R("span", d.draft?.balance_alert_llm?.enabled === !1 ? "只使用固定提示" : "使用模型（带安全回退）")]) }), R(Jv, {}, () => ["provider_id", "persona_id"].map((e) => R(qv, {
-		controlId: "field-global-balance_alert_llm-" + e,
-		label: e === "provider_id" ? "模型提供商 ID（可选）" : "人格 ID（可选）",
-		hint: e === "provider_id" ? "留空使用每个目标会话的模型；不是模型 API Key。" : "留空不附加人格；仅使用显式选择的人格。",
-		error: a.value["field-global-balance_alert_llm-" + e]
-	}, { default: ({ controlAttrs: t }) => R("input", {
-		...t,
-		class: "ui-control",
-		value: d.draft?.balance_alert_llm?.[e] ?? "",
-		autocomplete: "off",
-		disabled: p(),
-		onInput: (t) => {
-			let n = t.target.value;
-			S(["balance_alert_llm", e], n, null), delete a.value["field-global-balance_alert_llm-" + e];
-			try {
-				hy(d.draft?.balance_alert_llm);
-			} catch (t) {
-				a.value["field-global-balance_alert_llm-" + e] = t.message;
-			}
-		}
-	}) })))] });
-	function ae(t, n) {
-		let r = Ey(t).items, i = !!T(t.id), a = t.type === "openai_compatible", o = r.endpoint?.items || yy.provider_account.items.endpoint.items, s = yy.provider_account.items.response_mapping.items;
+		checked: f.draft?.balance_alert_llm?.enabled !== !1,
+		disabled: m(),
+		onChange: (e) => C(["balance_alert_llm", "enabled"], e.target.checked, null)
+	}), R("span", f.draft?.balance_alert_llm?.enabled === !1 ? "已关闭" : "已开启")]) })] });
+	function se(t, n) {
+		let r = Ey(t).items, i = !!E(t.id), a = t.type === "openai_compatible", o = r.endpoint?.items || yy.provider_account.items.endpoint.items, s = yy.provider_account.items.response_mapping.items;
 		return R(Vv, {}, {
 			default: () => [
 				R(Wv, {
 					title: "账户设置",
 					number: "01"
 				}, { default: () => R(Jv, {}, () => [
-					w("id", r.id, n, void 0, {
+					T("id", r.id, n, void 0, {
 						locked: i,
 						hint: i ? "已有账户 ID 不可修改，避免凭据误绑定。" : "使用稳定、唯一的 ID；保存后不可更改。"
 					}),
-					w("display_name", r.display_name, n),
-					w("aliases", r.aliases, n, void 0, { hint: "命令与自然语言使用这些别名。每行一项，避免与其他账户重名。" }),
-					w("enabled", r.enabled, n),
+					T("display_name", r.display_name, n),
+					T("aliases", r.aliases, n, void 0, { hint: "命令与自然语言使用这些别名。每行一项，避免与其他账户重名。" }),
+					T("enabled", r.enabled, n),
 					R("div", { class: "quota-provider-readonly" }, [R("span", "供应商"), R("strong", yy[t.type]?.name || t.type)]),
-					w("timeout_seconds", r.timeout_seconds, n),
-					w("cache_ttl_seconds", r.cache_ttl_seconds, n)
+					T("timeout_seconds", r.timeout_seconds, n),
+					T("cache_ttl_seconds", r.cache_ttl_seconds, n)
 				]) }),
 				R(Wv, {
 					title: "供应商设置",
 					number: "02"
-				}, { default: () => [R(Kv, {}, () => t.type === "deepseek" ? "DeepSeek 官方账户余额，查询地址与解析规则已内置。" : t.type === "alibaba_bailian" ? "查询阿里云 BSS 现金余额、可用额度和信用额度（独立展示，不相加）。请使用具有只读 BSS 权限的 RAM AccessKey，不要填写 DashScope API Key。" : t.type === "meinianda" ? "查询 Meinianda 账户站内额度（site_credit）。建议缓存至少 60 秒。" : t.type === "grsai" ? "Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。" : "余额查询使用供应商专属接口，请按其文档配置只读余额接口。"), R(Jv, {}, () => [...r.region ? [w("region", r.region, n)] : [], ...a ? [
-					w("service_profile", yy.openai_compatible.items.service_profile, n),
-					...t.service_profile === "grsai" ? [w("balance_scope", yy.openai_compatible.items.balance_scope, n)] : [],
-					...t.endpoint?.url ? [w("url", yy.provider_account.items.endpoint.items.url, n, ["endpoint", "url"])] : [],
-					w("base_url", o.base_url, n, ["endpoint", "base_url"]),
-					w("path", o.path, n, ["endpoint", "path"])
+				}, { default: () => [R(Kv, {}, () => t.type === "deepseek" ? "DeepSeek 官方账户余额，查询地址与解析规则已内置。" : t.type === "alibaba_bailian" ? "阿里云 BSS：现金余额、可用额度和信用额度。" : t.type === "meinianda" ? "查询 Meinianda 账户站内额度（site_credit）。建议缓存至少 60 秒。" : t.type === "grsai" ? "Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。" : "余额查询使用供应商专属接口，请按其文档配置只读余额接口。"), R(Jv, {}, () => [...r.region ? [T("region", r.region, n)] : [], ...a ? [
+					T("service_profile", yy.openai_compatible.items.service_profile, n),
+					...t.service_profile === "grsai" ? [T("balance_scope", yy.openai_compatible.items.balance_scope, n)] : [],
+					...t.endpoint?.url ? [T("url", yy.provider_account.items.endpoint.items.url, n, ["endpoint", "url"])] : [],
+					T("base_url", o.base_url, n, ["endpoint", "base_url"]),
+					T("path", o.path, n, ["endpoint", "path"])
 				] : []])] }),
-				te(t, n),
+				re(t, n),
 				a ? R(Wv, {
 					title: "高级接口与响应映射",
 					number: "04"
-				}, { default: () => [w("advanced_options", yy.openai_compatible.items.advanced_options, n), t.advanced_options ? R("div", { class: "quota-advanced" }, [
+				}, { default: () => [T("advanced_options", yy.openai_compatible.items.advanced_options, n), t.advanced_options ? R("div", { class: "quota-advanced" }, [
 					R("h3", "请求协议"),
 					R(Jv, {}, () => [
 						"method",
 						"auth_mode",
 						"auth_name",
 						"json_body"
-					].map((e) => w(e, o[e], n, ["endpoint", e]))),
+					].map((e) => T(e, o[e], n, ["endpoint", e]))),
 					R("h3", "余额响应映射"),
 					R(Kv, {}, () => "使用 JSON Pointer，例如 /data/remaining。静态请求体和映射中不允许放入凭据。"),
-					R(Jv, {}, () => Object.keys(s).map((e) => w(e, s[e], n, ["response_mapping", e])))
+					R(Jv, {}, () => Object.keys(s).map((e) => T(e, s[e], n, ["response_mapping", e])))
 				]) : null] }) : null,
-				E(),
-				R("div", { class: "quota-danger-row" }, [f("移除账户", {
-					disabled: p(),
-					onClick: () => void h("maintenance", "移除账户「" + t.display_name + "」？", "将从草稿移除此账户。保存设置后才会生效，并移除其已保存凭据；其他账户不受影响。", "从草稿移除", () => {
-						u.cancelSecret(), u.edit((e) => e.providers.splice(n, 1)), d.selected = null, e.value++;
+				D(),
+				R("div", { class: "quota-danger-row" }, [p("移除账户", {
+					disabled: m(),
+					onClick: () => void g("maintenance", "移除账户「" + t.display_name + "」？", "将从草稿移除此账户。保存设置后才会生效，并移除其已保存凭据；其他账户不受影响。", "从草稿移除", () => {
+						d.cancelSecret(), d.edit((e) => e.providers.splice(n, 1)), f.selected = null, e.value++;
 					})
 				}), R("span", { class: "quota-muted" }, "移除操作在保存设置后生效。")])
 			],
-			aside: () => D(t)
+			aside: () => O(t)
 		});
 	}
-	let oe = () => {
-		let e = d.draft?.providers || [], t = d.selected === null ? -1 : e.findIndex((e) => e.id === d.selected), n = e[t];
-		return n ? ae(n, t) : R("section", { class: "workspace-index quota-directory" }, [R("div", { class: "workspace-catalog" }, [
+	let ce = () => {
+		let e = f.draft?.providers || [], t = f.selected === null ? -1 : e.findIndex((e) => e.id === f.selected), n = e[t];
+		return n ? se(n, t) : R("section", { class: "workspace-index quota-directory" }, [R("div", { class: "workspace-catalog" }, [
 			R("div", { class: "workspace-index-heading" }, [R("h2", { class: "shell-eyebrow" }, "查询账户"), R("span", { class: "workspace-count" }, e.length + " 个账户")]),
 			e.length ? null : R("div", { class: "shell-empty" }, [R("h2", "还没有查询账户"), R("p", "选择供应商添加账户，再单独配置加密凭据。")]),
 			R("div", { class: "workspace-package-grid" }, e.map((e) => R("article", {
@@ -13028,14 +13111,14 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 			}, "◈"), R("div", [R("div", { class: "workspace-module-title" }, [R("h2", [R("a", {
 				href: "#/accounts/" + encodeURIComponent(e.id),
 				onClick: (t) => {
-					t.preventDefault(), g("accounts", e.id);
+					t.preventDefault(), _("accounts", e.id);
 				}
-			}, e.display_name || e.id)]), R("span", { class: "workspace-state" }, e.enabled === !1 ? "已停用" : "已启用")]), R("p", { class: "workspace-module-summary" }, (yy[e.type]?.name || e.type) + " · " + e.id)])]), R("div", { class: "quota-account-meta" }, [R("span", Dy(e).every(({ key: t }) => d.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? "凭据已配置" : "待配置凭据"), f("账户设置", {
+			}, e.display_name || e.id)]), R("span", { class: "workspace-state" }, e.enabled === !1 ? "已停用" : "已启用")]), R("p", { class: "workspace-module-summary" }, (yy[e.type]?.name || e.type) + " · " + e.id)])]), R("div", { class: "quota-account-meta" }, [R("span", Dy(e).every(({ key: t }) => f.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? "凭据已配置" : "待配置凭据"), p("账户设置", {
 				text: !0,
-				disabled: !d.ready,
-				onClick: () => void g("accounts", e.id)
+				disabled: !f.ready,
+				onClick: () => void _("accounts", e.id)
 			})])]))),
-			u.dirty() ? E() : null
+			d.dirty() ? D() : null
 		]), R("aside", {
 			class: "workspace-aside",
 			"aria-label": "添加查询账户"
@@ -13046,33 +13129,31 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				id: "new-provider",
 				class: "ui-control",
 				value: r.value,
-				disabled: p(),
+				disabled: m(),
 				onChange: (e) => r.value = e.target.value
 			}, by.map((e) => R("option", { value: e }, yy[e].name))),
-			f("添加账户", {
+			p("添加账户", {
 				type: "primary",
-				disabled: p() || u.dirty(),
+				disabled: m() || d.dirty(),
 				onClick: () => {
-					if (u.dirty()) return;
+					if (d.dirty()) return;
 					let t = Ty(r.value), n = 1;
 					for (; e.some((e) => e.id === r.value + "-" + n);) n++;
-					t.id = r.value + "-" + n, u.navigate("accounts", t.id), u.edit((e) => {
-						e.providers.push(t), u.suggestUnit(t.id);
-					});
+					t.id = r.value + "-" + n, d.navigate("accounts", t.id), d.edit((e) => e.providers.push(t));
 				}
 			}),
 			R("p", { class: "workspace-scope-note" }, "各供应商使用自己的余额协议和查询凭据，不复用模型聊天配置。")
 		])]);
-	}, se = () => R(Vv, {}, {
+	}, le = () => R(Vv, {}, {
 		default: () => [
 			...Sy.map((e) => R(Wv, {
 				title: e.title,
 				number: e.number
-			}, { default: () => R(Jv, {}, () => e.keys.map((e) => w(e, xy[e], null))) })),
-			ne(),
-			re(),
+			}, { default: () => R(Jv, {}, () => e.keys.map((e) => T(e, xy[e], null))) })),
 			ie(),
-			E()
+			ae(),
+			oe(),
+			D()
 		],
 		aside: () => R(Hv, {
 			title: "权限边界",
@@ -13085,34 +13166,34 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				R("li", "/yql 余额查询命令受管理员开关限制；预警命令按独立规则。"),
 				R("li", "群聊查询需开启允许群聊，并满足用户白名单限制。")
 			]),
-			R(Kv, {}, () => "账户级超时和缓存可覆盖全局默认值。额度预警须在各账户页面单独开启，并填写阈值、单位和推送目标。")
+			R(Kv, {}, () => "各账户可单独开启预警。")
 		] })
-	}), ce = () => R(Vv, {}, {
+	}), ue = () => R(Vv, {}, {
 		default: () => R(Wv, {
 			title: "旧配置迁移",
 			number: "01"
 		}, { default: () => [
 			R("p", "将旧版插件配置中的普通设置、凭据和环境变量引用迁移到独立管理存储。凭据加密保存，不会在页面显示。"),
-			R(Kv, { tone: d.snapshot?.migration.pending || d.snapshot?.migration.cleanup_pending || d.snapshot?.migration.legacy_conflict ? "warning" : "success" }, () => d.snapshot?.migration.legacy_conflict ? "发现与当前加密存储不同的旧配置。不会自动覆盖现有存储，也不会清理这份新出现的旧配置。请人工核对来源。" : d.snapshot?.migration.cleanup_pending ? "迁移已保存，但宿主旧字段尚未清理完成。请重新预览后重试清理。" : d.snapshot?.migration.pending ? "检测到旧版配置，迁移完成前不能保存新设置。" : "没有待迁移的旧版配置。"),
-			f("读取迁移预览", {
-				disabled: !d.ready || d.busy || d.stale || u.dirty(),
-				onClick: () => void u.plan()
+			R(Kv, { tone: f.snapshot?.migration.pending || f.snapshot?.migration.cleanup_pending || f.snapshot?.migration.legacy_conflict ? "warning" : "success" }, () => f.snapshot?.migration.legacy_conflict ? "发现与当前加密存储不同的旧配置。不会自动覆盖现有存储，也不会清理这份新出现的旧配置。请人工核对来源。" : f.snapshot?.migration.cleanup_pending ? "迁移已保存，但宿主旧字段尚未清理完成。请重新预览后重试清理。" : f.snapshot?.migration.pending ? "检测到旧版配置，迁移完成前不能保存新设置。" : "没有待迁移的旧版配置。"),
+			p("读取迁移预览", {
+				disabled: !f.ready || f.busy || f.stale || d.dirty(),
+				onClick: () => void d.plan()
 			}),
-			d.plan ? R("div", { class: "quota-migration-plan" }, [
+			f.plan ? R("div", { class: "quota-migration-plan" }, [
 				R("h3", "本次迁移范围"),
 				R("dl", [
 					R("dt", "账户"),
-					R("dd", String(d.plan.account_count)),
+					R("dd", String(f.plan.account_count)),
 					R("dt", "需要加密的凭据"),
-					R("dd", String(d.plan.plaintext_count)),
+					R("dd", String(f.plan.plaintext_count)),
 					R("dt", "环境变量引用"),
-					R("dd", String(d.plan.environment_count))
+					R("dd", String(f.plan.environment_count))
 				]),
 				R("p", "仅在迁移成功后清理宿主中的旧配置。若源配置变化，将拒绝执行，请重新预览。"),
-				f(d.plan.cleanup_pending ? "重试清理旧字段" : "确认迁移旧配置", {
+				p(f.plan.cleanup_pending ? "重试清理旧字段" : "确认迁移旧配置", {
 					type: "primary",
-					disabled: !d.plan.pending && !d.plan.cleanup_pending || d.plan.legacy_conflict || !d.snapshot?.encryption.ready || d.busy,
-					onClick: () => void h("legacy-config", "迁移旧配置？", "将迁移预览中的 " + d.plan.account_count + " 个账户；明文凭据加密后保存，并清理旧版插件字段。不会展示或发送凭据到其他服务。", "执行迁移", () => u.migrate())
+					disabled: !f.plan.pending && !f.plan.cleanup_pending || f.plan.legacy_conflict || !f.snapshot?.encryption.ready || f.busy,
+					onClick: () => void g("legacy-config", "迁移旧配置？", "将迁移预览中的 " + f.plan.account_count + " 个账户；明文凭据加密后保存，并清理旧版插件字段。不会展示或发送凭据到其他服务。", "执行迁移", () => d.migrate())
 				})
 			]) : null
 		] }),
@@ -13120,59 +13201,59 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 			title: "存储安全",
 			eyebrow: "LOCAL ENCRYPTION"
 		}, { default: () => [
-			R("p", { class: "ui-badge" }, d.snapshot?.encryption.ready ? "加密存储就绪" : "加密存储不可用"),
+			R("p", { class: "ui-badge" }, f.snapshot?.encryption.ready ? "加密存储就绪" : "加密存储不可用"),
 			R("p", "主密钥由运行环境管理，不在此页面输入、导出或恢复。"),
 			R(Kv, {}, () => "遇到存储故障请检查宿主日志中的安全错误代码。不要在公开日志或截图中粘贴密钥。")
 		] })
-	}), le = () => {
+	}), k = () => {
 		let e = window.location.hash;
 		window.history.replaceState(null, "", window.location.pathname + window.location.search);
 		let t = /^#\/(accounts|global|maintenance)(?:\/([^/]+))?$/.exec(e);
-		t && g(t[1], t[2] ? decodeURIComponent(t[2]) : null);
-	}, ue = () => u.close(), k = (e) => {
-		(u.dirty() || d.secret || d.busy) && (e.preventDefault(), e.returnValue = "");
+		t && _(t[1], t[2] ? decodeURIComponent(t[2]) : null);
+	}, de = () => d.close(), fe = (e) => {
+		(d.dirty() || f.secret || f.busy) && (e.preventDefault(), e.returnValue = "");
 	};
 	return xr(() => {
-		u.start(), window.addEventListener("pagehide", ue), window.addEventListener("beforeunload", k), window.addEventListener("hashchange", le);
+		d.start(), window.addEventListener("pagehide", de), window.addEventListener("beforeunload", fe), window.addEventListener("hashchange", k);
 	}), Cr(() => {
-		s.dispose(), u.close(), window.removeEventListener("pagehide", ue), window.removeEventListener("beforeunload", k), window.removeEventListener("hashchange", le);
+		s.dispose(), d.close(), window.removeEventListener("pagehide", de), window.removeEventListener("beforeunload", fe), window.removeEventListener("hashchange", k);
 	}), () => {
-		e.value, document.documentElement.dataset.theme = d.theme, document.documentElement.lang = d.locale;
-		let r = d.draft?.providers.find((e) => e.id === d.selected), i = d.route === "global" ? "全局设置" : d.route === "maintenance" ? "配置维护" : r ? r.display_name : "账户管理";
+		e.value, document.documentElement.dataset.theme = f.theme, document.documentElement.lang = f.locale;
+		let r = f.draft?.providers.find((e) => e.id === f.selected), i = f.route === "global" ? "全局设置" : f.route === "maintenance" ? "配置维护" : r ? r.display_name : "账户管理";
 		return R(Bv, {
-			theme: d.theme,
-			locale: d.locale,
+			theme: f.theme,
+			locale: f.locale,
 			styleMountTarget: document.head
 		}, { default: () => R("div", {
 			ref: t,
 			class: "game-shell quota-shell",
-			"data-theme": d.theme
+			"data-theme": f.theme
 		}, [
 			R("button", {
 				class: "ui-button skip-button",
 				onClick: () => n.value?.focus()
 			}, "跳到主要内容"),
 			R("aside", { class: "shell-sidebar" }, [
-				b(),
+				x(),
 				R("p", { class: "shell-nav-label" }, "QUOTA LINK"),
-				R("nav", { "aria-label": "主导航" }, [y("账户管理", "accounts", "account"), y("全局设置", "global", "settings")]),
-				R("div", { class: "shell-settings-slot" }, [y("配置维护", "maintenance", "maintenance"), R("p", { class: "shell-note" }, [
+				R("nav", { "aria-label": "主导航" }, [b("账户管理", "accounts", "account"), b("全局设置", "global", "settings")]),
+				R("div", { class: "shell-settings-slot" }, [b("配置维护", "maintenance", "maintenance"), R("p", { class: "shell-note" }, [
 					"统一查询 · 独立凭据",
 					R("br"),
 					"YOMIHIME SERIES"
 				])])
 			]),
 			R("div", { class: "shell-content" }, [
-				R("div", { class: "shell-mobile" }, [b(), R("nav", { "aria-label": "移动端导航" }, [
-					y("账户管理", "accounts", "account"),
-					y("全局设置", "global", "settings"),
-					y("配置维护", "maintenance", "maintenance")
+				R("div", { class: "shell-mobile" }, [x(), R("nav", { "aria-label": "移动端导航" }, [
+					b("账户管理", "accounts", "account"),
+					b("全局设置", "global", "settings"),
+					b("配置维护", "maintenance", "maintenance")
 				])]),
 				R("div", { class: "shell-topbar" }, [
 					R("span", "额度连结"),
 					R("span", "/"),
 					R("span", i),
-					R("span", { class: "quota-revision" }, d.snapshot ? "配置版本 " + d.snapshot.revision : "等待管理会话")
+					R("span", { class: "quota-revision" }, f.snapshot ? "配置版本 " + f.snapshot.revision : "等待管理会话")
 				]),
 				R("main", {
 					ref: n,
@@ -13183,24 +13264,24 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 						class: "shell-heading",
 						title: i,
 						eyebrow: "YOMIHIME QUOTA LINK / ADMIN",
-						subtitle: d.route === "accounts" ? r ? "配置查询参数与来源凭据。" : "管理 AI 服务的余额、用量与额度查询账户。" : void 0
-					}, { default: () => R("div", { class: "quota-header-actions" }, [r ? f("返回账户", { onClick: () => void g("accounts") }) : null, f("重新读取状态", {
-						disabled: !d.ready || d.busy,
-						onClick: () => void _()
+						subtitle: f.route === "accounts" ? r ? "配置查询参数与来源凭据。" : "管理 AI 服务的余额、用量与额度查询账户。" : void 0
+					}, { default: () => R("div", { class: "quota-header-actions" }, [r ? p("返回账户", { onClick: () => void _("accounts") }) : null, p("重新读取状态", {
+						disabled: !f.ready || f.busy,
+						onClick: () => void v()
 					})]) }),
 					R(Kv, {
-						tone: d.tone,
-						role: d.tone === "error" ? "alert" : "status",
+						tone: f.tone,
+						role: f.tone === "error" ? "alert" : "status",
 						class: "shell-status",
 						"data-testid": "status"
-					}, () => d.notice),
+					}, () => f.notice),
 					s.render(),
-					d.snapshot && !d.snapshot.encryption.ready ? R("div", {
+					f.snapshot && !f.snapshot.encryption.ready ? R("div", {
 						class: "quota-warning",
 						role: "status"
 					}, "加密存储不可用。新的明文凭据不能保存，请先检查运行环境；不会改用明文存储。") : null,
-					d.snapshot?.migration.pending && d.route !== "maintenance" ? R("div", { class: "quota-warning" }, [R("span", "有旧版配置等待迁移。普通设置与凭据操作暂时锁定。"), f("前往迁移", { onClick: () => void g("maintenance") })]) : null,
-					d.snapshot ? d.route === "global" ? se() : d.route === "maintenance" ? ce() : oe() : R("section", { class: "shell-empty" }, [R("h2", d.ready ? "正在读取配置" : "需要宿主管理授权"), R("p", "请先登录 AstrBot，再从插件详情页打开「额度查询」。")])
+					f.snapshot?.migration.pending && f.route !== "maintenance" ? R("div", { class: "quota-warning" }, [R("span", "有旧版配置等待迁移。普通设置与凭据操作暂时锁定。"), p("前往迁移", { onClick: () => void _("maintenance") })]) : null,
+					f.snapshot ? f.route === "global" ? le() : f.route === "maintenance" ? ue() : ce() : R("section", { class: "shell-empty" }, [R("h2", f.ready ? "正在读取配置" : "需要宿主管理授权"), R("p", "请先登录 AstrBot，再从插件详情页打开「额度查询」。")])
 				]),
 				R("footer", { class: "shell-footer" }, [R("a", {
 					class: "shell-project-link",

@@ -89,6 +89,25 @@ class Context:
         self.sent = []
         self.result = True
         self.adapter = "aiocqhttp"
+        self.conversation_manager = SimpleNamespace(
+            get_curr_conversation_id=self.no_conversation
+        )
+        self.persona_manager = SimpleNamespace(resolve_selected_persona=self.no_persona)
+
+    async def no_conversation(self, umo):
+        return None
+
+    async def no_persona(self, **kwargs):
+        return None, None, None, False
+
+    async def get_current_chat_provider_id(self, umo):
+        return "fake-model"
+
+    def get_config(self, **kwargs):
+        return {
+            "agent_runner": {"runner_type": "local"},
+            "provider_settings": {"enable": True},
+        }
 
     def get_platform_inst(self, instance):
         if self.adapter is None:
@@ -116,6 +135,10 @@ class Service:
         self.status = SnapshotStatus.AVAILABLE
         self.cached = False
         self.duplicate = False
+        self.latest = {}
+
+    def peek_snapshot(self, account_id, *, max_age_seconds=60):
+        return self.latest.get(account_id)
 
     async def query(self, request, **kwargs):
         self.calls.append((request.target, kwargs))
@@ -139,7 +162,12 @@ class Service:
             cached=self.cached,
             error=self.error,
         )
+        self.latest[account.id] = snapshot
         return SimpleNamespace(snapshots=(snapshot,))
+
+
+async def enabled_session(_umo):
+    return True
 
 
 def engine(tmp_path, config=None, clock=None, service=None, context=None, **kwargs):
@@ -148,7 +176,10 @@ def engine(tmp_path, config=None, clock=None, service=None, context=None, **kwar
     service = service or Service(config, clock)
     context = context or Context()
     transport = AlertDelivery(
-        context, component_factory=lambda mentions, text: (mentions, text)
+        context,
+        component_factory=lambda mentions, text: (mentions, text),
+        session_enabled=enabled_session,
+        session_llm_enabled=enabled_session,
     )
     result = AlertEngine(
         config,
@@ -272,6 +303,13 @@ async def test_invalid_facts_neither_start_nor_recover_episode(tmp_path, problem
     service.amounts["account-0"] = Decimal("5")
     clock.advance()
     await monitor.run_once()
+    if problem in {"currency", "duplicate"}:
+        assert (
+            not context.sent
+        )  # A unit-change/ambiguity latch needs explicit confirmation.
+        choice = monitor.unit_status()["accounts"][0]["choices"][0]
+        monitor.confirm_unit("account-0", choice["id"])
+        await monitor.run_once()
     assert len(context.sent) == 1
     clock.advance()
     service.error = NormalizedProviderError(
@@ -329,9 +367,13 @@ async def test_default_or_explicit_unit_never_converts_or_recovers_other_units(
     service.amounts["account-0"] = Decimal("-8.25")
     await monitor.run_once()
     assert not context.sent
-    assert monitor.status()["accounts"][0]["status"] == "stale"
+    assert monitor.status()["accounts"][0]["status"] == "unit_changed"
     clock.advance()
     service.unit = configured_unit
+    await monitor.run_once()
+    assert not context.sent
+    choice = monitor.unit_status()["accounts"][0]["choices"][0]
+    monitor.confirm_unit("account-0", choice["id"])
     await monitor.run_once()
     assert len(context.sent) == 1
     assert f"-8.25 {configured_unit}" in context.sent[0][1][1]
@@ -339,7 +381,7 @@ async def test_default_or_explicit_unit_never_converts_or_recovers_other_units(
     service.unit = other_unit
     service.amounts["account-0"] = Decimal("100")
     await monitor.run_once()
-    assert monitor.status()["accounts"][0]["status"] == "stale"
+    assert monitor.status()["accounts"][0]["status"] == "unit_changed"
     clock.advance()
     service.unit = configured_unit
     service.amounts["account-0"] = Decimal("-8.25")
@@ -802,7 +844,10 @@ def real_query_runtime(tmp_path, clock, raw, adapter):
         tmp_path / "alerts.sqlite3",
         clock=clock,
         delivery=AlertDelivery(
-            context, component_factory=lambda mentions, text: (mentions, text)
+            context,
+            component_factory=lambda mentions, text: (mentions, text),
+            session_enabled=enabled_session,
+            session_llm_enabled=enabled_session,
         ),
     )
     assert monitor.storage_available
