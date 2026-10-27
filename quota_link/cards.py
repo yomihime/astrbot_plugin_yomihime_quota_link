@@ -23,7 +23,8 @@ from .models import (
 )
 from .presentation.bitmap import CardSpec, Row, Section, render_card
 from .presentation.font import CardFontProvider
-from .settings import PluginSettings
+from .presentation.provider_logos import load_logo
+from .settings import AccountDirectory, AccountDirectoryEntry, PluginSettings
 
 _STATUS = {
     SnapshotStatus.AVAILABLE: "可用",
@@ -70,7 +71,13 @@ def _item_rows(
     return tuple(rows)
 
 
-def build_result_card(result: QueryResult) -> CardSpec:
+def _account_icon_key(entry: AccountDirectoryEntry) -> str:
+    return "grsai" if entry.service_profile == "grsai" else entry.provider_type.value
+
+
+def build_result_card(
+    result: QueryResult, directory: AccountDirectory | None = None
+) -> CardSpec:
     """Project every visible fact into YGL-style stat and property panels."""
     if result.request.kind is QueryRequestKind.ACCOUNT:
         title = "账户额度与用量"
@@ -78,6 +85,14 @@ def build_result_card(result: QueryResult) -> CardSpec:
         title = "供应商额度与用量"
     else:
         title = "额度与用量"
+    icons = (
+        {
+            (entry.id, entry.provider_type): _account_icon_key(entry)
+            for entry in directory.entries
+        }
+        if directory is not None
+        else {}
+    )
     sections = []
     for snapshot in result.snapshots:
         state = _STATUS[snapshot.status]
@@ -101,6 +116,10 @@ def build_result_card(result: QueryResult) -> CardSpec:
         sections.append(
             Section(
                 heading=f"{_single_line(snapshot.display_name)} · {state}{cache_mark}",
+                icon_key=icons.get(
+                    (snapshot.account_id, snapshot.provider_type),
+                    snapshot.provider_type.value,
+                ),
                 paragraphs=(
                     f"来源：{_single_line(snapshot.source)} · 获取：{_time(snapshot.fetched_at)}",
                 ),
@@ -141,7 +160,10 @@ def build_result_card(result: QueryResult) -> CardSpec:
 
 
 def render_result_card(
-    result: QueryResult, font_path: Path | None = None
+    result: QueryResult,
+    font_path: Path | None = None,
+    *,
+    directory: AccountDirectory | None = None,
 ) -> bytes | None:
     """Return a complete offline PNG or None so the caller keeps full text.
 
@@ -150,9 +172,7 @@ def render_result_card(
     of silently cropping, replacing characters, or dropping account facts.
     """
     try:
-        return render_card(
-            build_result_card(result), font_provider=CardFontProvider(font_path)
-        ).content
+        return render_local_card(build_result_card(result, directory), font_path)
     except Exception:
         return None
 
@@ -235,6 +255,7 @@ def build_status_card(
         sections.append(
             Section(
                 heading=_single_line(entry.display_name),
+                icon_key=_account_icon_key(entry),
                 rows=(
                     Row(
                         (
@@ -285,6 +306,13 @@ def build_status_card(
 def render_local_card(spec: CardSpec, font_path: Path | None = None) -> bytes | None:
     """Use the same bounded offline renderer and full-text fallback as queries."""
     try:
-        return render_card(spec, font_provider=CardFontProvider(font_path)).content
+        icons = (
+            tuple(load_logo(section.icon_key) for section in spec.sections)
+            if len(spec.sections) <= 32
+            else ()
+        )
+        return render_card(
+            spec, font_provider=CardFontProvider(font_path), section_icons=icons
+        ).content
     except Exception:
         return None

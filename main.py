@@ -234,6 +234,7 @@ class YomihimeQuotaLink(Star):
         # Help/status stay local. Query results are fetched once; every route
         # then shares image preparation and complete text fallback below.
         settings = self.settings
+        render_options = {}
         if parsed.request.kind.value == "help":
             payload = build_help_card(settings)
             renderer = render_local_card
@@ -251,10 +252,13 @@ class YomihimeQuotaLink(Star):
         else:
             payload = await self.service.query(parsed.request)
             renderer = render_result_card
+            render_options = {"directory": settings.directory}
             fallback = format_result(payload)
         prepared = None
         try:
-            bitmap = await asyncio.to_thread(renderer, payload, self._font_path)
+            bitmap = await asyncio.to_thread(
+                renderer, payload, self._font_path, **render_options
+            )
             if bitmap:
                 from astrbot.api.message_components import Image
 

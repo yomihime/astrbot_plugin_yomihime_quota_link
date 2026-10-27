@@ -63,12 +63,31 @@ PACKAGE_FILES += (
 PACKAGE_FILES += (
     "quota_link/cards.py",
     "quota_link/local_status.py",
+    "quota_link/presentation/provider_logos.py",
     "quota_link/presentation/__init__.py",
     "quota_link/presentation/bitmap.py",
     "quota_link/presentation/font.py",
     "quota_link/presentation/NOTICE.md",
     "quota_link/managed_font.py",
     "quota_link/presentation/assets/fonts/OFL.txt",
+)
+PACKAGE_FILES += (
+    "quota_link/presentation/assets/provider_logos/README.md",
+    "quota_link/presentation/assets/provider_logos/licenses/DeepSeek-LICENSE-CODE.txt",
+    "quota_link/presentation/assets/provider_logos/licenses/Lobe-Icons-LICENSE.txt",
+    "quota_link/presentation/assets/provider_logos/manifest.json",
+    "quota_link/presentation/assets/provider_logos/png-128/alibaba_bailian.png",
+    "quota_link/presentation/assets/provider_logos/png-128/deepseek.png",
+    "quota_link/presentation/assets/provider_logos/png-128/grsai-dark.png",
+    "quota_link/presentation/assets/provider_logos/png-128/grsai.png",
+    "quota_link/presentation/assets/provider_logos/png-128/meinianda.png",
+    "quota_link/presentation/assets/provider_logos/png-128/openai_compatible.png",
+    "quota_link/presentation/assets/provider_logos/svg/alibaba_bailian.svg",
+    "quota_link/presentation/assets/provider_logos/svg/deepseek.svg",
+    "quota_link/presentation/assets/provider_logos/svg/grsai-dark.svg",
+    "quota_link/presentation/assets/provider_logos/svg/grsai.svg",
+    "quota_link/presentation/assets/provider_logos/svg/meinianda.svg",
+    "quota_link/presentation/assets/provider_logos/svg/openai_compatible.svg",
 )
 PAGE_FILES = (
     "pages/00-quota-link/THIRD_PARTY_NOTICES.txt",

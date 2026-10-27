@@ -156,7 +156,7 @@ def entrypoint(monkeypatch):
     monkeypatch.setattr(module, "prepare_font", no_font)
     # Existing text-contract tests explicitly exercise the fallback path.
     monkeypatch.setattr(
-        module, "render_result_card", lambda result, font_path=None: None
+        module, "render_result_card", lambda result, font_path=None, **kwargs: None
     )
     monkeypatch.setattr(module, "render_local_card", lambda spec, font_path=None: None)
     FakeHttpClient.instances.clear()
@@ -547,7 +547,7 @@ def test_command_card_uses_one_query_and_offloads_rendering(
         queries.append(result)
         return result
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         assert threading.get_ident() != caller_thread
         renders.append(result)
         return b"synthetic-png"
@@ -586,7 +586,7 @@ def test_command_card_failure_preserves_complete_text_without_requery(
     def fail(*args):
         raise RuntimeError("SENSITIVE provider detail must not be exposed")
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         if failure == "render":
             fail()
         return None if failure == "unavailable" else b"synthetic-png"
@@ -625,7 +625,7 @@ def test_local_invalid_and_denied_commands_never_use_query_renderer_or_provider(
     module = importlib.import_module(plugin.__class__.__module__)
     calls = []
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         calls.append("render")
         raise AssertionError("must not render")
 
@@ -649,7 +649,7 @@ def test_llm_tool_never_calls_command_card_renderer(entrypoint, monkeypatch):
     module = importlib.import_module(plugin.__class__.__module__)
     calls = []
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         calls.append(result)
         raise AssertionError("LLM facts must not render")
 
@@ -780,7 +780,7 @@ def test_font_startup_failure_keeps_command_text_fallback(
     async def prepare(*args):
         raise RuntimeError("SENSITIVE download endpoint detail")
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         render_paths.append(font_path)
         return None
 
@@ -812,7 +812,7 @@ def test_prepared_font_passes_to_renderer_without_query_time_preparation(
         calls.append(args)
         return ready
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         paths.append(font_path)
         return None
 
@@ -1213,3 +1213,70 @@ def test_status_uses_current_directory_after_waiting_for_storage(
     assert "DeepSeek Work" not in replies[0]
     assert "new-private-id" not in replies[0]
     assert "账户：共 1 个" in replies[0]
+
+
+@pytest.mark.parametrize("command", ["/yql all", "/yql status"])
+def test_real_command_defaults_to_bundled_provider_icons(
+    entrypoint, monkeypatch, command
+):
+    import os
+
+    font = os.environ.get("QUOTA_TEST_FONT")
+    if not font:
+        pytest.skip("fixed font fixture required")
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+    cards = importlib.import_module(module.__package__ + ".quota_link.cards")
+    bitmap = importlib.import_module(
+        module.__package__ + ".quota_link.presentation.bitmap"
+    )
+    fonts = importlib.import_module(
+        module.__package__ + ".quota_link.presentation.font"
+    )
+    models = entrypoint._test_models
+    plugin._font_path = Path(font)
+    monkeypatch.setattr(module, "render_local_card", cards.render_local_card)
+    monkeypatch.setattr(module, "render_result_card", cards.render_result_card)
+    result = models.QueryResult(
+        models.QueryRequest(models.QueryRequestKind.ALL),
+        (
+            models.BalanceSnapshot(
+                "private-account",
+                models.ProviderType.MEINIANDA,
+                "示例头像账户",
+                models.SnapshotStatus.AVAILABLE,
+                (),
+                "合成数据",
+                datetime(2026, 10, 27, tzinfo=UTC),
+            ),
+        ),
+        datetime(2026, 10, 27, tzinfo=UTC),
+    )
+    queries = []
+
+    async def query(request):
+        queries.append(request)
+        return result
+
+    monkeypatch.setattr(plugin.service, "query", query)
+    image_module = types.ModuleType("astrbot.api.message_components")
+    image_module.Image = types.SimpleNamespace(fromBytes=lambda value: value)
+    monkeypatch.setitem(sys.modules, "astrbot.api.message_components", image_module)
+    event = FakeEvent(command, admin=True)
+    event.chain_result = lambda values: values[0]
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    spec = (
+        cards.build_result_card(result)
+        if command.endswith("all")
+        else cards.build_status_card(plugin.settings)
+    )
+    assert len(replies) == 1
+    assert replies[0] == cards.render_local_card(spec, Path(font))
+    assert (
+        replies[0]
+        != bitmap.render_card(
+            spec, font_provider=fonts.CardFontProvider(Path(font))
+        ).content
+    )
+    assert len(queries) == (1 if command.endswith("all") else 0)
+    assert FakeHttpClient.instances[-1].requests == []
