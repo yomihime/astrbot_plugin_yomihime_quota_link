@@ -4,6 +4,7 @@ import asyncio
 from decimal import Decimal
 
 import httpx
+import pytest
 
 from quota_link.cache import BalanceCache
 from quota_link.http_client import HttpProviderClient
@@ -13,10 +14,23 @@ from quota_link.service import QueryService
 from quota_link.settings import load_settings
 
 
-def test_all_provider_types_query_through_one_mocked_http_client():
+@pytest.mark.parametrize("legacy_cash_only", [False, True])
+def test_all_provider_types_query_through_one_mocked_http_client(legacy_cash_only):
     settings = load_settings(
         {
             "providers": [
+                {
+                    "id": "grsai",
+                    "type": "grsai",
+                    "display_name": "Grsai",
+                    "auth": {"token": "offline-token"},
+                },
+                {
+                    "id": "meinianda",
+                    "type": "meinianda",
+                    "display_name": "Meinianda",
+                    "auth": {"api_key": "offline-meinianda"},
+                },
                 {
                     "id": "deepseek",
                     "type": "deepseek",
@@ -52,9 +66,19 @@ def test_all_provider_types_query_through_one_mocked_http_client():
         },
         environ={},
     )
-    assert len(settings.queryable_accounts) == 3
+    assert len(settings.queryable_accounts) == 5
 
     def respond(request: httpx.Request) -> httpx.Response:
+        if request.url.host in {"grsaiapi.com", "api.grsai.com", "grsai.dakka.com.cn"}:
+            return httpx.Response(200, json={"code": 0, "data": {"credits": "12"}})
+        if request.url.host == "meinianda.top":
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {"balance": "23", "unit": "site_credit"},
+                },
+            )
         if request.url.host == "api.deepseek.com":
             return httpx.Response(
                 200,
@@ -76,7 +100,15 @@ def test_all_provider_types_query_through_one_mocked_http_client():
                 json={
                     "Success": True,
                     "Code": "200",
-                    "Data": {"AvailableCashAmount": "7.50", "Currency": "CNY"},
+                    "Data": {
+                        "AvailableCashAmount": "7.50",
+                        "Currency": "CNY",
+                        **(
+                            {}
+                            if legacy_cash_only
+                            else {"AvailableAmount": "-2.50", "CreditAmount": "10.00"}
+                        ),
+                    },
                 },
             )
         if request.url.host == "balance.example.test":
@@ -102,10 +134,31 @@ def test_all_provider_types_query_through_one_mocked_http_client():
         "deepseek",
         "alibaba_bailian",
         "openai_compatible",
+        "grsai",
+        "meinianda",
     }
-    assert all(
-        snapshot.status is SnapshotStatus.AVAILABLE for snapshot in result.snapshots
+    alibaba = next(
+        snapshot for snapshot in result.snapshots if snapshot.account_id == "bailian"
     )
+    assert all(snapshot.error is None for snapshot in result.snapshots)
+    assert all(
+        snapshot.status is SnapshotStatus.AVAILABLE
+        for snapshot in result.snapshots
+        if snapshot is not alibaba
+    )
+    assert alibaba.status is (
+        SnapshotStatus.PARTIAL if legacy_cash_only else SnapshotStatus.AVAILABLE
+    )
+    assert [item.metric for item in alibaba.balances] == [
+        "AvailableCashAmount",
+        "AvailableAmount",
+        "CreditAmount",
+    ]
+    assert [item.amount for item in alibaba.balances] == [
+        Decimal("7.50"),
+        None if legacy_cash_only else Decimal("-2.50"),
+        None if legacy_cash_only else Decimal("10.00"),
+    ]
     compatible = next(
         snapshot for snapshot in result.snapshots if snapshot.account_id == "compatible"
     )

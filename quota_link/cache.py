@@ -38,6 +38,7 @@ class BalanceCache:
         if snapshot.error is not None or snapshot.status not in (
             SnapshotStatus.AVAILABLE,
             SnapshotStatus.PARTIAL,
+            SnapshotStatus.UNAVAILABLE,
         ):
             return
         self._entries[(account_id, config_fingerprint)] = (

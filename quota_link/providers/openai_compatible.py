@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
@@ -24,6 +25,7 @@ from ..models import (
     ProviderType,
     SnapshotStatus,
 )
+from ..provider_retry import explicit_throttling
 from ..settings import GRSAI_REGION_HOSTS
 from .base import AsyncProviderClient
 
@@ -133,6 +135,8 @@ class OpenAICompatibleAdapter:
                 if service_profile == "grsai"
                 else _transport_error(exc)
             )
+            if isinstance(exc, HttpStatusError):
+                error = replace(error, retry_after_seconds=exc.retry_after_seconds)
             return _error_snapshot(
                 account_id,
                 display_name,
@@ -184,6 +188,14 @@ class OpenAICompatibleAdapter:
 
         try:
             payload = response.json()
+            if error := explicit_throttling(payload, response):
+                return _error_snapshot(
+                    account_id,
+                    display_name,
+                    error,
+                    source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
+                    provider_type=provider_type,
+                )
             if service_profile == "grsai":
                 item, status = _parse_grsai_account_payload(payload)
             else:
@@ -375,7 +387,9 @@ def _parse_grsai_account_payload(payload: Any) -> tuple[BalanceItem, SnapshotSta
         raise ValueError("Grsai response data is invalid")
     amount = _decimal(data["credits"])
     return (
-        BalanceItem(kind=BalanceItemKind.CREDITS, amount=amount, unit="credit"),
+        BalanceItem(
+            kind=BalanceItemKind.CREDITS, amount=amount, unit="credit", metric="credit"
+        ),
         SnapshotStatus.AVAILABLE,
     )
 
@@ -577,6 +591,7 @@ def _parse_payload(
     return (
         BalanceItem(
             kind=kind,
+            metric="mapped_balance",
             amount=values["amount"],
             unit=unit.strip(),
             total=values["total"],
@@ -776,13 +791,26 @@ def _transport_error(exc: Exception) -> NormalizedProviderError:
 
 
 def _grsai_http_error(status: int) -> NormalizedProviderError:
-    # No provider-specific failure response or HTTP mapping has been verified.
+    # These are transport-level HTTP semantics, not guesses about Grsai's
+    # undocumented business codes or a particular token failure reason.
     diagnostic = f"http_{status}" if 400 <= status <= 599 else "http_error"
-    return NormalizedProviderError(
-        ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-        "账户积分接口请求失败",
-        diagnostic,
+    category, message = {
+        401: (
+            ProviderErrorCategory.AUTHENTICATION,
+            "账户积分接口返回 HTTP 401，需核对认证配置",
+        ),
+        403: (
+            ProviderErrorCategory.PERMISSION,
+            "账户积分接口返回 HTTP 403，需核对访问配置",
+        ),
+        429: (
+            ProviderErrorCategory.RATE_LIMITED,
+            "账户积分接口返回 HTTP 429，请稍后重试",
+        ),
+    }.get(
+        status, (ProviderErrorCategory.TEMPORARILY_UNAVAILABLE, "账户积分接口请求失败")
     )
+    return NormalizedProviderError(category, message, diagnostic)
 
 
 def _grsai_transport_error(exc: Exception) -> NormalizedProviderError:

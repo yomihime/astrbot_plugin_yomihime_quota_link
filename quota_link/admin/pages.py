@@ -21,6 +21,7 @@ from .web_admin import (
 
 PLUGIN_NAME = "astrbot_plugin_yomihime_quota_link"
 OPERATIONS = (
+    "alert-status",
     "read",
     "update",
     "credential-status",
@@ -53,7 +54,7 @@ _SECRET_FIELDS = frozenset(
 
 
 def _validate_body(operation, body):
-    if operation in {"read", "credential-status", "legacy-config-plan"}:
+    if operation in {"read", "credential-status", "legacy-config-plan", "alert-status"}:
         expected = set()
     elif operation == "update":
         expected = {"revision", "config"}

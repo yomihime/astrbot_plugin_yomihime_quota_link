@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
@@ -21,6 +22,7 @@ from ..models import (
     ProviderType,
     SnapshotStatus,
 )
+from ..provider_retry import explicit_throttling
 from .base import AsyncProviderClient
 
 _BALANCE_URL = "https://api.deepseek.com/user/balance"
@@ -73,7 +75,12 @@ class DeepSeekAdapter:
             )
         except HttpStatusError as exc:
             return _error_snapshot(
-                account_id, display_name, _status_error(exc.status_code)
+                account_id,
+                display_name,
+                replace(
+                    _status_error(exc.status_code),
+                    retry_after_seconds=exc.retry_after_seconds,
+                ),
             )
         except HttpTransportError as exc:
             message = (
@@ -117,6 +124,8 @@ class DeepSeekAdapter:
 
         try:
             payload = response.json()
+            if error := explicit_throttling(payload, response):
+                return _error_snapshot(account_id, display_name, error)
             balances, available = _parse_payload(payload)
         except (
             HttpResponseParseError,
@@ -206,9 +215,9 @@ def _parse_payload(payload: Any) -> tuple[tuple[BalanceItem, ...], bool]:
         topped_up = _decimal(info.get("topped_up_balance"))
         items.extend(
             (
-                _balance_item(currency, total, "总可用余额"),
-                _balance_item(currency, granted, "未过期赠金余额"),
-                _balance_item(currency, topped_up, "充值余额"),
+                _balance_item(currency, total, "总可用余额", "total_balance"),
+                _balance_item(currency, granted, "未过期赠金余额", "granted_balance"),
+                _balance_item(currency, topped_up, "充值余额", "topped_up_balance"),
             )
         )
     return tuple(items), available
@@ -225,12 +234,15 @@ def _decimal(value: Any) -> Decimal:
     return amount
 
 
-def _balance_item(currency: str, amount: Decimal, label: str) -> BalanceItem:
+def _balance_item(
+    currency: str, amount: Decimal, label: str, metric: str
+) -> BalanceItem:
     return BalanceItem(
         kind=BalanceItemKind.CASH,
         amount=amount,
         unit=currency,
         label=label,
+        metric=metric,
     )
 
 

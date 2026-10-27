@@ -97,6 +97,8 @@ def serialize_query_result(
                 value = getattr(balance, field)
                 if value is not None:
                     item[field] = _decimal(value)
+            if balance.metric is not None:
+                item["metric"] = balance.metric
             if balance.label:
                 item["label"] = balance.label
             if balance.expires_at is not None:

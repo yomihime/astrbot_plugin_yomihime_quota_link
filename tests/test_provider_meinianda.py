@@ -179,7 +179,7 @@ def test_business_failure_does_not_expose_messages_or_report_a_balance():
 )
 def test_http_failures_are_safe_and_only_transient_statuses_retry(status, category):
     snapshot, calls = _fetch({"message": "test-secret"}, status=status)
-    assert len(calls) == (2 if status in {429, 500} else 1)
+    assert len(calls) == (2 if status == 500 else 1)
     assert snapshot.balances == ()
     assert snapshot.error.category is category
     assert snapshot.error.diagnostic_code == f"http_{status}"

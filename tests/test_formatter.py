@@ -293,7 +293,7 @@ def test_help_explains_service_boundaries_and_status_marks_incomplete_accounts()
     assert "余额查询使用服务商专属接口" in help_text
     assert "不是" not in help_text
     assert "不代表" not in help_text
-    assert "阿里云账户现金余额（BSS）" in help_text
+    assert "BSS 查询现金余额、可用额度、信用额度" in help_text
     assert "AliyunBSSReadOnlyAccess" in help_text
     assert "第三方服务：不可查询：配置不全" in status_text
 

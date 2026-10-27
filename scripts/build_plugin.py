@@ -25,6 +25,11 @@ ROOT_FILES = (
     "LICENSE",
 )
 PACKAGE_FILES = (
+    "quota_link/alert_config.py",
+    "quota_link/alert_commands.py",
+    "quota_link/alerts.py",
+    "quota_link/alert_delivery.py",
+    "quota_link/provider_retry.py",
     "quota_link/__init__.py",
     "quota_link/cache.py",
     "quota_link/capabilities.py",

@@ -56,7 +56,7 @@ def describe_capabilities(
         if entry.provider_type is ProviderType.DEEPSEEK:
             balance_kind = "多币种账户余额"
         elif entry.provider_type is ProviderType.ALIBABA_BAILIAN:
-            balance_kind = "阿里云账户现金余额（BSS）"
+            balance_kind = "阿里云账户余额（BSS：现金 / 可用 / 信用）"
         elif entry.provider_type is ProviderType.MEINIANDA:
             balance_kind = "账户站内额度（site_credit）"
         else:

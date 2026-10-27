@@ -1,6 +1,6 @@
 # 如月怜的额度连结
 
-AstrBot 插件，用于查询已配置 AI 服务账户的余额或用量。当前提供 DeepSeek、阿里云百炼（查询阿里云账户现金余额 BSS）、Grsai 账户积分、Meinianda 账户站内额度预设和 OpenAI 兼容服务 / 第三方服务配置。结果保留各接口的数据含义，不做货币换算。
+AstrBot 插件，用于查询已配置 AI 服务账户的余额或用量，并按明确阈值发送额度预警。当前提供 DeepSeek、阿里云百炼（BSS 现金余额、可用额度、信用额度）、Grsai 账户积分、Meinianda 账户站内额度预设和 OpenAI 兼容服务 / 第三方服务配置。结果保留各接口的数据含义，不做货币换算。
 
 ## 安装
 
@@ -75,13 +75,65 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 账户也可设置 `enabled`、`timeout_seconds` 和 `cache_ttl_seconds`。默认请求超时为 8 秒、成功结果缓存 60 秒；全局配置 `total_timeout_seconds` 默认 30 秒，`max_concurrency` 默认 4。超时和缓存时长必须为正数；管理页限制单次超时不超过 120 秒，总超时不超过 300 秒，并发不超过 32，缓存不超过 86400 秒，最多 100 个账户。
 
+## 额度预警
+
+账户页独立开关默认关闭。检查间隔为 **1–4320 分钟**（默认 15），滑条与数字输入同步。先填入触发阈值、单位和全局目标，再开启；阈值未配置时不会运行。原 UI 预览中曾保存的开关若缺少这些必要信息，会安全停用并提示补齐。
+
+网页的“预警单位”会为内置账户带出建议：Grsai 为 `credit`，Meinianda 为 `site_credit`；阿里云和 DeepSeek 在尚未填写时默认 `CNY`，可按账户实际币种修改。这只是界面默认值，不代表已查询或确认账户币种。已有单位保持不变；自定义兼容服务仅从明确配置的响应映射单位带出，否则手填。执行时仍要求查询结果单位完全一致，不一致则提示结果不可用于预警判断，不换汇、不按零余额处理。
+
+- 金额使用精确十进制字符串；**低于或等于触发阈值**首次提醒。恢复阈值必须更高；留空自动使用 `触发阈值 + max(abs(触发阈值) × 10%, 0.01)`。达到恢复阈值才结束本轮，不发送恢复消息。
+- 默认持续低额不重复。可设重复间隔，仍受每目标至少 5 分钟的消息预算约束；每条最多合并 10 个账户，剩余等待后续有效检查。程序重启、改检查间隔不会重置已通知的同一低额事件。
+- 默认指标：阿里 `AvailableAmount`、DeepSeek `total_balance`、Grsai `credit`、Meinianda `site_credit`、通用兼容接口 `mapped_balance`（明确 remaining 优先，否则 amount）。单位必须与供应商结果精确匹配，不跨币种、不把分项相加、不取任意首项。
+- 只使用新鲜、无错误且存在所选指标的结果。错误、缺字段、币种不符、过期缓存既不触发新提醒也不解除旧状态；DeepSeek `is_available=false` 但仍有有效零余额时可正常触发。
+
+全局“额度预警推送目标”每行一个 UMO，可在后面用空格追加 `@QQ号`。例如（仅示意，不是默认收件人）：
+
+```text
+my-qq:FriendMessage:10001
+my-qq:GroupMessage:20001 @10001 @10002
+```
+
+UMO 第一段是实际平台实例 ID，不必叫 NapCat。私聊行不可带 @；群内提及只支持明确数字 QQ 号，不支持昵称、全体、CQ 代码。群发送前再次验证实际实例是支持 QQ 提及的 `aiocqhttp` 适配器；普通群目标也必须有可用实例。`qq_official` 不支持此 SDK 主动发送方式，状态会提示阻止。目标和 QQ 成员须由管理员自己确认；保存配置、addhere 都不会测试发送。
+
+“预警 QQ 管理白名单”独立于查询权限和收件名单。`/yql alert` **整棵命令树**仅允许：可信 `aiocqhttp` 事件的实际 QQ 号命中该名单，**或** AstrBot 内置管理员。空名单仍允许宿主管理员；普通群管理员、昵称、参数中的 QQ 号和被 @ 的人不因此获得权限。其他平台可使用宿主内置管理员身份。网页继续只接受原 Dashboard 管理授权。
+
+```text
+/yql alert status
+/yql alert threshold "账户名" 10 CNY [指标ID]
+/yql alert on "账户名"
+/yql alert off "账户名"
+/yql alert interval "账户名" 15
+/yql alert recovery "账户名" 12
+/yql alert recovery "账户名" auto
+/yql alert repeat "账户名" 0
+/yql alert targets list
+/yql alert targets addhere @10001
+/yql alert targets add my-qq:GroupMessage:20001 @10001 @10002
+/yql alert targets remove <稳定目标ID>
+/yql alert admins list
+/yql alert admins add 10001
+/yql alert admins remove 10001
+/yql alert llm on
+/yql alert llm provider auto
+/yql alert llm persona none
+/yql alert retry "账户名"
+```
+
+`threshold` 中方括号表示可选参数，不要输入方括号。模型/人格可填写显式 ID；模型 `auto` 使用目标会话模型，人格 `none` 不附加人格。群里仅返回简短确认；状态和目标/管理名单请私聊查看。命令与网页共享配置事务和修订号，遇到并发修改必须重新确认，不会覆盖别人的新配置。既有 `/yql` 查询权限不变，LLM 查询工具仍只读，不能修改预警。
+
+LLM 默认可用，但只从受控安全短句中选择提示语，不判定阈值、不决定账户、金额、收件人或 @。不传入凭据、供应商地址、会话历史或工具；模型不可用、欠费、超时、空响应或不合规输出时使用固定事实文案。每次实际合并提醒才有一次生成，默认持续低额不会每轮调用模型。
+
+发送前在插件数据目录的私有 `alerts.sqlite3` 记录事件和发送占位。成功返回只显示“已提交平台”，**不等于最终送达**。异常/超时/中断后结果未知时不自动重发，显式 retry 也只解除查询认证暂停、不清除未知投递；应由管理员检查平台记录，避免重复打扰。明确未找到平台/未接受发送可在预算冷却后重试。卸载、关闭或配置变更会撤销旧任务的发送资格；已经进入平台传输的请求无法撤回，中断后按结果未知处理，不再启动新的发送。状态库不可用时停止提醒，不降级无状态刷屏。状态文件仅保存事件、时间、账户 ID 和目标哈希，不保存金额、凭据或明文收件人。
+
+本轮仅本地实现与合成测试，未在真实宿主部署、查询真实供应商或向任何群/私聊发送。15 分钟是插件默认值，不是供应商公开 QPS 保证；告警检查使用原余额接口，不增加账单、券、资源包查询。
+
 ### DeepSeek
 
 需要 DeepSeek API Key。插件通过官方 `GET https://api.deepseek.com/user/balance` 余额接口查询，不调用模型生成接口。结果按币种分别显示总可用余额、未过期赠金余额和充值余额；总额已包含两个分项，不要相加。`is_available` 表示当前账户是否有余额可供 API 调用；不可用状态不会伪装成零余额。[DeepSeek 余额接口文档](https://api-docs.deepseek.com/api/get-user-balance/)
 
 ### 阿里云百炼
 
-本适配器读取的是**阿里云账户现金余额（BSS）**，不是百炼模型 Key 的 token、免费额度、资源包或套餐用量。需要独立的 RAM AccessKey ID 和 Secret；RAM 身份至少授予阿里云费用与成本只读系统策略 `AliyunBSSReadOnlyAccess`。DashScope/百炼 API Key 不能替代阿里云 AccessKey。不要授予充值或其他写权限。插件只展示 `AvailableCashAmount` 和币种，不会拿其他额度字段补成现金余额。[QueryAccountBalance 接口文档](https://help.aliyun.com/zh/user-center/developer-reference/api-bssopenapi-2017-12-14-queryaccountbalance) · [AliyunBSSReadOnlyAccess 策略说明](https://help.aliyun.com/zh/ram/developer-reference/aliyunbssreadonlyaccess)
+本适配器读取的是**阿里云账户余额（BSS）**，不是百炼模型 Key 的 token、免费额度、资源包或套餐用量。需要独立的 RAM AccessKey ID 和 Secret；RAM 身份至少授予阿里云费用与成本只读系统策略 `AliyunBSSReadOnlyAccess`。DashScope/百炼 API Key 不能替代阿里云 AccessKey。不要授予充值或其他写权限。插件分别展示 `AvailableCashAmount` 现金余额、`AvailableAmount` 可用额度、`CreditAmount` 信用额度和响应币种；三项不能相加。可用额度允许负数，字段缺失显示“未提供”，不会补零或替代。查询成功不代表资金可用或服务可正常消费。[QueryAccountBalance 接口文档](https://help.aliyun.com/zh/user-center/developer-reference/api-bssopenapi-2017-12-14-queryaccountbalance) · [AliyunBSSReadOnlyAccess 策略说明](https://help.aliyun.com/zh/ram/developer-reference/aliyunbssreadonlyaccess)
 
 ### OpenAI 兼容服务 / 第三方服务
 
@@ -126,7 +178,7 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 }
 ```
 
-官方文档还列出 API Key 积分 `POST /client/openapi/getAPIKeyCredits`，但它与账户积分是不同范围；当前该范围暂不可查询，独立 Grsai 模板只支持账户积分。旧兼容模板中的 API Key 积分选项仅用于识别旧配置范围，不提供请求预设。用户已在 AstrBot ChatUI 得到 Grsai 账户积分成功结果，并验证自然语言工具回复；海外节点及失败响应的业务码、HTTP 状态含义尚未实测，插件只做保守的失败归类，不据此推断认证或权限原因。两种积分范围互不替代，也不能换算为货币。[Grsai 官方中文其他 API 文档](https://grsai.ai/zh/dashboard/documents/other)
+官方文档还列出 API Key 积分 `POST /client/openapi/getAPIKeyCredits`，但它与账户积分是不同范围；当前该范围暂不可查询，独立 Grsai 模板只支持账户积分。旧兼容模板中的 API Key 积分选项仅用于识别旧配置范围，不提供请求预设。用户已在 AstrBot ChatUI 得到 Grsai 账户积分成功结果，并验证自然语言工具回复；海外节点及失败响应业务码尚未实测；真实 HTTP 401/403/429 按通用保护策略暂停或退避，未知业务码仍不推断具体认证或权限原因。两种积分范围互不替代，也不能换算为货币。[Grsai 官方中文其他 API 文档](https://grsai.ai/zh/dashboard/documents/other)
 
 ### Meinianda 账户站内额度
 
@@ -148,9 +200,9 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 ## 数据、缓存与错误
 
 - 每个账户独立查询。成功结果按账户和配置缓存，默认 60 秒；失败结果不缓存。查询结果会标注获取时间和数据来源。
-- 单账户默认最多等待 8 秒，一次全账户查询默认最多等待 30 秒，同时查询数默认上限为 4。传输仅对连接/超时、HTTP 429 和 5xx 做一次有限重试；认证、权限、端点、业务或响应解析错误不会重试。
+- 单账户默认最多等待 8 秒，一次全账户查询默认最多等待 30 秒，同时查询数默认上限为 4。手动与定时查询共享进行中的请求；同供应商保守串行，不猜测不同 Key 是否同主账号。传输仅对连接/超时及未带 Retry-After 的 5xx 做一次有延迟重试；429、明确业务限流及带 Retry-After 的失败交给共享退避预算，不再 50ms 连撞。401/403 将认证相关配置的暂停持久化，重启或改提醒间隔也不自动解除；更改认证相关配置或显式 retry 才解除，不暂停其他凭据。
 - 一个账户失败不会替代其他账户结果。错误会归类为配置、认证、权限、限流、暂时不可用或响应格式问题；不会把余额缺失补成零。
-- DeepSeek 各币种分别显示，不跨币种求和。阿里云百炼模板只查阿里云账户 BSS 现金余额。兼容接口按配置的映射与固定单位展示，不自动推断 total、remaining、used 的含义。
+- DeepSeek 各币种分别显示，不跨币种求和。阿里云百炼模板只查阿里云账户 BSS 三项金额，不查询账单、券或资源包。兼容接口按配置的映射与固定单位展示，不自动推断 total、remaining、used 的含义。
 - 重载会重新读取配置并重建缓存与 HTTP 客户端；插件关闭或卸载时会取消未完成查询、清除缓存并关闭 HTTP 客户端。
 
 ## 故障排查
@@ -159,7 +211,7 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 2. 若提示缺少环境变量，检查变量是否设置在 AstrBot 进程环境中，并确认配置写成完整形式 `${VARIABLE_NAME}`，随后重载插件。
 3. DeepSeek 查询失败时，检查 API Key 和账户 API 可用状态；HTTP 401 表示认证失败，429 表示请求过快。
 4. 阿里云失败时，确认配置的是 RAM AccessKey ID/Secret 而非 DashScope Key，并确认 RAM 身份至少具有 `AliyunBSSReadOnlyAccess`。缺少 `AvailableCashAmount` 不会回退到“可用额度”。
-5. 通用 OpenAI 兼容服务失败时，检查服务地址是否为 HTTPS 服务根地址、接口路径是否以 `/` 开头，再依据文档确认高级认证、方法和响应映射。独立 Grsai 模板失败时，检查请求令牌和连接区域；旧兼容模板的 Grsai 条目还须选 `grsai/account`，并清除非积分接口路径、GET 方法与静态请求体。失败响应细节未核实，不能仅凭状态码断言令牌或权限问题。
+5. 通用 OpenAI 兼容服务失败时，检查服务地址是否为 HTTPS 服务根地址、接口路径是否以 `/` 开头，再依据文档确认高级认证、方法和响应映射。独立 Grsai 模板失败时，检查请求令牌和连接区域；旧兼容模板的 Grsai 条目还须选 `grsai/account`，并清除非积分接口路径、GET 方法与静态请求体。失败业务响应细节未核实；HTTP 401/403 用于暂停保护，仍需在服务商控制台核对具体原因。
 6. 检查端点可达性和账户/全局超时设置。插件页面保存成功会立即重建运行时并清缓存；若结果未知，请先刷新核对，不要重复提交凭据。
 
 ## 开发

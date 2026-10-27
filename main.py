@@ -11,6 +11,7 @@ from typing import Any
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Star, register
 
+from .quota_link.alert_commands import AlertCommands
 from .quota_link.cache import BalanceCache
 from .quota_link.cards import (
     build_help_card,
@@ -48,6 +49,14 @@ from .quota_link.tool_facts import (
 _COMMAND_START = re.compile(r"^\s*(?:/\s*)?yql\b\s*(.*)$", re.IGNORECASE | re.DOTALL)
 
 
+def _alert_message_chain(mentions, text):
+    """The SDK boundary constructs real mentions, never ordinary @ text."""
+    from astrbot.api.event import MessageChain
+    from astrbot.api.message_components import At, Plain
+
+    return MessageChain([*(At(qq=qq) for qq in mentions), Plain(text)])
+
+
 @register(
     "astrbot_plugin_yomihime_quota_link",
     "yomihime",
@@ -67,6 +76,11 @@ class YomihimeQuotaLink(Star):
         self._cleanup_tasks = set()
         self._font_task = None
         self._font_path = None
+        self._alert_engine = None
+        self._alert_root = None
+        self._terminated = False
+        self._lifecycle_epoch = 0
+        self._management_lock = asyncio.Lock()
         self.settings: PluginSettings
         self.cache: BalanceCache
         self.service: QueryService
@@ -82,11 +96,26 @@ class YomihimeQuotaLink(Star):
         )
 
     async def initialize(self) -> None:
+        # A later initialization or termination invalidates this attempt even
+        # while it is queued behind a config transaction or async cleanup.
+        self._lifecycle_epoch += 1
+        epoch = self._lifecycle_epoch
+        async with self._management_lock:
+            if epoch != self._lifecycle_epoch:
+                return
+            self._terminated = False
+            await self._initialize(epoch)
+
+    async def _initialize(self, epoch: int) -> None:
+        await self._stop_alerts()
+        self._alert_root = None
         await self._stop_font()
         if self._admin_pages is not None:
             self._admin_pages.close()
             self._admin_pages = None
         await self._close_runtime()
+        if self._terminated or epoch != self._lifecycle_epoch:
+            return
         raw = self.config
         root = None
         # Host initialization owns the persistent data directory. Tests without
@@ -109,6 +138,9 @@ class YomihimeQuotaLink(Star):
                 self._storage_failed = True
                 raw = {}
         self._build_runtime(raw)
+        if root is not None and not self._storage_failed:
+            self._alert_root = Path(root)
+            self._start_alerts()
         if self._context is not None and self.config.get("enable_admin_page", True):
             from astrbot.api.web import json_response, request
 
@@ -162,34 +194,105 @@ class YomihimeQuotaLink(Star):
                 task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 
+    def _alert_status(self):
+        if self._alert_engine is not None:
+            return self._alert_engine.status()
+        return {
+            "running": False,
+            "storage_available": False,
+            "accounts": [],
+        }
+
+    def _start_alerts(self):
+        if (
+            self._terminated
+            or self._alert_root is None
+            or self._context is None
+            or self._storage_failed
+            or self._alert_engine is not None
+        ):
+            return
+        from .quota_link.alert_delivery import AlertDelivery
+        from .quota_link.alerts import AlertEngine
+
+        engine = AlertEngine(
+            self.settings,
+            self.service,
+            self._context,
+            self._alert_root / "alerts.sqlite3",
+            delivery=AlertDelivery(
+                self._context, component_factory=_alert_message_chain
+            ),
+            is_current=lambda: self._alert_engine is engine and not self._terminated,
+        )
+        self._alert_engine = engine
+        engine.start()
+
+    async def _stop_alerts(self):
+        # Revoke generation before the first await: queued provider/LLM work
+        # may finish late, but cannot acquire authority to send for this engine.
+        engine, self._alert_engine = self._alert_engine, None
+        if engine is not None:
+            await engine.close()
+
+    def _retry_alert(self, account_id):
+        self.service.retry_account(account_id)
+        if self._alert_engine is not None:
+            self._alert_engine.wake(account_id)
+
     async def _admin_dispatch(self, operation, body, authorize):
         from .quota_link.config_store import ConfigUnavailable
 
-        if self._config_store is None:
-            raise ConfigUnavailable()
-        try:
-            result = await self._config_store.dispatch(operation, body, authorize)
-        except ConfigUnavailable:
-            self._storage_failed = True
-            await self._replace_runtime({})
-            raise
-        if self._storage_failed:
+        async with self._management_lock:
             authorize()
-            await self._replace_runtime(self._config_store.runtime_config())
-            self._storage_failed = False
-        return result
+            if operation == "alert-status":
+                result = self._alert_status()
+                authorize()
+                return result
+            if self._config_store is None or self._terminated:
+                raise ConfigUnavailable()
+            mutation = operation in {
+                "update",
+                "credential-replace",
+                "credential-clear",
+                "legacy-config-execute",
+            }
+            if mutation:
+                await self._stop_alerts()
+            try:
+                result = await self._config_store.dispatch(operation, body, authorize)
+                if self._storage_failed:
+                    authorize()
+                    self._storage_failed = False
+                    await self._replace_runtime(self._config_store.runtime_config())
+                return result
+            except ConfigUnavailable:
+                self._storage_failed = True
+                await self._replace_runtime({})
+                raise
+            finally:
+                # Validation/CAS failures keep the previous config and episode;
+                # they must not leave a formerly working watcher silently stopped.
+                if mutation:
+                    self._start_alerts()
 
     async def _replace_runtime(self, raw) -> None:
+        await self._stop_alerts()
         old_service, old_client = self.service, self.http_client
         self._build_runtime(raw)
         await self._dispose_runtime(old_service, old_client)
+        self._start_alerts()
 
     async def terminate(self) -> None:
-        await self._stop_font()
-        if self._admin_pages is not None:
-            self._admin_pages.close()
-            self._admin_pages = None
-        await self._close_runtime()
+        self._lifecycle_epoch += 1
+        self._terminated = True
+        await self._stop_alerts()
+        async with self._management_lock:
+            await self._stop_font()
+            if self._admin_pages is not None:
+                self._admin_pages.close()
+                self._admin_pages = None
+            await self._close_runtime()
 
     async def _dispose_runtime(self, service, client) -> None:
         async def cleanup():
@@ -218,14 +321,28 @@ class YomihimeQuotaLink(Star):
     @filter.command("yql")
     async def quota_link(self, event: AstrMessageEvent):
         """Run one full-argument /yql request."""
+        message = event.get_message_str()
+        match = _COMMAND_START.match(message)
+        argument = match.group(1) if match else ""
+        alert_match = re.match(
+            r"^alert(?:\s+|$)(.*)$", argument, re.IGNORECASE | re.DOTALL
+        )
+        if alert_match is not None:
+            commands = AlertCommands(
+                lambda: self.settings,
+                self._admin_dispatch,
+                self._alert_status,
+                self._retry_alert,
+            )
+            yield event.plain_result(
+                await commands.execute(event, alert_match.group(1))
+            )
+            return
         context = self._permission_context(event)
         if not can_query(context, self.settings, is_command=True):
             yield event.plain_result("当前会话无权查询额度信息。")
             return
 
-        message = event.get_message_str()
-        match = _COMMAND_START.match(message)
-        argument = match.group(1) if match else ""
         parsed = parse_command(argument, self.settings.directory)
         if parsed.error is not None or parsed.request is None:
             yield event.plain_result(await self._render(parsed))

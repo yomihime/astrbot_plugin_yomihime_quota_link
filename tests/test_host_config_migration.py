@@ -31,6 +31,9 @@ LEGACY_FIELDS = {
     "allow_group_queries",
     "group_allowed_user_ids",
     "providers",
+    "balance_alert_targets",
+    "balance_alert_admin_qq_ids",
+    "balance_alert_llm",
 }
 TEMPLATES = {
     "deepseek",
@@ -278,7 +281,9 @@ def test_pinned_host_normalization_preserves_every_original_provider_until_confi
     # This runs before any ConfigStore/plugin constructor, just like AstrBot.
     host = SyntheticHostConfig(host_path, schema)
     assert host["providers"] == source["providers"]
-    assert all(host[key] == source[key] for key in LEGACY_FIELDS)
+    assert all(
+        host[key] == source.get(key, LEGACY_DEFAULTS[key]) for key in LEGACY_FIELDS
+    )
     disk_before_confirmation = json.loads(host_path.read_text())
     assert disk_before_confirmation["providers"] == source["providers"]
     assert host["enable_admin_page"] is True

@@ -10,6 +10,34 @@ permissions:
   contents: read
 
 jobs:
+  frontend:
+    name: Frontend and packaged build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: pages/frontend/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check and reproduce production frontend
+        run: |
+          npm ci --prefix pages/frontend
+          npm run typecheck --prefix pages/frontend
+          npm run build --prefix pages/frontend
+          git diff --exit-code -- pages/00-quota-link
+          npm test --prefix pages/frontend
+      - name: Lint source
+        run: |
+          python -m pip install ruff==0.17.3
+          ruff check .
+          ruff format --check .
+
   compatibility:
     runs-on: ubuntu-latest
     strategy:
@@ -37,8 +65,17 @@ jobs:
           python-version: '3.12'
       - name: Resolve plugin requirements with tested runtime constraints
         run: |
-          python -m pip install -r requirements.txt ${{ matrix.dependencies }} ${{ matrix.constraints }} pytest pytest-subtests
+          python -m pip install -r requirements.txt ${{ matrix.dependencies }} ${{ matrix.constraints }} pytest pytest-subtests PyJWT==2.10.1 FastAPI==0.135.2 Starlette==0.52.1 Quart==0.20.0
           python -m pip check
+      - name: Prepare independently pinned official SDK fixture
+        run: |
+          fixture="$RUNNER_TEMP/yql-astrbot-fixture"
+          git init "$fixture"
+          git -C "$fixture" remote add origin https://github.com/AstrBotDevs/AstrBot.git
+          git -C "$fixture" fetch --depth=1 origin dffe922773725e9c178392c423676ad65044748c
+          git -C "$fixture" checkout --detach FETCH_HEAD
+          test "$(git -C "$fixture" rev-parse HEAD)" = dffe922773725e9c178392c423676ad65044748c
+          echo "QUOTA_TEST_ASTRBOT_SOURCE=$fixture" >> "$GITHUB_ENV"
       - name: Prepare and validate the pinned rendering fixture
         run: |
           python - <<'PY'

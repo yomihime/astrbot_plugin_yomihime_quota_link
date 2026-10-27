@@ -17,6 +17,7 @@ import secrets as random_secrets
 from collections.abc import Mapping, MutableMapping
 from typing import Any
 
+from .alert_config import AlertConfigError, normalize_alert_config
 from .security import SecretStoreUnavailable
 from .settings import load_settings, migrate_account_templates
 
@@ -31,6 +32,9 @@ GLOBAL_FIELDS = frozenset(
         "allow_group_queries",
         "group_allowed_user_ids",
         "providers",
+        "balance_alert_targets",
+        "balance_alert_admin_qq_ids",
+        "balance_alert_llm",
     }
 )
 ACCOUNT_FIELDS = frozenset(
@@ -49,6 +53,7 @@ ACCOUNT_FIELDS = frozenset(
         "endpoint",
         "advanced_options",
         "response_mapping",
+        "balance_alert",
     }
 )
 SECRET_FIELDS = frozenset(
@@ -72,6 +77,9 @@ LEGACY_DEFAULTS = {
     "allow_group_queries": False,
     "group_allowed_user_ids": [],
     "providers": [],
+    "balance_alert_targets": [],
+    "balance_alert_admin_qq_ids": [],
+    "balance_alert_llm": {"enabled": True, "provider_id": "", "persona_id": ""},
 }
 ENV = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
 ENV_REF = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}\Z")
@@ -173,7 +181,9 @@ class ConfigStore:
             ):
                 raise ConfigUnavailable()
             self._fresh_observed = False
-            result["config"] = self._validate(result["config"])
+            result["config"] = self._validate(
+                result["config"], require_alert_ready=False
+            )
             for account_id, entries in result["credentials"].items():
                 if not isinstance(account_id, str) or type(entries) is not dict:
                     raise ConfigUnavailable()
@@ -327,7 +337,7 @@ class ConfigStore:
                 record.pop("auth", None)
         return result
 
-    def _validate(self, config):
+    def _validate(self, config, *, require_alert_ready=True):
         config = _clone(config)
         if type(config) is not dict or set(config) - GLOBAL_FIELDS:
             raise ConfigValidation()
@@ -376,6 +386,11 @@ class ConfigStore:
                     continue
                 if type(value) is not dict or set(value) - allowed:
                     raise ConfigValidation()
+        try:
+            config = normalize_alert_config(config, require_ready=require_alert_ready)
+        except AlertConfigError as error:
+            raise ConfigValidation(str(error)) from None
+        records = config.get("providers", [])
         # Missing credentials are expected on an ordinary-config-only DTO.
         probe = _clone(config)
         for record in probe.get("providers", []):
@@ -389,6 +404,8 @@ class ConfigStore:
             "missing_grsai_token",
             "missing_environment",
         }
+        if not require_alert_ready:
+            permitted.add("invalid_balance_alert")
         if any(issue.code not in permitted for issue in parsed.errors):
             raise ConfigValidation()
         if len(parsed.accounts) != len(records):
@@ -590,7 +607,7 @@ class ConfigStore:
         if plan["pending"]:
             source = self._legacy_config()
             migrate_account_templates(source)
-            ordinary = self._validate(self._ordinary(source))
+            ordinary = self._validate(self._ordinary(source), require_alert_ready=False)
             values = {
                 value
                 for account in source.get("providers", [])
