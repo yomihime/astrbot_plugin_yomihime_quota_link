@@ -15,6 +15,8 @@ jobs:
   build:
     needs: dependency-compatibility
     runs-on: ubuntu-latest
+    env:
+      QUOTA_REQUIRE_TEST_FONT: '1'
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -27,12 +29,39 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt pytest pytest-subtests ruff
+        run: python -m pip install -r requirements.txt pytest pytest-subtests ruff==0.17.3 PyJWT==2.10.1 FastAPI==0.135.2 Starlette==0.52.1 Quart==0.20.0
+
+      - name: Prepare independently pinned official SDK fixture
+        run: |
+          fixture="$RUNNER_TEMP/yql-astrbot-fixture"
+          git init "$fixture"
+          git -C "$fixture" remote add origin https://github.com/AstrBotDevs/AstrBot.git
+          git -C "$fixture" fetch --depth=1 origin dffe922773725e9c178392c423676ad65044748c
+          git -C "$fixture" checkout --detach FETCH_HEAD
+          test "$(git -C "$fixture" rev-parse HEAD)" = dffe922773725e9c178392c423676ad65044748c
+          echo "QUOTA_TEST_ASTRBOT_SOURCE=$fixture" >> "$GITHUB_ENV"
+
+      - name: Prepare and validate the pinned rendering fixture
+        run: |
+          python - <<'PY'
+          import asyncio
+          import os
+          from pathlib import Path
+          from quota_link.managed_font import prepare_font
+          from quota_link.presentation.font import CardFontProvider
+
+          path = asyncio.run(prepare_font(Path(os.environ["RUNNER_TEMP"]) / "yql-font"))
+          if path is None:
+              raise SystemExit("Pinned rendering fixture could not be prepared")
+          CardFontProvider(path).load(24)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              stream.write(f"QUOTA_TEST_FONT={path}\n")
+          PY
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
           cache-dependency-path: pages/frontend/package-lock.json
 
