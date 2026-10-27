@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -22,6 +23,7 @@ from ..models import (
     ProviderType,
     SnapshotStatus,
 )
+from ..provider_retry import explicit_throttling
 from ..settings import AccountSettings
 from .base import AsyncProviderClient
 
@@ -51,7 +53,13 @@ class MeiniandaAdapter:
                 timeout=account.timeout_seconds,
             )
         except HttpStatusError as exc:
-            return _http_failure(account, exc.status_code)
+            snapshot = _http_failure(account, exc.status_code)
+            return replace(
+                snapshot,
+                error=replace(
+                    snapshot.error, retry_after_seconds=exc.retry_after_seconds
+                ),
+            )
         except HttpTransportError as exc:
             return _failure(
                 account,
@@ -75,6 +83,16 @@ class MeiniandaAdapter:
 
         try:
             payload = response.json()
+            if error := explicit_throttling(payload, response):
+                return replace(
+                    _failure(
+                        account,
+                        error.category,
+                        error.safe_message,
+                        error.diagnostic_code,
+                    ),
+                    error=error,
+                )
             if isinstance(payload, Mapping) and payload.get("success") is False:
                 # No documented business error codes: do not infer credentials
                 # or permissions from the provider's free-form message.
@@ -106,6 +124,7 @@ class MeiniandaAdapter:
                     amount=amount,
                     unit="site_credit",
                     label="账户站内额度",
+                    metric="site_credit",
                     raw_semantics="账户站内额度，不是 API Key 限额；不换算为货币",
                 ),
             ),

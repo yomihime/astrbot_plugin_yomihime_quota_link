@@ -8,11 +8,22 @@ import math
 import os
 import re
 from collections.abc import MutableMapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any, Mapping
 from urllib.parse import urlsplit
 
+from .alert_config import (
+    AlertConfigError,
+    BalanceAlertLLM,
+    BalanceAlertSettings,
+    BalanceAlertTarget,
+    alert_configuration_error,
+    parse_alert_admin_qq_ids,
+    parse_alert_llm,
+    parse_alert_targets,
+    parse_balance_alert,
+)
 from .models import (
     ProviderType,
     QueryParseError,
@@ -136,6 +147,9 @@ class AccountSettings:
     service_profile: str = "generic"
     prefer_split_endpoint: bool = False
     region: str = "china"
+    balance_alert: BalanceAlertSettings = field(
+        default_factory=BalanceAlertSettings, repr=False
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,6 +167,13 @@ class PluginSettings:
     allow_group_queries: bool = False
     group_allowed_user_ids: tuple[str, ...] = ()
     private_allowed_user_ids: tuple[str, ...] = ()
+    balance_alert_targets: tuple[BalanceAlertTarget, ...] = field(
+        default=(), repr=False
+    )
+    balance_alert_admin_qq_ids: tuple[str, ...] = field(default=(), repr=False)
+    balance_alert_llm: BalanceAlertLLM = field(
+        default_factory=BalanceAlertLLM, repr=False
+    )
 
     @property
     def enabled_accounts(self) -> tuple[AccountSettings, ...]:
@@ -799,6 +820,18 @@ def load_settings(
         errors.append(ConfigDiagnostic("invalid_root", "$", "配置根节点必须是映射"))
         raw = {}
 
+    alert_values = {}
+    for key, parser, fallback, default in (
+        ("balance_alert_targets", parse_alert_targets, (), []),
+        ("balance_alert_admin_qq_ids", parse_alert_admin_qq_ids, (), []),
+        ("balance_alert_llm", parse_alert_llm, BalanceAlertLLM(enabled=False), {}),
+    ):
+        try:
+            alert_values[key] = parser(raw.get(key, default))
+        except AlertConfigError as error:
+            alert_values[key] = fallback
+            errors.append(ConfigDiagnostic("invalid_balance_alert", key, str(error)))
+
     timeout = _positive_number(
         raw.get("timeout_seconds", _DEFAULT_TIMEOUT),
         _DEFAULT_TIMEOUT,
@@ -1334,6 +1367,35 @@ def load_settings(
             prefer_split_endpoint,
             region,
         )
+        try:
+            alert = parse_balance_alert(
+                record.get("balance_alert", {}), provider_type, service_profile
+            )
+            alert_error = alert_configuration_error(
+                alert,
+                account_enabled=enabled,
+                targets=alert_values["balance_alert_targets"],
+            )
+            if alert_error:
+                errors.append(
+                    ConfigDiagnostic(
+                        "invalid_balance_alert",
+                        f"{path}.balance_alert",
+                        alert_error,
+                        account_id,
+                    )
+                )
+                alert = replace(alert, enabled=False)
+        except AlertConfigError as error:
+            errors.append(
+                ConfigDiagnostic(
+                    "invalid_balance_alert",
+                    f"{path}.balance_alert",
+                    str(error),
+                    account_id,
+                )
+            )
+            alert = parse_balance_alert({}, provider_type, service_profile)
         candidate = AccountSettings(
             id=account_id,
             provider_type=provider_type,
@@ -1354,6 +1416,7 @@ def load_settings(
             service_profile=service_profile,
             prefer_split_endpoint=prefer_split_endpoint,
             region=region,
+            balance_alert=alert,
         )
         parsed.append(candidate)
         parsed_paths.append(path)
@@ -1417,4 +1480,5 @@ def load_settings(
         allow_group_queries=allow_group_queries,
         group_allowed_user_ids=group_allowed_user_ids,
         private_allowed_user_ids=private_allowed_user_ids,
+        **alert_values,
     )

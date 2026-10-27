@@ -117,7 +117,7 @@ def test_rpc_signature_matches_official_aliyun_example_vector():
     )
 
 
-def test_fetches_only_cash_balance_through_fixed_mainland_endpoint():
+def test_fetches_three_independent_balance_metrics_in_one_bss_call():
     payload = json.loads(FIXTURE.read_text(encoding="utf-8"), parse_float=Decimal)
     client = FakeClient(FakeResponse(payload))
 
@@ -138,12 +138,23 @@ def test_fetches_only_cash_balance_through_fixed_mainland_endpoint():
     assert params["Signature"] == _rpc_signature("GET", params, "testsecret")
     assert snapshot.provider_type is ProviderType.ALIBABA_BAILIAN
     assert snapshot.status is SnapshotStatus.AVAILABLE
-    assert len(snapshot.balances) == 1
+    assert len(snapshot.balances) == 3
     item = snapshot.balances[0]
     assert item.kind is BalanceItemKind.CASH
     assert item.amount == Decimal("10000.00")
     assert item.unit == "CNY"
-    assert item.label == "账户现金余额"
+    assert item.label == "现金余额"
+    assert [i.metric for i in snapshot.balances] == [
+        "AvailableCashAmount",
+        "AvailableAmount",
+        "CreditAmount",
+    ]
+    assert [i.amount for i in snapshot.balances] == [
+        Decimal("10000.00"),
+        Decimal("999999.00"),
+        Decimal("1000.00"),
+    ]
+    assert len(client.calls) == 1
 
 
 def test_factory_generates_new_timestamp_nonce_and_signature_for_each_attempt():
@@ -346,11 +357,6 @@ def test_transport_and_local_request_errors_are_normalized(
     [
         None,
         {"Code": "200", "Data": {"AvailableCashAmount": "1.00", "Currency": "CNY"}},
-        {
-            "Code": "200",
-            "Success": True,
-            "Data": {"AvailableAmount": "1.00", "Currency": "CNY"},
-        },
         {"Code": "200", "Success": True, "Data": {"AvailableCashAmount": "1.00"}},
         {
             "Code": "200",

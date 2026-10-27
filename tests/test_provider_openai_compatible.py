@@ -414,6 +414,9 @@ def test_grsai_invalid_configuration_makes_no_request(changes):
     "payload,category",
     [
         ({"code": 7, "msg": "request-token-secret"}, ProviderErrorCategory.ENDPOINT),
+        ({"code": 401}, ProviderErrorCategory.ENDPOINT),
+        ({"code": 403}, ProviderErrorCategory.ENDPOINT),
+        ({"code": 429}, ProviderErrorCategory.ENDPOINT),
         ({"code": 0, "data": {}}, ProviderErrorCategory.PARSE),
         ({"code": "0", "data": {"credits": 1}}, ProviderErrorCategory.PARSE),
         ({"code": 0, "data": {"credits": -1}}, ProviderErrorCategory.PARSE),
@@ -429,13 +432,22 @@ def test_grsai_failure_response_is_safely_classified(payload, category):
     assert "request-token-secret" not in repr(snapshot)
 
 
-@pytest.mark.parametrize("status", [401, 403, 404, 429, 500])
-def test_grsai_unknown_http_mapping_stays_generic(status):
+@pytest.mark.parametrize(
+    "status,category",
+    [
+        (401, ProviderErrorCategory.AUTHENTICATION),
+        (403, ProviderErrorCategory.PERMISSION),
+        (429, ProviderErrorCategory.RATE_LIMITED),
+        (404, ProviderErrorCategory.TEMPORARILY_UNAVAILABLE),
+        (500, ProviderErrorCategory.TEMPORARILY_UNAVAILABLE),
+    ],
+)
+def test_grsai_http_auth_and_throttle_status_use_transport_semantics(status, category):
     fake = FakeClient(FakeResponse({"msg": "request-token-secret"}, status))
 
     snapshot, _ = _query(_grsai_account(), fake)
 
-    assert snapshot.error.category is ProviderErrorCategory.TEMPORARILY_UNAVAILABLE
+    assert snapshot.error.category is category
     assert snapshot.error.diagnostic_code == f"http_{status}"
     assert "request-token-secret" not in repr(snapshot)
     assert snapshot.source == "Grsai 账户积分接口"

@@ -10,6 +10,7 @@ from .formatter import (
     display_diagnostic,
     display_provider,
     display_semantics,
+    display_snapshot_status,
     display_target,
     local_account_state,
 )
@@ -25,13 +26,6 @@ from .presentation.bitmap import CardSpec, Row, Section, render_card
 from .presentation.font import CardFontProvider
 from .presentation.provider_logos import load_logo
 from .settings import AccountDirectory, AccountDirectoryEntry, PluginSettings
-
-_STATUS = {
-    SnapshotStatus.AVAILABLE: "可用",
-    SnapshotStatus.PARTIAL: "部分可用",
-    SnapshotStatus.UNAVAILABLE: "不可用",
-    SnapshotStatus.UNKNOWN: "状态未知",
-}
 
 
 def _time(value: datetime) -> str:
@@ -55,7 +49,16 @@ def _item_rows(
             heading = f"{label} · {suffix}" if suffix else label
             rows.append(Row((heading, f"{value} {unit}")))
     if not rows:
-        rows.append(Row((label, f"数值未知（单位：{unit}）")))
+        rows.append(
+            Row(
+                (
+                    label,
+                    f"未提供（单位：{unit}）"
+                    if provider_type is ProviderType.ALIBABA_BAILIAN
+                    else f"数值未知（单位：{unit}）",
+                )
+            )
+        )
     if item.expires_at is not None:
         rows.append(
             Row(
@@ -95,7 +98,7 @@ def build_result_card(
     )
     sections = []
     for snapshot in result.snapshots:
-        state = _STATUS[snapshot.status]
+        state = display_snapshot_status(snapshot)
         cache_mark = " · 缓存数据" if snapshot.cached else ""
         rows = tuple(
             row

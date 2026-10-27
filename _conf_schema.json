@@ -30,7 +30,7 @@
     "invisible": true
   },
   "command_admin_only": {
-    "description": "仅管理员可用 /yql 命令",
+    "description": "仅管理员可查询额度",
     "type": "bool",
     "default": true,
     "invisible": true
@@ -39,7 +39,7 @@
     "description": "私聊白名单",
     "type": "list",
     "default": [],
-    "hint": "填写完整 平台名:用户ID，例如 aiocqhttp:123456；管理员无需加入。/yql 还受上方管理员开关限制。",
+    "hint": "填写完整 平台名:用户ID，例如 aiocqhttp:123456；管理员无需加入。/yql 余额查询还受上方管理员开关限制。",
     "invisible": true
   },
   "allow_group_queries": {
@@ -112,6 +112,49 @@
                 "secret": true
               }
             }
+          },
+          "balance_alert": {
+            "description": "账户额度预警",
+            "type": "object",
+            "items": {
+              "enabled": {
+                "description": "启用预警",
+                "type": "bool",
+                "default": false
+              },
+              "check_interval_minutes": {
+                "description": "检查间隔（1–4320 分钟）",
+                "type": "int",
+                "default": 15
+              },
+              "metric": {
+                "description": "指标 ID（空为供应商默认）",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "旧版单位参考（自动识别后验证）",
+                "type": "string",
+                "default": "",
+                "invisible": true
+              },
+              "threshold": {
+                "description": "触发阈值",
+                "type": "string",
+                "default": null,
+                "hint": "填写普通十进制文本；未设置为 null，启用前必须明确设置。"
+              },
+              "recovery_threshold": {
+                "description": "恢复阈值（空为自动滞回）",
+                "type": "string",
+                "default": null
+              },
+              "repeat_minutes": {
+                "description": "持续低额重复间隔（0 表示不重复）",
+                "type": "int",
+                "default": 0
+              }
+            }
           }
         }
       },
@@ -163,7 +206,7 @@
             "items": {
               "access_key_id": {
                 "description": "RAM AccessKey ID",
-                "hint": "查询阿里云账户现金余额（BSS）。RAM 身份至少需 AliyunBSSReadOnlyAccess；不能用 DashScope 模型 API Key。",
+                "hint": "查询阿里云 BSS 现金余额、可用额度、信用额度。RAM 身份至少需 AliyunBSSReadOnlyAccess；不能用 DashScope 模型 API Key。",
                 "type": "string",
                 "default": "",
                 "secret": true
@@ -180,6 +223,49 @@
                 "type": "string",
                 "default": "",
                 "secret": true
+              }
+            }
+          },
+          "balance_alert": {
+            "description": "账户额度预警",
+            "type": "object",
+            "items": {
+              "enabled": {
+                "description": "启用预警",
+                "type": "bool",
+                "default": false
+              },
+              "check_interval_minutes": {
+                "description": "检查间隔（1–4320 分钟）",
+                "type": "int",
+                "default": 15
+              },
+              "metric": {
+                "description": "指标 ID（空为供应商默认）",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "旧版单位参考（自动识别后验证）",
+                "type": "string",
+                "default": "",
+                "invisible": true
+              },
+              "threshold": {
+                "description": "触发阈值",
+                "type": "string",
+                "default": null,
+                "hint": "填写普通十进制文本；未设置为 null，启用前必须明确设置。"
+              },
+              "recovery_threshold": {
+                "description": "恢复阈值（空为自动滞回）",
+                "type": "string",
+                "default": null
+              },
+              "repeat_minutes": {
+                "description": "持续低额重复间隔（0 表示不重复）",
+                "type": "int",
+                "default": 0
               }
             }
           }
@@ -265,6 +351,49 @@
               "国内直连",
               "海外节点"
             ]
+          },
+          "balance_alert": {
+            "description": "账户额度预警",
+            "type": "object",
+            "items": {
+              "enabled": {
+                "description": "启用预警",
+                "type": "bool",
+                "default": false
+              },
+              "check_interval_minutes": {
+                "description": "检查间隔（1–4320 分钟）",
+                "type": "int",
+                "default": 15
+              },
+              "metric": {
+                "description": "指标 ID（空为供应商默认）",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "旧版单位参考（自动识别后验证）",
+                "type": "string",
+                "default": "",
+                "invisible": true
+              },
+              "threshold": {
+                "description": "触发阈值",
+                "type": "string",
+                "default": null,
+                "hint": "填写普通十进制文本；未设置为 null，启用前必须明确设置。"
+              },
+              "recovery_threshold": {
+                "description": "恢复阈值（空为自动滞回）",
+                "type": "string",
+                "default": null
+              },
+              "repeat_minutes": {
+                "description": "持续低额重复间隔（0 表示不重复）",
+                "type": "int",
+                "default": 0
+              }
+            }
           }
         }
       },
@@ -321,6 +450,49 @@
                 "type": "string",
                 "default": "",
                 "secret": true
+              }
+            }
+          },
+          "balance_alert": {
+            "description": "账户额度预警",
+            "type": "object",
+            "items": {
+              "enabled": {
+                "description": "启用预警",
+                "type": "bool",
+                "default": false
+              },
+              "check_interval_minutes": {
+                "description": "检查间隔（1–4320 分钟）",
+                "type": "int",
+                "default": 15
+              },
+              "metric": {
+                "description": "指标 ID（空为供应商默认）",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "旧版单位参考（自动识别后验证）",
+                "type": "string",
+                "default": "",
+                "invisible": true
+              },
+              "threshold": {
+                "description": "触发阈值",
+                "type": "string",
+                "default": null,
+                "hint": "填写普通十进制文本；未设置为 null，启用前必须明确设置。"
+              },
+              "recovery_threshold": {
+                "description": "恢复阈值（空为自动滞回）",
+                "type": "string",
+                "default": null
+              },
+              "repeat_minutes": {
+                "description": "持续低额重复间隔（0 表示不重复）",
+                "type": "int",
+                "default": 0
               }
             }
           }
@@ -466,7 +638,11 @@
                   "header",
                   "query"
                 ],
-                "labels": ["Bearer 令牌", "请求头", "查询参数"],
+                "labels": [
+                  "Bearer 令牌",
+                  "请求头",
+                  "查询参数"
+                ],
                 "condition": {
                   "advanced_options": true
                 }
@@ -595,6 +771,49 @@
             "condition": {
               "advanced_options": true
             }
+          },
+          "balance_alert": {
+            "description": "账户额度预警",
+            "type": "object",
+            "items": {
+              "enabled": {
+                "description": "启用预警",
+                "type": "bool",
+                "default": false
+              },
+              "check_interval_minutes": {
+                "description": "检查间隔（1–4320 分钟）",
+                "type": "int",
+                "default": 15
+              },
+              "metric": {
+                "description": "指标 ID（空为供应商默认）",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "旧版单位参考（自动识别后验证）",
+                "type": "string",
+                "default": "",
+                "invisible": true
+              },
+              "threshold": {
+                "description": "触发阈值",
+                "type": "string",
+                "default": null,
+                "hint": "填写普通十进制文本；未设置为 null，启用前必须明确设置。"
+              },
+              "recovery_threshold": {
+                "description": "恢复阈值（空为自动滞回）",
+                "type": "string",
+                "default": null
+              },
+              "repeat_minutes": {
+                "description": "持续低额重复间隔（0 表示不重复）",
+                "type": "int",
+                "default": 0
+              }
+            }
           }
         }
       },
@@ -718,7 +937,11 @@
                   "header",
                   "query"
                 ],
-                "labels": ["Bearer 令牌", "请求头", "查询参数"]
+                "labels": [
+                  "Bearer 令牌",
+                  "请求头",
+                  "查询参数"
+                ]
               },
               "auth_name": {
                 "description": "认证参数名",
@@ -829,11 +1052,92 @@
               }
             },
             "default": {}
+          },
+          "balance_alert": {
+            "description": "账户额度预警",
+            "type": "object",
+            "items": {
+              "enabled": {
+                "description": "启用预警",
+                "type": "bool",
+                "default": false
+              },
+              "check_interval_minutes": {
+                "description": "检查间隔（1–4320 分钟）",
+                "type": "int",
+                "default": 15
+              },
+              "metric": {
+                "description": "指标 ID（空为供应商默认）",
+                "type": "string",
+                "default": ""
+              },
+              "unit": {
+                "description": "旧版单位参考（自动识别后验证）",
+                "type": "string",
+                "default": "",
+                "invisible": true
+              },
+              "threshold": {
+                "description": "触发阈值",
+                "type": "string",
+                "default": null,
+                "hint": "填写普通十进制文本；未设置为 null，启用前必须明确设置。"
+              },
+              "recovery_threshold": {
+                "description": "恢复阈值（空为自动滞回）",
+                "type": "string",
+                "default": null
+              },
+              "repeat_minutes": {
+                "description": "持续低额重复间隔（0 表示不重复）",
+                "type": "int",
+                "default": 0
+              }
+            }
           }
         },
         "hide_hint_in_list": true
       }
     },
     "invisible": true
+  },
+  "balance_alert_targets": {
+    "description": "额度预警推送目标",
+    "type": "list",
+    "default": [],
+    "hint": "由插件页面管理，每项含 umo 与 mentions；不会自动测试发送。",
+    "invisible": true
+  },
+  "balance_alert_admin_qq_ids": {
+    "description": "预警管理 QQ 白名单",
+    "type": "list",
+    "default": [],
+    "hint": "可信 QQ 身份命中此列表或 AstrBot 内置管理员可管理预警；推送目标不赋予管理权限。",
+    "invisible": true
+  },
+  "balance_alert_llm": {
+    "description": "智能提示",
+    "type": "object",
+    "invisible": true,
+    "items": {
+      "enabled": {
+        "description": "智能提示",
+        "type": "bool",
+        "default": true
+      },
+      "provider_id": {
+        "description": "旧版配置（不再使用）",
+        "type": "string",
+        "default": "",
+        "invisible": true
+      },
+      "persona_id": {
+        "description": "旧版配置（不再使用）",
+        "type": "string",
+        "default": "",
+        "invisible": true
+      }
+    }
   }
 }

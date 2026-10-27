@@ -1,5 +1,6 @@
 """Immutable, provider-independent request and balance models."""
 
+import math
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -133,11 +134,19 @@ class NormalizedProviderError:
     category: ProviderErrorCategory
     safe_message: str
     diagnostic_code: str | None = None
+    retry_after_seconds: float | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.category, ProviderErrorCategory):
             raise TypeError("category must be a ProviderErrorCategory")
         _require_nonempty(self.safe_message, "safe_message")
+        if self.retry_after_seconds is not None and (
+            isinstance(self.retry_after_seconds, bool)
+            or not isinstance(self.retry_after_seconds, (int, float))
+            or not math.isfinite(self.retry_after_seconds)
+            or self.retry_after_seconds < 0
+        ):
+            raise ValueError("retry_after_seconds must be finite and nonnegative")
         if self.diagnostic_code is not None:
             _require_nonempty(self.diagnostic_code, "diagnostic_code")
 
@@ -155,11 +164,14 @@ class BalanceItem:
     expires_at: datetime | None = None
     label: str = ""
     raw_semantics: str | None = None
+    metric: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, BalanceItemKind):
             raise TypeError("kind must be a BalanceItemKind")
         _require_nonempty(self.unit, "unit")
+        if self.metric is not None:
+            _require_nonempty(self.metric, "metric")
         for name in ("amount", "total", "remaining", "used"):
             _validate_decimal(getattr(self, name), name)
         _require_aware(self.expires_at, "expires_at")

@@ -336,7 +336,7 @@ def test_concurrency_is_bounded() -> None:
 
         await service.query(QueryRequest(QueryRequestKind.ALL))
 
-        assert adapter.max_active == 2
+        assert adapter.max_active == 1  # Conservative provider-wide serialization.
         await service.close()
 
     asyncio.run(run())

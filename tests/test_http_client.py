@@ -31,7 +31,7 @@ def test_json_numbers_are_parsed_as_decimal():
     assert asyncio.run(run()) == Decimal("0.12345678901234567890123456789")
 
 
-@pytest.mark.parametrize("status", [429, 500, 503])
+@pytest.mark.parametrize("status", [500, 503])
 def test_retryable_status_retries_once(status):
     async def run():
         calls = 0

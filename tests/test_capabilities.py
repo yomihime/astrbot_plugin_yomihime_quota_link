@@ -85,7 +85,9 @@ def test_describe_capabilities_exposes_safe_enabled_account_metadata_only():
     assert descriptions[0]["provider"] == "DeepSeek"
     assert descriptions[0]["balance_kind"] == "多币种账户余额"
     assert descriptions[1]["provider"] == "阿里云百炼"
-    assert descriptions[1]["balance_kind"] == "阿里云账户现金余额（BSS）"
+    assert (
+        descriptions[1]["balance_kind"] == "阿里云账户余额（BSS：现金 / 可用 / 信用）"
+    )
     assert descriptions[2]["provider"] == "OpenAI 兼容服务"
     assert descriptions[2]["balance_kind"] == "积分"
     assert descriptions[2]["balance_scope"] == "generic"

@@ -111,7 +111,11 @@ def _item_text(item: BalanceItem, provider_type: ProviderType | None = None) -> 
     if item.used is not None:
         values.append(f"已用 {_amount(item.used, unit)}")
     if not values:
-        values.append(f"数值未知（单位：{unit}）")
+        values.append(
+            f"未提供（单位：{unit}）"
+            if provider_type is ProviderType.ALIBABA_BAILIAN
+            else f"数值未知（单位：{unit}）"
+        )
     if item.expires_at is not None:
         values.append(f"到期 {_display_time(item.expires_at)}")
     semantics = display_semantics(item, provider_type)
@@ -120,16 +124,25 @@ def _item_text(item: BalanceItem, provider_type: ProviderType | None = None) -> 
     return f"{label}：" + "；".join(values)
 
 
-def _snapshot_text(snapshot: BalanceSnapshot) -> list[str]:
-    if snapshot.status is SnapshotStatus.AVAILABLE:
-        status = "可用"
-    elif snapshot.status is SnapshotStatus.PARTIAL:
-        status = "部分可用"
-    elif snapshot.status is SnapshotStatus.UNAVAILABLE:
-        status = "不可用"
-    else:
-        status = "状态未知"
+def display_snapshot_status(snapshot: BalanceSnapshot) -> str:
+    """BSS success is a successful query, not proof of spendable credit."""
+    if snapshot.provider_type is ProviderType.ALIBABA_BAILIAN:
+        if snapshot.error is not None:
+            return "查询失败"
+        if snapshot.status is SnapshotStatus.AVAILABLE:
+            return "查询成功"
+        if snapshot.status is SnapshotStatus.PARTIAL:
+            return "部分数据已获取"
+    return {
+        SnapshotStatus.AVAILABLE: "可用",
+        SnapshotStatus.PARTIAL: "部分可用",
+        SnapshotStatus.UNAVAILABLE: "不可用",
+        SnapshotStatus.UNKNOWN: "状态未知",
+    }[snapshot.status]
 
+
+def _snapshot_text(snapshot: BalanceSnapshot) -> list[str]:
+    status = display_snapshot_status(snapshot)
     cache_mark = "（缓存）" if snapshot.cached else ""
     lines = [f"{_single_line(snapshot.display_name)}：{status}{cache_mark}"]
     lines.extend(
@@ -194,7 +207,7 @@ def format_result(result: QueryResult) -> str:
 HELP_NOTES = (
     "在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。",
     "OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写服务地址、接口路径和高级认证/响应映射。配置完整后即可查询。",
-    "阿里云百炼模板查询阿里云账户现金余额（BSS）；RAM 身份至少需要 AliyunBSSReadOnlyAccess。",
+    "阿里云 BSS 查询现金余额、可用额度、信用额度；RAM 身份至少需要 AliyunBSSReadOnlyAccess。",
 )
 
 

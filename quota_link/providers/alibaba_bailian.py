@@ -1,4 +1,4 @@
-"""Read the Alibaba Cloud account's cash balance through BSS OpenAPI."""
+"""Read three independent Alibaba Cloud account metrics through BSS OpenAPI."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import hmac
 import re
 import secrets
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -32,14 +33,26 @@ from ..models import (
 from .base import AsyncProviderClient
 
 _BALANCE_URL = "https://business.aliyuncs.com/"
-_SOURCE = "阿里云账户现金余额"
+_SOURCE = "阿里云账户余额与额度"
 _PERMISSION_ERROR_MESSAGE = (
     "阿里云拒绝访问账户现金余额。请为查询当前 BSS 现金余额的 RAM 身份至少授予 "
     "AliyunBSSReadOnlyAccess；DashScope 模型 API Key 不能替代此 RAM 授权。无需授予 BSS FullAccess。"
 )
 _CURRENCIES = frozenset({"CNY", "USD", "JPY"})
-_SAFE_CODE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_SAFE_CODE = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
 _BUSINESS_ERRORS: dict[str, tuple[ProviderErrorCategory, str]] = {
+    "Throttling": (ProviderErrorCategory.RATE_LIMITED, "throttling"),
+    "Throttling.User": (ProviderErrorCategory.RATE_LIMITED, "throttling_user"),
+    "Throttling.Api": (ProviderErrorCategory.RATE_LIMITED, "throttling_api"),
+    "Throttling.System": (ProviderErrorCategory.RATE_LIMITED, "throttling_system"),
+    "Throttling.RateQuota": (
+        ProviderErrorCategory.RATE_LIMITED,
+        "throttling_rate_quota",
+    ),
+    "Throttling.Concurrent": (
+        ProviderErrorCategory.RATE_LIMITED,
+        "throttling_concurrent",
+    ),
     "NoPermission": (ProviderErrorCategory.PERMISSION, "permission_denied"),
     "NotAuthorized": (ProviderErrorCategory.PERMISSION, "not_authorized"),
     "AuthSiteFail": (ProviderErrorCategory.AUTHENTICATION, "auth_site_failed"),
@@ -59,7 +72,7 @@ _BUSINESS_ERRORS: dict[str, tuple[ProviderErrorCategory, str]] = {
 
 
 class AlibabaBailianAdapter:
-    """Query only the cash balance exposed by mainland BSS OpenAPI."""
+    """Query only the balance metrics exposed by mainland BSS OpenAPI."""
 
     async def fetch_balance(
         self, account: Any, client: AsyncProviderClient
@@ -146,9 +159,16 @@ class AlibabaBailianAdapter:
 
         try:
             payload = response.json()
-            amount, currency = _parse_payload(payload)
+            amounts, currency = _parse_payload(payload)
         except BusinessFailure as exc:
-            return _error_snapshot(account_id, display_name, _business_error(exc.code))
+            return _error_snapshot(
+                account_id,
+                display_name,
+                replace(
+                    _business_error(exc.code),
+                    retry_after_seconds=getattr(response, "retry_after_seconds", None),
+                ),
+            )
         except HttpResponseParseError:
             return _error_snapshot(
                 account_id,
@@ -174,14 +194,24 @@ class AlibabaBailianAdapter:
             account_id=account_id,
             provider_type=ProviderType.ALIBABA_BAILIAN,
             display_name=display_name,
-            status=SnapshotStatus.AVAILABLE,
-            balances=(
+            status=(
+                SnapshotStatus.AVAILABLE
+                if all(v is not None for v in amounts.values())
+                else SnapshotStatus.PARTIAL
+            ),
+            balances=tuple(
                 BalanceItem(
-                    kind=BalanceItemKind.CASH,
-                    amount=amount,
+                    kind=kind,
+                    amount=amounts[metric],
                     unit=currency,
-                    label="账户现金余额",
-                ),
+                    label=label,
+                    metric=metric,
+                )
+                for metric, label, kind in (
+                    ("AvailableCashAmount", "现金余额", BalanceItemKind.CASH),
+                    ("AvailableAmount", "可用额度", BalanceItemKind.QUOTA),
+                    ("CreditAmount", "信用额度", BalanceItemKind.QUOTA),
+                )
             ),
             source=_SOURCE,
             fetched_at=datetime.now(UTC),
@@ -239,7 +269,7 @@ def _percent_encode(value: str) -> str:
     return quote(value, safe="-_.~", encoding="utf-8", errors="strict")
 
 
-def _parse_payload(payload: Any) -> tuple[Decimal, str]:
+def _parse_payload(payload: Any) -> tuple[dict[str, Decimal | None], str]:
     if not isinstance(payload, Mapping):
         raise TypeError("response must be an object")
     success = payload.get("Success")
@@ -252,20 +282,27 @@ def _parse_payload(payload: Any) -> tuple[Decimal, str]:
     data = payload.get("Data")
     if not isinstance(data, Mapping):
         raise TypeError("response data must be an object")
-    amount = _decimal(data.get("AvailableCashAmount"))
+    amounts = {
+        metric: None
+        if data.get(metric) is None
+        else _decimal(data[metric], allow_negative=metric == "AvailableAmount")
+        for metric in ("AvailableCashAmount", "AvailableAmount", "CreditAmount")
+    }
+    if not any(value is not None for value in amounts.values()):
+        raise ValueError("no supported balance metrics")
     currency = data.get("Currency")
     if not isinstance(currency, str) or currency not in _CURRENCIES:
         raise ValueError("unsupported currency")
-    return amount, currency
+    return amounts, currency
 
 
-def _decimal(value: Any) -> Decimal:
+def _decimal(value: Any, *, allow_negative: bool = False) -> Decimal:
     if isinstance(value, bool) or isinstance(value, float):
         raise ValueError("amount must preserve decimal precision")
     if not isinstance(value, (str, int, Decimal)):
         raise TypeError("amount must be a decimal string or number")
     amount = Decimal(value)
-    if not amount.is_finite() or amount < 0:
+    if not amount.is_finite() or (amount < 0 and not allow_negative):
         raise ValueError("amount must be finite and non-negative")
     return amount
 
@@ -274,6 +311,7 @@ def _business_error(code: str | None) -> NormalizedProviderError:
     if code in _BUSINESS_ERRORS:
         category, diagnostic = _BUSINESS_ERRORS[code]
         messages = {
+            ProviderErrorCategory.RATE_LIMITED: "阿里云余额查询被限流，请稍后重试",
             ProviderErrorCategory.PERMISSION: _PERMISSION_ERROR_MESSAGE,
             ProviderErrorCategory.AUTHENTICATION: "阿里云访问密钥认证失败",
             ProviderErrorCategory.ENDPOINT: "阿里云账户现金余额查询失败",
@@ -326,8 +364,12 @@ def _status_response_error(exc: HttpStatusError) -> NormalizedProviderError:
         if isinstance(payload, Mapping):
             code = payload.get("Code")
             if isinstance(code, str) and code in _BUSINESS_ERRORS:
-                return _business_error(code)
-    return _status_error(exc.status_code)
+                return replace(
+                    _business_error(code), retry_after_seconds=exc.retry_after_seconds
+                )
+    return replace(
+        _status_error(exc.status_code), retry_after_seconds=exc.retry_after_seconds
+    )
 
 
 def _account_fields(

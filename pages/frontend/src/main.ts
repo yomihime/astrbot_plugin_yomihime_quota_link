@@ -5,6 +5,7 @@ import {PageHeader,SettingsGroup,ActionBar,StatusHint,FormField,FormGrid,type Fo
 import {createInlineConfirmation} from './confirmation';
 import {createController} from './controller.js';
 import {globals,globalGroups,globalLabels,fieldLabels,templates,providerOptions,newAccount,templateFor,credentialFields,clone} from './config.js';
+import {alertDefaults,defaultMetric,metricOptions,metricLabels,normalizeAlert,normalizeIds,parseTargetsText,formatTargets,alertDraftErrors,fixedAlertUnit} from './alert-config.js';
 import './ui/tokens.css';
 import './shell.css';
 import './quota.css';
@@ -12,9 +13,9 @@ import './quota.css';
 declare global {interface Window{AstrBotPluginView:any}}
 type Dict=Record<string,any>;
 const App=defineComponent({setup(){
- const tick=ref(0),root=ref<HTMLElement|null>(null),main=ref<HTMLElement|null>(null),newType=ref('deepseek'),raw=ref<Record<string,string>>({}),errors=ref<Record<string,string>>({});
- const confirmation=createInlineConfirmation(document);let lastDraft:unknown;
- const controller=createController(window.AstrBotPluginView,()=>{if(lastDraft!==controller.state.draft){raw.value={};errors.value={};lastDraft=controller.state.draft;}confirmation.invalidate();tick.value++;});
+ const tick=ref(0),root=ref<HTMLElement|null>(null),main=ref<HTMLElement|null>(null),newType=ref('deepseek'),raw=ref<Record<string,string>>({}),errors=ref<Record<string,string>>({}),sliderValues=ref<Record<string,number>>({});
+ const confirmation=createInlineConfirmation(document),unitChoices=ref<Record<string,string>>(Object.create(null));let lastDraft:unknown,lastUnits:unknown;
+ const controller=createController(window.AstrBotPluginView,()=>{if(lastDraft!==controller.state.draft){raw.value={};errors.value={};sliderValues.value={};lastDraft=controller.state.draft;}if(lastUnits!==controller.state.units){unitChoices.value=Object.create(null);lastUnits=controller.state.units;}confirmation.invalidate();tick.value++;});
  const s=controller.state;
  const button=(text:string,attrs:Dict={})=>h(NButton,{size:'large',...attrs},()=>text);
  const ordinaryDisabled=()=>!s.ready||s.busy||s.stale||!!s.snapshot?.migration.pending;
@@ -23,20 +24,27 @@ const App=defineComponent({setup(){
   const key=controller.interactionKey();if(await confirmation.ask({kind,title,message,confirmLabel:label,isCurrent:()=>key===controller.interactionKey()&&s.ready})){await action();}
  };
  const navigation=async(route:string,selected:string|null=null)=>{
-  if(controller.dirty()||s.secret||s.busy){await guard('navigation','离开当前设置？','未保存的设置和凭据输入将清空。已发出的请求无法撤回，结果不明时需重新读取，不会自动重试。','放弃草稿并离开',()=>controller.navigate(route,selected));}
-  else controller.navigate(route,selected);
+  const go=()=>{controller.navigate(route,selected);if(route==='accounts'&&selected&&s.snapshot?.config.providers.some(a=>a.id===selected))void controller.refreshUnits();};
+  if(controller.dirty()||s.secret||s.busy){await guard('navigation','离开当前设置？','未保存的设置和凭据输入将清空。已发出的请求无法撤回，结果不明时需重新读取，不会自动重试。','放弃草稿并离开',go);}
+  else go();
  };
- const reload=async()=>{if(controller.dirty()||s.secret)await guard('navigation','重新读取配置？','这会清空当前未保存的设置和凭据输入。','丢弃草稿并读取',()=>controller.refresh());else await controller.refresh();};
+ const reload=async()=>{const read=async()=>{if(await controller.refresh()&&s.route==='accounts'&&s.selected)await controller.refreshUnits();};if(controller.dirty()||s.secret)await guard('navigation','重新读取配置？','这会清空当前未保存的设置和凭据输入。','丢弃草稿并读取',read);else await read();};
  const icon=(kind:string)=>h('svg',{class:'shell-icon',viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.5,'aria-hidden':'true'},kind==='account'?[h('rect',{x:3,y:5,width:18,height:14,rx:2}),h('path',{d:'M3 10h18M7 15h4'})]:kind==='settings'?[h('circle',{cx:12,cy:12,r:4}),h('path',{d:'M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2'})]:[h('path',{d:'M4 12a8 8 0 1 1 2 6M4 12V5m0 7h7'})]);
  const navLink=(title:string,route:string,kind:string)=>h('a',{href:'#/'+route,'aria-current':s.route===route?'page':undefined,onClick:(event:Event)=>{event.preventDefault();void navigation(route);}},[icon(kind),h('span',title)]);
  const brand=()=>h('div',{class:'shell-brand'},[h('span',{class:'shell-brand-mark','aria-hidden':'true'},'✧'),h('span',[h('span',{class:'shell-brand-line'},'如月怜的'),h('span',{class:'shell-brand-line'},'额度连结')])]);
  const readPath=(object:Dict,path:string[])=>path.reduce((value,key)=>value?.[key],object);
  const change=(path:string[],value:unknown,index:number|null)=>controller.edit((config:Dict)=>{let target=index===null?config:config.providers[index];for(const key of path.slice(0,-1)){if(!target[key]||typeof target[key]!=='object')target[key]={};target=target[key];}target[path.at(-1)!]=value;if(index!==null&&path.length===1&&path[0]==='id')s.selected=String(value);});
+ const changeProfile=async(index:number,value:string)=>{
+  const account=s.draft?.providers[index];if(!account||value===account.service_profile)return;
+  const alert=account.balance_alert,protectedRule=alert?.threshold!==null&&alert?.threshold!==undefined||alert?.recovery_threshold!==null&&alert?.recovery_threshold!==undefined||alert?.enabled;
+  const reset=()=>controller.edit((config:Dict)=>{const current=config.providers[index];current.service_profile=value;current.balance_alert={...current.balance_alert,enabled:false,metric:defaultMetric(current),threshold:null,recovery_threshold:null};});
+  if(protectedRule)await guard('maintenance','更换服务类型并重设预警？','将清空阈值并关闭预警，单位会重新识别。','更换并清空阈值',reset);else reset();
+ };
  function field(key:string,descriptor:Dict,index:number|null,path:string[]=[key],extra:Dict={}){
   const account=index===null?s.draft:s.draft?.providers[index];if(!account)return null;
   const controlId='field-'+(index===null?'global':index)+'-'+path.join('-'),value=readPath(account,path)??descriptor.default??'',label=((index===null?globalLabels:fieldLabels) as Record<string,string>)[key]||descriptor.description;
   const locked=extra.locked||ordinaryDisabled();
-  const setValue=(value:unknown)=>{delete errors.value[controlId];change(path,value,index);};
+  const setValue=(value:unknown)=>{delete errors.value[controlId];if(index!==null&&path.length===1&&key==='service_profile'){void changeProfile(index,String(value));return;}change(path,value,index);};
   let control:(attrs:FormFieldSlot['controlAttrs'])=>VNodeChild;
   if(descriptor.type==='bool')control=attrs=>h('label',{class:'ui-check-label'},[h('input',{...attrs,type:'checkbox',checked:!!value,disabled:locked,onChange:(e:Event)=>setValue((e.target as HTMLInputElement).checked)}),h('span',value?'已开启':'已关闭')]);
   else if(descriptor.options)control=attrs=>h('select',{...attrs,class:'ui-control',value,disabled:locked,onChange:(e:Event)=>setValue((e.target as HTMLSelectElement).value)},[(!descriptor.options.includes(value)?[h('option',{value},value||'请选择')]:[]),...descriptor.options.map((option:string,i:number)=>h('option',{value:option},descriptor.labels?.[i]||option))]);
@@ -47,12 +55,12 @@ const App=defineComponent({setup(){
  }
  const savedAccount=(id:string)=>s.snapshot?.config.providers.find((a:Dict)=>a.id===id);
  const saveActions=()=>h(ActionBar,{},()=>[
-  button('保存设置',{type:'primary','data-action':'save',disabled:ordinaryDisabled()||!controller.dirty()||Object.keys(errors.value).length>0,onClick:()=>void controller.save()}),
+  button('保存设置',{type:'primary','data-action':'save',disabled:ordinaryDisabled()||!controller.dirty()||Object.keys(errors.value).length>0,onClick:async()=>{if(await controller.save()&&s.route==='accounts'&&s.selected)await controller.refreshUnits();}}),
   button('放弃修改',{disabled:ordinaryDisabled()||!controller.dirty(),onClick:()=>controller.discard()}),
   controller.dirty()?h('span',{class:'dirty-indicator'},'有未保存修改'):h('span',{class:'quota-muted'},'普通设置与凭据分别保存'),
  ]);
  const credentialPanel=(account:Dict)=>h(Surface,{title:'查询凭据',eyebrow:'SOURCE ACCESS'},{default:()=>[
-  h(StatusHint,{},()=> '仅显示配置状态，不读取或回显原值。更换、清除分别提交。'),
+  h(StatusHint,{},()=> '凭据单独保存。'),
   !savedAccount(account.id)?h(StatusHint,{tone:'warning'},()=> '请先保存新账户，再配置凭据。'):null,
   controller.dirty()?h(StatusHint,{tone:'warning'},()=> '请先保存或放弃普通设置修改，再操作凭据。'):null,
   ...[...credentialFields(account),...Object.entries(s.snapshot?.credentials[account.id]||{}).filter(([key,status])=>status.configured&&!credentialFields(account).some((item:Dict)=>item.key===key)).map(([key])=>({key,label:'旧版凭据（'+key+'）'}))].map(({key,label}:Dict)=>{const status=s.snapshot?.credentials[account.id]?.[key];const editing=s.secret?.account===account.id&&s.secret?.field===key;return h('section',{class:'quota-credential',key},[
@@ -64,7 +72,75 @@ const App=defineComponent({setup(){
     h(ActionBar,{},()=>[button('保存新凭据',{type:'primary',attrType:'submit','data-action':'credential-save',disabled:credentialDisabled()}),button('取消输入',{disabled:s.busy,onClick:()=>controller.cancelSecret()})]),
    ]):h(ActionBar,{},()=>[button('更换凭据',{'data-action':'credential-replace',disabled:credentialDisabled()||!savedAccount(account.id),onClick:()=>controller.beginSecret(account.id,key)}),button('清除凭据',{'data-action':'credential-clear',disabled:ordinaryDisabled()||controller.dirty()||!status?.configured,onClick:()=>void guard('credential-clear','清除 '+label+'？','将移除账户「'+account.display_name+'」的此项凭据或引用。账户设置保留；之后需重新配置才能查询。','确认清除',()=>controller.clear(account.id,key))})]),
   ]);}),
-  h('p',{class:'quota-muted'},'凭据草稿仅存在当前页面内存。离开、授权失效或结束会话时清空，不写入浏览器存储。'),
+  h('p',{class:'quota-muted'},''),
+ ]});
+
+ const statusLabels:Record<string,string>={unit_unidentified:'等待识别单位',units_ambiguous:'多个单位待确认',unit_changed:'单位已变化，请确认',disabled:'预警已关闭',waiting:'等待下次检查',monitoring:'余额监测中',recovering:'额度已回升，尚未达到恢复阈值',submitted:'已提交平台；不代表最终送达',storage_unavailable:'告警状态存储不可用，预警未运行',ready:'等待下次检查',normal:'余额在阈值以上',low:'低于或等于阈值，当前告警持续中',recovered:'余额已恢复',pending:'等待检查',pending_send:'等待合并提醒',sent:'发送请求已受理（不代表送达）',accepted:'发送请求已受理（不代表送达）',unknown:'发送结果未知；不会盲目重试',send_unknown:'发送结果未知；不会盲目重试',failed:'发送失败',send_failed:'发送失败',paused:'认证或权限校验失败；修正配置或手动重试后恢复检查',auth_paused:'凭据被拒绝，检查已暂停',blocked:'配置或目标未通过检查',incomplete:'配置不完整，未启动',error:'检查失败，保留上次告警状态',stale:'结果过期或指标、单位不匹配，不用于预警判断'};
+ const runtimeStatus=(accountId?:string)=>{
+  const runtime=s.alertStatus,entry=accountId?runtime?.accounts.find(a=>a.account_id===accountId):null;
+  return h('div',{class:'quota-alert-runtime'},[
+   h('div',{class:'quota-alert-runtime-heading'},[h('strong','运行状态'),button(s.alertBusy?'读取中…':'刷新预警状态',{text:true,'data-action':'alert-status',disabled:!s.ready||s.busy||s.alertBusy,onClick:()=>void controller.refreshAlerts()})]),
+   s.alertNotice?h('p',{class:'quota-muted'},s.alertNotice):null,
+   runtime?h(StatusHint,{tone:!runtime.storage_available||entry?.status==='storage_unavailable'||entry?.status==='failed'?'error':!runtime.running||entry&&['low','recovering','unknown','error','stale','blocked','paused','units_ambiguous','unit_changed'].includes(entry.status)?'warning':'neutral'},()=>!runtime.storage_available?'告警状态存储不可用，预警未运行。':!runtime.running?'检查任务未运行。':accountId?(entry?statusLabels[entry.status]||'状态已更新，请通过预警命令查看详情。':'此账户尚无运行记录。'):'检查任务已运行；仅配置完整且单独开启的账户参与。'):null,
+   entry?.detail_code?h(StatusHint,{tone:'warning'},()=>entry.detail_code==='session_disabled'?'目标会话已停用':'已使用固定提示'):null,
+   entry?.last_checked_at?h('p',{class:'quota-muted'},'最近检查：'+entry.last_checked_at):null,
+   entry?.last_sent_at?h('p',{class:'quota-muted'},'最近发送尝试：'+entry.last_sent_at):null,
+  ]);
+ };
+ const unitPanel=(account:Dict,index:number)=>{
+  const saved=savedAccount(account.id),keys=['type','service_profile','balance_scope','prefer_split_endpoint','response_mapping','endpoint','region'];
+  const current=!!saved&&keys.every(k=>JSON.stringify(account[k])===JSON.stringify(saved[k]))&&account.balance_alert?.metric===saved.balance_alert?.metric;
+  const entry=current?s.units?.accounts.find(a=>a.account_id===account.id):undefined;
+  const candidates=entry?.choices.filter(c=>c.metric===(account.balance_alert?.metric||defaultMetric(account)))||[];
+  const needsChoice=!!entry&&(['ambiguous','changed'].includes(entry.unit_state)||entry.unit_state==='unidentified'&&candidates.length===1);
+  const shown=entry?.unit||fixedAlertUnit(account),choiceId=unitChoices.value[account.id]||'',choice=candidates.find(c=>c.id===choiceId);
+  const warning=entry?.unit_state==='ambiguous'?'发现多个单位，请选择。':entry?.unit_state==='changed'?'单位已变化，请重新确认。':entry?.unit_state==='stale'?'已有单位已过期，请先查询余额。':null;
+  return h('section',{class:'quota-alert-unit','aria-label':'预警单位'},[
+   h('div',{class:'quota-alert-runtime-heading'},[h('strong',{'data-testid':'alert-unit'},'单位：'+(shown||'待获取')),button(s.unitsBusy?'读取中…':'刷新',{text:true,'data-action':'alert-units',disabled:!s.ready||s.busy||s.unitsBusy||!saved,onClick:()=>void controller.refreshUnits()})]),
+   !shown&&!warning?h('p',{class:'quota-muted'},current?(needsChoice?'请确认查询到的单位。':'查询余额后自动识别。'):saved?'保存设置后重新识别。':'保存账户后自动识别。'):null,
+   entry?.observed_at?h('p',{class:'quota-muted'},'更新于 '+entry.observed_at):null,
+   warning?h(StatusHint,{tone:'warning'},()=>warning):null,
+   s.unitsNotice?h(StatusHint,{tone:s.unitsUnknown?'warning':'neutral'},()=>s.unitsNotice):null,
+   needsChoice&&candidates.length?h(FormField,{controlId:'field-'+index+'-unit-choice',label:'选择单位',hint:controller.dirty()?'请先保存设置。':undefined},{default:({controlAttrs}:FormFieldSlot)=>h('div',{class:'quota-unit-choice'},[
+    h('select',{...controlAttrs,class:'ui-control',value:choiceId,disabled:ordinaryDisabled()||s.unitsBusy||controller.dirty()||s.unitsUnknown,onChange:(event:Event)=>{confirmation.cancel();unitChoices.value[account.id]=(event.target as HTMLSelectElement).value;}},[h('option',{value:''},'请选择'),...candidates.map(c=>h('option',{value:c.id},c.unit))]),
+    button('确认单位',{'data-action':'alert-bind-unit',disabled:ordinaryDisabled()||s.unitsBusy||s.unitsUnknown||controller.dirty()||!choice,onClick:()=>void guard('maintenance','确认单位 '+choice?.unit+'？',account.balance_alert?.threshold!==null&&account.balance_alert?.threshold!==undefined?'改用 '+choice?.unit+'，按阈值 '+account.balance_alert.threshold+' 比较？':'改用 '+choice?.unit+'？阈值尚未设置。','确认单位',()=>controller.bindUnit(account.id,choiceId))}),
+   ])}):null,
+  ]);
+ };
+ const alertAccountPanel=(account:Dict,index:number)=>{
+  const a={...alertDefaults(),...account.balance_alert},prefix='field-'+index+'-balance_alert-',locked=ordinaryDisabled();
+  const set=(key:string,value:unknown)=>change(['balance_alert',key],value,index);
+  const alertInput=(key:string,label:string,hint:string,placeholder='')=>h(FormField,{controlId:prefix+key,label,hint,error:errors.value[prefix+key]},{default:({controlAttrs}:FormFieldSlot)=>h('input',{...controlAttrs,class:'ui-control',type:'text',inputmode:key.includes('threshold')?'decimal':undefined,value:a[key]??'',placeholder,disabled:locked,autocomplete:'off',spellcheck:false,onInput:(event:Event)=>{const value=(event.target as HTMLInputElement).value;set(key,key.includes('threshold')&&value===''?null:value);for(const field of ['threshold','recovery_threshold'])delete errors.value[prefix+field];try{normalizeAlert({...a,[key]:key.includes('threshold')&&value===''?null:value},account);}catch(error){errors.value[prefix+key]=(error as Error).message;}}})});
+  const interval=a.check_interval_minutes,validInterval=Number.isInteger(interval)&&interval>=1&&interval<=4320;
+  if(validInterval)sliderValues.value[prefix]=interval;
+  const sliderValue=validInterval?interval:sliderValues.value[prefix]??15;
+  const changeInterval=(value:string)=>{const n=/^[0-9]+$/.test(value)?Number(value):NaN;if(Number.isInteger(n)&&n>=1&&n<=4320){set('check_interval_minutes',n);delete errors.value[prefix+'check_interval_minutes'];}else{set('check_interval_minutes',value);errors.value[prefix+'check_interval_minutes']='请输入 1 至 4320 的整数分钟；不会自动截断或夹值。';}};
+  const configErrors=alertDraftErrors({...s.draft,providers:[account]});
+  return h(SettingsGroup,{title:'额度预警',number:'03'},{default:()=>[
+   h(FormField,{controlId:prefix+'enabled',label:'启用此账户预警',hint:'保存后生效。'},{default:({controlAttrs}:FormFieldSlot)=>h('label',{class:'ui-check-label'},[h('input',{...controlAttrs,type:'checkbox',checked:a.enabled===true,disabled:locked,onChange:(e:Event)=>set('enabled',(e.target as HTMLInputElement).checked)}),h('span',a.enabled?'已开启':'已关闭')])}),
+   configErrors.length?h(StatusHint,{tone:'warning'},()=>configErrors.join(' ')):null,
+   h(FormField,{controlId:prefix+'check_interval_minutes',label:'检查间隔（分钟）',hint:'1–4320 分钟，默认 15。',error:errors.value[prefix+'check_interval_minutes']},{default:({controlAttrs}:FormFieldSlot)=>h('div',{class:'quota-alert-interval'},[
+    h('div',{class:'quota-alert-interval-controls'},[h('input',{type:'range',id:prefix+'interval-slider','aria-label':'检查间隔滑条（分钟）',min:1,max:4320,step:1,value:sliderValue,disabled:locked,onInput:(e:Event)=>changeInterval((e.target as HTMLInputElement).value)}),h('input',{...controlAttrs,class:'ui-control',type:'number',min:1,max:4320,step:1,value:interval,disabled:locked,onInput:(e:Event)=>changeInterval((e.target as HTMLInputElement).value)}),h('span','分钟')]),
+    h('div',{class:'quota-alert-quick-values'},[1,15,60,1440,4320].map(v=>button(String(v),{size:'small',text:true,'aria-label':`设为 ${v} 分钟`,disabled:locked,onClick:()=>changeInterval(String(v))}))),
+   ])}),
+   h(FormGrid,{},()=>[
+    h(FormField,{controlId:prefix+'metric',label:'预警指标',hint:'选择需要监测的余额。'},{default:({controlAttrs}:FormFieldSlot)=>h('select',{...controlAttrs,class:'ui-control',value:a.metric||defaultMetric(account),disabled:locked,onChange:(e:Event)=>set('metric',(e.target as HTMLSelectElement).value)},metricOptions(account).map((metric:string)=>h('option',{value:metric},(metricLabels as Record<string,string>)[metric]+' · '+metric)))}),
+    unitPanel(account,index),
+    alertInput('threshold','触发阈值','余额低于或等于此值时提醒。','请输入明确阈值'),
+    alertInput('recovery_threshold','恢复阈值（可选）','留空自动设置，须高于触发阈值。','自动滞回阈值'),
+    h(FormField,{controlId:prefix+'repeat_minutes',label:'持续低额重复提醒（分钟）',hint:'0 不重复，最多 4320 分钟。',error:errors.value[prefix+'repeat_minutes']},{default:({controlAttrs}:FormFieldSlot)=>h('input',{...controlAttrs,class:'ui-control',type:'number',min:0,max:4320,step:1,value:a.repeat_minutes,disabled:locked,onInput:(e:Event)=>{const text=(e.target as HTMLInputElement).value,n=/^[0-9]+$/.test(text)?Number(text):NaN;set('repeat_minutes',Number.isInteger(n)?n:text);if(!Number.isInteger(n)||n<0||n>4320)errors.value[prefix+'repeat_minutes']='请输入 0 至 4320 的整数分钟。';else delete errors.value[prefix+'repeat_minutes'];}})}),
+   ]),runtimeStatus(account.id),
+  ]});
+ };
+ const targetSettings=()=>h(SettingsGroup,{title:'额度预警推送目标',number:'03'},{default:()=>[
+  h(FormField,{controlId:'field-global-balance_alert_targets',label:'目标 UMO（每行一个）',hint:'每行一个 UMO，群聊可追加 @QQ号。',error:errors.value['field-global-balance_alert_targets']},{default:({controlAttrs}:FormFieldSlot)=>h('textarea',{...controlAttrs,class:'ui-control quota-targets',rows:5,spellcheck:false,autocomplete:'off',value:raw.value['field-global-balance_alert_targets']??formatTargets(s.draft?.balance_alert_targets),placeholder:'Synthetic-QQ:FriendMessage:10001\nSynthetic-QQ:GroupMessage:10002 @10003 @10004',disabled:ordinaryDisabled(),onInput:(e:Event)=>{const text=(e.target as HTMLTextAreaElement).value;raw.value['field-global-balance_alert_targets']=text;try{change(['balance_alert_targets'],parseTargetsText(text),null);delete errors.value['field-global-balance_alert_targets'];}catch(error){change(['balance_alert_targets'],text,null);errors.value['field-global-balance_alert_targets']=(error as Error).message;}}})}),
+  runtimeStatus(),
+ ]});
+ const alertAdministration=()=>h(SettingsGroup,{title:'预警管理权限',number:'04'},{default:()=>[
+  h(FormField,{controlId:'field-global-balance_alert_admin_qq_ids',label:'预警管理 QQ 白名单',hint:'每行一个 QQ 号；名单成员或 AstrBot 管理员可管理预警。',error:errors.value['field-global-balance_alert_admin_qq_ids']},{default:({controlAttrs}:FormFieldSlot)=>h('textarea',{...controlAttrs,class:'ui-control',rows:3,value:raw.value['field-global-balance_alert_admin_qq_ids']??(Array.isArray(s.draft?.balance_alert_admin_qq_ids)?s.draft?.balance_alert_admin_qq_ids.join('\n'):''),placeholder:'每行一个 QQ 号；留空仍允许 AstrBot 内置管理员',disabled:ordinaryDisabled(),onInput:(e:Event)=>{const text=(e.target as HTMLTextAreaElement).value;raw.value['field-global-balance_alert_admin_qq_ids']=text;try{if(/[\p{Cc}\p{Cf}\p{Cs}]/u.test(text.replace(/[\r\n\t]/g,'')))throw Error('不允许控制字符或不可见字符。');const ids=normalizeIds(text.split(/\s+/u).filter(Boolean));change(['balance_alert_admin_qq_ids'],ids,null);delete errors.value['field-global-balance_alert_admin_qq_ids'];}catch(error){change(['balance_alert_admin_qq_ids'],text,null);errors.value['field-global-balance_alert_admin_qq_ids']=(error as Error).message;}}})}),
+ ]});
+ const alertLlmSettings=()=>h(SettingsGroup,{title:'预警提示',number:'05'},{default:()=>[
+  h(FormField,{controlId:'field-global-balance_alert_llm-enabled',label:'智能提示',hint:'使用目标会话的模型与人格。'},{default:({controlAttrs}:FormFieldSlot)=>h('label',{class:'ui-check-label'},[h('input',{...controlAttrs,type:'checkbox',checked:s.draft?.balance_alert_llm?.enabled!==false,disabled:ordinaryDisabled(),onChange:(e:Event)=>change(['balance_alert_llm','enabled'],(e.target as HTMLInputElement).checked,null)}),h('span',s.draft?.balance_alert_llm?.enabled!==false?'已开启':'已关闭')])}),
  ]});
  function accountEditor(account:Dict,index:number){const descriptors=templateFor(account).items,isExisting=!!savedAccount(account.id),compatible=account.type==='openai_compatible',endpoint=descriptors.endpoint?.items||templates.provider_account.items.endpoint.items,mapping:Dict=templates.provider_account.items.response_mapping.items;
   return h(SettingsLayout,{}, {default:()=>[
@@ -75,14 +151,15 @@ const App=defineComponent({setup(){
     field('timeout_seconds',descriptors.timeout_seconds,index),field('cache_ttl_seconds',descriptors.cache_ttl_seconds,index),
    ])}),
    h(SettingsGroup,{title:'供应商设置',number:'02'},{default:()=>[
-    h(StatusHint,{},()=>account.type==='deepseek'?'DeepSeek 官方账户余额，查询地址与解析规则已内置。':account.type==='alibaba_bailian'?'查询阿里云 BSS 账户现金余额。请使用具有只读 BSS 权限的 RAM AccessKey，不要填写 DashScope API Key。':account.type==='meinianda'?'查询 Meinianda 账户站内额度（site_credit）。建议缓存至少 60 秒。':account.type==='grsai'?'Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。':'余额查询使用供应商专属接口，请按其文档配置只读余额接口。'),
+    h(StatusHint,{},()=>account.type==='deepseek'?'DeepSeek 官方账户余额，查询地址与解析规则已内置。':account.type==='alibaba_bailian'?'阿里云 BSS：现金余额、可用额度和信用额度。':account.type==='meinianda'?'查询 Meinianda 账户站内额度（site_credit）。建议缓存至少 60 秒。':account.type==='grsai'?'Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。':'余额查询使用供应商专属接口，请按其文档配置只读余额接口。'),
     h(FormGrid,{},()=>[
      ...(descriptors.region?[field('region',descriptors.region,index)]:[]),
      ...(compatible?[field('service_profile',templates.openai_compatible.items.service_profile,index),...(account.service_profile==='grsai'?[field('balance_scope',templates.openai_compatible.items.balance_scope,index)]:[]),
       ...(account.endpoint?.url?[field('url',templates.provider_account.items.endpoint.items.url,index,['endpoint','url'])]:[]),field('base_url',endpoint.base_url,index,['endpoint','base_url']),field('path',endpoint.path,index,['endpoint','path'])]:[]),
     ]),
    ]}),
-   compatible?h(SettingsGroup,{title:'高级接口与响应映射',number:'03'},{default:()=>[
+   alertAccountPanel(account,index),
+   compatible?h(SettingsGroup,{title:'高级接口与响应映射',number:'04'},{default:()=>[
     field('advanced_options',templates.openai_compatible.items.advanced_options,index),
     account.advanced_options?h('div',{class:'quota-advanced'},[
      h('h3','请求协议'),h(FormGrid,{},()=>['method','auth_mode','auth_name','json_body'].map(key=>field(key,endpoint[key],index,['endpoint',key]))),
@@ -110,11 +187,11 @@ const App=defineComponent({setup(){
   ]);
  };
  const globalSettings=()=>h(SettingsLayout,{}, {default:()=>[
-  ...globalGroups.map(group=>h(SettingsGroup,{title:group.title,number:group.number},{default:()=>h(FormGrid,{},()=>group.keys.map(key=>field(key,globals[key],null)))})),saveActions(),
+  ...globalGroups.map(group=>h(SettingsGroup,{title:group.title,number:group.number},{default:()=>h(FormGrid,{},()=>group.keys.map(key=>field(key,globals[key],null)))})),targetSettings(),alertAdministration(),alertLlmSettings(),saveActions(),
  ],aside:()=>h(Surface,{title:'权限边界',eyebrow:'QUERY ACCESS'},{default:()=>[
   h('p','此页面仅供 AstrBot 管理员配置。查询权限不会授予管理页面访问权。'),h('ul',{class:'quota-guidance'},[
-   h('li','管理员不需要加入私聊白名单。'),h('li','私聊白名单使用完整 平台名:用户ID。'),h('li','/yql 命令仍受「命令仅管理员」开关限制。'),h('li','群聊查询需开启允许群聊，并满足用户白名单限制。'),
-  ]),h(StatusHint,{},()=> '账户级超时和缓存可覆盖全局默认值。不会自动查询余额；页面仅管理配置。'),
+   h('li','管理员不需要加入私聊白名单。'),h('li','私聊白名单使用完整 平台名:用户ID。'),h('li','/yql 余额查询命令受管理员开关限制；预警命令按独立规则。'),h('li','群聊查询需开启允许群聊，并满足用户白名单限制。'),
+  ]),h(StatusHint,{},()=> '各账户可单独开启预警。'),
  ]})});
  const maintenance=()=>h(SettingsLayout,{}, {default:()=>h(SettingsGroup,{title:'旧配置迁移',number:'01'},{default:()=>[
   h('p','将旧版插件配置中的普通设置、凭据和环境变量引用迁移到独立管理存储。凭据加密保存，不会在页面显示。'),

@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json as json_module
+import math
+import random
+import time
 from collections.abc import Callable, Mapping
 from decimal import Decimal
+from email.utils import parsedate_to_datetime
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlsplit
 
@@ -23,6 +27,7 @@ class HttpStatusError(Exception):
     ) -> None:
         self.status_code = status_code
         self._response = response
+        self.retry_after_seconds = getattr(response, "retry_after_seconds", None)
         super().__init__(f"Provider returned HTTP status {status_code}")
 
     @property
@@ -65,9 +70,12 @@ class HttpRequestError(Exception):
 class _ProviderResponse:
     """Response facade that exposes only safe, parsed data."""
 
-    def __init__(self, response: httpx.Response) -> None:
+    def __init__(self, response: httpx.Response, *, now: float | None = None) -> None:
         self._status_code = response.status_code
         self._content = response.content
+        self.retry_after_seconds = _retry_after(
+            response.headers.get("Retry-After"), time.time() if now is None else now
+        )
 
     @property
     def status_code(self) -> int:
@@ -86,13 +94,20 @@ class HttpProviderClient:
     def __init__(
         self,
         timeout: float = 10.0,
-        retry_delay: float = 0.05,
+        retry_delay: float = 1.0,
         client: httpx.AsyncClient | None = None,
+        *,
+        sleep=asyncio.sleep,
+        jitter=random.random,
+        wall_clock=time.time,
     ) -> None:
         self._timeout = timeout
         self._retry_delay = retry_delay
         self._client = client or httpx.AsyncClient(follow_redirects=False)
         self._closed = False
+        self._sleep = sleep
+        self._jitter = jitter
+        self._wall_clock = wall_clock
 
     async def request(
         self,
@@ -117,6 +132,8 @@ class HttpProviderClient:
             raise HttpRequestError("insecure_scheme")
 
         for attempt in range(2):
+            if self._closed:
+                raise HttpRequestError("closed")
             request_params = params_factory() if params_factory else params
             try:
                 response = await self._client.request(
@@ -132,24 +149,36 @@ class HttpProviderClient:
                 raise
             except httpx.TimeoutException:
                 if attempt == 0:
-                    await asyncio.sleep(self._retry_delay)
+                    await self._sleep(
+                        self._retry_delay * (2**attempt) * (1 + 0.2 * self._jitter())
+                    )
                     continue
                 raise HttpTransportError("timeout") from None
             except httpx.ConnectError:
                 if attempt == 0:
-                    await asyncio.sleep(self._retry_delay)
+                    await self._sleep(
+                        self._retry_delay * (2**attempt) * (1 + 0.2 * self._jitter())
+                    )
                     continue
                 raise HttpTransportError("connection") from None
 
-            if response.status_code == 429 or 500 <= response.status_code <= 599:
+            # 429 is returned immediately to the shared provider budget. Never
+            # retry it inside a request and collide across accounts.
+            facade = _ProviderResponse(response, now=self._wall_clock())
+            if self._closed:
+                raise HttpRequestError("closed")
+            if (
+                500 <= response.status_code <= 599
+                and facade.retry_after_seconds is None
+            ):
                 if attempt == 0:
-                    await asyncio.sleep(self._retry_delay)
+                    await self._sleep(
+                        self._retry_delay * (2**attempt) * (1 + 0.2 * self._jitter())
+                    )
                     continue
             if not 200 <= response.status_code < 300:
-                raise HttpStatusError(
-                    response.status_code, _ProviderResponse(response)
-                ) from None
-            return _ProviderResponse(response)
+                raise HttpStatusError(response.status_code, facade) from None
+            return facade
 
         # The loop always returns or raises. This keeps static checkers aware of
         # the return type without retaining any low-level exception details.
@@ -161,3 +190,21 @@ class HttpProviderClient:
             return
         self._closed = True
         await self._client.aclose()
+
+
+def _retry_after(value: str | None, now: float) -> float | None:
+    """Preserve delay-seconds or HTTP-date without retaining arbitrary headers."""
+    if value is None:
+        return None
+    try:
+        stripped = value.strip()
+        if stripped.isascii() and stripped.isdigit():
+            delay = float(stripped)
+        else:
+            timestamp = parsedate_to_datetime(stripped)
+            if timestamp.tzinfo is None:
+                return None
+            delay = max(0.0, timestamp.timestamp() - now)
+        return delay if math.isfinite(delay) and delay >= 0 else None
+    except (ValueError, TypeError, OverflowError):
+        return None
