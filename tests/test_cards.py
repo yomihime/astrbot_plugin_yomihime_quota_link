@@ -268,6 +268,8 @@ class BitmapTests(unittest.TestCase):
     def setUpClass(cls):
         value = os.environ.get("QUOTA_TEST_FONT")
         if not value:
+            if os.environ.get("QUOTA_REQUIRE_TEST_FONT") == "1":
+                raise RuntimeError("QUOTA_TEST_FONT is required for rendering checks")
             raise unittest.SkipTest(
                 "Set QUOTA_TEST_FONT to the pinned Noto font fixture"
             )

@@ -1,0 +1,59 @@
+name: Runtime dependency compatibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: minimum
+            dependencies: Pillow==10.0.0 httpx==0.28.0 cryptography==46.0.3
+            constraints: ""
+          - name: pillow-12
+            dependencies: Pillow==12.3.0
+            constraints: ""
+          - name: host-pillow-13
+            dependencies: Pillow==13.0.0
+            constraints: -c tests/fixtures/host-pillow13.txt
+    name: Python 3.12 / ${{ matrix.name }}
+    env:
+      QUOTA_REQUIRE_TEST_FONT: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Resolve plugin requirements with tested runtime constraints
+        run: |
+          python -m pip install -r requirements.txt ${{ matrix.dependencies }} ${{ matrix.constraints }} pytest pytest-subtests
+          python -m pip check
+      - name: Prepare and validate the pinned rendering fixture
+        run: |
+          python - <<'PY'
+          import asyncio
+          import os
+          from pathlib import Path
+          from quota_link.managed_font import prepare_font
+          from quota_link.presentation.font import CardFontProvider
+
+          path = asyncio.run(prepare_font(Path(os.environ["RUNNER_TEMP"]) / "yql-font"))
+          if path is None:
+              raise SystemExit("Pinned rendering fixture could not be prepared")
+          CardFontProvider(path).load(24)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              stream.write(f"QUOTA_TEST_FONT={path}\n")
+          PY
+      - name: Run offline tests including real font and PNG boundaries
+        run: python -m pytest -q

@@ -1,0 +1,3 @@
+# Observed AstrBot protected dependency from the installation regression.
+# This is a resolver test input, not a replacement for the host's requirements.
+Pillow==13.0.0
