@@ -9,7 +9,11 @@ permissions:
   contents: write
 
 jobs:
+  dependency-compatibility:
+    uses: ./.github/workflows/dependency-compatibility.yml
+
   build:
+    needs: dependency-compatibility
     runs-on: ubuntu-latest
     steps:
       - name: Check out source

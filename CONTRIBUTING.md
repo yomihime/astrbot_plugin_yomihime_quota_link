@@ -4,6 +4,8 @@
 
 建议使用 Python 3.12 或更高版本，并在 AstrBot 的运行环境中调试插件。
 
+运行时依赖与 AstrBot 安装要求沿用 Game Link 的最低版本策略。新增上限或排除版本时，请附上可复现的不兼容行为与上游问题，并更新 `tests/test_dependencies.py` 的例外记录。前端构建锁文件、测试夹具和工具版本继续按可复现构建需求维护。
+
 ```bash
 git clone https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 cd astrbot_plugin_yomihime_quota_link
@@ -30,6 +32,8 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+卡片回归需要完整的固定 Noto 字体：将 `QUOTA_TEST_FONT` 指向已通过大小与 SHA256 校验的 `NotoSansCJKsc-Regular.otf`，设置 `QUOTA_REQUIRE_TEST_FONT=1` 后运行测试。字体常量见 `quota_link/presentation/font.py`；CI 使用现有固定来源和校验流程准备独立夹具，准备失败会阻止通过。依赖矩阵在 Python 3.12 下覆盖 Pillow 10.0.0、12.3.0 和宿主固定 13.0.0；最低组合同时覆盖 httpx 0.28.0、cryptography 46.0.3。`tests/fixtures/host-pillow13.txt` 只记录本次安装冲突涉及的宿主保护项。
 
 新增平台适配器或监控逻辑时，请同时补充对应的测试和 README 文档。
 
