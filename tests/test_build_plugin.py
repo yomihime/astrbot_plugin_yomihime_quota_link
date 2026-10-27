@@ -72,6 +72,7 @@ EXPECTED_PACKAGE_FILES |= {
     "quota_link/presentation/__init__.py",
     "quota_link/presentation/NOTICE.md",
     "quota_link/cards.py",
+    "quota_link/local_status.py",
     "quota_link/presentation/assets/fonts/OFL.txt",
     "quota_link/managed_font.py",
 }
@@ -161,6 +162,13 @@ security = importlib.import_module("quota_link.security")
 admin = importlib.import_module("quota_link.admin")
 assert callable(security.SecretStore)
 assert callable(admin.AdminPages)
+cards = importlib.import_module("quota_link.cards")
+local_status = importlib.import_module("quota_link.local_status")
+settings = importlib.import_module("quota_link.settings")
+assert cards.__file__.startswith(archive)
+assert local_status.__file__.startswith(archive)
+assert cards.build_help_card(settings.load_settings({})).title == "YQL 使用帮助"
+assert cards.build_status_card(settings.load_settings({})).title == "本地配置状态"
 assert capabilities.__file__.startswith(archive)
 assert tool_facts.__file__.startswith(archive)
 assert callable(capabilities.describe_capabilities)

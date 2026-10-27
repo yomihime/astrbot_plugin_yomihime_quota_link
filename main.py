@@ -12,7 +12,12 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Star, register
 
 from .quota_link.cache import BalanceCache
-from .quota_link.cards import render_result_card
+from .quota_link.cards import (
+    build_help_card,
+    build_status_card,
+    render_local_card,
+    render_result_card,
+)
 from .quota_link.formatter import (
     format_help,
     format_parse_error,
@@ -25,6 +30,7 @@ from .quota_link.intent import (
     can_query,
     parse_command,
 )
+from .quota_link.local_status import LocalStorageStatus, project_storage_status
 from .quota_link.managed_font import FONT_FILENAME, prepare_font
 from .quota_link.providers import IMPLEMENTED_ADAPTERS
 from .quota_link.service import QueryService
@@ -221,21 +227,34 @@ class YomihimeQuotaLink(Star):
         match = _COMMAND_START.match(message)
         argument = match.group(1) if match else ""
         parsed = parse_command(argument, self.settings.directory)
-        if (
-            parsed.error is not None
-            or parsed.request is None
-            or parsed.request.kind.value in {"help", "status"}
-        ):
+        if parsed.error is not None or parsed.request is None:
             yield event.plain_result(await self._render(parsed))
             return
 
-        # Query once: image and text fallback share the same immutable facts.
-        result = await self.service.query(parsed.request)
+        # Help/status stay local. Query results are fetched once; every route
+        # then shares image preparation and complete text fallback below.
+        settings = self.settings
+        if parsed.request.kind.value == "help":
+            payload = build_help_card(settings)
+            renderer = render_local_card
+            fallback = format_help(settings)
+        elif parsed.request.kind.value == "status":
+            try:
+                storage = await self._local_storage_status(context)
+            except PermissionError:
+                yield event.plain_result("当前会话无权查询额度信息。")
+                return
+            settings = self.settings
+            payload = build_status_card(settings, storage)
+            renderer = render_local_card
+            fallback = format_status(settings, storage)
+        else:
+            payload = await self.service.query(parsed.request)
+            renderer = render_result_card
+            fallback = format_result(payload)
         prepared = None
         try:
-            bitmap = await asyncio.to_thread(
-                render_result_card, result, self._font_path
-            )
+            bitmap = await asyncio.to_thread(renderer, payload, self._font_path)
             if bitmap:
                 from astrbot.api.message_components import Image
 
@@ -247,7 +266,28 @@ class YomihimeQuotaLink(Star):
         if prepared is not None:
             yield prepared
         else:
-            yield event.plain_result(format_result(result))
+            yield event.plain_result(fallback)
+
+    async def _local_storage_status(self, context) -> LocalStorageStatus:
+        """Read save metadata locally, then discard identifiers and config values."""
+        if self._config_store is None:
+            return LocalStorageStatus(
+                state="unavailable" if self._storage_failed else "unknown"
+            )
+
+        def authorize():
+            if not can_query(context, self.settings, is_command=True):
+                raise PermissionError
+
+        try:
+            dto = await self._config_store.dispatch("credential-status", {}, authorize)
+            authorize()
+            return project_storage_status(self.settings.directory, dto)
+        except PermissionError:
+            raise
+        except Exception:
+            # Storage diagnostics can contain private paths or credential refs.
+            return LocalStorageStatus(state="unavailable")
 
     @filter.llm_tool(name="yql_query_balance")
     async def query_balance_tool(

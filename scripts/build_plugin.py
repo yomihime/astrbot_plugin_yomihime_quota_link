@@ -62,6 +62,7 @@ PACKAGE_FILES += (
 )
 PACKAGE_FILES += (
     "quota_link/cards.py",
+    "quota_link/local_status.py",
     "quota_link/presentation/__init__.py",
     "quota_link/presentation/bitmap.py",
     "quota_link/presentation/font.py",

@@ -3,7 +3,17 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .formatter import _KIND_LABELS, _single_line, display_semantics, display_target
+from .formatter import (
+    _KIND_LABELS,
+    HELP_NOTES,
+    _single_line,
+    display_diagnostic,
+    display_provider,
+    display_semantics,
+    display_target,
+    local_account_state,
+)
+from .local_status import LocalStorageStatus, credential_label, storage_summary
 from .models import (
     BalanceItem,
     ProviderType,
@@ -13,6 +23,7 @@ from .models import (
 )
 from .presentation.bitmap import CardSpec, Row, Section, render_card
 from .presentation.font import CardFontProvider
+from .settings import PluginSettings
 
 _STATUS = {
     SnapshotStatus.AVAILABLE: "可用",
@@ -142,5 +153,138 @@ def render_result_card(
         return render_card(
             build_result_card(result), font_provider=CardFontProvider(font_path)
         ).content
+    except Exception:
+        return None
+
+
+def build_help_card(settings: PluginSettings) -> CardSpec:
+    """Build command help from the credential-free directory, with no IO."""
+    names = tuple(
+        _single_line(entry.display_name)
+        for entry in settings.directory.entries
+        if entry.enabled
+    )
+    return CardSpec(
+        title="YQL 使用帮助",
+        subtitle="查询额度 · 查看本地配置",
+        sections=(
+            Section(
+                heading="查询额度",
+                rows=(
+                    Row(("全部账户", "/yql  或  /yql all")),
+                    Row(("指定账户", "/yql account <名称>")),
+                    Row(("指定供应商", "/yql provider <名称>")),
+                ),
+                paragraphs=("也可使用 /yql <名称>；名称支持显示名、别名与供应商名。",),
+            ),
+            Section(
+                heading="帮助与状态",
+                rows=(Row(("使用帮助  ·  本地配置", "/yql help  ·  /yql status")),),
+                paragraphs=("help 和 status 读取本地信息。",),
+            ),
+            Section(
+                heading=f"已启用账户 · {len(names)} 个",
+                rows=tuple(Row(("", name), role="note") for name in names),
+                paragraphs=()
+                if names
+                else ("尚未配置启用的账户。请先在管理页添加账户。",),
+            ),
+        ),
+        limitations=HELP_NOTES,
+    )
+
+
+def build_status_card(
+    settings: PluginSettings, storage: LocalStorageStatus = LocalStorageStatus()
+) -> CardSpec:
+    """Show local readiness and save records, never remote credential validity."""
+    accounts = settings.directory.entries
+    enabled = sum(entry.enabled for entry in accounts)
+    ready = sum(entry.enabled and entry.queryable for entry in accounts)
+    sections = [
+        Section(
+            heading="访问与凭据",
+            rows=(
+                Row(("凭据存储", storage_summary(storage))),
+                Row(
+                    ("群聊查询", "已开启" if settings.allow_group_queries else "已关闭")
+                ),
+                Row(
+                    (
+                        "命令权限",
+                        "仅管理员" if settings.command_admin_only else "按会话授权",
+                    )
+                ),
+            ),
+        )
+    ]
+    for index, entry in enumerate(accounts):
+        state = local_account_state(entry)
+        if entry.enabled and not entry.queryable:
+            reason = state.removeprefix("不可查询：")
+            if reason.startswith("配置不全："):
+                state = "待补齐：" + reason.removeprefix("配置不全：")
+            elif entry.unavailable_reason in {
+                "missing_environment_variable",
+                "missing_credentials",
+                "missing_grsai_token",
+            }:
+                state = "待配置：" + reason
+            else:
+                state = "待检查：" + reason
+        sections.append(
+            Section(
+                heading=_single_line(entry.display_name),
+                rows=(
+                    Row(
+                        (
+                            "本地配置" if entry.queryable or not entry.enabled else "",
+                            state,
+                        ),
+                        role="metric"
+                        if entry.queryable or not entry.enabled
+                        else "error",
+                    ),
+                    Row(("凭据保存", credential_label(storage, index)), role="note"),
+                ),
+                paragraphs=(f"供应商：{display_provider(entry)}",),
+            )
+        )
+    if not accounts:
+        sections.append(
+            Section(
+                heading="尚未配置账户",
+                rows=(Row(("下一步", "在管理页添加账户与凭据")),),
+                paragraphs=(
+                    "保存后发送 /yql status 查看本地配置，再用 /yql 查询额度。",
+                ),
+            )
+        )
+    if settings.errors:
+        sections.append(
+            Section(
+                heading=f"配置问题 · {len(settings.errors)} 项",
+                rows=tuple(
+                    Row(
+                        (str(index + 1), display_diagnostic(issue.safe_message)),
+                        role="error",
+                    )
+                    for index, issue in enumerate(settings.errors)
+                ),
+            )
+        )
+    return CardSpec(
+        title="本地配置状态",
+        subtitle=f"{len(accounts)} 个账户 · {enabled} 个启用 · {ready} 个配置完整",
+        caption="依据本地账户目录与凭据保存记录",
+        sections=tuple(sections),
+        limitations=("连通性和余额可通过 /yql 查询。",),
+    )
+
+
+def render_local_card(spec: CardSpec, font_path: Path | None = None) -> bytes | None:
+    """Use the same bounded offline renderer and full-text fallback as queries."""
+    try:
+        return render_card(spec, font_provider=CardFontProvider(font_path)).content
     except Exception:
         return None
