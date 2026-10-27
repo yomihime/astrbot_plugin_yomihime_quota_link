@@ -67,6 +67,7 @@ class Section:
     paragraphs: tuple[str, ...] = ()
     columns: tuple[str, ...] = ()
     rows: tuple[Row, ...] = ()
+    icon_key: str = ""
 
 
 @dataclass(frozen=True)
@@ -126,6 +127,7 @@ COLORS = {
     "accent": "#ad7950",
 }
 MARGIN, GAP, PANEL_PADDING, RADIUS = 56, 18, 22, 18
+SECTION_ICON_SIZE = 40
 
 
 def _validate(spec: CardSpec, bounds: BitmapBounds) -> tuple[str, ...]:
@@ -177,6 +179,8 @@ def _validate(spec: CardSpec, bounds: BitmapBounds) -> tuple[str, ...]:
                 raise BitmapUnavailable("invalid_input")
         if section.columns:
             raise BitmapUnavailable("invalid_input")
+        if type(section.icon_key) is not str or len(section.icon_key) > 32:
+            raise BitmapUnavailable("invalid_input")
         add(section.heading)
         for value in section.paragraphs:
             add(value)
@@ -227,8 +231,15 @@ class _Panel:
 
 
 class _Layout:
-    def __init__(self, provider: FontProvider, bounds: BitmapBounds):
+    def __init__(
+        self,
+        provider: FontProvider,
+        bounds: BitmapBounds,
+        icon_indices: frozenset[int] = frozenset(),
+    ):
         self.bounds = bounds
+        self.icon_indices = icon_indices
+        self.icons: list[tuple[int, int, int]] = []
         self.measurements = self.output_lines = 0
         self.texts: list[_Text] = []
         self.panels: list[_Panel] = []
@@ -311,18 +322,39 @@ class _Layout:
         self.panels.append(_Panel((x, y, x + 58, y + 3), "accent", 1))
         self.panels.append(_Panel((x + 70, y + 1, x + width, y + 2), "border"))
         y += 25
-        for section in spec.sections:
+        for index, section in enumerate(spec.sections):
             top, position = y, len(self.panels)
             left, inner_width = x + PANEL_PADDING, width - PANEL_PADDING * 2
             y += PANEL_PADDING
             if section.heading:
-                self.panels.append(_Panel((left, y + 3, left + 4, y + 29), "accent", 2))
-                y += (
-                    self.text(
-                        section.heading, left + 15, y, inner_width - 15, 28, "strong"
+                if index in self.icon_indices:
+                    # Optional account icons use a fixed 40 px slot. The heading
+                    # still wraps in full, with the existing panel budgets.
+                    self.icons.append((index, left, y))
+                    heading_height = self.text(
+                        section.heading,
+                        left + 52,
+                        y + 4,
+                        inner_width - 52,
+                        28,
+                        "strong",
                     )
-                    + 12
-                )
+                    y += max(SECTION_ICON_SIZE, heading_height + 4) + 12
+                else:
+                    self.panels.append(
+                        _Panel((left, y + 3, left + 4, y + 29), "accent", 2)
+                    )
+                    y += (
+                        self.text(
+                            section.heading,
+                            left + 15,
+                            y,
+                            inner_width - 15,
+                            28,
+                            "strong",
+                        )
+                        + 12
+                    )
             metrics = [row for row in section.rows if row.role == "metric"]
             notes = [row for row in section.rows if row.role != "metric"]
             if metrics:
@@ -381,11 +413,45 @@ class _BoundedBuffer(BytesIO):
         return super().write(data)
 
 
+def _load_section_icons(section_icons, count):
+    """Decode bounded, caller-supplied local PNGs; bad/missing icons stay optional.
+
+    No paths, URLs, SVG parsers or provider identities cross this boundary.
+    Missing icons preserve the original accent-line layout and all text.
+    """
+    if type(section_icons) is not tuple or len(section_icons) != count:
+        return {}
+    from PIL import Image
+
+    loaded = {}
+    for index, content in enumerate(section_icons):
+        if type(content) is not bytes or not 0 < len(content) <= 131072:
+            continue
+        if not content.startswith(b"\x89PNG\r\n\x1a\n"):
+            continue
+        try:
+            with Image.open(BytesIO(content)) as icon:
+                if (
+                    icon.format != "PNG"
+                    or not (1 <= icon.width <= 256 and 1 <= icon.height <= 256)
+                    or getattr(icon, "n_frames", 1) != 1
+                ):
+                    continue
+                loaded[index] = icon.convert("RGBA").resize(
+                    (SECTION_ICON_SIZE, SECTION_ICON_SIZE), Image.Resampling.LANCZOS
+                )
+        except Exception:
+            # Optional branding must not hide text or expose image diagnostics.
+            continue
+    return loaded
+
+
 def render_card(
     spec: CardSpec,
     *,
     font_provider: FontProvider,
     bounds: BitmapBounds = BitmapBounds(),
+    section_icons: tuple[bytes | None, ...] = (),
 ) -> RenderedBitmap:
     """Render all supplied text or fail before returning any image.
 
@@ -406,7 +472,8 @@ def render_card(
         raise
     except Exception:
         raise BitmapUnavailable("font_unavailable") from None
-    layout = _Layout(font_provider, bounds)
+    icons = _load_section_icons(section_icons, len(spec.sections))
+    layout = _Layout(font_provider, bounds, frozenset(icons))
     height = layout.build(spec)
     # All line heights, width, height and pixels have been checked before new().
     try:
@@ -425,6 +492,8 @@ def render_card(
                     fill=COLORS[box.fill],
                     outline=COLORS[box.outline] if box.outline else None,
                 )
+            for index, x, y in layout.icons:
+                image.paste(icons[index], (x, y), icons[index])
             for text in layout.texts:
                 y = text.y
                 for line in text.lines:

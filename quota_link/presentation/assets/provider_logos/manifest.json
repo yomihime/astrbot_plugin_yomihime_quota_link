@@ -1,0 +1,94 @@
+{
+  "repo_commit": "74cfdb1be88ae7f4dda1dbf24e47c7311c2b6471",
+  "date_utc": "2026-10-27",
+  "assets": [
+    {
+      "provider_type": "deepseek",
+      "file": "svg/deepseek.svg",
+      "name": "DeepSeek",
+      "classification": "官方仓库路径整理",
+      "note": "移除字标，鲸鱼比例与蓝色不变",
+      "sha256": "45f62c8fa47279db6566af24e45ed8c9af14b1cdb9edb76aaa0b8e5b06777b08",
+      "png_file": "png-128/deepseek.png",
+      "png_sha256": "22439dedcbbac97acbffd8e952e35203d7670f1d224572300e6a880972af0f03",
+      "png_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "provider_type": "alibaba_bailian",
+      "file": "svg/alibaba_bailian.svg",
+      "name": "阿里云百炼",
+      "classification": "社区矢量 · 官方图标对照",
+      "note": "Lobe Icons / MIT；非官方 SVG",
+      "sha256": "74128dc6d6f36fdac93bd24db27155cec0791749c3d34f4a86618b37b03d624c",
+      "png_file": "png-128/alibaba_bailian.png",
+      "png_sha256": "3a7fe7ef77d648661ce6cda98ac9b815c1f273286faf607c703e2743124a0c1d",
+      "png_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "provider_type": "grsai",
+      "file": "svg/grsai.svg",
+      "name": "Grsai",
+      "classification": "官网 PNG 图形矢量化",
+      "note": "3 geometric paths; additional light monochrome dark-theme variant",
+      "sha256": "9c81f2eff79e6be21311b21b4f5b8af1812128496b4d007c7156db23a493eef9",
+      "variants": [
+        "svg/grsai-dark.svg"
+      ],
+      "png_file": "png-128/grsai.png",
+      "png_sha256": "9d4cd0d4f1564ef7f4c6303231b936a42aeddb0e2eed5cd967f5cbe5f3368f5c",
+      "png_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "provider_type": "meinianda",
+      "file": "svg/meinianda.svg",
+      "name": "Meinianda",
+      "classification": "用户参考头像 · 手工矢量重建",
+      "note": "84px user reference; brown bob, plaid blouse, orange carton. 美年达 text hand-drawn as paths; small details approximate. Prior New API asset superseded.",
+      "sha256": "51933c5dba6a43d83a9f4ecb03f0cc46e4ef3c8b7b7d501f2ec0fe2d9a5c189f",
+      "png_file": "png-128/meinianda.png",
+      "png_sha256": "a0e656134eeb3ed104f5c2c76211c5ea036006bf762f7cfcbf155010b917bc1d",
+      "png_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "provider_type": "openai_compatible",
+      "file": "svg/openai_compatible.svg",
+      "name": "OpenAI 兼容服务",
+      "classification": "通用接口图标",
+      "note": "只表示兼容协议，不暗示运营方",
+      "sha256": "82582e881c77d3fec180812c7421523947e10da0d707398557992c071766847f",
+      "png_file": "png-128/openai_compatible.png",
+      "png_sha256": "7850cf836a4602ae51a50e4ca32970fcd1608f923002a0a615d253bc423ed9f8",
+      "png_size": [
+        128,
+        128
+      ]
+    }
+  ],
+  "revision": "v3-user-reference",
+  "site_identity_check": {
+    "grsai": "Official docs list both configured API hosts and /client/openapi/getCredits; page header uses /images/logo.png",
+    "meinianda": "Public /api/status: system_name=Meinianda AI; logo empty. Frontend logo fallback=/logo.png."
+  },
+  "reference_input": {
+    "filename": "IMG_1770.png",
+    "dimensions": [
+      84,
+      84
+    ],
+    "sha256": "0b9874d95fbd23432374b85c86adb343196925558f4a8e8d5b30ec9f9d77a49a",
+    "user_confirmed_carton_text": "美年达"
+  },
+  "runtime": "Bundled fixed PNGs, verified offline; SVG sources retained for provenance."
+}

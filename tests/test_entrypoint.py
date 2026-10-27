@@ -156,8 +156,9 @@ def entrypoint(monkeypatch):
     monkeypatch.setattr(module, "prepare_font", no_font)
     # Existing text-contract tests explicitly exercise the fallback path.
     monkeypatch.setattr(
-        module, "render_result_card", lambda result, font_path=None: None
+        module, "render_result_card", lambda result, font_path=None, **kwargs: None
     )
+    monkeypatch.setattr(module, "render_local_card", lambda spec, font_path=None: None)
     FakeHttpClient.instances.clear()
     models = importlib.import_module(f"{package_name}.quota_link.models")
     module.YomihimeQuotaLink._test_models = models
@@ -546,7 +547,7 @@ def test_command_card_uses_one_query_and_offloads_rendering(
         queries.append(result)
         return result
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         assert threading.get_ident() != caller_thread
         renders.append(result)
         return b"synthetic-png"
@@ -585,7 +586,7 @@ def test_command_card_failure_preserves_complete_text_without_requery(
     def fail(*args):
         raise RuntimeError("SENSITIVE provider detail must not be exposed")
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         if failure == "render":
             fail()
         return None if failure == "unavailable" else b"synthetic-png"
@@ -617,14 +618,14 @@ def test_command_card_failure_preserves_complete_text_without_requery(
         ("/yql missing-target", True),
     ],
 )
-def test_non_query_and_denied_commands_never_render_or_query(
+def test_local_invalid_and_denied_commands_never_use_query_renderer_or_provider(
     entrypoint, monkeypatch, command, admin
 ):
     plugin = entrypoint(None, _config())
     module = importlib.import_module(plugin.__class__.__module__)
     calls = []
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         calls.append("render")
         raise AssertionError("must not render")
 
@@ -648,11 +649,12 @@ def test_llm_tool_never_calls_command_card_renderer(entrypoint, monkeypatch):
     module = importlib.import_module(plugin.__class__.__module__)
     calls = []
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         calls.append(result)
         raise AssertionError("LLM facts must not render")
 
     monkeypatch.setattr(module, "render_result_card", render)
+    monkeypatch.setattr(module, "render_local_card", render)
     event = FakeEvent("查余额", admin=True)
     result = asyncio.run(plugin.query_balance_tool(event, "query", "grsai-work"))
     assert json.loads(result)["operation"] == "query"
@@ -778,7 +780,7 @@ def test_font_startup_failure_keeps_command_text_fallback(
     async def prepare(*args):
         raise RuntimeError("SENSITIVE download endpoint detail")
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         render_paths.append(font_path)
         return None
 
@@ -810,7 +812,7 @@ def test_prepared_font_passes_to_renderer_without_query_time_preparation(
         calls.append(args)
         return ready
 
-    def render(result, font_path=None):
+    def render(result, font_path=None, *, directory=None):
         paths.append(font_path)
         return None
 
@@ -909,3 +911,372 @@ def test_reinitialize_joins_old_font_then_publishes_only_new_path(
         assert plugin._font_path is None
 
     asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("command", ["/yql help", "/yql status"])
+def test_local_command_cards_render_off_thread_without_query(
+    entrypoint, monkeypatch, command
+):
+    import threading
+
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+    caller = threading.get_ident()
+    renders = []
+
+    async def query(*args):
+        raise AssertionError("local cards must not query a provider")
+
+    def render(spec, font_path=None):
+        assert threading.get_ident() != caller
+        renders.append(spec)
+        return b"synthetic-local-png"
+
+    image_module = types.ModuleType("astrbot.api.message_components")
+    image_module.Image = types.SimpleNamespace(fromBytes=lambda value: ("image", value))
+    monkeypatch.setitem(sys.modules, "astrbot.api.message_components", image_module)
+    monkeypatch.setattr(module, "render_local_card", render)
+    monkeypatch.setattr(plugin.service, "query", query)
+    event = FakeEvent(command, admin=True)
+    event.chain_result = lambda values: ("chain", values)
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    assert replies == [("chain", [("image", b"synthetic-local-png")])]
+    assert len(renders) == 1
+    assert "演示数据" not in str(renders[0])
+    assert FakeHttpClient.instances[-1].requests == []
+    assert event.replies == []
+
+
+@pytest.mark.parametrize("command", ["/yql help", "/yql status"])
+@pytest.mark.parametrize("failure", ["font", "render", "component", "chain"])
+def test_local_card_failure_keeps_complete_text(
+    entrypoint, monkeypatch, command, failure
+):
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("SENSITIVE-DO-NOT-EXPOSE")
+
+    async def query(*args):
+        fail()
+
+    def render(spec, font_path=None):
+        if failure == "render":
+            fail()
+        return None if failure == "font" else b"synthetic-png"
+
+    image_module = types.ModuleType("astrbot.api.message_components")
+    image_module.Image = types.SimpleNamespace(
+        fromBytes=fail if failure == "component" else lambda value: value
+    )
+    monkeypatch.setitem(sys.modules, "astrbot.api.message_components", image_module)
+    monkeypatch.setattr(module, "render_local_card", render)
+    monkeypatch.setattr(plugin.service, "query", query)
+    event = FakeEvent(command, admin=True)
+    event.chain_result = fail if failure == "chain" else lambda values: values
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    expected = (
+        module.format_help(plugin.settings)
+        if command.endswith("help")
+        else module.format_status(plugin.settings)
+    )
+    assert replies == [expected]
+    assert "DeepSeek Work" in replies[0] and "Nova Quota" in replies[0]
+    assert "SENSITIVE" not in replies[0]
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+def test_status_uses_only_local_storage_metadata(entrypoint, monkeypatch):
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+    store_module = importlib.import_module(
+        module.__package__ + ".quota_link.config_store"
+    )
+    calls = []
+    renders = []
+    metadata = {
+        field: {
+            "configured": field == "api_key",
+            "source": "encrypted" if field == "api_key" else "missing",
+        }
+        for field in store_module.SECRET_FIELDS
+    }
+
+    async def dispatch(operation, body, authorize):
+        authorize()
+        calls.append((operation, body))
+        return {
+            "config": {
+                "private-url": "https://SENSITIVE.invalid",
+                "raw-secret": "SENSITIVE",
+            },
+            "credentials": {"grsai-work": metadata, "openai-main": metadata},
+            "encryption": {"ready": True},
+            "migration": {"pending": False},
+        }
+
+    plugin._config_store = types.SimpleNamespace(dispatch=dispatch)
+    monkeypatch.setattr(
+        module, "render_local_card", lambda spec, font=None: renders.append(spec)
+    )
+    event = FakeEvent("/yql status", admin=True)
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    assert calls == [("credential-status", {})]
+    assert "加密凭据已保存" in replies[0]
+    assert "安全存储已就绪" in replies[0]
+    for forbidden in (
+        "SENSITIVE",
+        "https://",
+        "grsai-work",
+        "openai-main",
+        "test-placeholder",
+    ):
+        assert forbidden not in replies[0] + str(renders[0])
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+@pytest.mark.parametrize("mode", ["storage_error", "storage_absent"])
+def test_status_storage_failure_is_safe_and_keeps_local_accounts(
+    entrypoint, monkeypatch, mode
+):
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+    monkeypatch.setattr(module, "render_local_card", lambda *args: None)
+
+    async def dispatch(*args):
+        raise RuntimeError("SENSITIVE /private/path vault_ref")
+
+    if mode == "storage_error":
+        plugin._config_store = types.SimpleNamespace(dispatch=dispatch)
+    else:
+        plugin._storage_failed = True
+    event = FakeEvent("/yql status", admin=True)
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    assert "安全存储待检查" in replies[0]
+    assert "DeepSeek Work" in replies[0]
+    assert "SENSITIVE" not in replies[0]
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+@pytest.mark.parametrize(
+    "command,admin",
+    [
+        ("/yql status", False),
+        ("/yql help extra", True),
+        ("/yql status extra", True),
+        ("/yql missing-target", True),
+    ],
+)
+def test_invalid_or_denied_commands_keep_short_text_and_skip_all_cards(
+    entrypoint, monkeypatch, command, admin
+):
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+    calls = []
+
+    def unexpected(*args, **kwargs):
+        calls.append("unexpected")
+        raise AssertionError
+
+    async def dispatch(*args):
+        unexpected()
+
+    plugin._config_store = types.SimpleNamespace(dispatch=dispatch)
+    monkeypatch.setattr(module, "render_local_card", unexpected)
+    monkeypatch.setattr(module, "render_result_card", unexpected)
+    monkeypatch.setattr(plugin.service, "query", dispatch)
+    event = FakeEvent(command, admin=admin)
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    assert len(replies) == 1 and isinstance(replies[0], str)
+    assert len(replies[0]) < 80
+    assert calls == []
+
+
+def test_status_rechecks_permission_after_local_storage_read(entrypoint, monkeypatch):
+    from dataclasses import replace
+
+    plugin = entrypoint(
+        None,
+        {
+            **_config(),
+            "command_admin_only": False,
+            "private_allowed_user_ids": ["telegram:user-1"],
+        },
+    )
+    module = importlib.import_module(plugin.__class__.__module__)
+    calls = []
+    monkeypatch.setattr(
+        module, "render_local_card", lambda *args: calls.append("render")
+    )
+
+    async def dispatch(operation, body, authorize):
+        authorize()
+        plugin.settings = replace(plugin.settings, command_admin_only=True)
+        return {}
+
+    plugin._config_store = types.SimpleNamespace(dispatch=dispatch)
+    event = FakeEvent("/yql status")
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    assert replies == ["当前会话无权查询额度信息。"]
+    assert calls == []
+
+
+@pytest.mark.parametrize("command", ["/yql help", "/yql status"])
+@pytest.mark.parametrize("size", [0, 205])
+def test_local_entrypoint_real_renderer_empty_and_oversize(
+    entrypoint, monkeypatch, command, size
+):
+    import os
+
+    font = os.environ.get("QUOTA_TEST_FONT")
+    if not font:
+        pytest.skip("fixed font fixture required")
+    config = {
+        "providers": [
+            {
+                "id": f"private-{i}",
+                "type": "deepseek",
+                "display_name": f"账户 {i}",
+                "auth": {"api_key": "synthetic-key"},
+            }
+            for i in range(size)
+        ]
+    }
+    plugin = entrypoint(None, config)
+    module = importlib.import_module(plugin.__class__.__module__)
+    cards = importlib.import_module(module.__package__ + ".quota_link.cards")
+    plugin._font_path = Path(font)
+    monkeypatch.setattr(module, "render_local_card", cards.render_local_card)
+
+    async def query(*args):
+        raise AssertionError("local command must not query")
+
+    monkeypatch.setattr(plugin.service, "query", query)
+    image_module = types.ModuleType("astrbot.api.message_components")
+    image_module.Image = types.SimpleNamespace(fromBytes=lambda value: value)
+    monkeypatch.setitem(sys.modules, "astrbot.api.message_components", image_module)
+    event = FakeEvent(command, admin=True)
+    event.chain_result = lambda values: values[0]
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    assert len(replies) == 1
+    if size:
+        assert isinstance(replies[0], str)
+        assert all(f"账户 {i}" in replies[0] for i in range(size))
+    else:
+        assert replies[0].startswith(b"\x89PNG\r\n\x1a\n")
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+def test_status_uses_current_directory_after_waiting_for_storage(
+    entrypoint, monkeypatch
+):
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+    store_module = importlib.import_module(
+        module.__package__ + ".quota_link.config_store"
+    )
+    fields = {
+        field: {
+            "configured": field == "api_key",
+            "source": "encrypted" if field == "api_key" else "missing",
+        }
+        for field in store_module.SECRET_FIELDS
+    }
+    monkeypatch.setattr(module, "render_local_card", lambda *args: None)
+
+    async def dispatch(operation, body, authorize):
+        authorize()
+        plugin.settings = module.load_settings(
+            {
+                "providers": [
+                    {
+                        "id": "new-private-id",
+                        "type": "deepseek",
+                        "display_name": "更新后的账户",
+                        "auth": {"api_key": "synthetic-key"},
+                    }
+                ]
+            }
+        )
+        return {
+            "credentials": {"new-private-id": fields},
+            "encryption": {"ready": True},
+            "migration": {"pending": False},
+        }
+
+    plugin._config_store = types.SimpleNamespace(dispatch=dispatch)
+    event = FakeEvent("/yql status", admin=True)
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    assert "更新后的账户" in replies[0]
+    assert "加密凭据已保存" in replies[0]
+    assert "DeepSeek Work" not in replies[0]
+    assert "new-private-id" not in replies[0]
+    assert "账户：共 1 个" in replies[0]
+
+
+@pytest.mark.parametrize("command", ["/yql all", "/yql status"])
+def test_real_command_defaults_to_bundled_provider_icons(
+    entrypoint, monkeypatch, command
+):
+    import os
+
+    font = os.environ.get("QUOTA_TEST_FONT")
+    if not font:
+        pytest.skip("fixed font fixture required")
+    plugin = entrypoint(None, _config())
+    module = importlib.import_module(plugin.__class__.__module__)
+    cards = importlib.import_module(module.__package__ + ".quota_link.cards")
+    bitmap = importlib.import_module(
+        module.__package__ + ".quota_link.presentation.bitmap"
+    )
+    fonts = importlib.import_module(
+        module.__package__ + ".quota_link.presentation.font"
+    )
+    models = entrypoint._test_models
+    plugin._font_path = Path(font)
+    monkeypatch.setattr(module, "render_local_card", cards.render_local_card)
+    monkeypatch.setattr(module, "render_result_card", cards.render_result_card)
+    result = models.QueryResult(
+        models.QueryRequest(models.QueryRequestKind.ALL),
+        (
+            models.BalanceSnapshot(
+                "private-account",
+                models.ProviderType.MEINIANDA,
+                "示例头像账户",
+                models.SnapshotStatus.AVAILABLE,
+                (),
+                "合成数据",
+                datetime(2026, 10, 27, tzinfo=UTC),
+            ),
+        ),
+        datetime(2026, 10, 27, tzinfo=UTC),
+    )
+    queries = []
+
+    async def query(request):
+        queries.append(request)
+        return result
+
+    monkeypatch.setattr(plugin.service, "query", query)
+    image_module = types.ModuleType("astrbot.api.message_components")
+    image_module.Image = types.SimpleNamespace(fromBytes=lambda value: value)
+    monkeypatch.setitem(sys.modules, "astrbot.api.message_components", image_module)
+    event = FakeEvent(command, admin=True)
+    event.chain_result = lambda values: values[0]
+    replies = asyncio.run(_collect(plugin.quota_link(event)))
+    spec = (
+        cards.build_result_card(result)
+        if command.endswith("all")
+        else cards.build_status_card(plugin.settings)
+    )
+    assert len(replies) == 1
+    assert replies[0] == cards.render_local_card(spec, Path(font))
+    assert (
+        replies[0]
+        != bitmap.render_card(
+            spec, font_provider=fonts.CardFontProvider(Path(font))
+        ).content
+    )
+    assert len(queries) == (1 if command.endswith("all") else 0)
+    assert FakeHttpClient.instances[-1].requests == []

@@ -72,8 +72,28 @@ EXPECTED_PACKAGE_FILES |= {
     "quota_link/presentation/__init__.py",
     "quota_link/presentation/NOTICE.md",
     "quota_link/cards.py",
+    "quota_link/local_status.py",
+    "quota_link/presentation/provider_logos.py",
     "quota_link/presentation/assets/fonts/OFL.txt",
     "quota_link/managed_font.py",
+}
+EXPECTED_PACKAGE_FILES |= {
+    "quota_link/presentation/assets/provider_logos/README.md",
+    "quota_link/presentation/assets/provider_logos/licenses/DeepSeek-LICENSE-CODE.txt",
+    "quota_link/presentation/assets/provider_logos/licenses/Lobe-Icons-LICENSE.txt",
+    "quota_link/presentation/assets/provider_logos/manifest.json",
+    "quota_link/presentation/assets/provider_logos/png-128/alibaba_bailian.png",
+    "quota_link/presentation/assets/provider_logos/png-128/deepseek.png",
+    "quota_link/presentation/assets/provider_logos/png-128/grsai-dark.png",
+    "quota_link/presentation/assets/provider_logos/png-128/grsai.png",
+    "quota_link/presentation/assets/provider_logos/png-128/meinianda.png",
+    "quota_link/presentation/assets/provider_logos/png-128/openai_compatible.png",
+    "quota_link/presentation/assets/provider_logos/svg/alibaba_bailian.svg",
+    "quota_link/presentation/assets/provider_logos/svg/deepseek.svg",
+    "quota_link/presentation/assets/provider_logos/svg/grsai-dark.svg",
+    "quota_link/presentation/assets/provider_logos/svg/grsai.svg",
+    "quota_link/presentation/assets/provider_logos/svg/meinianda.svg",
+    "quota_link/presentation/assets/provider_logos/svg/openai_compatible.svg",
 }
 EXPECTED_PAGE_FILES = {
     "pages/00-quota-link/licenses/vueuc.txt",
@@ -161,6 +181,19 @@ security = importlib.import_module("quota_link.security")
 admin = importlib.import_module("quota_link.admin")
 assert callable(security.SecretStore)
 assert callable(admin.AdminPages)
+logos = importlib.import_module("quota_link.presentation.provider_logos")
+assert logos.__file__.startswith(archive)
+for provider, expected_hash in logos.LOGO_SHA256.items():
+    content = logos.load_logo(provider)
+    assert content is not None and content.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+    assert logos.sha256(content).hexdigest() == expected_hash
+cards = importlib.import_module("quota_link.cards")
+local_status = importlib.import_module("quota_link.local_status")
+settings = importlib.import_module("quota_link.settings")
+assert cards.__file__.startswith(archive)
+assert local_status.__file__.startswith(archive)
+assert cards.build_help_card(settings.load_settings({})).title == "YQL 使用帮助"
+assert cards.build_status_card(settings.load_settings({})).title == "本地配置状态"
 assert capabilities.__file__.startswith(archive)
 assert tool_facts.__file__.startswith(archive)
 assert callable(capabilities.describe_capabilities)

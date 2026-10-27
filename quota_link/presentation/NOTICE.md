@@ -44,3 +44,13 @@ For offline rendering tests set `QUOTA_TEST_FONT` to an explicit local copy of
 the exact pinned font. Test mocks exercise network failures without contacting
 providers. `examples/render_cards.py --font-path ...` uses that same checked
 font-loading and card-rendering path. No real account values enter the samples.
+
+## Bundled provider logos
+
+`assets/provider_logos/` contains the source SVGs, offline 128×128 transparent
+PNG derivatives, hashes, provenance, and applicable upstream license texts.
+The runtime selects only fixed provider keys, verifies each PNG hash, and draws
+a 40px icon beside the account heading. It never parses SVGs or downloads logos.
+Missing or invalid icons preserve the original accent and complete card text.
+The shared bounded renderer accepts PNG bytes only, limits size/dimensions/frame
+count, and does not access file paths or URLs.

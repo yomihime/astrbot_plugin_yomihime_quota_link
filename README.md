@@ -26,11 +26,13 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 ### 查询卡片
 
-`/yql`、`/yql all`、账户查询与供应商查询默认返回与 Game Link 同系列的暖纸色图片卡片。每个账户使用独立面板，主数值突出展示，其余余额以属性分栏排列；币种、积分和站内额度保留各自单位，状态、缓存、来源与时间作为辅助信息。内置语义说明采用简洁的肯定式表述，自定义接口说明保留原意。时间统一显示为 UTC（保留到秒）。帮助、配置状态、参数错误和权限拒绝仍使用文字；LLM 工具仍返回原有 JSON 事实，不生成卡片。
+`/yql`、`/yql all`、账户查询与供应商查询默认返回与 Game Link 同系列的暖纸色图片卡片。每个账户使用独立面板与 40px 供应商图标，主数值突出展示，其余余额以属性分栏排列；币种、积分和站内额度保留各自单位，状态、缓存、来源与时间作为辅助信息。内置语义说明采用简洁的肯定式表述，自定义接口说明保留原意。时间统一显示为 UTC（保留到秒）。帮助和配置状态使用同系列卡片：`/yql help` 按查询、本地命令和已启用账户分组；`/yql status` 展示本地配置、访问规则、凭据保存记录及安全诊断。状态中的加密凭据与环境变量引用分别标明保存情况，连通性和余额由 `/yql` 查询。参数错误和权限拒绝保持简短文字；LLM 工具保留原有 JSON 事实。
+
+图标的 SVG 源文件、固定 128px 透明 PNG 派生和来源/许可说明随插件包提供；Pillow 只读取已校验的内置 PNG。Meinianda 使用已确认的女孩头像，兼容服务使用通用接口符号。图标缺失或校验失败时保留原卡片内容，不触发下载。
 
 卡片在本地生成，不把账户信息发送到外部制图服务，不写临时图片。插件包不包含字体。启动时沿用 Game Link 的固定 Noto 字体下载与缓存方式：先检查 YQL 自己的有效缓存；若同时安装了 YGL 且其字体已就绪，将经过同一大小与 SHA256 校验的字体复制到 YQL 的独立缓存；否则按 YGL 的固定镜像顺序下载。缓存位于插件数据目录的 `resources/fonts/`，不会修改或依赖 YGL 的文件。下载在后台进行，每个来源最多 15 秒、单轮最多 45 秒；查询只读取已就绪的字体，不触发重复下载。字体准备期间或准备失败时使用文字回退，下次插件启动再尝试。字体采用 SIL OFL 1.1，卡片绘制使用 Pillow。若图像依赖/字体不可用、包含字体不支持的字符、内容超出绘制预算或宿主无法准备图像消息，会退回完整文字结果；不会静默省略账户或用量字段，也不会为回退重复查询供应商。超长结果可改用 `/yql <账户名>` 缩小范围。消息已交给宿主后发生的适配器发送错误不自动重试，避免重复发送。
 
-复现不含真实账户数据的卡片：`PYTHONPATH=. python examples/render_cards.py --font-path <已校验字体路径> --output-dir card-previews`。渲染来源、字体许可和离线策略见 [`quota_link/presentation/NOTICE.md`](quota_link/presentation/NOTICE.md)。
+复现不含真实账户数据的卡片：`PYTHONPATH=. python examples/render_cards.py --font-path <已校验字体路径> --output-dir card-previews`。带供应商图标的三种演示可用 `python examples/provider_logo_preview/render.py --font <已校验字体路径> --output provider-card-previews` 生成。帮助与状态的四种演示可用 `python scripts/render_local_card_demos.py --font <已校验字体路径> --output local-card-previews` 生成；演示标记仅由该脚本添加，命令卡片使用实际本地配置。渲染来源、字体许可和离线策略见 [`quota_link/presentation/NOTICE.md`](quota_link/presentation/NOTICE.md)。
 
 `/yql` 命令默认仅管理员可用，包括 `/yql help` 和 `/yql status`。需要开放命令时，可将 `command_admin_only` 设为 `false`；此开关不会放宽自然语言工具调用的私聊权限。
 

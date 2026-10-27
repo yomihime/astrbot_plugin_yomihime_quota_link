@@ -5,6 +5,7 @@ from decimal import Decimal
 from unicodedata import category
 
 from .capabilities import _PROVIDER_NAMES
+from .local_status import LocalStorageStatus, credential_label, storage_summary
 from .models import (
     BalanceItem,
     BalanceItemKind,
@@ -16,7 +17,7 @@ from .models import (
     QueryResult,
     SnapshotStatus,
 )
-from .settings import PluginSettings
+from .settings import AccountDirectoryEntry, PluginSettings
 
 _KIND_LABELS = {
     BalanceItemKind.CASH: "现金余额",
@@ -31,6 +32,14 @@ _KIND_LABELS = {
 _UNAVAILABLE_REASONS = {
     "missing_environment_variable": "凭据环境变量未设置",
     "missing_credentials": "缺少可用凭据",
+    "missing_grsai_token": "请配置 Grsai 账户请求令牌",
+    "invalid_grsai_region": "请选择有效的 Grsai 节点",
+    "invalid_service_profile": "请检查服务类型",
+    "invalid_balance_scope": "请检查余额查询范围",
+    "invalid_balance_kind": "Grsai 积分类别应配置为 credits",
+    "grsai_method_must_post": "Grsai 积分接口使用 POST",
+    "grsai_account_path_mismatch": "请使用 Grsai 账户积分接口",
+    "grsai_balance_scope_mismatch": "请按 Grsai 接口选择对应余额范围",
     "missing_endpoint": "配置不全：请按服务商文档补齐服务地址与接口路径",
     "missing_base_url": "配置不全：请填写 HTTPS 服务根地址",
     "missing_api_path": "配置不全：请填写以 / 开头的接口路径",
@@ -182,6 +191,37 @@ def format_result(result: QueryResult) -> str:
     return "\n".join(lines)
 
 
+HELP_NOTES = (
+    "在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。",
+    "OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写服务地址、接口路径和高级认证/响应映射。配置完整后即可查询。",
+    "阿里云百炼模板查询阿里云账户现金余额（BSS）；RAM 身份至少需要 AliyunBSSReadOnlyAccess。",
+)
+
+
+def display_provider(entry: AccountDirectoryEntry) -> str:
+    if entry.service_profile == "grsai":
+        return "Grsai"
+    return _PROVIDER_NAMES[entry.provider_type]
+
+
+def local_account_state(entry: AccountDirectoryEntry) -> str:
+    if not entry.enabled:
+        return "已禁用"
+    if entry.queryable:
+        return "已配置，可查询"
+    reason = _UNAVAILABLE_REASONS.get(
+        entry.unavailable_reason or "", "配置不全或暂不可查询"
+    )
+    return f"不可查询：{reason}"
+
+
+def display_diagnostic(message: str) -> str:
+    """Localize known command copy without changing stored diagnostic facts."""
+    if message == "请填写以 / 开头的相对 API Path":
+        message = "请填写以 / 开头的相对接口路径"
+    return _single_line(message)
+
+
 def format_help(settings: PluginSettings) -> str:
     """Render local command help using the credential-free account directory."""
     lines = [
@@ -192,9 +232,8 @@ def format_help(settings: PluginSettings) -> str:
         "  /yql status          查看本地配置状态\n"
         "  /yql all             查询所有账户\n"
         "  /yql <名称>          查询指定账户或供应商\n"
-        "在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。\n"
-        "OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写服务地址、接口路径和高级认证/响应映射。配置完整后即可查询。\n"
-        "阿里云百炼模板查询阿里云账户现金余额（BSS）；RAM 身份至少需要 AliyunBSSReadOnlyAccess。"
+        "  /yql account <名称>  查询指定账户\n"
+        "  /yql provider <名称> 查询指定供应商\n" + "\n".join(HELP_NOTES)
     ]
     entries = [entry for entry in settings.directory.entries if entry.enabled]
     if entries:
@@ -205,35 +244,36 @@ def format_help(settings: PluginSettings) -> str:
     return "\n".join(lines)
 
 
-def format_status(settings: PluginSettings) -> str:
+def format_status(
+    settings: PluginSettings, storage: LocalStorageStatus = LocalStorageStatus()
+) -> str:
     """Render local settings state; this function performs no network access."""
     accounts = settings.directory.entries
     enabled = [entry for entry in accounts if entry.enabled]
     queryable = [entry for entry in enabled if entry.queryable]
     lines = [
         "如月怜的额度连结状态",
+        "数据来源：本地配置与凭据保存记录；连通性和余额可通过 /yql 查询。",
         f"账户：共 {len(accounts)} 个，启用 {len(enabled)} 个，可查询 {len(queryable)} 个",
         f"群聊查询：{'已开启' if settings.allow_group_queries else '已关闭'}",
+        f"命令权限：{'仅管理员' if settings.command_admin_only else '按会话授权'}",
+        f"凭据存储：{storage_summary(storage)}",
     ]
     if not accounts:
         lines.append("尚未配置账户。")
     else:
         lines.append("账户列表：")
-        for entry in accounts:
-            if not entry.enabled:
-                state = "已禁用"
-            elif entry.queryable:
-                state = "已配置，可查询"
-            else:
-                reason = _UNAVAILABLE_REASONS.get(
-                    entry.unavailable_reason or "", "配置不全或暂不可查询"
-                )
-                state = f"不可查询：{reason}"
-            lines.append(f"  {_single_line(entry.display_name)}：{state}")
+        for index, entry in enumerate(accounts):
+            lines.append(
+                f"  {_single_line(entry.display_name)}：{local_account_state(entry)}"
+            )
+            lines.append(
+                f"    {display_provider(entry)} · {credential_label(storage, index)}"
+            )
     if settings.errors:
         lines.append(f"配置问题：{len(settings.errors)} 项")
         lines.extend(
-            f"  {_single_line(diagnostic.safe_message)}"
+            f"  {display_diagnostic(diagnostic.safe_message)}"
             for diagnostic in settings.errors
         )
     return "\n".join(lines)
