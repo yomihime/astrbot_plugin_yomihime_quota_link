@@ -5,7 +5,6 @@ from pathlib import Path
 
 from .formatter import (
     _KIND_LABELS,
-    HELP_NOTES,
     _single_line,
     display_diagnostic,
     display_provider,
@@ -189,20 +188,26 @@ def build_help_card(settings: PluginSettings) -> CardSpec:
     )
     return CardSpec(
         title="YQL 使用帮助",
+        width=720,
+        layout="compact",
         subtitle="查询额度 · 查看本地配置",
         sections=(
             Section(
                 heading="查询额度",
                 rows=(
-                    Row(("全部账户", "/yql  或  /yql all")),
-                    Row(("指定账户", "/yql account <名称>")),
-                    Row(("指定供应商", "/yql provider <名称>")),
+                    Row(("全部账户", "/yql  或  /yql all"), role="command"),
+                    Row(("指定账户", "/yql account <名称>"), role="command"),
+                    Row(("指定供应商", "/yql provider <名称>"), role="command"),
                 ),
                 paragraphs=("也可使用 /yql <名称>；名称支持显示名、别名与供应商名。",),
             ),
             Section(
                 heading="帮助与状态",
-                rows=(Row(("使用帮助  ·  本地配置", "/yql help  ·  /yql status")),),
+                rows=(
+                    Row(("使用帮助", "/yql help"), role="command"),
+                    Row(("本地配置", "/yql status"), role="command"),
+                    Row(("额度预警", "/yql alert help"), role="command"),
+                ),
                 paragraphs=("help 和 status 读取本地信息。",),
             ),
             Section(
@@ -213,7 +218,10 @@ def build_help_card(settings: PluginSettings) -> CardSpec:
                 else ("尚未配置启用的账户。请先在管理页添加账户。",),
             ),
         ),
-        limitations=HELP_NOTES,
+        limitations=(
+            "启用函数工具后，可用自然语言查询额度。",
+            "供应商接口与凭据请在管理页配置。",
+        ),
     )
 
 
@@ -228,15 +236,20 @@ def build_status_card(
         Section(
             heading="访问与凭据",
             rows=(
-                Row(("凭据存储", storage_summary(storage))),
+                Row(("凭据存储", storage_summary(storage)), role="note"),
                 Row(
-                    ("群聊查询", "已开启" if settings.allow_group_queries else "已关闭")
+                    (
+                        "群聊查询",
+                        "已开启" if settings.allow_group_queries else "已关闭",
+                    ),
+                    role="note",
                 ),
                 Row(
                     (
                         "命令权限",
                         "仅管理员" if settings.command_admin_only else "按会话授权",
-                    )
+                    ),
+                    role="note",
                 ),
             ),
         )
@@ -262,7 +275,7 @@ def build_status_card(
                 rows=(
                     Row(
                         (
-                            "本地配置" if entry.queryable or not entry.enabled else "",
+                            "",
                             state,
                         ),
                         role="metric"
@@ -299,6 +312,8 @@ def build_status_card(
         )
     return CardSpec(
         title="本地配置状态",
+        width=720,
+        layout="compact",
         subtitle=f"{len(accounts)} 个账户 · {enabled} 个启用 · {ready} 个配置完整",
         caption="依据本地账户目录与凭据保存记录",
         sections=tuple(sections),

@@ -271,7 +271,7 @@ def build_alert_status_card(config: dict, status: dict) -> CardSpec:
         title="额度预警状态",
         subtitle=f"{len(rows)} 个账户 · 本地运行记录",
         sections=tuple(sections),
-        limitations=("本地记录 · 提交不等于送达，实际送达请查看平台记录。",),
+        limitations=("本地记录 · 实际送达请查看平台记录。",),
     )
 
 
@@ -317,7 +317,7 @@ def build_alert_admins_card(admins: tuple[str, ...]) -> CardSpec:
         ),
         limitations=(
             "AstrBot 内置管理员也可管理。",
-            "预警管理权限不等于额度查询权限或推送收件权限。",
+            "额度查询与推送收件权限分别配置。",
         ),
     )
 

@@ -15,7 +15,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from quota_link.alert_cards import (  # noqa: E402
+    build_alert_admins_card,
     build_alert_help_card,
+    build_alert_receipt_card,
     build_alert_status_card,
     build_alert_targets_card,
     build_alert_units_card,
@@ -102,6 +104,11 @@ def demo_cases():
         ("05-alert-help-account.png", build_alert_help_card("account")),
         ("06-alert-help-units.png", build_alert_help_card("units")),
         ("07-alert-help-targets.png", build_alert_help_card("targets")),
+        ("08-alert-admins.png", build_alert_admins_card(("10001", "10002"))),
+        (
+            "09-alert-receipt.png",
+            build_alert_receipt_card("已保存账户预警阈值：10 CNY。"),
+        ),
     )
 
 

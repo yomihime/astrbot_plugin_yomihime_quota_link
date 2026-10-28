@@ -111,7 +111,7 @@ def test_real_demo_pipeline_is_bounded_offline_and_preserves_text(font, case):
             font_provider=font,
             section_icons=tuple(load_logo(key) for key in keys),
         )
-    assert result.width == 960
+    assert result.width == value.width
     assert result.height <= BitmapBounds().max_height
     assert len(result.content) <= BitmapBounds().max_bytes
     with Image.open(BytesIO(result.content)) as image:
