@@ -51,9 +51,10 @@ async def _alert_session_enabled(umo):
     try:
         from astrbot.core.star.session_llm_manager import SessionServiceManager
 
-        return await SessionServiceManager.is_session_enabled(umo) is True
+        state = await SessionServiceManager.is_session_enabled(umo)
+        return state if type(state) is bool else None
     except Exception:
-        return False
+        return None
 
 
 async def _alert_session_llm_enabled(umo):
@@ -286,7 +287,7 @@ class YomihimeQuotaLink(Star):
                 return result
             if self._config_store is None or self._terminated:
                 raise ConfigUnavailable()
-            if operation == "alert-bind-unit":
+            if operation in {"alert-bind-unit", "alert-refresh-units"}:
                 dto = await self._config_store.dispatch("read", {}, authorize)
                 authorize()
                 if (
@@ -296,10 +297,27 @@ class YomihimeQuotaLink(Star):
                     raise ConfigConflict()
                 if self._alert_engine is None:
                     raise ConfigUnavailable()
+                engine = self._alert_engine
                 try:
-                    self._alert_engine.confirm_unit(
-                        body.get("account_id"), body.get("choice_id")
-                    )
+                    if operation == "alert-refresh-units":
+                        await engine.refresh_units(body.get("account_id"), authorize)
+                        authorize()
+                        if self._terminated or self._alert_engine is not engine:
+                            raise ConfigUnavailable()
+                        latest = await self._config_store.dispatch(
+                            "read", {}, authorize
+                        )
+                        authorize()
+                        if self._terminated or self._alert_engine is not engine:
+                            raise ConfigUnavailable()
+                        if latest["revision"] != body["revision"]:
+                            raise ConfigConflict()
+                    else:
+                        engine.confirm_unit(
+                            body.get("account_id"), body.get("choice_id")
+                        )
+                except ConfigValidation:
+                    raise
                 except ValueError as error:
                     raise ConfigValidation(str(error)) from None
                 authorize()
@@ -387,9 +405,13 @@ class YomihimeQuotaLink(Star):
                 self._alert_status,
                 self._retry_alert,
             )
-            yield event.plain_result(
-                await commands.execute(event, alert_match.group(1))
-            )
+            result = await commands.execute_result(event, alert_match.group(1))
+            if result.card is None:
+                yield event.plain_result(result.text)
+            else:
+                yield await self._card_reply(
+                    event, result.card, render_local_card, result.text
+                )
             return
         context = self._permission_context(event)
         if not can_query(context, self.settings, is_command=True):
@@ -424,6 +446,12 @@ class YomihimeQuotaLink(Star):
             renderer = render_result_card
             render_options = {"directory": settings.directory}
             fallback = format_result(payload)
+        yield await self._card_reply(
+            event, payload, renderer, fallback, **render_options
+        )
+
+    async def _card_reply(self, event, payload, renderer, fallback, **render_options):
+        """Prepare one reply; fallback never reruns a command, query or mutation."""
         prepared = None
         try:
             bitmap = await asyncio.to_thread(
@@ -437,10 +465,7 @@ class YomihimeQuotaLink(Star):
             # Optional rendering or image preparation may fail. Do not log
             # account facts or retry after dispatch, which could send twice.
             pass
-        if prepared is not None:
-            yield prepared
-        else:
-            yield event.plain_result(fallback)
+        return prepared if prepared is not None else event.plain_result(fallback)
 
     async def _local_storage_status(self, context) -> LocalStorageStatus:
         """Read save metadata locally, then discard identifiers and config values."""

@@ -414,6 +414,10 @@ async def test_target_budget_delays_new_episode_without_losing_pending_account(
     service.amounts["account-1"] = Decimal("1")
     await monitor.run_once()
     assert len(context.sent) == 1
+    rows = {item["account_id"]: item for item in monitor.status()["accounts"]}
+    assert rows["account-0"]["status"] == "submitted"
+    assert rows["account-1"]["status"] == "waiting_budget"
+    assert "300" in rows["account-1"]["message"]
     clock.advance(240)
     await monitor.run_once()
     assert len(context.sent) == 2
@@ -429,6 +433,7 @@ async def test_optional_repeat_respects_longer_target_budget(tmp_path):
     clock.advance(60)
     await monitor.run_once()
     assert len(context.sent) == 1
+    assert monitor.status()["accounts"][0]["status"] == "waiting_budget"
     clock.advance(240)
     await monitor.run_once()
     assert len(context.sent) == 2

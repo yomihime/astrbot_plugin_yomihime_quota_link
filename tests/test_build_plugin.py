@@ -52,6 +52,7 @@ EXPECTED_PACKAGE_FILES |= {
     "quota_link/alert_config.py",
     "quota_link/alert_units.py",
     "quota_link/alert_commands.py",
+    "quota_link/alert_cards.py",
     "quota_link/alerts.py",
     "quota_link/alert_delivery.py",
     "quota_link/provider_retry.py",
@@ -187,7 +188,7 @@ capabilities = importlib.import_module("quota_link.capabilities")
 tool_facts = importlib.import_module("quota_link.tool_facts")
 security = importlib.import_module("quota_link.security")
 admin = importlib.import_module("quota_link.admin")
-for module in ("alert_config", "alert_units", "alert_commands", "alerts", "alert_delivery", "provider_retry"):
+for module in ("alert_config", "alert_units", "alert_commands", "alert_cards", "alerts", "alert_delivery", "provider_retry"):
     loaded = importlib.import_module("quota_link." + module)
     assert loaded.__file__.startswith(archive)
 assert callable(security.SecretStore)

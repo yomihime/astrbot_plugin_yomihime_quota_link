@@ -7,6 +7,16 @@ export const llmDefaults=()=>({enabled:true});
 export function defaultMetric(account){return account.type==='alibaba_bailian'?'AvailableAmount':account.type==='deepseek'?'total_balance':account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?'credit':account.type==='meinianda'?'site_credit':account.type==='openai_compatible'?'mapped_balance':'';}
 export function metricOptions(account){return account.type==='alibaba_bailian'?['AvailableAmount','AvailableCashAmount','CreditAmount']:account.type==='deepseek'?['total_balance','granted_balance','topped_up_balance']:account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?['credit']:account.type==='meinianda'?['site_credit']:account.type==='openai_compatible'?['mapped_balance']:[];}
 export const metricLabels={AvailableAmount:'可用额度',AvailableCashAmount:'现金余额',CreditAmount:'信用额度',total_balance:'总余额',granted_balance:'赠送余额',topped_up_balance:'充值余额',credit:'积分',site_credit:'站内额度',mapped_balance:'已配置映射余额'};
+const unitLabels={credit:'积分',site_credit:'站内额度'};
+export const unitLabel=unit=>Object.hasOwn(unitLabels,unit)?unitLabels[unit]:unit;
+export const metricLabel=metric=>Object.hasOwn(metricLabels,metric)?metricLabels[metric]:'监测余额';
+export function localTime(value,locale='zh-CN'){
+ const date=new Date(value);if(!Number.isFinite(date.getTime()))return '时间不可用';
+ const options={year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',timeZoneName:'short'};
+ try{return new Intl.DateTimeFormat(locale,options).format(date);}catch{return new Intl.DateTimeFormat('zh-CN',options).format(date);}
+}
+export const alertDetailLabels={session_disabled:'目标会话已停用，请在 AstrBot 中启用会话。',session_check_failed:'无法核对目标会话状态，请检查 AstrBot 会话设置与日志。',fixed_hint:'已使用固定提示。',target_invalid:'推送目标格式无效，请在全局设置中核对 UMO。',platform_not_found:'未找到目标平台实例，请核对 UMO 的平台实例 ID。',platform_unavailable:'目标平台实例暂不可用，请检查连接状态与宿主日志。',platform_unsupported:'目标平台不支持此主动发送方式，请改用支持的推送目标。',mention_unsupported:'目标不支持 QQ 提及，请移除 @ 后缀或使用支持的 QQ 群目标。',mention_invalid:'QQ 提及格式无效，请核对群会话与 @QQ 号。',transport_unavailable:'宿主主动发送接口不可用，请检查 AstrBot 版本与日志。',message_components_unavailable:'消息组件无法构造，请检查宿主组件与日志。'};
+export const alertDetailLabel=code=>Object.hasOwn(alertDetailLabels,code)?alertDetailLabels[code]:'暂无明确阻止原因，请核对全局推送目标、平台连接与宿主预警日志。';
 export function fixedAlertUnit(account){const metric=defaultMetric(account);return metric==='credit'?'credit':metric==='site_credit'?'site_credit':null;}
 export function validateAlertUnits(value){
  const text=(v,max)=>typeof v==='string'&&v.length>0&&[...v].length<=max&&!controls.test(v);
@@ -16,7 +26,12 @@ export function validateAlertUnits(value){
  const accounts=new Set();return {accounts:value.accounts.map(a=>{
   if(!record(a)||!text(a.account_id,128)||accounts.has(a.account_id)||!['unidentified','verified','ambiguous','changed','stale'].includes(a.unit_state)||!(a.unit===null||unit(a.unit))||!date(a.observed_at)||!Array.isArray(a.choices)||a.choices.length>20)throw Error('invalid_response');
   if(a.unit_state==='verified'&&!a.unit)throw Error('invalid_response');accounts.add(a.account_id);const choices=new Set();
-  return {account_id:a.account_id,unit_state:a.unit_state,unit:a.unit,observed_at:a.observed_at,choices:a.choices.map(c=>{if(!record(c)||(typeof c.id!=='string'||!(/^[0-9a-f]{64}$/).test(c.id))||choices.has(c.id)||!text(c.metric,64)||(/\s/u).test(c.metric)||!unit(c.unit))throw Error('invalid_response');choices.add(c.id);return {id:c.id,metric:c.metric,unit:c.unit};})};
+  for(const key of ['metric','binding_metric'])if(a[key]!==undefined&&!(key==='binding_metric'&&a[key]===null)&&(!text(a[key],64)||(/\s/u).test(a[key])))throw Error('invalid_response');
+  if(a.change_reason!==undefined&&!['','metric_changed','query_identity_changed','unit_changed'].includes(a.change_reason))throw Error('invalid_response');
+  if(a.choices_state!==undefined&&!['fresh','expired','unavailable'].includes(a.choices_state))throw Error('invalid_response');
+  if(a.choices_observed_at!==undefined&&!date(a.choices_observed_at))throw Error('invalid_response');
+  if(a.choices_state&&a.choices_state!=='fresh'&&a.choices.length)throw Error('invalid_response');
+  return {account_id:a.account_id,unit_state:a.unit_state,unit:a.unit,observed_at:a.observed_at,...Object.fromEntries(['metric','binding_metric','change_reason','choices_state','choices_observed_at'].filter(k=>a[k]!==undefined).map(k=>[k,a[k]])),choices:a.choices.map(c=>{if(!record(c)||(typeof c.id!=='string'||!(/^[0-9a-f]{64}$/).test(c.id))||choices.has(c.id)||!text(c.metric,64)||(/\s/u).test(c.metric)||!unit(c.unit))throw Error('invalid_response');choices.add(c.id);return {id:c.id,metric:c.metric,unit:c.unit};})};
  })};
 }
 export function parseUmo(value){
@@ -95,5 +110,5 @@ export function alertDraftErrors(config){
 }
 export function validateAlertStatus(value){
  if(!record(value)||typeof value.running!=='boolean'||typeof value.storage_available!=='boolean'||!Array.isArray(value.accounts)||value.accounts.length>100)throw Error('invalid_response');
- return {running:value.running,storage_available:value.storage_available,accounts:value.accounts.map(a=>{if(!record(a)||typeof a.account_id!=='string'||a.account_id.length>128||typeof a.status!=='string'||!/^[a-z_]{1,64}$/.test(a.status))throw Error('invalid_response');if(a.detail_code!==undefined&&!['','session_disabled','fixed_hint'].includes(a.detail_code))throw Error('invalid_response');return {account_id:a.account_id,status:a.status,...(a.detail_code?{detail_code:a.detail_code}:{}),...Object.fromEntries(['last_checked_at','last_sent_at'].filter(k=>typeof a[k]==='string'&&a[k].length<=64&&!controls.test(a[k])).map(k=>[k,a[k]]))};})};
+ return {running:value.running,storage_available:value.storage_available,accounts:value.accounts.map(a=>{if(!record(a)||typeof a.account_id!=='string'||a.account_id.length>128||typeof a.status!=='string'||!/^[a-z_]{1,64}$/.test(a.status))throw Error('invalid_response');if(a.detail_code!==undefined&&(typeof a.detail_code!=='string'||!(/^[a-z_]{0,64}$/).test(a.detail_code)))throw Error('invalid_response');return {account_id:a.account_id,status:a.status,...(a.detail_code?{detail_code:a.detail_code}:{}),...Object.fromEntries(['last_checked_at','last_sent_at'].filter(k=>typeof a[k]==='string'&&a[k].length<=64&&!controls.test(a[k])).map(k=>[k,a[k]]))};})};
 }

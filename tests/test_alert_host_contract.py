@@ -462,6 +462,20 @@ def test_main_session_boundaries_call_public_methods_and_fail_closed(monkeypatch
         raise RuntimeError("private session storage detail")
 
     module.SessionServiceManager.is_session_enabled = broken
-    assert (
-        asyncio.run(ns["_alert_session_enabled"]("custom:FriendMessage:123")) is False
+    assert asyncio.run(ns["_alert_session_enabled"]("custom:FriendMessage:123")) is None
+    from test_alert_delivery import FakeContext, delivery, fact
+
+    from quota_link.alert_config import BalanceAlertLLM, BalanceAlertTarget
+
+    context = FakeContext()
+    result = asyncio.run(
+        delivery(context, session_enabled=ns["_alert_session_enabled"]).deliver(
+            BalanceAlertTarget("custom:FriendMessage:123"),
+            (fact(),),
+            BalanceAlertLLM(False),
+            active=lambda: True,
+            reserve=lambda: pytest.fail("unknown session state must not reserve"),
+        )
     )
+    assert result.status == "blocked" and result.reason_code == "session_check_failed"
+    assert not context.sent and "private session" not in repr(result)

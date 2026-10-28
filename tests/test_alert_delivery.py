@@ -226,7 +226,7 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
         reserve=lambda: True,
     )
     assert result.status == "submitted"
-    assert context.resolved == ["custom:FriendMessage:123"] * 2
+    assert context.resolved == ["custom:FriendMessage:123"] * 3
     assert context.prompts[0]["chat_provider_id"] == "fake-model"
     assert (
         context.conversation_reads
@@ -234,7 +234,7 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
             ("current", "custom:FriendMessage:123"),
             ("read", "custom:FriendMessage:123", "existing-conversation", False),
         ]
-        * 2
+        * 3
     )
     assert (
         context.persona_reads
@@ -246,7 +246,7 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
                 "provider_settings": {"enable": True},
             }
         ]
-        * 2
+        * 3
     )
     assert "PRIVATE HISTORY" not in repr(context.prompts)
     assert "Speak gently." in context.prompts[0]["system_prompt"]
@@ -473,7 +473,7 @@ async def test_no_current_conversation_never_creates_or_reads_one():
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert context.conversation_reads == [("current", "custom:FriendMessage:123")] * 2
+    assert context.conversation_reads == [("current", "custom:FriendMessage:123")] * 3
     assert context.persona_reads[0]["conversation_persona_id"] is None
     assert context.prompts[0]["contexts"] == [] and context.prompts[0]["tools"] is None
 

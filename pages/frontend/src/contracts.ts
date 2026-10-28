@@ -3,8 +3,8 @@ export interface CredentialStatus{configured:boolean;source:'encrypted'|'environ
 export interface Snapshot{revision:number;config:Configuration;credentials:Record<string,Record<string,CredentialStatus>>;encryption:{ready:boolean;state:string;reason_code:string|null};migration:{pending:boolean;account_count:number;cleanup_pending?:boolean;legacy_conflict?:boolean}}
 export interface MigrationPlan{plan_id:string;pending:boolean;cleanup_pending?:boolean;legacy_conflict?:boolean;account_count:number;plaintext_count:number;environment_count:number}
 export interface SecretDraft{account:string;field:string;mode:string;value:string;environment:string}
-export interface AlertStatus{running:boolean;storage_available:boolean;accounts:Array<{account_id:string;status:string;detail_code?:'session_disabled'|'fixed_hint';last_checked_at?:string;last_sent_at?:string}>}
+export interface AlertStatus{running:boolean;storage_available:boolean;accounts:Array<{account_id:string;status:string;detail_code?:string;last_checked_at?:string;last_sent_at?:string}>}
 export interface UnitChoice{id:string;metric:string;unit:string}
-export interface AlertUnits{accounts:Array<{account_id:string;unit_state:string;unit:string|null;observed_at:string|null;choices:UnitChoice[]}>}
+export interface AlertUnits{accounts:Array<{account_id:string;unit_state:string;unit:string|null;observed_at:string|null;choices:UnitChoice[];metric?:string;binding_metric?:string|null;change_reason?:string;choices_state?:string;choices_observed_at?:string|null}>}
 export interface State{units:AlertUnits|null;unitsBusy:boolean;unitsUnknown:boolean;unitsNotice:string;alertStatus:AlertStatus|null;alertBusy:boolean;alertNotice:string;ready:boolean;theme:'light'|'dark';locale:string;snapshot:Snapshot|null;draft:Configuration|null;secret:SecretDraft|null;plan:MigrationPlan|null;busy:boolean;stale:boolean;unknown:boolean;notice:string;tone:string;edit:number;route:string;selected:string|null}
 export interface Bridge{ready():Promise<Record<string,unknown>>;onContext(callback:(context:Record<string,unknown>)=>void):(()=>void)|undefined;apiPost(path:string,body:unknown):Promise<unknown>}

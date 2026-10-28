@@ -601,3 +601,360 @@ async def test_newer_same_unit_recovery_during_llm_revokes_queued_low_fact(
     assert monitor._row("account-0")["low"] == 0
     assert not context.sent
     await monitor.close()
+
+
+@run_async
+async def test_verified_binding_outlives_candidate_ttl_and_restart(tmp_path):
+    monitor, config, clock, service, context = setup(tmp_path)
+    await monitor.run_once()
+    original = monitor.unit_status()["accounts"][0]
+    old_id = original["choices"][0]["id"]
+    clock.advance(61)
+    before = monitor._db.total_changes
+    expired = monitor.unit_status()["accounts"][0]
+    assert expired["unit_state"] == "verified"
+    assert expired["unit"] == "CNY"
+    assert expired["observed_at"] == original["observed_at"]
+    assert expired["binding_metric"] == "total_balance"
+    assert expired["choices_state"] == "expired" and expired["choices"] == []
+    assert monitor._db.total_changes == before and len(service.calls) == 1
+    with pytest.raises(ValueError):
+        monitor.confirm_unit("account-0", old_id)
+    await monitor.close()
+    monitor, *_ = setup(
+        tmp_path, config=config, clock=clock, service=service, context=context
+    )
+    assert monitor.unit_status()["accounts"][0] == expired
+    await monitor.close()
+
+
+@run_async
+@pytest.mark.parametrize("legacy", ["", "CNY"])
+@pytest.mark.parametrize("actual", ["CNY", "USD"])
+async def test_first_credentials_do_not_turn_unverified_threshold_into_real_binding(
+    tmp_path, legacy, actual
+):
+    config = settings(interval=1, threshold="10.000000000000000001")
+    account = config.accounts[0]
+    account.auth, account.queryable = {}, False
+    monitor, _, clock, service, context = setup(tmp_path, config=config, legacy=legacy)
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "unidentified"
+    await monitor.close()
+    account.auth, account.queryable = {"api_key": "synthetic-first-key"}, True
+    monitor, *_ = setup(
+        tmp_path,
+        config=config,
+        legacy=legacy,
+        clock=clock,
+        service=service,
+        context=context,
+    )
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "unidentified"
+    service.items = [(actual, Decimal("1"))]
+    await monitor.run_once()
+    dto = monitor.unit_status()["accounts"][0]
+    if legacy and legacy != actual:
+        # A mismatching legacy threshold-unit reference still needs an explicit
+        # decision; it is never presented as a previously verified binding.
+        assert dto["unit_state"] == "changed"
+        assert dto["unit"] is None and dto["binding_metric"] is None
+        assert not context.sent
+    else:
+        assert dto["unit_state"] == "verified" and dto["unit"] == actual
+        assert len(context.sent) == 1
+    assert account.balance_alert.threshold == Decimal("10.000000000000000001")
+    await monitor.close()
+
+
+@run_async
+async def test_same_currency_metric_switch_reports_real_semantic_change(tmp_path):
+    config = settings(interval=1)
+    account = config.accounts[0]
+    account.provider_type = ProviderType.ALIBABA_BAILIAN
+    account.balance_alert = replace(account.balance_alert, metric="AvailableAmount")
+    monitor, _, clock, service, context = setup(tmp_path, config=config)
+    service.metric = "AvailableAmount"
+    await monitor.run_once()
+    original = monitor.unit_status()["accounts"][0]
+    await monitor.close()
+    account.balance_alert = replace(account.balance_alert, metric="AvailableCashAmount")
+    service.metric = "AvailableCashAmount"
+    clock.advance(61)
+    monitor, *_ = setup(
+        tmp_path, config=config, clock=clock, service=service, context=context
+    )
+    dto = monitor.unit_status()["accounts"][0]
+    assert dto["unit_state"] == "changed" and dto["unit"] == "CNY"
+    assert dto["change_reason"] == "metric_changed"
+    assert dto["metric"] == "AvailableCashAmount"
+    assert dto["binding_metric"] == "AvailableAmount"
+    assert dto["observed_at"] == original["observed_at"]
+    await monitor.close()
+    account.auth = {"api_key": "synthetic-replaced-again"}
+    monitor, *_ = setup(
+        tmp_path, config=config, clock=clock, service=service, context=context
+    )
+    assert monitor.unit_status()["accounts"][0]["change_reason"] == "metric_changed"
+    await monitor.refresh_units(account.id, lambda: None)
+    await monitor.run_once()
+    dto = monitor.unit_status()["accounts"][0]
+    assert dto["unit_state"] == "changed" and len(context.sent) == 1
+    assert (
+        monitor.status()["accounts"][0]["message"] == "监测项已变更，请确认阈值和单位"
+    )
+    bind(monitor)
+    dto = monitor.unit_status()["accounts"][0]
+    assert dto["binding_metric"] == "AvailableCashAmount" and dto["change_reason"] == ""
+    assert account.balance_alert.threshold == Decimal("10")
+    await monitor.close()
+
+
+@run_async
+async def test_expired_changed_candidates_require_explicit_query_then_confirmation(
+    tmp_path,
+):
+    monitor, _, clock, service, context = setup(tmp_path)
+    await monitor.run_once()
+    clock.advance(61)
+    service.items = [("USD", Decimal("3"))]
+    await service.query(QueryRequest(QueryRequestKind.ACCOUNT, "account-0"))
+    old_id = choice(monitor, "USD")["id"]
+    clock.advance(61)
+    dto = monitor.unit_status()["accounts"][0]
+    assert dto["unit_state"] == "changed" and dto["choices"] == []
+    assert dto["choices_state"] == "expired"
+    calls = len(service.calls)
+    monitor.unit_status()
+    assert len(service.calls) == calls
+    result = await monitor.refresh_units("account-0", lambda: None)
+    assert service.calls[-1] == ("account-0", {"max_age_seconds": 0})
+    dto = result["accounts"][0]
+    assert dto["unit_state"] == "changed" and dto["choices_state"] == "fresh"
+    assert dto["choices"][0]["unit"] == "USD"
+    assert len(context.sent) == 1
+    with pytest.raises(ValueError):
+        monitor.confirm_unit("account-0", old_id)
+    bind(monitor, "USD")
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "verified"
+    assert len(context.sent) == 1
+    await monitor.close()
+
+
+@run_async
+async def test_explicit_refresh_versions_even_identical_candidates(tmp_path):
+    monitor, _, _, service, _ = setup(tmp_path, enabled=False)
+    service.items = [("CNY", Decimal("3")), ("USD", Decimal("2"))]
+    await monitor.refresh_units("account-0", lambda: None)
+    old_id = choice(monitor)["id"]
+    await monitor.refresh_units("account-0", lambda: None)
+    assert choice(monitor)["id"] != old_id
+    with pytest.raises(ValueError):
+        monitor.confirm_unit("account-0", old_id)
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "ambiguous"
+    await monitor.close()
+
+
+@run_async
+@pytest.mark.parametrize("failure", ["error", "missing_metric", "duplicate", "stale"])
+async def test_explicit_refresh_never_reports_empty_candidates_as_success(
+    tmp_path, failure
+):
+    monitor, _, _, service, context = setup(tmp_path, enabled=False)
+    if failure == "error":
+        service.error = NormalizedProviderError(
+            ProviderErrorCategory.RATE_LIMITED, "synthetic"
+        )
+    elif failure == "missing_metric":
+        service.metric = "granted_balance"
+    elif failure == "duplicate":
+        service.items = [("CNY", Decimal("1")), ("CNY", Decimal("2"))]
+    else:
+        service.age = 61
+    with pytest.raises(ValueError, match="未取得"):
+        await monitor.refresh_units("account-0", lambda: None)
+    assert not monitor.unit_status()["accounts"][0]["choices"] and not context.sent
+    await monitor.close()
+
+
+@run_async
+@pytest.mark.parametrize("semantic_reset", [0, 1])
+async def test_old_binding_schema_migration_never_invents_previous_metric(
+    tmp_path, semantic_reset
+):
+    import sqlite3
+
+    monitor, config, clock, service, context = setup(tmp_path)
+    await monitor.run_once()
+    await monitor.close()
+    with sqlite3.connect(tmp_path / "alerts.sqlite3") as db:
+        db.execute("ALTER TABLE unit_bindings DROP COLUMN binding_metric")
+        db.execute("ALTER TABLE unit_bindings DROP COLUMN change_reason")
+        if semantic_reset:
+            db.execute("UPDATE unit_bindings SET state='changed',semantic_reset=1")
+    monitor, *_ = setup(
+        tmp_path, config=config, clock=clock, service=service, context=context
+    )
+    dto = monitor.unit_status()["accounts"][0]
+    assert dto["unit"] == "CNY"
+    assert dto["binding_metric"] == (None if semantic_reset else "total_balance")
+    assert dto["change_reason"] == ("query_identity_changed" if semantic_reset else "")
+    await monitor.close()
+
+
+@run_async
+async def test_config_store_threshold_then_first_credential_keeps_unidentified(
+    tmp_path,
+):
+    from quota_link.config_store import ConfigStore
+    from quota_link.security import SecretStore
+    from quota_link.settings import load_settings
+
+    store = ConfigStore(SecretStore(tmp_path), {})
+    raw = {
+        "providers": [
+            {
+                "id": "account-0",
+                "type": "deepseek",
+                "display_name": "Synthetic",
+                "balance_alert": {"enabled": True, "threshold": "10.00"},
+            }
+        ],
+        "balance_alert_targets": [{"umo": "fake:GroupMessage:100", "mentions": []}],
+        "balance_alert_llm": {"enabled": False},
+    }
+    saved = await store.dispatch("update", {"revision": 0, "config": raw}, lambda: None)
+    config = load_settings(store.runtime_config())
+    clock = Clock()
+    service = UnitService(config, clock)
+    monitor, *_ = engine(tmp_path, config, clock, service)
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "unidentified"
+    await monitor.close()
+    saved = await store.dispatch(
+        "credential-replace",
+        {
+            "revision": saved["revision"],
+            "account_id": "account-0",
+            "field": "api_key",
+            "value": "synthetic-first-key",
+        },
+        lambda: None,
+    )
+    config = load_settings(store.runtime_config())
+    service = UnitService(config, clock)
+    monitor, *_ = engine(tmp_path, config, clock, service)
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "unidentified"
+    await monitor.refresh_units("account-0", lambda: None)
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "verified"
+    assert saved["config"]["providers"][0]["balance_alert"]["threshold"] == "10.00"
+    await monitor.close()
+
+
+@run_async
+async def test_close_cancels_explicit_refresh_without_waiting_for_provider(tmp_path):
+    import asyncio
+
+    monitor, _, _, service, context = setup(tmp_path, enabled=False)
+    entered = asyncio.Event()
+
+    async def delayed_query(*args, **kwargs):
+        entered.set()
+        await asyncio.Event().wait()
+
+    service.query = delayed_query
+    refresh = asyncio.create_task(monitor.refresh_units("account-0", lambda: None))
+    await entered.wait()
+    await monitor.close()
+    assert refresh.done() and refresh.cancelled()
+    assert not context.sent
+
+
+@run_async
+@pytest.mark.parametrize(
+    "failure", ["missing_metric", "invalid_unit", "invalid_amount"]
+)
+@pytest.mark.parametrize("elapsed", [0, 1])
+async def test_new_success_without_usable_metric_revokes_queued_fact_only(
+    tmp_path, failure, elapsed
+):
+    monitor, config, clock, service, context = setup(tmp_path)
+    config.balance_alert_llm = BalanceAlertLLM(True)
+    observed = {}
+
+    async def generate(**kwargs):
+        observed["binding"] = dict(monitor._binding("account-0"))
+        observed["episode"] = monitor._row("account-0")["episode"]
+        clock.advance(elapsed)
+        if failure == "missing_metric":
+            service.metric = "granted_balance"
+        elif failure == "invalid_unit":
+            service.items = [("unknown", Decimal("5"))]
+        else:
+            service.items = [("CNY", None)]
+        await service.query(QueryRequest(QueryRequestKind.ACCOUNT, "account-0"))
+        assert dict(monitor._binding("account-0")) == observed["binding"]
+        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+
+    context.llm_generate = generate
+    await monitor.run_once()
+    assert not context.sent
+    row = monitor._row("account-0")
+    assert row["low"] == 1 and row["episode"] == observed["episode"]
+    assert monitor.unit_status()["accounts"][0]["unit_state"] == "verified"
+    assert monitor._db.execute("SELECT count(*) FROM deliveries").fetchone()[0] == 0
+    config.balance_alert_llm = BalanceAlertLLM(False)
+    service.metric, service.items = "total_balance", [("CNY", Decimal("5"))]
+    clock.advance(60)
+    await monitor.run_once()
+    assert len(context.sent) == 1
+    assert monitor._row("account-0")["episode"] == observed["episode"]
+    await monitor.close()
+
+
+@run_async
+async def test_old_snapshot_cannot_restore_token_after_new_success_missing_metric(
+    tmp_path,
+):
+    monitor, config, clock, service, context = setup(tmp_path)
+    config.balance_alert_llm = BalanceAlertLLM(True)
+
+    async def generate(**kwargs):
+        old = service.latest["account-0"]
+        clock.advance(1)
+        service.metric = "granted_balance"
+        await service.query(QueryRequest(QueryRequestKind.ACCOUNT, "account-0"))
+        token = monitor._observation_tokens["account-0"]
+        monitor._on_snapshot(old)
+        assert monitor._observation_tokens["account-0"] == token
+        service.latest["account-0"] = old
+        assert monitor.unit_status()["accounts"][0]["choices"] == []
+        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+
+    context.llm_generate = generate
+    await monitor.run_once()
+    assert not context.sent
+    assert monitor._row("account-0")["low"] == 1
+    await monitor.close()
+
+
+@run_async
+async def test_unusable_new_success_keeps_unknown_delivery_suppression(tmp_path):
+    monitor, _, clock, service, context = setup(tmp_path)
+    context.result = RuntimeError("synthetic uncertain delivery")
+    await monitor.run_once()
+    episode = monitor._row("account-0")["episode"]
+    assert monitor.status()["accounts"][0]["status"] == "unknown"
+    clock.advance(1)
+    service.metric = "granted_balance"
+    await service.query(QueryRequest(QueryRequestKind.ACCOUNT, "account-0"))
+    assert monitor._row("account-0")["low"] == 1
+    assert monitor._row("account-0")["episode"] == episode
+    assert (
+        monitor._db.execute("SELECT status FROM deliveries").fetchone()[0] == "unknown"
+    )
+    service.metric = "total_balance"
+    clock.advance(60)
+    context.result = True
+    await monitor.run_once()
+    assert monitor.status()["accounts"][0]["status"] == "unknown"
+    assert len(context.sent) == 1
+    await monitor.close()

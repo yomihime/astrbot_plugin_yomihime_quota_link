@@ -7,11 +7,11 @@
     },
     {
       "path": "app.js",
-      "sha256": "ea476e1f4563c1eef711f5bd0d22b8ba88ab0f7c3bc91ee5f91ff01a92b6a061"
+      "sha256": "5e0c564f3eb0d85aafd005cd19a69c0b5df545b3d66bde61fc8a025dd42c9def"
     },
     {
       "path": "styles.css",
-      "sha256": "838bc75670d9d705207de8134511263865a67532ab82dacc818d7e011a12db52"
+      "sha256": "a8dba2079d4189ab70a3ac7bd9e8f3fd23a44badb4153d4a8044aaeaae62c54a"
     },
     {
       "path": "THIRD_PARTY_NOTICES.txt",
