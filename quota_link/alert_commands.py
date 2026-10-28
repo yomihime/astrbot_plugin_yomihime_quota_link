@@ -20,11 +20,12 @@ from .alert_cards import (
     build_alert_targets_card,
     build_alert_units_card,
     format_alert_card,
+    format_alert_help,
 )
 from .config_store import ConfigValidation
 from .presentation.bitmap import CardSpec
 
-HELP = format_alert_card(build_alert_help_card())
+HELP = format_alert_help()
 
 
 def can_manage_alert(event, settings) -> bool:
@@ -87,7 +88,15 @@ def parse_alert_command(argument: str) -> AlertCommand:
         "llm",
     }:
         raise ConfigValidation("未知预警命令；使用 /yql alert help 查看用法。")
-    if operation in {"help", "status"} and words:
+    if operation == "help" and words:
+        if len(words) != 1 or words[0].casefold() not in {
+            "account",
+            "units",
+            "targets",
+        }:
+            raise ConfigValidation("用法：/yql alert help [account|units|targets]。")
+        words[0] = words[0].casefold()
+    if operation == "status" and words:
         raise ConfigValidation("该预警命令不接受附加参数。")
     return AlertCommand(operation, tuple(words))
 
@@ -167,8 +176,11 @@ class AlertCommands:
             command = parse_alert_command(argument)
             private = event.is_private_chat() is True
             if command.operation == "help":
+                topic = command.arguments[0] if command.arguments else ""
                 return (
-                    AlertCommandResult.from_card(build_alert_help_card())
+                    AlertCommandResult(
+                        format_alert_help(topic), build_alert_help_card(topic)
+                    )
                     if private
                     else AlertCommandResult(
                         "预警管理：请私聊机器人使用 /yql alert help 查看详细配置用法。"

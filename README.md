@@ -99,6 +99,8 @@ UMO 第一段是实际平台实例 ID，不必叫 NapCat。私聊行不可带 @�
 
 “预警 QQ 管理白名单”独立于查询权限和收件名单。`/yql alert` **整棵命令树**仅允许：可信 `aiocqhttp` 事件的实际 QQ 号命中该名单，**或** AstrBot 内置管理员。空名单仍允许宿主管理员；普通群管理员、昵称、参数中的 QQ 号和被 @ 的人不因此获得权限。其他平台可使用宿主内置管理员身份。网页继续只接受原 Dashboard 管理授权。
 
+私聊使用 `/yql alert help` 查看常用命令与分项入口；`help account`、`help units`、`help targets` 分别查看账户设置、单位确认、目标与管理权限的详细用法。帮助只读，不查询供应商；图片不可用时保留完整命令参数的文字说明。
+
 ```text
 /yql alert status
 /yql alert threshold "账户名" 10 [指标ID]

@@ -25,6 +25,7 @@ from quota_link.alert_cards import (
     build_alert_targets_card,
     build_alert_units_card,
     format_alert_card,
+    format_alert_help,
 )
 from quota_link.alert_commands import AlertCommands, target_id
 from quota_link.cards import render_local_card
@@ -71,6 +72,9 @@ def units(**changes):
 def examples():
     return (
         build_alert_help_card(),
+        build_alert_help_card("account"),
+        build_alert_help_card("units"),
+        build_alert_help_card("targets"),
         build_alert_status_card(config(), status()),
         build_alert_targets_card((("stable-id", "demo:GroupMessage:42", ("123",)),)),
         build_alert_targets_card(()),
@@ -81,14 +85,65 @@ def examples():
 
 
 def test_help_keeps_every_command_and_offline_or_explicit_refresh_boundary():
-    card = build_alert_help_card()
-    fallback = format_alert_card(card)
+    fallback = format_alert_help()
     for _heading, commands in HELP_GROUPS:
         for _label, command in commands:
-            assert command in text(card) and command in fallback
+            assert command in fallback
     assert 'units "账户名" refresh' in fallback
     assert "白名单或 AstrBot 内置管理员" in fallback
     assert "阈值按当前单位判定" in fallback
+
+
+def test_help_home_is_short_and_discovers_each_read_only_topic():
+    card = build_alert_help_card()
+    assert sum(len(section.rows) for section in card.sections) == 6
+    assert "/yql alert" in text(card)
+    for topic in ("account", "units", "targets"):
+        assert "help " + topic in text(card)
+    assert len(text(card)) < len(format_alert_help())
+    assert format_alert_help() != format_alert_card(card)
+
+
+@pytest.mark.parametrize(
+    ("topic", "commands"),
+    [
+        (
+            "account",
+            (
+                '/yql alert on|off "账户名"',
+                '/yql alert interval "账户名" 15',
+                '/yql alert threshold "账户名" 10 [指标ID]',
+                '/yql alert recovery "账户名" 12|auto',
+                '/yql alert repeat "账户名" 0',
+                '/yql alert retry "账户名"',
+            ),
+        ),
+        (
+            "units",
+            (
+                '/yql alert units "账户名"',
+                '/yql alert units "账户名" refresh',
+                '/yql alert bind "账户名" 候选ID',
+            ),
+        ),
+        (
+            "targets",
+            (
+                "/yql alert targets list",
+                "/yql alert targets addhere @123",
+                "/yql alert targets add UMO @123",
+                "/yql alert targets remove 目标ID",
+                "/yql alert admins list|add QQ号|remove QQ号",
+                "/yql alert llm on|off",
+            ),
+        ),
+    ],
+)
+def test_topic_fallback_keeps_all_corresponding_command_parameters(topic, commands):
+    fallback = format_alert_help(topic)
+    assert build_alert_help_card(topic) != build_alert_help_card()
+    for command in commands:
+        assert command in fallback
 
 
 def test_status_keeps_specific_blocked_reason_in_both_presentations():
@@ -138,7 +193,7 @@ def test_target_ids_mentions_and_exact_umo_survive_both_presentations():
             assert fact in rendered
 
 
-@pytest.mark.parametrize("index", range(7))
+@pytest.mark.parametrize("index", range(10))
 def test_alert_cards_render_offline_with_pinned_font(font, index):
     with patch("socket.socket", side_effect=AssertionError("offline only")):
         bitmap = render_local_card(examples()[index], font)
@@ -148,7 +203,7 @@ def test_alert_cards_render_offline_with_pinned_font(font, index):
     with Image.open(BytesIO(bitmap)) as image:
         image.load()
         assert image.format == "PNG"
-        assert image.width == 960 and image.height <= BitmapBounds().max_height
+        assert image.width == 720 and image.height <= BitmapBounds().max_height
     assert len(bitmap) <= BitmapBounds().max_bytes
 
 
@@ -181,7 +236,16 @@ def test_structured_api_keeps_existing_authority_and_group_privacy(private):
     commands = AlertCommands(
         lambda: SimpleNamespace(balance_alert_admin_qq_ids=("123",)), dispatch, status
     )
-    for argument in ("help", "status", "targets list", "admins list", "units work"):
+    for argument in (
+        "help",
+        "help account",
+        "help units",
+        "help targets",
+        "status",
+        "targets list",
+        "admins list",
+        "units work",
+    ):
         before = len(calls)
         denied = asyncio.run(
             commands.execute_result(Event(sender="999", private=private), argument)
@@ -232,6 +296,9 @@ def test_units_refresh_is_explicit_once_and_uses_existing_revision():
     "command",
     [
         "help",
+        "help account",
+        "help units",
+        "help targets",
         "status",
         "targets list",
         "admins list",
@@ -253,7 +320,12 @@ def test_entrypoint_renders_once_without_reexecuting_or_querying(
     plugin = entrypoint(None, raw)
     module = importlib.import_module(plugin.__class__.__module__)
     caller = threading.get_ident()
-    calls, renders, statuses, retries = [], [], [], []
+    calls, renders, statuses, retries, executions = [], [], [], [], []
+    execute_result = module.AlertCommands.execute_result
+
+    async def execute_once(commands, event, argument):
+        executions.append(argument)
+        return await execute_result(commands, event, argument)
 
     async def dispatch(operation, body, authorize):
         authorize()
@@ -282,6 +354,7 @@ def test_entrypoint_renders_once_without_reexecuting_or_querying(
     plugin._admin_dispatch = dispatch
     plugin._alert_status = lambda: statuses.append(True) or status()
     plugin._retry_alert = retries.append
+    monkeypatch.setattr(module.AlertCommands, "execute_result", execute_once)
     monkeypatch.setattr(plugin.service, "query", no_query)
     monkeypatch.setattr(module, "render_local_card", render)
     monkeypatch.setitem(
@@ -305,9 +378,10 @@ def test_entrypoint_renders_once_without_reexecuting_or_querying(
 
     replies = asyncio.run(run())
     assert len(replies) == len(renders) == 1
+    assert executions == [command]
     assert [op for op, _ in calls] == (
         []
-        if command == "help"
+        if command.startswith("help")
         else ["read", "alert-units"]
         if command == "units work"
         else ["read", "alert-refresh-units"]
@@ -331,6 +405,10 @@ def test_entrypoint_renders_once_without_reexecuting_or_querying(
             alert_cards = importlib.import_module(
                 module.__package__ + ".quota_link.alert_cards"
             )
-            assert replies[0] == alert_cards.format_alert_card(renders[0])
+            assert replies[0] == (
+                alert_cards.format_alert_help(command.partition(" ")[2])
+                if command.startswith("help")
+                else alert_cards.format_alert_card(renders[0])
+            )
         if command == "status":
             assert status()["accounts"][0]["detail"] in replies[0]

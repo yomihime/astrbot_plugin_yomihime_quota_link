@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from quota_link.alert_cards import build_alert_help_card, format_alert_help
 from quota_link.alert_commands import (
     AlertCommands,
     can_manage_alert,
@@ -101,6 +102,82 @@ def test_bad_parser_never_echoes_input(text):
     assert text not in str(exc.value)
 
 
+@pytest.mark.parametrize("argument", ["", "help", "HELP"])
+def test_help_without_topic_keeps_home_entry(argument):
+    parsed = parse_alert_command(argument)
+    assert parsed.operation == "help" and parsed.arguments == ()
+
+
+@pytest.mark.parametrize("topic", ["account", "units", "targets"])
+def test_help_accepts_one_case_insensitive_topic(topic):
+    parsed = parse_alert_command("HELP " + topic.upper())
+    assert parsed.operation == "help" and parsed.arguments == (topic,)
+
+
+@pytest.mark.parametrize(
+    "argument",
+    [
+        "help unknown-private-input",
+        "help account units",
+        "help units refresh",
+        "help targets list",
+        'help ""',
+        "status account",
+        "status help",
+    ],
+)
+def test_help_and_status_reject_extra_or_invalid_arguments(argument):
+    with pytest.raises(ConfigValidation) as exc:
+        parse_alert_command(argument)
+    assert argument not in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    "argument",
+    [
+        "",
+        "help",
+        "help account",
+        "help units",
+        "help targets",
+        "help unknown-private-input",
+        "help account units",
+        "help units refresh",
+        "status account",
+    ],
+)
+@pytest.mark.parametrize("private", [True, False])
+@pytest.mark.parametrize("authorized", [True, False])
+def test_help_authorizes_first_and_never_dispatches_or_reads_status(
+    argument, private, authorized
+):
+    def no_io(*args, **kwargs):
+        raise AssertionError("help must not read configuration/status or run actions")
+
+    commands = AlertCommands(
+        lambda: SimpleNamespace(balance_alert_admin_qq_ids=("123",)),
+        no_io,
+        no_io,
+        no_io,
+    )
+    event = Event(sender="123" if authorized else "999", private=private)
+    result = asyncio.run(commands.execute_result(event, argument))
+    if not authorized:
+        assert result.card is None and "无权管理" in result.text
+        assert "用法" not in result.text
+    elif not private:
+        assert result.card is None and "私聊" in result.text
+        assert "unknown-private-input" not in result.text
+        assert "account|units|targets" not in result.text
+    elif argument in {"", "help", "help account", "help units", "help targets"}:
+        topic = argument.partition(" ")[2]
+        assert result.text == format_alert_help(topic)
+        assert result.card == build_alert_help_card(topic)
+        assert asyncio.run(commands.execute(event, argument)) == result.text
+    else:
+        assert result.card is None and "unknown-private-input" not in result.text
+
+
 def config():
     return {
         "balance_alert_admin_qq_ids": ["123"],
@@ -147,6 +224,9 @@ def execute(harness, text, event=None):
     "text",
     [
         "help",
+        "help account",
+        "help units",
+        "help targets",
         "status",
         "targets list",
         "admins list",

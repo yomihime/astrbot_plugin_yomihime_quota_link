@@ -99,6 +99,9 @@ def demo_cases():
             ),
         ),
         ("04-alert-units.png", build_alert_units_card(accounts[0], units)),
+        ("05-alert-help-account.png", build_alert_help_card("account")),
+        ("06-alert-help-units.png", build_alert_help_card("units")),
+        ("07-alert-help-targets.png", build_alert_help_card("targets")),
     )
 
 

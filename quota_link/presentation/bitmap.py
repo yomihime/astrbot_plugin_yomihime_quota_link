@@ -58,7 +58,7 @@ class FontProvider(Protocol):
 @dataclass(frozen=True)
 class Row:
     cells: tuple[str, ...]
-    role: Literal["metric", "note", "error"] = "metric"
+    role: Literal["metric", "note", "error", "command"] = "metric"
 
 
 @dataclass(frozen=True)
@@ -80,6 +80,7 @@ class CardSpec:
     sources: tuple[str, ...] = ()
     limitations: tuple[str, ...] = ()
     width: int = 960
+    layout: Literal["standard", "compact"] = "standard"
 
 
 @dataclass(frozen=True)
@@ -142,6 +143,8 @@ def _validate(spec: CardSpec, bounds: BitmapBounds) -> tuple[str, ...]:
         raise BitmapUnavailable("invalid_input")
     if spec.width > bounds.max_width:
         raise BitmapUnavailable("layout_overflow")
+    if spec.layout not in ("standard", "compact"):
+        raise BitmapUnavailable("invalid_input")
     strings: list[str] = []
     total = lines = 0
 
@@ -194,7 +197,7 @@ def _validate(spec: CardSpec, bounds: BitmapBounds) -> tuple[str, ...]:
                 type(row) is not Row
                 or type(row.cells) is not tuple
                 or len(row.cells) != 2
-                or row.role not in ("metric", "note", "error")
+                or row.role not in ("metric", "note", "error", "command")
             ):
                 raise BitmapUnavailable("invalid_input")
             for value in row.cells:
@@ -244,7 +247,9 @@ class _Layout:
         self.texts: list[_Text] = []
         self.panels: list[_Panel] = []
         try:
-            self.fonts = {size: provider.load(size) for size in (40, 28, 24, 16)}
+            self.fonts = {
+                size: provider.load(size) for size in (40, 32, 28, 26, 24, 22, 18, 16)
+            }
         except Exception:
             raise BitmapUnavailable("font_unavailable") from None
 
@@ -310,6 +315,8 @@ class _Layout:
         return height
 
     def build(self, spec: CardSpec) -> int:
+        if spec.layout == "compact":
+            return self.build_compact(spec)
         x, width, y = MARGIN, spec.width - MARGIN * 2, 52
         if spec.brand:
             y += self.text(spec.brand, x, y, width, 16, "accent") + 7
@@ -394,6 +401,92 @@ class _Layout:
         for value in (*spec.limitations, *spec.sources):
             y += self.text(value, x, y, width, 16, "secondary") + 4
         height = y + 40
+        if (
+            height > self.bounds.max_height
+            or spec.width * height > self.bounds.max_pixels
+        ):
+            raise BitmapUnavailable("layout_overflow")
+        return height
+
+    def build_compact(self, spec: CardSpec) -> int:
+        """Readable phone-scaled guides; lighter hierarchy, never omitted facts.
+
+        Alert cards use a narrower canvas rather than shrinking dense text.
+        Command rows align a short label with its argument template. Every
+        string still wraps through the same bounded, lossless layout path.
+        """
+        x, width, y = 36, spec.width - 72, 36
+        if spec.brand:
+            y += self.text(spec.brand, x, y, width, 18, "accent") + 10
+        y += self.text(spec.title, x, y, width, 32, "normal")
+        if spec.subtitle:
+            y += 8 + self.text(spec.subtitle, x, y + 8, width, 22, "secondary")
+        if spec.caption:
+            y += 5 + self.text(spec.caption, x, y + 5, width, 18, "secondary")
+        y += 20
+        self.panels.append(_Panel((x, y, x + width, y + 1), "border"))
+        y += 20
+        for index, section in enumerate(spec.sections):
+            top, position = y, len(self.panels)
+            left, inner_width = x + 20, width - 40
+            y += 18
+            if section.heading:
+                if index in self.icon_indices:
+                    self.icons.append((index, left, y))
+                    heading_height = self.text(
+                        section.heading, left + 52, y + 5, inner_width - 52, 26
+                    )
+                    y += max(SECTION_ICON_SIZE, heading_height + 5) + 12
+                else:
+                    y += (
+                        self.text(section.heading, left, y, inner_width, 24, "normal")
+                        + 14
+                    )
+            for offset, row in enumerate(section.rows):
+                if offset:
+                    y += 12
+                label, value = row.cells
+                if row.role == "command":
+                    label_width = min(132, inner_width // 3)
+                    label_height = self.text(
+                        label, left, y + 2, label_width, 22, "secondary"
+                    )
+                    value_height = self.text(
+                        value,
+                        left + label_width + 16,
+                        y,
+                        inner_width - label_width - 16,
+                        26,
+                    )
+                    y += max(label_height + 2, value_height)
+                elif row.role == "metric":
+                    if label:
+                        y += self.text(label, left, y, inner_width, 22, "secondary")
+                        y += 2
+                    y += self.text(value, left, y, inner_width, 26)
+                else:
+                    y += self.text(
+                        "：".join(part for part in row.cells if part),
+                        left,
+                        y,
+                        inner_width,
+                        22,
+                        "normal" if row.role == "error" else "secondary",
+                    )
+            for paragraph in section.paragraphs:
+                y += 10 + self.text(
+                    paragraph, left, y + 10, inner_width, 22, "secondary"
+                )
+            y += 18
+            self.panels.insert(
+                position, _Panel((x, top, x + width, y), "panel", RADIUS, "border")
+            )
+            y += 14
+        if spec.limitations or spec.sources:
+            y += 4
+        for value in (*spec.limitations, *spec.sources):
+            y += self.text(value, x, y, width, 22, "secondary") + 6
+        height = y + 24
         if (
             height > self.bounds.max_height
             or spec.width * height > self.bounds.max_pixels
