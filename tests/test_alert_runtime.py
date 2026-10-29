@@ -598,12 +598,15 @@ async def test_persistence_has_private_metadata_only(tmp_path):
 
 
 @pytest.mark.parametrize("unsafe", ["corrupt", "symlink", "permissions", "version"])
-def test_unsafe_or_unknown_storage_fails_closed(tmp_path, unsafe):
+def test_unsafe_or_unknown_storage_fails_closed(tmp_path, unsafe, unsafe_link):
     path = tmp_path / "alerts.sqlite3"
     if unsafe == "symlink":
         destination = tmp_path / "other"
-        destination.write_text("do not modify")
-        path.symlink_to(destination)
+        with sqlite3.connect(destination) as db:
+            db.execute("CREATE TABLE sentinel (value TEXT)")
+            db.execute("INSERT INTO sentinel VALUES ('do not modify')")
+        original_target = destination.read_bytes()
+        unsafe_link(path, destination)
     elif unsafe == "version":
         with sqlite3.connect(path) as db:
             db.execute("PRAGMA user_version=42")
@@ -615,6 +618,8 @@ def test_unsafe_or_unknown_storage_fails_closed(tmp_path, unsafe):
     monitor = AlertEngine(config, Service(config, Clock()), Context(), path)
     assert not monitor.storage_available
     assert monitor.status()["accounts"][0]["status"] == "storage_unavailable"
+    if unsafe == "symlink":
+        assert destination.read_bytes() == original_target
 
 
 @pytest.mark.parametrize("unknown_first", [True, False])

@@ -35,24 +35,35 @@ def _verify(content: bytes) -> None:
         raise ValueError("font_integrity_failed")
 
 
+def _is_reparse(info: os.stat_result) -> bool:
+    return bool(
+        getattr(info, "st_file_attributes", 0)
+        & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    )
+
+
 def _safe_directories(directory: Path, *, create: bool = False) -> None:
     """Reject symlink components, including ancestors of the host-owned root."""
     for part in (*reversed(directory.parents), directory):
         try:
-            mode = part.lstat().st_mode
+            info = part.lstat()
         except FileNotFoundError:
             if not create:
                 raise
             part.mkdir()
-            mode = part.lstat().st_mode
-        if not stat.S_ISDIR(mode):
+            info = part.lstat()
+        if not stat.S_ISDIR(info.st_mode) or _is_reparse(info):
             raise ValueError("invalid_font_directory")
 
 
 def _read(path: Path) -> bytes:
     _safe_directories(path.parent)
     before = path.lstat()
-    if not stat.S_ISREG(before.st_mode) or before.st_size != FONT_SIZE:
+    if (
+        not stat.S_ISREG(before.st_mode)
+        or _is_reparse(before)
+        or before.st_size != FONT_SIZE
+    ):
         raise ValueError("invalid_font_file")
     descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
     with os.fdopen(descriptor, "rb") as stream:
@@ -70,8 +81,16 @@ def _read(path: Path) -> bytes:
 def _install(path: Path, content: bytes) -> None:
     _verify(content)
     _safe_directories(path.parent, create=True)
-    if path.is_symlink() or (path.exists() and not path.is_file()):
-        raise ValueError("invalid_font_file")
+
+    def check_destination():
+        try:
+            info = path.lstat()
+        except FileNotFoundError:
+            return
+        if not stat.S_ISREG(info.st_mode) or _is_reparse(info):
+            raise ValueError("invalid_font_file")
+
+    check_destination()
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -82,8 +101,7 @@ def _install(path: Path, content: bytes) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         _safe_directories(path.parent)
-        if path.is_symlink() or (path.exists() and not path.is_file()):
-            raise ValueError("invalid_font_file")
+        check_destination()
         os.replace(temporary, path)
     finally:
         if temporary is not None:

@@ -107,6 +107,7 @@ def test_release_zip_runs_complete_alert_chain(tmp_path):
     assert evidence["terminate_no_late_send"]
     assert evidence["web_auth_cas_and_command_or"]
     assert evidence["socket_attempts"] == 0
+    assert evidence["network_guard_checks"] == 5
     assert evidence["modules_from_zip"] >= 20
     (tmp_path / "packaged-alert-evidence.json").write_text(
         json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -731,6 +732,36 @@ async def _scenario(unpacked, state, host, font):
         await plugin.terminate()
 
 
+def _network_guard(attempts):
+    def no_connect(*args, **kwargs):
+        attempts.append(True)
+        raise AssertionError("packaged acceptance must never open a network socket")
+
+    socket.socket.connect = no_connect
+    socket.socket.connect_ex = no_connect
+    socket.getaddrinfo = no_connect
+
+
+def _check_network_guard():
+    checks = 0
+    for address in (("203.0.113.1", 443), ("127.0.0.1", 443)):
+        for name in ("connect", "connect_ex"):
+            with socket.socket() as connection:
+                try:
+                    getattr(connection, name)(address)
+                except AssertionError:
+                    checks += 1
+                else:
+                    raise AssertionError("network guard failed")
+    try:
+        socket.getaddrinfo("example.invalid", 443)
+    except AssertionError:
+        checks += 1
+    else:
+        raise AssertionError("DNS guard failed")
+    return checks
+
+
 def _run_packaged():
     unpacked, state, host, font = map(Path, sys.argv[2:6])
     for path in json.loads(sys.argv[6]):
@@ -741,14 +772,17 @@ def _run_packaged():
     sys.meta_path.insert(0, _NoDevelopmentImports())
     socket_attempts = []
 
-    def no_connect(*args, **kwargs):
-        socket_attempts.append(True)
-        raise AssertionError("packaged acceptance must never open a network socket")
-
-    socket.socket.connect = no_connect
-    socket.socket.connect_ex = no_connect
-    socket.getaddrinfo = no_connect
-    evidence = asyncio.run(_scenario(unpacked, state, host, font))
+    # Windows asyncio creates a private loopback socketpair for loop wakeups.
+    # Initialize only that loop before installing the blanket connection guard;
+    # neither external nor ordinary loopback connections receive an exception.
+    with asyncio.Runner() as runner:
+        runner.get_loop()
+        _network_guard(socket_attempts)
+        checks = _check_network_guard()
+        assert checks == len(socket_attempts) == 5
+        socket_attempts.clear()
+        evidence = runner.run(_scenario(unpacked, state, host, font))
+    evidence["network_guard_checks"] = checks
     evidence["socket_attempts"] = len(socket_attempts)
     assert not socket_attempts
     print(json.dumps(evidence, sort_keys=True))
