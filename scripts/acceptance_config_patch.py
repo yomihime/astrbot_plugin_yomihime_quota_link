@@ -86,12 +86,17 @@ def _put(mapping, path, value):
 
 def _targets(current, field):
     """Restore owned target entries while preserving concurrent added UMOs."""
-    if not all(
-        v.present and type(v.value) is list
-        for v in (current, field.before, field.after)
+    if not current.present or type(current.value) is not list:
+        return None
+    if any(
+        v.present and type(v.value) is not list for v in (field.before, field.after)
     ):
         return None
-    lists = [v.value for v in (current, field.before, field.after)]
+    # An absent target field has the same target identities as an empty list.
+    # Keep its original presence when no concurrent target survives cleanup.
+    lists = [current.value] + [
+        v.value if v.present else [] for v in (field.before, field.after)
+    ]
     indexes = []
     for items in lists:
         if any(type(v) is not dict or type(v.get("umo")) is not str for v in items):
@@ -111,7 +116,9 @@ def _targets(current, field):
         result = [v for v in result if v["umo"] != umo]
         if old is not None:
             result.append(deepcopy(old))
-    return Value(True, result)
+    return (
+        Value(False) if not result and not field.before.present else Value(True, result)
+    )
 
 
 def merge_owned(dto, fields=(), accounts=()):
@@ -157,6 +164,13 @@ def merge_owned(dto, fields=(), accounts=()):
             _public(value.value)
             if type(value.value) is dict:
                 raise ValueError("receipt must own individual leaves")
+            if (
+                field.account_id is None
+                and field.path == ("balance_alert_targets",)
+                and value.present
+                and type(value.value) is not list
+            ):
+                raise ValueError("target receipt must be a list or absent")
         target = (
             config
             if field.account_id is None

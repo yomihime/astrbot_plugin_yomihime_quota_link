@@ -194,6 +194,107 @@ def test_target_list_merge_preserves_user_added_target_and_rejects_same_target_e
     assert conflicts and result == dto["config"]
 
 
+def test_absent_target_baseline_removes_only_owned_target_and_preserves_ciphertexts(
+    store,
+):
+    async def exercise():
+        baseline = await save(store, {"providers": [account("original")]})
+        assert "balance_alert_targets" not in baseline["config"]
+        await credential(store, "original", "synthetic-existing-secret")
+        owned = {"umo": "synthetic:GroupMessage:1", "mentions": []}
+        user = {"umo": "synthetic:GroupMessage:2", "mentions": ["9"]}
+        root_config = deepcopy(baseline["config"])
+        root_config["balance_alert_targets"] = [owned]
+        saved = await save(store, root_config)
+        receipt = OwnedField(
+            None,
+            ("balance_alert_targets",),
+            Value(False),
+            Value(True, saved["config"]["balance_alert_targets"]),
+        )
+        concurrent = deepcopy(saved["config"])
+        concurrent["balance_alert_targets"].append(user)
+        concurrent["providers"].append(account("concurrent-new"))
+        concurrent["providers"][0]["display_name"] = "user updated existing account"
+        await save(store, concurrent)
+        await credential(store, "concurrent-new", "synthetic-new-secret")
+        before = blob_snapshot(store)
+        result = await restore_owned(store.dispatch, [receipt])
+        assert result["changed"] and not result["conflicts"]
+        final = await store.dispatch("read", {}, lambda: None)
+        assert final["config"]["balance_alert_targets"] == [user]
+        assert final["config"]["providers"] == concurrent["providers"]
+        assert_blobs_preserved(store, before)
+
+    run(exercise())
+
+
+def test_absent_target_baseline_without_concurrent_addition_restores_absence(store):
+    async def exercise():
+        baseline = await save(store, {"providers": [account("original")]})
+        assert "balance_alert_targets" not in baseline["config"]
+        owned = {"umo": "synthetic:GroupMessage:1", "mentions": []}
+        config = deepcopy(baseline["config"])
+        config["balance_alert_targets"] = [owned]
+        saved = await save(store, config)
+        receipt = OwnedField(
+            None,
+            ("balance_alert_targets",),
+            Value(False),
+            Value(True, saved["config"]["balance_alert_targets"]),
+        )
+        result = await restore_owned(store.dispatch, [receipt])
+        assert result["changed"] and not result["conflicts"]
+        final = await store.dispatch("read", {}, lambda: None)
+        assert "balance_alert_targets" not in final["config"]
+
+    run(exercise())
+
+
+def test_absent_target_identity_merge_preserves_same_umo_user_edit_and_presence():
+    owned = {"umo": "synthetic:GroupMessage:1", "mentions": []}
+    changed = {**owned, "mentions": ["9"]}
+    user = {"umo": "synthetic:GroupMessage:2", "mentions": []}
+    field = OwnedField(
+        None, ("balance_alert_targets",), Value(False), Value(True, [owned])
+    )
+    dto = {
+        "revision": 1,
+        "config": {"providers": [], "balance_alert_targets": [changed, user]},
+    }
+    result, conflicts = merge_owned(dto, [field])
+    assert conflicts and result == dto["config"]
+    # Only owned targets remain, with order changed: preserve original absence.
+    other_owned = {"umo": "synthetic:GroupMessage:3", "mentions": []}
+    reordered = {
+        "revision": 1,
+        "config": {"providers": [], "balance_alert_targets": [other_owned, owned]},
+    }
+    field = OwnedField(
+        None,
+        ("balance_alert_targets",),
+        Value(False),
+        Value(True, [owned, other_owned]),
+    )
+    result, conflicts = merge_owned(reordered, [field])
+    assert not conflicts and "balance_alert_targets" not in result
+
+
+@pytest.mark.parametrize("malformed", [None, "not-list", 1])
+@pytest.mark.parametrize("side", ["before", "after"])
+def test_present_nonlist_target_receipt_is_rejected(malformed, side):
+    owned = {"umo": "synthetic:GroupMessage:1", "mentions": []}
+    before, after = Value(False), Value(True, [owned])
+    if side == "before":
+        before = Value(True, malformed)
+    else:
+        after = Value(True, malformed)
+    field = OwnedField(None, ("balance_alert_targets",), before, after)
+    dto = {"revision": 1, "config": {"providers": [], "balance_alert_targets": [owned]}}
+    with pytest.raises(ValueError, match="target receipt"):
+        merge_owned(dto, [field])
+
+
 def test_leaf_restore_retains_concurrent_sibling_and_absence():
     dto = {
         "revision": 1,
