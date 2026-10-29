@@ -125,7 +125,7 @@ def test_empty_cards_render_valid_offline_png(font, builder):
     assert content is not None
     with Image.open(BytesIO(content)) as image:
         image.load()
-        assert image.width == 960
+        assert image.width == 720
         assert image.height <= BitmapBounds().max_height
         assert image.format == "PNG"
     assert len(content) <= BitmapBounds().max_bytes
@@ -202,3 +202,25 @@ def test_display_diagnostic_localizes_known_path_copy_without_mutating_facts():
     assert "请填写以 / 开头的相对接口路径" in combined
     assert "API Path" not in combined
     assert issue.safe_message == original
+
+
+def test_help_is_lightweight_but_text_keeps_provider_setup_details():
+    value = settings()
+    spec = build_help_card(value)
+    assert spec.layout == "compact" and spec.width == 720
+    assert "/yql alert help" in text(spec)
+    assert "AliyunBSSReadOnlyAccess" not in text(spec)
+    assert "AliyunBSSReadOnlyAccess" in format_help(value)
+    assert all(
+        row.role == "command" for section in spec.sections[:2] for row in section.rows
+    )
+
+
+def test_local_status_uses_quiet_properties_and_keeps_credential_facts():
+    spec = build_status_card(
+        settings(), LocalStorageStatus("ready", ("encrypted", "environment"))
+    )
+    assert spec.layout == "compact" and spec.width == 720
+    assert all(row.role == "note" for row in spec.sections[0].rows)
+    assert "加密凭据已保存" in text(spec)
+    assert "环境变量引用已保存" in text(spec)

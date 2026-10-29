@@ -8,15 +8,72 @@ import argparse
 import json
 import sys
 from dataclasses import replace
+from datetime import UTC, datetime
+from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from quota_link.cards import build_help_card, build_status_card, render_local_card  # noqa: E402
+from quota_link.cards import (  # noqa: E402
+    build_help_card,
+    build_result_card,
+    build_status_card,
+    render_local_card,
+)
 from quota_link.config_store import SECRET_FIELDS  # noqa: E402
 from quota_link.local_status import project_storage_status  # noqa: E402
+from quota_link.models import (  # noqa: E402
+    BalanceItem,
+    BalanceItemKind,
+    BalanceSnapshot,
+    NormalizedProviderError,
+    ProviderErrorCategory,
+    ProviderType,
+    QueryRequest,
+    QueryRequestKind,
+    QueryResult,
+    SnapshotStatus,
+)
 from quota_link.settings import load_settings  # noqa: E402
+
+
+def result_cases():
+    when = datetime(2026, 10, 28, 1, 20, tzinfo=UTC)
+    base = BalanceSnapshot(
+        account_id="synthetic-balance",
+        provider_type=ProviderType.DEEPSEEK,
+        display_name="DeepSeek · 日常工作",
+        status=SnapshotStatus.AVAILABLE,
+        balances=(BalanceItem(BalanceItemKind.CASH, Decimal("12.34"), "CNY"),),
+        source="本地合成数据",
+        fetched_at=when,
+    )
+    failure = NormalizedProviderError(
+        ProviderErrorCategory.TEMPORARILY_UNAVAILABLE, "服务暂时不可用，请稍后重试。"
+    )
+    variants = (
+        ("05-balance.png", base),
+        (
+            "06-balance-partial.png",
+            replace(base, status=SnapshotStatus.PARTIAL, error=failure),
+        ),
+        (
+            "07-balance-failed.png",
+            replace(
+                base, status=SnapshotStatus.UNAVAILABLE, balances=(), error=failure
+            ),
+        ),
+    )
+    return tuple(
+        (
+            filename,
+            build_result_card(
+                QueryResult(QueryRequest(QueryRequestKind.ALL), (item,), when)
+            ),
+        )
+        for filename, item in variants
+    )
 
 
 def demo_cases():
@@ -136,7 +193,7 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     manifest = []
-    for filename, spec in demo_cases():
+    for filename, spec in (*demo_cases(), *result_cases()):
         caption = "演示数据 · " + (spec.caption or "本地合成账户")
         image = render_local_card(replace(spec, caption=caption), args.font)
         if image is None:

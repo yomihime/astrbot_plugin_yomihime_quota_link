@@ -603,3 +603,29 @@ def test_unit_status_read_only_route_available(monkeypatch):
     request = Request("alert-units", b"{}")
     result, _ = invoke(monkeypatch, request, successful)
     assert result.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"revision": True, "account_id": "synthetic"},
+        {"revision": -1, "account_id": "synthetic"},
+        {"revision": 1, "account_id": ""},
+        {"revision": 1, "account_id": "synthetic", "metric": "AvailableAmount"},
+        {"account_id": "synthetic"},
+    ],
+)
+def test_unit_refresh_validates_revision_and_exact_target(monkeypatch, body):
+    request = Request("alert-refresh-units", json.dumps(body).encode())
+    result, _ = invoke(monkeypatch, request, successful)
+    assert result.status_code == 400
+
+
+def test_unit_refresh_is_explicit_authorized_post(monkeypatch):
+    request = Request("alert-refresh-units", b'{"revision":1,"account_id":"synthetic"}')
+    result, _ = invoke(monkeypatch, request, successful)
+    assert result.status_code == 200
+    request = Request("alert-refresh-units", b'{"revision":1,"account_id":"synthetic"}')
+    request.method = "GET"
+    result, _ = invoke(monkeypatch, request, successful)
+    assert result.status_code == 403

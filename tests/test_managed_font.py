@@ -5,6 +5,7 @@ import hashlib
 import os
 import threading
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -124,7 +125,7 @@ def test_corrupt_own_cache_replaced_by_valid_ygl(tmp_path, monkeypatch, content)
 
 @pytest.mark.parametrize("ygl_state", ["missing", "corrupt", "digest", "symlink"])
 def test_invalid_ygl_falls_back_to_verified_download(
-    tmp_path, monkeypatch, content, ygl_state
+    tmp_path, monkeypatch, content, ygl_state, unsafe_link
 ):
     ygl = cache(tmp_path / "ygl")
     if ygl_state == "corrupt":
@@ -134,7 +135,7 @@ def test_invalid_ygl_falls_back_to_verified_download(
     elif ygl_state == "symlink":
         other = put(tmp_path / "other-font", content)
         ygl.parent.mkdir(parents=True)
-        ygl.symlink_to(other)
+        unsafe_link(ygl, other)
     calls, options = transport(monkeypatch, [success(content)])
     root = tmp_path / "yql"
     assert asyncio.run(font.prepare_font(root, ygl)) == cache(root)
@@ -199,7 +200,7 @@ def test_unwritable_cache_does_not_retry_identical_network_bytes(
 
 @pytest.mark.parametrize("location", ["root", "resources", "fonts", "file"])
 def test_destination_symlinks_rejected_without_touching_target(
-    tmp_path, monkeypatch, content, location
+    tmp_path, monkeypatch, content, location, unsafe_link
 ):
     root = tmp_path / "yql"
     target = tmp_path / "target"
@@ -213,7 +214,7 @@ def test_destination_symlinks_rejected_without_touching_target(
     relative.parent.mkdir(parents=True, exist_ok=True)
     if location == "file":
         target = put(target / "font", b"untouched")
-    relative.symlink_to(target, target_is_directory=location != "file")
+    unsafe_link(relative, target, directory=location != "file")
     ygl = put(cache(tmp_path / "ygl"), content)
     forbid_network(monkeypatch)
     assert asyncio.run(font.prepare_font(root, ygl)) is None
@@ -221,6 +222,50 @@ def test_destination_symlinks_rejected_without_touching_target(
         assert target.read_bytes() == b"untouched"
     else:
         assert list(target.iterdir()) == []
+
+
+def test_ygl_directory_link_falls_back_without_reading_target(
+    tmp_path, monkeypatch, content, unsafe_link
+):
+    source = put(cache(tmp_path / "source"), content)
+    linked = tmp_path / "linked"
+    unsafe_link(linked, source.parent, directory=True)
+    calls, _ = transport(monkeypatch, [success(content)])
+    root = tmp_path / "yql"
+    assert asyncio.run(font.prepare_font(root, linked / font.FONT_FILENAME)) == cache(
+        root
+    )
+    assert len(calls) == 1
+    assert source.read_bytes() == content
+
+
+@pytest.mark.parametrize("destination", [False, True])
+def test_regular_file_reparse_metadata_is_rejected(
+    tmp_path, monkeypatch, content, destination
+):
+    path = put(cache(tmp_path), content)
+    original = Path.lstat
+
+    def reparse_lstat(candidate, *args, **kwargs):
+        info = original(candidate, *args, **kwargs)
+        if candidate == path:
+            fields = {
+                name: getattr(info, name)
+                for name in dir(info)
+                if name.startswith("st_")
+            }
+            fields["st_file_attributes"] = 0x400
+            return SimpleNamespace(**fields)
+        return info
+
+    monkeypatch.setattr(Path, "lstat", reparse_lstat)
+    with pytest.raises(ValueError, match="invalid_font_file"):
+        if destination:
+            font._install(path, content)
+        else:
+            font._read(path)
+    assert path.read_bytes() == content
+    assert not list(path.parent.glob(".font-*"))
 
 
 def test_atomic_publication_failure_cleans_temporary_and_keeps_old(

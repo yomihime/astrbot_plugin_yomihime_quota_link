@@ -5,7 +5,7 @@ import {PageHeader,SettingsGroup,ActionBar,StatusHint,FormField,FormGrid,type Fo
 import {createInlineConfirmation} from './confirmation';
 import {createController} from './controller.js';
 import {globals,globalGroups,globalLabels,fieldLabels,templates,providerOptions,newAccount,templateFor,credentialFields,clone} from './config.js';
-import {alertDefaults,defaultMetric,metricOptions,metricLabels,normalizeAlert,normalizeIds,parseTargetsText,formatTargets,alertDraftErrors,fixedAlertUnit} from './alert-config.js';
+import {alertDefaults,defaultMetric,metricOptions,normalizeAlert,normalizeIds,parseTargetsText,formatTargets,alertDraftErrors,fixedAlertUnit,unitLabel,metricLabel,localTime,alertDetailLabel} from './alert-config.js';
 import './ui/tokens.css';
 import './shell.css';
 import './quota.css';
@@ -75,16 +75,16 @@ const App=defineComponent({setup(){
   h('p',{class:'quota-muted'},''),
  ]});
 
- const statusLabels:Record<string,string>={unit_unidentified:'等待识别单位',units_ambiguous:'多个单位待确认',unit_changed:'单位已变化，请确认',disabled:'预警已关闭',waiting:'等待下次检查',monitoring:'余额监测中',recovering:'额度已回升，尚未达到恢复阈值',submitted:'已提交平台；不代表最终送达',storage_unavailable:'告警状态存储不可用，预警未运行',ready:'等待下次检查',normal:'余额在阈值以上',low:'低于或等于阈值，当前告警持续中',recovered:'余额已恢复',pending:'等待检查',pending_send:'等待合并提醒',sent:'发送请求已受理（不代表送达）',accepted:'发送请求已受理（不代表送达）',unknown:'发送结果未知；不会盲目重试',send_unknown:'发送结果未知；不会盲目重试',failed:'发送失败',send_failed:'发送失败',paused:'认证或权限校验失败；修正配置或手动重试后恢复检查',auth_paused:'凭据被拒绝，检查已暂停',blocked:'配置或目标未通过检查',incomplete:'配置不完整，未启动',error:'检查失败，保留上次告警状态',stale:'结果过期或指标、单位不匹配，不用于预警判断'};
+ const statusLabels:Record<string,string>={unit_unidentified:'等待识别单位',units_ambiguous:'多个单位待确认',unit_changed:'监测项或单位已变化，请确认',waiting_budget:'等待同一推送目标的发送间隔（至少 300 秒 / 5 分钟）；将在后续有效检查中重试',disabled:'预警已关闭',waiting:'等待下次检查',monitoring:'余额监测中',recovering:'额度已回升，尚未达到恢复阈值',submitted:'已提交平台；不代表最终送达',storage_unavailable:'告警状态存储不可用，预警未运行',ready:'等待下次检查',normal:'余额在阈值以上',low:'低于或等于阈值，当前告警持续中',recovered:'余额已恢复',pending:'等待检查',pending_send:'等待合并提醒',sent:'发送请求已受理（不代表送达）',accepted:'发送请求已受理（不代表送达）',unknown:'发送结果未知；不会盲目重试',send_unknown:'发送结果未知；不会盲目重试',failed:'发送失败',send_failed:'发送失败',paused:'认证或权限校验失败；修正配置或手动重试后恢复检查',auth_paused:'凭据被拒绝，检查已暂停',blocked:'预警发送已暂停，请检查下方原因',incomplete:'配置不完整，未启动',error:'检查失败，保留上次告警状态',stale:'结果过期或指标、单位不匹配，不用于预警判断'};
  const runtimeStatus=(accountId?:string)=>{
   const runtime=s.alertStatus,entry=accountId?runtime?.accounts.find(a=>a.account_id===accountId):null;
   return h('div',{class:'quota-alert-runtime'},[
    h('div',{class:'quota-alert-runtime-heading'},[h('strong','运行状态'),button(s.alertBusy?'读取中…':'刷新预警状态',{text:true,'data-action':'alert-status',disabled:!s.ready||s.busy||s.alertBusy,onClick:()=>void controller.refreshAlerts()})]),
    s.alertNotice?h('p',{class:'quota-muted'},s.alertNotice):null,
-   runtime?h(StatusHint,{tone:!runtime.storage_available||entry?.status==='storage_unavailable'||entry?.status==='failed'?'error':!runtime.running||entry&&['low','recovering','unknown','error','stale','blocked','paused','units_ambiguous','unit_changed'].includes(entry.status)?'warning':'neutral'},()=>!runtime.storage_available?'告警状态存储不可用，预警未运行。':!runtime.running?'检查任务未运行。':accountId?(entry?statusLabels[entry.status]||'状态已更新，请通过预警命令查看详情。':'此账户尚无运行记录。'):'检查任务已运行；仅配置完整且单独开启的账户参与。'):null,
-   entry?.detail_code?h(StatusHint,{tone:'warning'},()=>entry.detail_code==='session_disabled'?'目标会话已停用':'已使用固定提示'):null,
-   entry?.last_checked_at?h('p',{class:'quota-muted'},'最近检查：'+entry.last_checked_at):null,
-   entry?.last_sent_at?h('p',{class:'quota-muted'},'最近发送尝试：'+entry.last_sent_at):null,
+   runtime?h(StatusHint,{tone:!runtime.storage_available||entry?.status==='storage_unavailable'||entry?.status==='failed'?'error':!runtime.running||entry&&['low','recovering','unknown','error','stale','blocked','paused','units_ambiguous','unit_changed','waiting_budget'].includes(entry.status)?'warning':'neutral'},()=>!runtime.storage_available?'告警状态存储不可用，预警未运行。':!runtime.running?'检查任务未运行。':accountId?(entry?statusLabels[entry.status]||'状态已更新，请通过预警命令查看详情。':'此账户尚无运行记录。'):'检查任务已运行；仅配置完整且单独开启的账户参与。'):null,
+   entry?.detail_code||entry?.status==='blocked'?h(StatusHint,{tone:'warning'},()=>alertDetailLabel(entry?.detail_code)):null,
+   entry?.last_checked_at?h('p',{class:'quota-muted'},['最近检查：',h('time',{datetime:entry.last_checked_at},localTime(entry.last_checked_at,s.locale))]):null,
+   entry?.last_sent_at?h('p',{class:'quota-muted'},['最近发送尝试：',h('time',{datetime:entry.last_sent_at},localTime(entry.last_sent_at,s.locale))]):null,
   ]);
  };
  const unitPanel=(account:Dict,index:number)=>{
@@ -94,17 +94,22 @@ const App=defineComponent({setup(){
   const candidates=entry?.choices.filter(c=>c.metric===(account.balance_alert?.metric||defaultMetric(account)))||[];
   const needsChoice=!!entry&&(['ambiguous','changed'].includes(entry.unit_state)||entry.unit_state==='unidentified'&&candidates.length===1);
   const shown=entry?.unit||fixedAlertUnit(account),choiceId=unitChoices.value[account.id]||'',choice=candidates.find(c=>c.id===choiceId);
-  const warning=entry?.unit_state==='ambiguous'?'发现多个单位，请选择。':entry?.unit_state==='changed'?'单位已变化，请重新确认。':entry?.unit_state==='stale'?'已有单位已过期，请先查询余额。':null;
+  const warning=entry?.unit_state==='ambiguous'?'发现多个单位，请选择。':entry?.unit_state==='changed'?(entry.change_reason==='metric_changed'?'监测项已变化：'+metricLabel(entry.binding_metric)+' → '+metricLabel(entry.metric)+'。请重新确认单位和阈值。':entry.change_reason==='query_identity_changed'?'查询账户或接口已变化，请重新确认单位和阈值。':entry.change_reason==='unit_changed'?'查询单位已变化，请重新确认。':'监测项或单位已变化，请重新确认。'):entry?.unit_state==='stale'?'查询候选已过期，请重新查询。已确认的单位记录仍保留。':null;
+  const queryDisabled=ordinaryDisabled()||s.unitsBusy||!saved||!current||controller.dirty()||!!s.secret;
   return h('section',{class:'quota-alert-unit','aria-label':'预警单位'},[
-   h('div',{class:'quota-alert-runtime-heading'},[h('strong',{'data-testid':'alert-unit'},'单位：'+(shown||'待获取')),button(s.unitsBusy?'读取中…':'刷新',{text:true,'data-action':'alert-units',disabled:!s.ready||s.busy||s.unitsBusy||!saved,onClick:()=>void controller.refreshUnits()})]),
+   h('div',{class:'quota-alert-runtime-heading'},[h('strong',{'data-testid':'alert-unit'},'单位：'+(shown?unitLabel(shown):'待获取')),button(s.unitsBusy?'处理中…':'读取单位状态',{text:true,'data-action':'alert-units',disabled:!s.ready||s.busy||s.unitsBusy||!saved,onClick:()=>void controller.refreshUnits()})]),
+   entry?.unit_state==='verified'?h('p',{class:'quota-muted'},entry.choices_state==='expired'?'单位已验证。查询候选已过期，已确认的单位仍有效。':'单位已验证。'):null,
    !shown&&!warning?h('p',{class:'quota-muted'},current?(needsChoice?'请确认查询到的单位。':'查询余额后自动识别。'):saved?'保存设置后重新识别。':'保存账户后自动识别。'):null,
-   entry?.observed_at?h('p',{class:'quota-muted'},'更新于 '+entry.observed_at):null,
+   saved&&!current?h('p',{class:'quota-muted'},account.balance_alert?.metric!==saved.balance_alert?.metric?'监测项已改为“'+metricLabel(account.balance_alert?.metric)+'”，保存后重新查询并确认。':'查询配置已修改，保存后重新识别单位。'):null,
+   entry?.observed_at?h('p',{class:'quota-muted'},['单位记录：',h('time',{datetime:entry.observed_at},localTime(entry.observed_at,s.locale))]):null,
    warning?h(StatusHint,{tone:'warning'},()=>warning):null,
+   needsChoice&&!candidates.length?h('p',{class:'quota-muted'},entry?.choices_state==='expired'?'可确认候选已过期，重新查询后再选择。':'当前没有可确认候选，重新查询后再选择。'):null,
    s.unitsNotice?h(StatusHint,{tone:s.unitsUnknown?'warning':'neutral'},()=>s.unitsNotice):null,
    needsChoice&&candidates.length?h(FormField,{controlId:'field-'+index+'-unit-choice',label:'选择单位',hint:controller.dirty()?'请先保存设置。':undefined},{default:({controlAttrs}:FormFieldSlot)=>h('div',{class:'quota-unit-choice'},[
-    h('select',{...controlAttrs,class:'ui-control',value:choiceId,disabled:ordinaryDisabled()||s.unitsBusy||controller.dirty()||s.unitsUnknown,onChange:(event:Event)=>{confirmation.cancel();unitChoices.value[account.id]=(event.target as HTMLSelectElement).value;}},[h('option',{value:''},'请选择'),...candidates.map(c=>h('option',{value:c.id},c.unit))]),
-    button('确认单位',{'data-action':'alert-bind-unit',disabled:ordinaryDisabled()||s.unitsBusy||s.unitsUnknown||controller.dirty()||!choice,onClick:()=>void guard('maintenance','确认单位 '+choice?.unit+'？',account.balance_alert?.threshold!==null&&account.balance_alert?.threshold!==undefined?'改用 '+choice?.unit+'，按阈值 '+account.balance_alert.threshold+' 比较？':'改用 '+choice?.unit+'？阈值尚未设置。','确认单位',()=>controller.bindUnit(account.id,choiceId))}),
+    h('select',{...controlAttrs,class:'ui-control',value:choiceId,disabled:ordinaryDisabled()||s.unitsBusy||controller.dirty()||s.unitsUnknown,onChange:(event:Event)=>{confirmation.cancel();unitChoices.value[account.id]=(event.target as HTMLSelectElement).value;}},[h('option',{value:''},'请选择'),...candidates.map(c=>h('option',{value:c.id},unitLabel(c.unit)))]),
+    button('确认单位',{'data-action':'alert-bind-unit',disabled:ordinaryDisabled()||s.unitsBusy||s.unitsUnknown||controller.dirty()||!choice,onClick:()=>void guard('maintenance','确认单位 '+unitLabel(choice?.unit)+'？',account.balance_alert?.threshold!==null&&account.balance_alert?.threshold!==undefined?'改用 '+unitLabel(choice?.unit)+'，按阈值 '+account.balance_alert.threshold+' 比较？':'改用 '+unitLabel(choice?.unit)+'？阈值尚未设置。','确认单位',()=>controller.bindUnit(account.id,choiceId))}),
    ])}):null,
+   saved?h('div',{class:'quota-unit-query'},[button('重新查询单位',{'data-action':'alert-refresh-units',disabled:queryDisabled,onClick:()=>void controller.queryUnits(account.id)}),h('p',{class:'quota-muted'},controller.dirty()?'保存设置后可重新查询单位。':s.secret?'完成或取消凭据输入后可重新查询。':'请求此账户的余额接口，获取新候选；不发送预警。')]):null,
   ]);
  };
  const alertAccountPanel=(account:Dict,index:number)=>{
@@ -121,13 +126,13 @@ const App=defineComponent({setup(){
    configErrors.length?h(StatusHint,{tone:'warning'},()=>configErrors.join(' ')):null,
    h(FormField,{controlId:prefix+'check_interval_minutes',label:'检查间隔（分钟）',hint:'1–4320 分钟，默认 15。',error:errors.value[prefix+'check_interval_minutes']},{default:({controlAttrs}:FormFieldSlot)=>h('div',{class:'quota-alert-interval'},[
     h('div',{class:'quota-alert-interval-controls'},[h('input',{type:'range',id:prefix+'interval-slider','aria-label':'检查间隔滑条（分钟）',min:1,max:4320,step:1,value:sliderValue,disabled:locked,onInput:(e:Event)=>changeInterval((e.target as HTMLInputElement).value)}),h('input',{...controlAttrs,class:'ui-control',type:'number',min:1,max:4320,step:1,value:interval,disabled:locked,onInput:(e:Event)=>changeInterval((e.target as HTMLInputElement).value)}),h('span','分钟')]),
-    h('div',{class:'quota-alert-quick-values'},[1,15,60,1440,4320].map(v=>button(String(v),{size:'small',text:true,'aria-label':`设为 ${v} 分钟`,disabled:locked,onClick:()=>changeInterval(String(v))}))),
+    h('div',{class:'quota-alert-quick-values',role:'group','aria-label':'检查间隔快捷设置'},[h('span',{class:'quota-muted'},'快捷设置：'),...[1,15,60,1440,4320].map(v=>button(v>=1440?`${v/1440} 天`:`${v} 分钟`,{size:'small','aria-label':`设为 ${v} 分钟`,'aria-pressed':interval===v,disabled:locked,onClick:()=>changeInterval(String(v))}))]),
    ])}),
    h(FormGrid,{},()=>[
-    h(FormField,{controlId:prefix+'metric',label:'预警指标',hint:'选择需要监测的余额。'},{default:({controlAttrs}:FormFieldSlot)=>h('select',{...controlAttrs,class:'ui-control',value:a.metric||defaultMetric(account),disabled:locked,onChange:(e:Event)=>set('metric',(e.target as HTMLSelectElement).value)},metricOptions(account).map((metric:string)=>h('option',{value:metric},(metricLabels as Record<string,string>)[metric]+' · '+metric)))}),
+    h(FormField,{controlId:prefix+'metric',label:'预警指标',hint:'选择需要监测的余额。'},{default:({controlAttrs}:FormFieldSlot)=>h('select',{...controlAttrs,class:'ui-control',value:a.metric||defaultMetric(account),disabled:locked,onChange:(e:Event)=>set('metric',(e.target as HTMLSelectElement).value)},metricOptions(account).map((metric:string)=>h('option',{value:metric},metricLabel(metric))))}),
     unitPanel(account,index),
-    alertInput('threshold','触发阈值','余额低于或等于此值时提醒。','请输入明确阈值'),
-    alertInput('recovery_threshold','恢复阈值（可选）','留空自动设置，须高于触发阈值。','自动滞回阈值'),
+    alertInput('threshold','触发阈值','余额低于或等于此值时提醒。','填写触发阈值'),
+    alertInput('recovery_threshold','恢复阈值（可选）','留空自动设置，须高于触发阈值。','留空自动设置'),
     h(FormField,{controlId:prefix+'repeat_minutes',label:'持续低额重复提醒（分钟）',hint:'0 不重复，最多 4320 分钟。',error:errors.value[prefix+'repeat_minutes']},{default:({controlAttrs}:FormFieldSlot)=>h('input',{...controlAttrs,class:'ui-control',type:'number',min:0,max:4320,step:1,value:a.repeat_minutes,disabled:locked,onInput:(e:Event)=>{const text=(e.target as HTMLInputElement).value,n=/^[0-9]+$/.test(text)?Number(text):NaN;set('repeat_minutes',Number.isInteger(n)?n:text);if(!Number.isInteger(n)||n<0||n>4320)errors.value[prefix+'repeat_minutes']='请输入 0 至 4320 的整数分钟。';else delete errors.value[prefix+'repeat_minutes'];}})}),
    ]),runtimeStatus(account.id),
   ]});
@@ -137,7 +142,7 @@ const App=defineComponent({setup(){
   runtimeStatus(),
  ]});
  const alertAdministration=()=>h(SettingsGroup,{title:'预警管理权限',number:'04'},{default:()=>[
-  h(FormField,{controlId:'field-global-balance_alert_admin_qq_ids',label:'预警管理 QQ 白名单',hint:'每行一个 QQ 号；名单成员或 AstrBot 管理员可管理预警。',error:errors.value['field-global-balance_alert_admin_qq_ids']},{default:({controlAttrs}:FormFieldSlot)=>h('textarea',{...controlAttrs,class:'ui-control',rows:3,value:raw.value['field-global-balance_alert_admin_qq_ids']??(Array.isArray(s.draft?.balance_alert_admin_qq_ids)?s.draft?.balance_alert_admin_qq_ids.join('\n'):''),placeholder:'每行一个 QQ 号；留空仍允许 AstrBot 内置管理员',disabled:ordinaryDisabled(),onInput:(e:Event)=>{const text=(e.target as HTMLTextAreaElement).value;raw.value['field-global-balance_alert_admin_qq_ids']=text;try{if(/[\p{Cc}\p{Cf}\p{Cs}]/u.test(text.replace(/[\r\n\t]/g,'')))throw Error('不允许控制字符或不可见字符。');const ids=normalizeIds(text.split(/\s+/u).filter(Boolean));change(['balance_alert_admin_qq_ids'],ids,null);delete errors.value['field-global-balance_alert_admin_qq_ids'];}catch(error){change(['balance_alert_admin_qq_ids'],text,null);errors.value['field-global-balance_alert_admin_qq_ids']=(error as Error).message;}}})}),
+  h(FormField,{controlId:'field-global-balance_alert_admin_qq_ids',label:'预警管理 QQ 白名单',hint:'每行一个 QQ 号；名单成员或 AstrBot 管理员可管理预警。',error:errors.value['field-global-balance_alert_admin_qq_ids']},{default:({controlAttrs}:FormFieldSlot)=>h('textarea',{...controlAttrs,class:'ui-control',rows:3,value:raw.value['field-global-balance_alert_admin_qq_ids']??(Array.isArray(s.draft?.balance_alert_admin_qq_ids)?s.draft?.balance_alert_admin_qq_ids.join('\n'):''),placeholder:'每行一个 QQ 号',disabled:ordinaryDisabled(),onInput:(e:Event)=>{const text=(e.target as HTMLTextAreaElement).value;raw.value['field-global-balance_alert_admin_qq_ids']=text;try{if(/[\p{Cc}\p{Cf}\p{Cs}]/u.test(text.replace(/[\r\n\t]/g,'')))throw Error('不允许控制字符或不可见字符。');const ids=normalizeIds(text.split(/\s+/u).filter(Boolean));change(['balance_alert_admin_qq_ids'],ids,null);delete errors.value['field-global-balance_alert_admin_qq_ids'];}catch(error){change(['balance_alert_admin_qq_ids'],text,null);errors.value['field-global-balance_alert_admin_qq_ids']=(error as Error).message;}}})}),
  ]});
  const alertLlmSettings=()=>h(SettingsGroup,{title:'预警提示',number:'05'},{default:()=>[
   h(FormField,{controlId:'field-global-balance_alert_llm-enabled',label:'智能提示',hint:'使用目标会话的模型与人格。'},{default:({controlAttrs}:FormFieldSlot)=>h('label',{class:'ui-check-label'},[h('input',{...controlAttrs,type:'checkbox',checked:s.draft?.balance_alert_llm?.enabled!==false,disabled:ordinaryDisabled(),onChange:(e:Event)=>change(['balance_alert_llm','enabled'],(e.target as HTMLInputElement).checked,null)}),h('span',s.draft?.balance_alert_llm?.enabled!==false?'已开启':'已关闭')])}),
@@ -151,7 +156,7 @@ const App=defineComponent({setup(){
     field('timeout_seconds',descriptors.timeout_seconds,index),field('cache_ttl_seconds',descriptors.cache_ttl_seconds,index),
    ])}),
    h(SettingsGroup,{title:'供应商设置',number:'02'},{default:()=>[
-    h(StatusHint,{},()=>account.type==='deepseek'?'DeepSeek 官方账户余额，查询地址与解析规则已内置。':account.type==='alibaba_bailian'?'阿里云 BSS：现金余额、可用额度和信用额度。':account.type==='meinianda'?'查询 Meinianda 账户站内额度（site_credit）。建议缓存至少 60 秒。':account.type==='grsai'?'Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。':'余额查询使用供应商专属接口，请按其文档配置只读余额接口。'),
+    h(StatusHint,{},()=>account.type==='deepseek'?'DeepSeek 官方账户余额，查询地址与解析规则已内置。':account.type==='alibaba_bailian'?'阿里云 BSS：现金余额、可用额度和信用额度。':account.type==='meinianda'?'查询 Meinianda 账户站内额度。建议缓存至少 60 秒。':account.type==='grsai'?'Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。':'余额查询使用供应商专属接口，请按其文档配置只读余额接口。'),
     h(FormGrid,{},()=>[
      ...(descriptors.region?[field('region',descriptors.region,index)]:[]),
      ...(compatible?[field('service_profile',templates.openai_compatible.items.service_profile,index),...(account.service_profile==='grsai'?[field('balance_scope',templates.openai_compatible.items.balance_scope,index)]:[]),

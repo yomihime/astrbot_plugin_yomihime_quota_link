@@ -11687,12 +11687,47 @@ var ry = {
 	credit: "积分",
 	site_credit: "站内额度",
 	mapped_balance: "已配置映射余额"
-};
-function iy(e) {
+}, iy = {
+	credit: "积分",
+	site_credit: "站内额度"
+}, ay = (e) => Object.hasOwn(iy, e) ? iy[e] : e, oy = (e) => Object.hasOwn(ry, e) ? ry[e] : "监测余额";
+function sy(e, t = "zh-CN") {
+	let n = new Date(e);
+	if (!Number.isFinite(n.getTime())) return "时间不可用";
+	let r = {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hourCycle: "h23",
+		timeZoneName: "short"
+	};
+	try {
+		return new Intl.DateTimeFormat(t, r).format(n);
+	} catch {
+		return new Intl.DateTimeFormat("zh-CN", r).format(n);
+	}
+}
+var cy = {
+	session_disabled: "目标会话已停用，请在 AstrBot 中启用会话。",
+	session_check_failed: "无法核对目标会话状态，请检查 AstrBot 会话设置与日志。",
+	fixed_hint: "已使用固定提示。",
+	target_invalid: "推送目标格式无效，请在全局设置中核对 UMO。",
+	platform_not_found: "未找到目标平台实例，请核对 UMO 的平台实例 ID。",
+	platform_unavailable: "目标平台实例暂不可用，请检查连接状态与宿主日志。",
+	platform_unsupported: "目标平台不支持此主动发送方式，请改用支持的推送目标。",
+	mention_unsupported: "目标不支持 QQ 提及，请移除 @ 后缀或使用支持的 QQ 群目标。",
+	mention_invalid: "QQ 提及格式无效，请核对群会话与 @QQ 号。",
+	transport_unavailable: "宿主主动发送接口不可用，请检查 AstrBot 版本与日志。",
+	message_components_unavailable: "消息组件无法构造，请检查宿主组件与日志。"
+}, ly = (e) => Object.hasOwn(cy, e) ? cy[e] : "暂无明确阻止原因，请核对全局推送目标、平台连接与宿主预警日志。";
+function uy(e) {
 	let t = ty(e);
 	return t === "credit" ? "credit" : t === "site_credit" ? "site_credit" : null;
 }
-function ay(e) {
+function dy(e) {
 	let t = (e, t) => typeof e == "string" && e.length > 0 && [...e].length <= t && !Zv.test(e), n = (e) => t(e, 32) && !/\s/u.test(e), r = (e) => e === null || typeof e == "string" && e.length <= 64 && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(e) && Number.isFinite(Date.parse(e));
 	if (!Xv(e) || !Array.isArray(e.accounts) || e.accounts.length > 100) throw Error("invalid_response");
 	let i = /* @__PURE__ */ new Set();
@@ -11706,11 +11741,29 @@ function ay(e) {
 		].includes(e.unit_state) || !(e.unit === null || n(e.unit)) || !r(e.observed_at) || !Array.isArray(e.choices) || e.choices.length > 20 || e.unit_state === "verified" && !e.unit) throw Error("invalid_response");
 		i.add(e.account_id);
 		let a = /* @__PURE__ */ new Set();
+		for (let n of ["metric", "binding_metric"]) if (e[n] !== void 0 && (n !== "binding_metric" || e[n] !== null) && (!t(e[n], 64) || /\s/u.test(e[n]))) throw Error("invalid_response");
+		if (e.change_reason !== void 0 && ![
+			"",
+			"metric_changed",
+			"query_identity_changed",
+			"unit_changed"
+		].includes(e.change_reason) || e.choices_state !== void 0 && ![
+			"fresh",
+			"expired",
+			"unavailable"
+		].includes(e.choices_state) || e.choices_observed_at !== void 0 && !r(e.choices_observed_at) || e.choices_state && e.choices_state !== "fresh" && e.choices.length) throw Error("invalid_response");
 		return {
 			account_id: e.account_id,
 			unit_state: e.unit_state,
 			unit: e.unit,
 			observed_at: e.observed_at,
+			...Object.fromEntries([
+				"metric",
+				"binding_metric",
+				"change_reason",
+				"choices_state",
+				"choices_observed_at"
+			].filter((t) => e[t] !== void 0).map((t) => [t, e[t]])),
 			choices: e.choices.map((e) => {
 				if (!Xv(e) || typeof e.id != "string" || !/^[0-9a-f]{64}$/.test(e.id) || a.has(e.id) || !t(e.metric, 64) || /\s/u.test(e.metric) || !n(e.unit)) throw Error("invalid_response");
 				return a.add(e.id), {
@@ -11722,7 +11775,7 @@ function ay(e) {
 		};
 	}) };
 }
-function oy(e) {
+function fy(e) {
 	if (typeof e != "string" || Zv.test(e)) throw Error("UMO 不允许控制字符或不可见字符。");
 	let t = e.trim(), n = t.indexOf(":"), r = t.indexOf(":", n + 1);
 	if ([...t].length > 512 || /\s/u.test(t) || n <= 0 || r <= n + 1 || r === t.length - 1) throw Error("请填写完整 UMO：平台实例:消息类型:会话 ID。");
@@ -11738,7 +11791,7 @@ function oy(e) {
 		session: a
 	};
 }
-function sy(e, t = 100) {
+function py(e, t = 100) {
 	if (!Array.isArray(e) || e.length > t) throw Error(`QQ 号最多 ${t} 项。`);
 	let n = [];
 	for (let t of e) {
@@ -11748,12 +11801,12 @@ function sy(e, t = 100) {
 	}
 	return n;
 }
-function cy(e) {
+function my(e) {
 	if (!Array.isArray(e) || e.length > 20) throw Error("推送目标最多 20 个。");
 	let t = /* @__PURE__ */ new Set();
 	return e.map((e) => {
 		if (!Xv(e) || Object.keys(e).some((e) => !["umo", "mentions"].includes(e)) || !Object.hasOwn(e, "umo") || !Object.hasOwn(e, "mentions")) throw Error("每个目标须包含 UMO 和提及列表。");
-		let n = oy(e.umo), r = sy(e.mentions, 20);
+		let n = fy(e.umo), r = py(e.mentions, 20);
 		if (r.length && (n.type !== "GroupMessage" || !Qv.test(n.session.split("_").at(-1)))) throw Error("仅数字 QQ 群会话可附加 @QQ 号；私聊或其他会话请删除 @ 后缀。");
 		if (t.has(n.umo)) throw Error("UMO 重复，请合并为一行。");
 		return t.add(n.umo), {
@@ -11762,7 +11815,7 @@ function cy(e) {
 		};
 	});
 }
-function ly(e) {
+function hy(e) {
 	if (typeof e != "string") throw Error("请输入推送目标。");
 	let t = [], n = /* @__PURE__ */ new Set();
 	for (let [r, i] of e.split(/\r\n|\r|\n/).entries()) try {
@@ -11770,7 +11823,7 @@ function ly(e) {
 		if (!i.trim()) continue;
 		let [e, ...r] = i.trim().split(/\s+/u);
 		if (r.some((e) => !e.startsWith("@"))) throw Error("UMO 后请使用空格分隔的 @QQ号。");
-		let a = cy([{
+		let a = my([{
 			umo: e,
 			mentions: r.map((e) => e.slice(1))
 		}])[0];
@@ -11781,27 +11834,27 @@ function ly(e) {
 	}
 	return t;
 }
-function uy(e) {
+function gy(e) {
 	return Array.isArray(e) ? e.map((e) => [e.umo, ...e.mentions.map((e) => "@" + e)].join(" ")).join("\n") : "";
 }
-function dy(e) {
+function _y(e) {
 	if (typeof e != "string" || Zv.test(e)) throw Error("阈值须为不含指数的有限十进制字符串。");
 	let t = e.trim();
 	if (t.length > 50 || !/^-?(?:0|[1-9][0-9]{0,29})(?:\.[0-9]{1,18})?$/.test(t)) throw Error("阈值最多 30 位整数、18 位小数，不支持指数形式。");
 	return /^-?0(?:\.0+)?$/.test(t) ? "0" : t;
 }
-function fy(e) {
-	let t = dy(e), [n, r = ""] = t.split(".");
+function vy(e) {
+	let t = _y(e), [n, r = ""] = t.split(".");
 	return {
 		n: BigInt(n.replace("-", "") + r) * (t.startsWith("-") ? -1n : 1n),
 		scale: r.length
 	};
 }
-function py(e, t) {
-	let n = fy(e), r = fy(t), i = Math.max(n.scale, r.scale);
+function yy(e, t) {
+	let n = vy(e), r = vy(t), i = Math.max(n.scale, r.scale);
 	return n.n * 10n ** BigInt(i - n.scale) - r.n * 10n ** BigInt(i - r.scale);
 }
-function my(e, t) {
+function by(e, t) {
 	if (e === void 0) return {
 		...$v(),
 		metric: ty(t)
@@ -11816,11 +11869,11 @@ function my(e, t) {
 	if (typeof n.metric != "string" || Zv.test(n.metric) || n.metric.trim() && !ny(t).includes(n.metric.trim())) throw Error("请选择该供应商支持的预警指标。");
 	if (n.metric = n.metric.trim() || ty(t), typeof n.unit != "string" || [...n.unit.trim()].length > 32 || Zv.test(n.unit) || /\s/u.test(n.unit.trim())) throw Error("单位须为不超过 32 字的明确文本。");
 	n.unit = n.unit.trim();
-	for (let e of ["threshold", "recovery_threshold"]) n[e] !== null && (n[e] = dy(n[e]));
-	if (n.recovery_threshold !== null && (n.threshold === null || py(n.recovery_threshold, n.threshold) <= 0n)) throw Error("恢复阈值须严格大于触发阈值。");
+	for (let e of ["threshold", "recovery_threshold"]) n[e] !== null && (n[e] = _y(n[e]));
+	if (n.recovery_threshold !== null && (n.threshold === null || yy(n.recovery_threshold, n.threshold) <= 0n)) throw Error("恢复阈值须严格大于触发阈值。");
 	return n;
 }
-function hy(e) {
+function xy(e) {
 	if (e === void 0) return ey();
 	if (!Xv(e) || Object.keys(e).some((e) => ![
 		"enabled",
@@ -11838,42 +11891,38 @@ function hy(e) {
 	}
 	return t;
 }
-function gy(e) {
+function Sy(e) {
 	let t = [], n = [];
 	try {
-		n = cy(e.balance_alert_targets === void 0 ? [] : e.balance_alert_targets);
+		n = my(e.balance_alert_targets === void 0 ? [] : e.balance_alert_targets);
 	} catch (e) {
 		t.push(e.message);
 	}
 	try {
-		sy(e.balance_alert_admin_qq_ids === void 0 ? [] : e.balance_alert_admin_qq_ids);
+		py(e.balance_alert_admin_qq_ids === void 0 ? [] : e.balance_alert_admin_qq_ids);
 	} catch (e) {
 		t.push(e.message);
 	}
 	try {
-		hy(e.balance_alert_llm);
+		xy(e.balance_alert_llm);
 	} catch (e) {
 		t.push(e.message);
 	}
 	for (let r of e.providers || []) try {
-		let e = my(r.balance_alert, r);
+		let e = by(r.balance_alert, r);
 		if (e.enabled && (r.enabled !== void 0 && r.enabled !== !0 || e.threshold === null || !e.metric || n.length === 0)) throw Error("启用预警前，请启用账户并填写阈值和至少一个全局推送目标。");
 	} catch (e) {
 		t.push(`${r.display_name || r.id}：${e.message}`);
 	}
 	return t;
 }
-function _y(e) {
+function Cy(e) {
 	if (!Xv(e) || typeof e.running != "boolean" || typeof e.storage_available != "boolean" || !Array.isArray(e.accounts) || e.accounts.length > 100) throw Error("invalid_response");
 	return {
 		running: e.running,
 		storage_available: e.storage_available,
 		accounts: e.accounts.map((e) => {
-			if (!Xv(e) || typeof e.account_id != "string" || e.account_id.length > 128 || typeof e.status != "string" || !/^[a-z_]{1,64}$/.test(e.status) || e.detail_code !== void 0 && ![
-				"",
-				"session_disabled",
-				"fixed_hint"
-			].includes(e.detail_code)) throw Error("invalid_response");
+			if (!Xv(e) || typeof e.account_id != "string" || e.account_id.length > 128 || typeof e.status != "string" || !/^[a-z_]{1,64}$/.test(e.status) || e.detail_code !== void 0 && (typeof e.detail_code != "string" || !/^[a-z_]{0,64}$/.test(e.detail_code))) throw Error("invalid_response");
 			return {
 				account_id: e.account_id,
 				status: e.status,
@@ -11883,7 +11932,7 @@ function _y(e) {
 		})
 	};
 }
-var vy = {
+var wy = {
 	timeout_seconds: {
 		description: "单个账户查询的最长等待秒数",
 		type: "float",
@@ -11972,13 +12021,13 @@ var vy = {
 			}
 		}
 	}
-}, yy = vy.providers.templates, by = [
+}, Ty = wy.providers.templates, Ey = [
 	"deepseek",
 	"alibaba_bailian",
 	"grsai",
 	"meinianda",
 	"openai_compatible"
-], xy = Object.fromEntries(Object.entries(vy).filter(([e]) => e !== "providers")), Sy = [{
+], Dy = Object.fromEntries(Object.entries(wy).filter(([e]) => e !== "providers")), Oy = [{
 	title: "查询与缓存",
 	number: "01",
 	keys: [
@@ -11997,25 +12046,25 @@ var vy = {
 		"group_allowed_user_ids"
 	]
 }];
-function Cy(e) {
+function ky(e) {
 	return JSON.parse(JSON.stringify(e));
 }
-function wy(e) {
-	return Object.fromEntries(Object.entries(e).filter(([e, t]) => e !== "auth" && !t.secret && !(["provider_id", "persona_id"].includes(e) && t.invisible)).map(([e, t]) => [e, t.items && t.type === "object" ? wy(t.items) : Cy(Object.hasOwn(t, "default") ? t.default : "")]));
+function Ay(e) {
+	return Object.fromEntries(Object.entries(e).filter(([e, t]) => e !== "auth" && !t.secret && !(["provider_id", "persona_id"].includes(e) && t.invisible)).map(([e, t]) => [e, t.items && t.type === "object" ? Ay(t.items) : ky(Object.hasOwn(t, "default") ? t.default : "")]));
 }
-function Ty(e) {
+function jy(e) {
 	let t = {
-		...wy(yy[e].items),
+		...Ay(Ty[e].items),
 		__template_key: e,
 		id: "",
-		display_name: yy[e].name
+		display_name: Ty[e].name
 	};
-	return t.balance_alert = my(t.balance_alert, t), t;
+	return t.balance_alert = by(t.balance_alert, t), t;
 }
-function Ey(e) {
-	return (Object.hasOwn(yy, e?.__template_key) ? yy[e.__template_key] : null) || (Object.hasOwn(yy, e?.type) ? yy[e.type] : null) || yy.provider_account;
+function My(e) {
+	return (Object.hasOwn(Ty, e?.__template_key) ? Ty[e.__template_key] : null) || (Object.hasOwn(Ty, e?.type) ? Ty[e.type] : null) || Ty.provider_account;
 }
-function Dy(e) {
+function Ny(e) {
 	return e?.type === "alibaba_bailian" ? [
 		{
 			key: "access_key_id",
@@ -12037,7 +12086,7 @@ function Dy(e) {
 		label: e?.type === "deepseek" ? "DeepSeek API Key" : e?.type === "meinianda" ? "Meinianda API Key" : "余额查询 API Key"
 	}];
 }
-var Oy = {
+var Py = {
 	timeout_seconds: "账户超时（秒）",
 	cache_ttl_seconds: "成功结果缓存（秒）",
 	id: "账户 ID",
@@ -12072,7 +12121,7 @@ var Oy = {
 	balance_scope: "积分范围",
 	region: "连接区域",
 	advanced_options: "显示高级设置"
-}, ky = {
+}, Fy = {
 	timeout_seconds: "单账户超时（秒）",
 	total_timeout_seconds: "整次查询超时（秒）",
 	cache_ttl_seconds: "成功结果缓存（秒）",
@@ -12081,7 +12130,7 @@ var Oy = {
 	private_allowed_user_ids: "私聊白名单",
 	allow_group_queries: "允许群聊查询",
 	group_allowed_user_ids: "群聊用户白名单"
-}, Ay = /* @__PURE__ */ new Set(["__template_key", ...Object.values(yy).flatMap((e) => Object.keys(e.items).filter((e) => e !== "auth"))]), jy = new Set(Object.keys(yy.provider_account.items.endpoint.items)), My = new Set(Object.keys(yy.provider_account.items.response_mapping.items)), Ny = /* @__PURE__ */ new Set([
+}, Iy = /* @__PURE__ */ new Set(["__template_key", ...Object.values(Ty).flatMap((e) => Object.keys(e.items).filter((e) => e !== "auth"))]), Ly = new Set(Object.keys(Ty.provider_account.items.endpoint.items)), Ry = new Set(Object.keys(Ty.provider_account.items.response_mapping.items)), zy = /* @__PURE__ */ new Set([
 	"auth",
 	"api_key",
 	"access_key_id",
@@ -12091,44 +12140,44 @@ var Oy = {
 	"secret",
 	"password",
 	"credentials"
-]), Py = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prototype, null].includes(Object.getPrototypeOf(e));
-function Fy(e, t = 0) {
+]), By = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prototype, null].includes(Object.getPrototypeOf(e));
+function Vy(e, t = 0) {
 	if (t > 12) throw Error("invalid_response");
 	if (e !== null && typeof e != "boolean" && typeof e != "string" && !(typeof e == "number" && Number.isFinite(e))) {
 		if (Array.isArray(e)) {
-			e.forEach((e) => Fy(e, t + 1));
+			e.forEach((e) => Vy(e, t + 1));
 			return;
 		}
-		if (!Py(e)) throw Error("invalid_response");
+		if (!By(e)) throw Error("invalid_response");
 		for (let [n, r] of Object.entries(e)) {
-			if (Ny.has(n.toLowerCase()) || [
+			if (zy.has(n.toLowerCase()) || [
 				"__proto__",
 				"prototype",
 				"constructor"
 			].includes(n)) throw Error("invalid_response");
-			Fy(r, t + 1);
+			Vy(r, t + 1);
 		}
 	}
 }
-function Iy(e) {
-	if (!Py(e) || e.providers !== void 0 && !Array.isArray(e.providers) || Array.isArray(e.providers) && e.providers.length > 100 || Object.keys(e).some((e) => e !== "providers" && !Object.hasOwn(xy, e))) throw Error("invalid_response");
-	Fy(e), e = Cy({
-		...wy(xy),
+function Hy(e) {
+	if (!By(e) || e.providers !== void 0 && !Array.isArray(e.providers) || Array.isArray(e.providers) && e.providers.length > 100 || Object.keys(e).some((e) => e !== "providers" && !Object.hasOwn(Dy, e))) throw Error("invalid_response");
+	Vy(e), e = ky({
+		...Ay(Dy),
 		...e,
 		providers: e.providers || []
 	});
-	for (let t of e.providers) if (Py(t) && t.type === void 0 && by.includes(t.__template_key) && (t.type = t.__template_key), !Py(t) || typeof t.id != "string" || typeof t.type != "string" || Object.keys(t).some((e) => !Ay.has(e)) || t.endpoint && (!Py(t.endpoint) || Object.keys(t.endpoint).some((e) => !jy.has(e))) || t.response_mapping && (!Py(t.response_mapping) || Object.keys(t.response_mapping).some((e) => !My.has(e)))) throw Error("invalid_response");
-	e.balance_alert_targets = cy(e.balance_alert_targets), e.balance_alert_admin_qq_ids = sy(e.balance_alert_admin_qq_ids), e.balance_alert_llm = hy(e.balance_alert_llm);
-	for (let t of e.providers) t.balance_alert = my(t.balance_alert, t);
-	return Cy(e);
+	for (let t of e.providers) if (By(t) && t.type === void 0 && Ey.includes(t.__template_key) && (t.type = t.__template_key), !By(t) || typeof t.id != "string" || typeof t.type != "string" || Object.keys(t).some((e) => !Iy.has(e)) || t.endpoint && (!By(t.endpoint) || Object.keys(t.endpoint).some((e) => !Ly.has(e))) || t.response_mapping && (!By(t.response_mapping) || Object.keys(t.response_mapping).some((e) => !Ry.has(e)))) throw Error("invalid_response");
+	e.balance_alert_targets = my(e.balance_alert_targets), e.balance_alert_admin_qq_ids = py(e.balance_alert_admin_qq_ids), e.balance_alert_llm = xy(e.balance_alert_llm);
+	for (let t of e.providers) t.balance_alert = by(t.balance_alert, t);
+	return ky(e);
 }
-function Ly(e) {
-	if (!Py(e) || !Number.isSafeInteger(e.revision) || e.revision < 0) throw Error("invalid_response");
-	let t = Iy(e.config);
-	if (!Py(e.credentials) || !Py(e.encryption) || typeof e.encryption.ready != "boolean" || !Py(e.migration) || typeof e.migration.pending != "boolean") throw Error("invalid_response");
+function Uy(e) {
+	if (!By(e) || !Number.isSafeInteger(e.revision) || e.revision < 0) throw Error("invalid_response");
+	let t = Hy(e.config);
+	if (!By(e.credentials) || !By(e.encryption) || typeof e.encryption.ready != "boolean" || !By(e.migration) || typeof e.migration.pending != "boolean") throw Error("invalid_response");
 	let n = Object.create(null);
 	for (let [t, r] of Object.entries(e.credentials)) {
-		if (!Py(r)) throw Error("invalid_response");
+		if (!By(r)) throw Error("invalid_response");
 		n[t] = Object.create(null);
 		for (let [e, i] of Object.entries(r)) {
 			if (![
@@ -12139,7 +12188,7 @@ function Ly(e) {
 				"security_token",
 				"secret",
 				"key"
-			].includes(e) || !Py(i) || typeof i.configured != "boolean" || ![
+			].includes(e) || !By(i) || typeof i.configured != "boolean" || ![
 				"encrypted",
 				"environment",
 				"missing"
@@ -12167,8 +12216,8 @@ function Ly(e) {
 		}
 	};
 }
-function Ry(e) {
-	if (!Py(e) || typeof e.pending != "boolean" || typeof e.plan_id != "string" || !e.plan_id || ![
+function Wy(e) {
+	if (!By(e) || typeof e.pending != "boolean" || typeof e.plan_id != "string" || !e.plan_id || ![
 		"account_count",
 		"plaintext_count",
 		"environment_count"
@@ -12183,7 +12232,7 @@ function Ry(e) {
 		environment_count: e.environment_count
 	};
 }
-function zy(e) {
+function Gy(e) {
 	let t = [];
 	for (let n of [
 		"timeout_seconds",
@@ -12196,18 +12245,18 @@ function zy(e) {
 		(!r.id?.trim() || n.has(r.id.trim())) && t.push("账户 ID 不能为空或重复。"), n.add(r.id?.trim()), r.display_name?.trim() || t.push("请填写账户显示名称。");
 		for (let e of ["timeout_seconds", "cache_ttl_seconds"]) r[e] !== void 0 && !(typeof r[e] == "number" && Number.isFinite(r[e]) && r[e] > 0) && t.push("账户超时和缓存必须为正数。");
 	}
-	return e.private_allowed_user_ids?.some((e) => !/^\S+:\S+$/.test(e)) && t.push("私聊白名单需使用 平台名:用户ID。"), (e.timeout_seconds > 120 || e.total_timeout_seconds > 300 || e.cache_ttl_seconds > 86400 || e.max_concurrency > 32) && t.push("全局参数超出允许范围。"), e.providers.some((e) => e.timeout_seconds > 120 || e.cache_ttl_seconds > 86400) && t.push("账户超时最多 120 秒，缓存最多 86400 秒。"), [.../* @__PURE__ */ new Set([...t, ...gy(e)])];
+	return e.private_allowed_user_ids?.some((e) => !/^\S+:\S+$/.test(e)) && t.push("私聊白名单需使用 平台名:用户ID。"), (e.timeout_seconds > 120 || e.total_timeout_seconds > 300 || e.cache_ttl_seconds > 86400 || e.max_concurrency > 32) && t.push("全局参数超出允许范围。"), e.providers.some((e) => e.timeout_seconds > 120 || e.cache_ttl_seconds > 86400) && t.push("账户超时最多 120 秒，缓存最多 86400 秒。"), [.../* @__PURE__ */ new Set([...t, ...Sy(e)])];
 }
 //#endregion
 //#region src/controller.js
-var By = /* @__PURE__ */ new Set([
+var Ky = /* @__PURE__ */ new Set([
 	"isDark",
 	"theme",
 	"locale",
 	"i18n",
 	"displayName",
 	"pageTitle"
-]), Vy = /* @__PURE__ */ new Set([
+]), qy = /* @__PURE__ */ new Set([
 	"read",
 	"update",
 	"credential-status",
@@ -12215,7 +12264,7 @@ var By = /* @__PURE__ */ new Set([
 	"credential-clear",
 	"legacy-config-plan",
 	"legacy-config-execute"
-]), Hy = (e) => {
+]), Jy = (e) => {
 	let t = [
 		e?.code,
 		e?.error_code,
@@ -12243,7 +12292,7 @@ var By = /* @__PURE__ */ new Set([
 		"invalid_account"
 	].includes(e)) ? "validation" : "unknown";
 };
-function Uy(e) {
+function Yy(e) {
 	if (!e || typeof e != "object" || Array.isArray(e) || e.pluginName !== "astrbot_plugin_yomihime_quota_link" || e.pageName !== "00-quota-link") throw Error("invalid_context");
 	let t = (e, n = 0) => {
 		if (n > 16) throw Error("invalid_context");
@@ -12252,9 +12301,9 @@ function Uy(e) {
 		if (e && typeof e == "object" && [Object.prototype, null].includes(Object.getPrototypeOf(e))) return Object.fromEntries(Object.keys(e).sort().map((r) => [r, t(e[r], n + 1)]));
 		throw Error("invalid_context");
 	};
-	return JSON.stringify(t(Object.fromEntries(Object.entries(e).filter(([e]) => !By.has(e)))));
+	return JSON.stringify(t(Object.fromEntries(Object.entries(e).filter(([e]) => !Ky.has(e)))));
 }
-function Wy(e, t = () => {}) {
+function Xy(e, t = () => {}) {
 	let n = {
 		units: null,
 		unitsBusy: !1,
@@ -12278,220 +12327,252 @@ function Wy(e, t = () => {}) {
 		edit: 0,
 		route: "accounts",
 		selected: null
-	}, r = 0, i = 0, a = 0, o = null, s = !1, c = !1, l, u = null, d = () => t(), f = (e, t = "neutral") => {
+	}, r = 0, i = 0, a = 0, o = 0, s = null, c = !1, l = !1, u, d = null, f = () => t(), p = (e, t = "neutral") => {
 		n.notice = e, n.tone = t;
-	}, p = () => !!n.snapshot && !!n.draft && JSON.stringify(n.snapshot.config) !== JSON.stringify(n.draft);
-	function m() {
-		n.snapshot && (n.draft = Cy(n.snapshot.config));
-	}
+	}, m = () => !!n.snapshot && !!n.draft && JSON.stringify(n.snapshot.config) !== JSON.stringify(n.draft);
 	function h() {
-		n.secret && (n.secret.value = "", n.secret.environment = ""), n.secret = null;
+		n.snapshot && (n.draft = ky(n.snapshot.config));
 	}
 	function g() {
-		r++, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertBusy = !1, n.alertNotice = "", h(), n.plan = null, n.draft = null, n.edit++;
+		n.secret && (n.secret.value = "", n.secret.environment = ""), n.secret = null;
 	}
-	function _(e) {
-		i++, u = null, n.busy = !1, g(), n.snapshot = null, n.ready = !1, n.stale = !0, o = null, f(e, "error"), d();
+	function _() {
+		r++, i++, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertBusy = !1, n.alertNotice = "", g(), n.plan = null, n.draft = null, n.edit++;
 	}
-	let v = (e) => !c && n.ready && e.epoch === i && u === e;
-	function y(e) {
-		r++, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertNotice = "", n.snapshot = e, m(), n.stale = !1, n.unknown = !1, n.plan = null, n.edit++;
+	function v(e) {
+		a++, d = null, n.busy = !1, _(), n.snapshot = null, n.ready = !1, n.stale = !0, s = null, p(e, "error"), f();
 	}
-	async function b(t, n, r) {
-		if (!Vy.has(t) || !v(r)) throw Error("stale_context");
+	let y = (e) => !l && n.ready && e.epoch === a && d === e;
+	function b(e) {
+		r++, i++, n.alertBusy = !1, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertNotice = "", n.snapshot = e, h(), n.stale = !1, n.unknown = !1, n.plan = null, n.edit++;
+	}
+	async function x(t, n, r) {
+		if (!qy.has(t) || !y(r)) throw Error("stale_context");
 		let i = await e.apiPost("admin/" + t, n);
-		if (!v(r)) throw Error("stale_context");
+		if (!y(r)) throw Error("stale_context");
 		return i;
 	}
-	async function x(e, t, { write: r = !1, plan: o = !1 } = {}) {
-		if (c || !n.ready || n.busy || r && (n.stale || !n.snapshot || n.snapshot.migration.pending && e !== "legacy-config-execute")) return !1;
+	async function S(e, t, { write: r = !1, plan: i = !1 } = {}) {
+		if (l || !n.ready || n.busy || r && (n.stale || !n.snapshot || n.snapshot.migration.pending && e !== "legacy-config-execute")) return !1;
 		let s = {
-			epoch: i,
-			serial: ++a,
+			epoch: a,
+			serial: ++o,
 			write: r
 		};
-		u = s, n.busy = !0, h(), n.plan = null, f(r ? "正在提交，请勿重复操作…" : "正在读取最新状态…"), d();
+		d = s, n.busy = !0, g(), n.plan = null, p(r ? "正在提交，请勿重复操作…" : "正在读取最新状态…"), f();
 		try {
-			let i = await b(e, t, s);
-			if (!v(s)) return !1;
-			if (o) n.plan = Ry(i), f(n.plan.legacy_conflict ? "旧配置与当前存储不一致。不会覆盖现有存储或清理新的旧配置。" : n.plan.cleanup_pending ? "迁移已保存，可重试清理原来的宿主旧字段。" : n.plan.pending ? "迁移预览已就绪。执行前请核对下方范围。" : "没有待迁移的旧配置。");
+			let a = await x(e, t, s);
+			if (!y(s)) return !1;
+			if (i) n.plan = Wy(a), p(n.plan.legacy_conflict ? "旧配置与当前存储不一致。不会覆盖现有存储或清理新的旧配置。" : n.plan.cleanup_pending ? "迁移已保存，可重试清理原来的宿主旧字段。" : n.plan.pending ? "迁移预览已就绪。执行前请核对下方范围。" : "没有待迁移的旧配置。");
 			else {
-				let n = Ly(i);
+				let n = Uy(a);
 				if (r && (n.revision < t.revision || e !== "legacy-config-execute" && n.revision === t.revision)) throw Error("invalid_response");
-				y(n), f(n.migration.cleanup_pending ? "配置已迁移，但宿主旧字段清理尚未完成，请在配置维护中重新预览并完成清理。" : r ? "已保存，当前状态已重新核对。" : "已读取最新配置。", n.migration.cleanup_pending ? "warning" : "success");
+				b(n), p(n.migration.cleanup_pending ? "配置已迁移，但宿主旧字段清理尚未完成，请在配置维护中重新预览并完成清理。" : r ? "已保存，当前状态已重新核对。" : "已读取最新配置。", n.migration.cleanup_pending ? "warning" : "success");
 			}
 			return !0;
 		} catch (e) {
-			if (!v(s)) return !1;
-			let t = Hy(e);
-			return h(), t === "auth" ? (_("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unknown = !1, f("配置已被其他页面修改。请重新读取，再核对并提交；不会自动重试。", "warning")) : t === "validation" ? f("提交未通过校验。请检查字段和凭据类型；敏感输入已清空。", "error") : (n.stale = !0, n.unknown = r, f(r ? "提交结果尚未确认，敏感输入已清空。请重新读取状态后再决定，切勿直接重复提交。" : "无法读取可信的配置状态。请重新读取，或从宿主重新打开。", "warning")), !1);
+			if (!y(s)) return !1;
+			let t = Jy(e);
+			return g(), t === "auth" ? (v("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unknown = !1, p("配置已被其他页面修改。请重新读取，再核对并提交；不会自动重试。", "warning")) : t === "validation" ? p("提交未通过校验。请检查字段和凭据类型；敏感输入已清空。", "error") : (n.stale = !0, n.unknown = r, p(r ? "提交结果尚未确认，敏感输入已清空。请重新读取状态后再决定，切勿直接重复提交。" : "无法读取可信的配置状态。请重新读取，或从宿主重新打开。", "warning")), !1);
 		} finally {
-			v(s) && (n.busy = !1, u = null, d());
+			y(s) && (n.busy = !1, d = null, f());
 		}
-	}
-	async function S() {
-		return !n.ready || n.busy ? !1 : (h(), x("read", {}));
 	}
 	async function C() {
-		if (c || !n.ready || n.busy || n.alertBusy) return !1;
-		let t = i, r = n.snapshot?.revision;
-		n.alertBusy = !0, n.alertNotice = "正在读取预警运行状态…", d();
-		try {
-			let a = await e.apiPost("admin/alert-status", {});
-			return c || !n.ready || t !== i || r !== n.snapshot?.revision ? !1 : (n.alertStatus = _y(a), n.alertNotice = "", !0);
-		} catch (e) {
-			return c || t !== i ? !1 : Hy(e) === "auth" ? (_("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (n.alertStatus = null, n.alertNotice = "无法读取可信的预警运行状态，请稍后重试。", !1);
-		} finally {
-			!c && t === i && (n.alertBusy = !1, d());
-		}
+		return !n.ready || n.busy ? !1 : (g(), S("read", {}));
 	}
 	async function w() {
-		if (c || !n.ready || !n.snapshot || n.busy || n.unitsBusy) return !1;
+		if (l || !n.ready || n.busy || n.alertBusy) return !1;
 		let t = {
-			epoch: i,
+			epoch: a,
+			revision: n.snapshot?.revision,
+			serial: ++i
+		};
+		n.alertBusy = !0, n.alertNotice = "正在读取预警运行状态…", f();
+		let r = () => !l && n.ready && t.epoch === a && t.revision === n.snapshot?.revision && t.serial === i;
+		try {
+			let t = await e.apiPost("admin/alert-status", {});
+			return r() ? (n.alertStatus = Cy(t), n.alertNotice = "", !0) : !1;
+		} catch (e) {
+			return r() ? Jy(e) === "auth" ? (v("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (n.alertStatus = null, n.alertNotice = "无法读取可信的预警运行状态，请稍后重试。", !1) : !1;
+		} finally {
+			r() && (n.alertBusy = !1, f());
+		}
+	}
+	async function T() {
+		if (l || !n.ready || !n.snapshot || n.busy || n.unitsBusy) return !1;
+		let t = {
+			epoch: a,
 			revision: n.snapshot.revision,
 			serial: ++r,
 			selected: n.selected
 		};
-		n.unitsBusy = !0, n.unitsNotice = "", d();
-		let a = () => !c && n.ready && t.epoch === i && t.serial === r && t.revision === n.snapshot?.revision && t.selected === n.selected;
+		n.unitsBusy = !0, n.unitsNotice = "", f();
+		let i = () => !l && n.ready && t.epoch === a && t.serial === r && t.revision === n.snapshot?.revision && t.selected === n.selected;
 		try {
 			let t = await e.apiPost("admin/alert-units", {});
-			return a() ? (n.units = ay(t), n.unitsUnknown = !1, !0) : !1;
+			return i() ? (n.units = dy(t), n.unitsUnknown = !1, !0) : !1;
 		} catch (e) {
-			return a() ? (n.units = null, Hy(e) === "auth" ? _("管理授权已失效，请重新打开。") : n.unitsNotice = "单位获取失败，请刷新。", !1) : !1;
+			return i() ? (n.units = null, Jy(e) === "auth" ? v("管理授权已失效，请重新打开。") : n.unitsNotice = "单位获取失败，请刷新。", !1) : !1;
 		} finally {
-			a() && (n.unitsBusy = !1, d());
+			i() && (n.unitsBusy = !1, f());
 		}
 	}
-	async function T(t, o) {
-		if (c || !n.ready || n.stale || n.busy || n.unitsBusy || n.unitsUnknown || !n.snapshot || p() || n.route !== "accounts" || n.selected !== t) return !1;
-		let s = n.snapshot.config.providers.find((e) => e.id === t), l = n.units?.accounts.find((e) => e.account_id === t), m = l?.choices.find((e) => e.id === o && e.metric === s?.balance_alert?.metric);
-		if (!l || !(["ambiguous", "changed"].includes(l.unit_state) || l.unit_state === "unidentified" && l.choices.filter((e) => e.metric === s?.balance_alert?.metric).length === 1) || !m || n.snapshot.migration.pending) return !1;
-		let g = {
-			epoch: i,
-			serial: ++a,
+	async function E(t) {
+		if (l || !n.ready || n.stale || n.busy || n.unitsBusy || !n.snapshot || m() || n.secret || n.snapshot.migration.pending || n.route !== "accounts" || n.selected !== t || !n.snapshot.config.providers.some((e) => e.id === t)) return !1;
+		let i = {
+			epoch: a,
+			serial: ++o,
+			write: !1
+		};
+		d = i, r++, n.busy = !0, n.unitsBusy = !0, n.unitsNotice = "正在查询余额以获取最新单位…", f();
+		try {
+			let r = await e.apiPost("admin/alert-refresh-units", {
+				revision: n.snapshot.revision,
+				account_id: t
+			});
+			if (!y(i)) return !1;
+			n.units = dy(r), n.unitsUnknown = !1;
+			let a = n.units.accounts.find((e) => e.account_id === t);
+			return n.unitsNotice = a?.unit_state === "verified" ? "已读取最新单位状态，已确认的单位仍有效。" : a?.choices.length ? "已获取最新候选，请核对后确认。" : "暂未取得可确认候选，请检查凭据、接口配置或查询退避状态后再查询。", !0;
+		} catch (e) {
+			if (!y(i)) return !1;
+			n.units = null;
+			let t = Jy(e);
+			return t === "auth" ? v("管理授权已失效，请重新打开。") : t === "conflict" ? (n.stale = !0, n.unitsNotice = "配置已改变，请重新读取。", p("配置已改变，请重新读取。", "warning")) : n.unitsNotice = "未取得可信的新候选。请检查凭据、接口与查询状态后重新查询。", !1;
+		} finally {
+			y(i) && (n.busy = !1, n.unitsBusy = !1, d = null, f());
+		}
+	}
+	async function D(t, i) {
+		if (l || !n.ready || n.stale || n.busy || n.unitsBusy || n.unitsUnknown || !n.snapshot || m() || n.route !== "accounts" || n.selected !== t) return !1;
+		let s = n.snapshot.config.providers.find((e) => e.id === t), c = n.units?.accounts.find((e) => e.account_id === t), u = c?.choices.find((e) => e.id === i && e.metric === s?.balance_alert?.metric);
+		if (!c || c.choices_state && c.choices_state !== "fresh" || !(["ambiguous", "changed"].includes(c.unit_state) || c.unit_state === "unidentified" && c.choices.filter((e) => e.metric === s?.balance_alert?.metric).length === 1) || !u || n.snapshot.migration.pending) return !1;
+		let h = {
+			epoch: a,
+			serial: ++o,
 			write: !0
 		};
-		u = g, r++, n.busy = !0, n.unitsBusy = !0, n.unitsNotice = "", h(), d();
+		d = h, r++, n.busy = !0, n.unitsBusy = !0, n.unitsNotice = "", g(), f();
 		try {
 			let r = await e.apiPost("admin/alert-bind-unit", {
 				revision: n.snapshot.revision,
 				account_id: t,
-				choice_id: m.id
+				choice_id: u.id
 			});
-			return v(g) ? (n.units = ay(r), n.unitsUnknown = !1, n.unitsNotice = "单位已确认。", !0) : !1;
+			return y(h) ? (n.units = dy(r), n.unitsUnknown = !1, n.unitsNotice = "单位已确认。", !0) : !1;
 		} catch (e) {
-			if (!v(g)) return !1;
+			if (!y(h)) return !1;
 			n.units = null;
-			let t = Hy(e);
-			return t === "auth" ? (_("管理授权已失效，请重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unitsNotice = "配置已改变，请重新读取。", f("配置已改变，请重新读取。", "warning")) : t === "validation" ? n.unitsNotice = "单位已变化，请刷新后重试。" : (n.unitsUnknown = !0, n.unitsNotice = "确认结果未知，请刷新单位后再操作。"), !1);
+			let t = Jy(e);
+			return t === "auth" ? (v("管理授权已失效，请重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unitsNotice = "配置已改变，请重新读取。", p("配置已改变，请重新读取。", "warning")) : t === "validation" ? n.unitsNotice = "候选已变化或过期，请重新查询后确认。" : (n.unitsUnknown = !0, n.unitsNotice = "确认结果未知，请刷新单位后再操作。"), !1);
 		} finally {
-			v(g) && (n.busy = !1, n.unitsBusy = !1, u = null, d());
+			y(h) && (n.busy = !1, n.unitsBusy = !1, d = null, f());
 		}
 	}
-	function E(e) {
-		if (c) return;
-		s = !0, n.theme = e?.isDark === !0 || e?.theme === "dark" ? "dark" : "light", n.locale = typeof e?.locale == "string" ? e.locale : "zh-CN";
+	function O(e) {
+		if (l) return;
+		c = !0, n.theme = e?.isDark === !0 || e?.theme === "dark" ? "dark" : "light", n.locale = typeof e?.locale == "string" ? e.locale : "zh-CN";
 		let t;
 		try {
-			t = Uy(e);
+			t = Yy(e);
 		} catch {
-			_("宿主管理上下文无效。请从 AstrBot 插件管理打开此页。");
+			v("宿主管理上下文无效。请从 AstrBot 插件管理打开此页。");
 			return;
 		}
-		if (n.ready && t === o) {
-			d();
+		if (n.ready && t === s) {
+			f();
 			return;
 		}
-		i++, u = null, n.busy = !1, g(), n.snapshot = null, n.stale = !0, n.unknown = !1, n.ready = !0, o = t, d(), S();
+		a++, d = null, n.busy = !1, _(), n.snapshot = null, n.stale = !0, n.unknown = !1, n.ready = !0, s = t, f(), C();
 	}
-	function D(e) {
-		n.ready && !n.stale && !n.busy && n.draft && (e(n.draft), n.edit++, n.plan = null, d());
+	function ee(e) {
+		n.ready && !n.stale && !n.busy && n.draft && (e(n.draft), n.edit++, n.plan = null, f());
 	}
-	function O(e, t = null) {
-		let a = u?.write;
-		i++, r++, n.units = null, n.unitsBusy = !1, n.unitsNotice = "", n.alertBusy = !1, u = null, n.busy = !1, h(), n.plan = null, n.edit++, n.route = e, n.selected = t, m(), a && (n.stale = !0, n.unknown = !0, f("已离开原设置。已发出的请求无法撤回，请重新读取确认结果。", "warning")), d();
+	function te(e, t = null) {
+		let o = d?.write;
+		a++, r++, i++, n.units = null, n.unitsBusy = !1, n.unitsNotice = "", n.alertBusy = !1, d = null, n.busy = !1, g(), n.plan = null, n.edit++, n.route = e, n.selected = t, h(), o && (n.stale = !0, n.unknown = !0, p("已离开原设置。已发出的请求无法撤回，请重新读取确认结果。", "warning")), f();
 	}
-	async function ee() {
+	async function ne() {
 		if (!n.draft) return !1;
-		let e = zy(n.draft);
-		return e.length ? (f(e.join(" "), "error"), d(), !1) : x("update", {
+		let e = Gy(n.draft);
+		return e.length ? (p(e.join(" "), "error"), f(), !1) : S("update", {
 			revision: n.snapshot?.revision,
-			config: Cy(n.draft)
+			config: ky(n.draft)
 		}, { write: !0 });
 	}
-	function te(e, t, r = "value") {
-		!n.stale && !n.busy && n.ready && n.snapshot && (h(), n.secret = {
+	function re(e, t, r = "value") {
+		!n.stale && !n.busy && n.ready && n.snapshot && (g(), n.secret = {
 			account: e,
 			field: t,
 			mode: r,
 			value: "",
 			environment: ""
-		}, n.edit++, d());
+		}, n.edit++, f());
 	}
-	function ne(e, t) {
-		n.secret && !n.busy && (n.secret[e] = t, n.edit++, d());
+	function ie(e, t) {
+		n.secret && !n.busy && (n.secret[e] = t, n.edit++, f());
 	}
-	async function re() {
+	async function ae() {
 		let e = n.secret;
-		if (!e || p()) return !1;
+		if (!e || m()) return !1;
 		let t = e.mode === "environment" ? e.environment : e.value;
-		return !t.trim() || e.mode === "environment" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(t) ? (f(e.mode === "environment" ? "请输入有效的环境变量名，不要填写变量的值。" : "请输入新凭据；留空不会执行清除。", "error"), d(), !1) : x("credential-replace", {
+		return !t.trim() || e.mode === "environment" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(t) ? (p(e.mode === "environment" ? "请输入有效的环境变量名，不要填写变量的值。" : "请输入新凭据；留空不会执行清除。", "error"), f(), !1) : S("credential-replace", {
 			revision: n.snapshot.revision,
 			account_id: e.account,
 			field: e.field,
 			...e.mode === "environment" ? { environment: t } : { value: t }
 		}, { write: !0 });
 	}
-	async function ie(e, t) {
-		return !p() && x("credential-clear", {
+	async function oe(e, t) {
+		return !m() && S("credential-clear", {
 			revision: n.snapshot?.revision,
 			account_id: e,
 			field: t
 		}, { write: !0 });
 	}
-	function ae() {
-		h(), n.edit++, d();
-	}
-	function oe() {
-		h(), n.plan = null, m(), n.edit++, f("未保存的草稿已丢弃。"), d();
-	}
 	function se() {
-		c || (c = !0, i++, u = null, n.busy = !1, g(), n.snapshot = null, n.ready = !1, l?.(), d());
+		g(), n.edit++, f();
 	}
 	function ce() {
+		g(), n.plan = null, h(), n.edit++, p("未保存的草稿已丢弃。"), f();
+	}
+	function le() {
+		l || (l = !0, a++, d = null, n.busy = !1, _(), n.snapshot = null, n.ready = !1, u?.(), f());
+	}
+	function ue() {
 		if (!e || typeof e.apiPost != "function" || typeof e.ready != "function" || typeof e.onContext != "function") {
-			f("请从 AstrBot 插件管理页面打开此页。", "warning"), d();
+			p("请从 AstrBot 插件管理页面打开此页。", "warning"), f();
 			return;
 		}
-		l = e.onContext(E), Promise.resolve(e.ready()).then((e) => {
-			s || E(e);
+		u = e.onContext(O), Promise.resolve(e.ready()).then((e) => {
+			c || O(e);
 		}).catch(() => {
-			!s && !c && _("宿主管理会话不可用，请重新打开此页。");
+			!c && !l && v("宿主管理会话不可用，请重新打开此页。");
 		});
 	}
 	return {
 		state: n,
-		start: ce,
-		accept: E,
-		close: se,
-		refresh: S,
-		refreshUnits: w,
-		bindUnit: T,
-		refreshAlerts: C,
-		save: ee,
-		dirty: p,
-		edit: D,
-		navigate: O,
-		beginSecret: te,
-		changeSecret: ne,
-		replace: re,
-		clear: ie,
-		cancelSecret: ae,
-		discard: oe,
+		start: ue,
+		accept: O,
+		close: le,
+		refresh: C,
+		refreshUnits: T,
+		queryUnits: E,
+		bindUnit: D,
+		refreshAlerts: w,
+		save: ne,
+		dirty: m,
+		edit: ee,
+		navigate: te,
+		beginSecret: re,
+		changeSecret: ie,
+		replace: ae,
+		clear: oe,
+		cancelSecret: se,
+		discard: ce,
 		interactionKey: () => JSON.stringify([
-			i,
+			a,
 			n.edit,
 			n.route,
 			n.selected,
@@ -12501,16 +12582,16 @@ function Wy(e, t = () => {}) {
 			n.stale,
 			r
 		]),
-		plan: () => x("legacy-config-plan", {}, { plan: !0 }),
-		migrate: () => (n.plan?.pending || n.plan?.cleanup_pending) && !n.plan?.legacy_conflict && !p() ? x("legacy-config-execute", {
+		plan: () => S("legacy-config-plan", {}, { plan: !0 }),
+		migrate: () => (n.plan?.pending || n.plan?.cleanup_pending) && !n.plan?.legacy_conflict && !m() ? S("legacy-config-execute", {
 			revision: n.snapshot?.revision,
 			plan_id: n.plan.plan_id,
 			confirm: !0
 		}, { write: !0 }) : Promise.resolve(!1)
 	};
 }
-var Gy = Po(/* @__PURE__ */ P({ setup() {
-	let e = /* @__PURE__ */ N(0), t = /* @__PURE__ */ N(null), n = /* @__PURE__ */ N(null), r = /* @__PURE__ */ N("deepseek"), i = /* @__PURE__ */ N({}), a = /* @__PURE__ */ N({}), o = /* @__PURE__ */ N({}), s = Yv(document), c = /* @__PURE__ */ N(Object.create(null)), l, u, d = Wy(window.AstrBotPluginView, () => {
+var Zy = Po(/* @__PURE__ */ P({ setup() {
+	let e = /* @__PURE__ */ N(0), t = /* @__PURE__ */ N(null), n = /* @__PURE__ */ N(null), r = /* @__PURE__ */ N("deepseek"), i = /* @__PURE__ */ N({}), a = /* @__PURE__ */ N({}), o = /* @__PURE__ */ N({}), s = Yv(document), c = /* @__PURE__ */ N(Object.create(null)), l, u, d = Xy(window.AstrBotPluginView, () => {
 		l !== d.state.draft && (i.value = {}, a.value = {}, o.value = {}, l = d.state.draft), u !== d.state.units && (c.value = Object.create(null), u = d.state.units), s.invalidate(), e.value++;
 	}), f = d.state, p = (e, t = {}) => R(lg, {
 		size: "large",
@@ -12582,7 +12663,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 	function T(e, t, n, r = [e], o = {}) {
 		let s = n === null ? f.draft : f.draft?.providers[n];
 		if (!s) return null;
-		let c = "field-" + (n === null ? "global" : n) + "-" + r.join("-"), l = S(s, r) ?? t.default ?? "", u = (n === null ? ky : Oy)[e] || t.description, d = o.locked || m(), p = (t) => {
+		let c = "field-" + (n === null ? "global" : n) + "-" + r.join("-"), l = S(s, r) ?? t.default ?? "", u = (n === null ? Fy : Py)[e] || t.description, d = o.locked || m(), p = (t) => {
 			if (delete a.value[c], n !== null && r.length === 1 && e === "service_profile") {
 				w(n, String(t));
 				return;
@@ -12674,7 +12755,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		R(Kv, {}, () => "凭据单独保存。"),
 		E(e.id) ? null : R(Kv, { tone: "warning" }, () => "请先保存新账户，再配置凭据。"),
 		d.dirty() ? R(Kv, { tone: "warning" }, () => "请先保存或放弃普通设置修改，再操作凭据。") : null,
-		...[...Dy(e), ...Object.entries(f.snapshot?.credentials[e.id] || {}).filter(([t, n]) => n.configured && !Dy(e).some((e) => e.key === t)).map(([e]) => ({
+		...[...Ny(e), ...Object.entries(f.snapshot?.credentials[e.id] || {}).filter(([t, n]) => n.configured && !Ny(e).some((e) => e.key === t)).map(([e]) => ({
 			key: e,
 			label: "旧版凭据（" + e + "）"
 		}))].map(({ key: t, label: n }) => {
@@ -12747,7 +12828,8 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 	] }), ee = {
 		unit_unidentified: "等待识别单位",
 		units_ambiguous: "多个单位待确认",
-		unit_changed: "单位已变化，请确认",
+		unit_changed: "监测项或单位已变化，请确认",
+		waiting_budget: "等待同一推送目标的发送间隔（至少 300 秒 / 5 分钟）；将在后续有效检查中重试",
 		disabled: "预警已关闭",
 		waiting: "等待下次检查",
 		monitoring: "余额监测中",
@@ -12768,7 +12850,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		send_failed: "发送失败",
 		paused: "认证或权限校验失败；修正配置或手动重试后恢复检查",
 		auth_paused: "凭据被拒绝，检查已暂停",
-		blocked: "配置或目标未通过检查",
+		blocked: "预警发送已暂停，请检查下方原因",
 		incomplete: "配置不完整，未启动",
 		error: "检查失败，保留上次告警状态",
 		stale: "结果过期或指标、单位不匹配，不用于预警判断"
@@ -12791,11 +12873,12 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				"blocked",
 				"paused",
 				"units_ambiguous",
-				"unit_changed"
+				"unit_changed",
+				"waiting_budget"
 			].includes(n.status) ? "warning" : "neutral" }, () => t.storage_available ? t.running ? e ? n ? ee[n.status] || "状态已更新，请通过预警命令查看详情。" : "此账户尚无运行记录。" : "检查任务已运行；仅配置完整且单独开启的账户参与。" : "检查任务未运行。" : "告警状态存储不可用，预警未运行。") : null,
-			n?.detail_code ? R(Kv, { tone: "warning" }, () => n.detail_code === "session_disabled" ? "目标会话已停用" : "已使用固定提示") : null,
-			n?.last_checked_at ? R("p", { class: "quota-muted" }, "最近检查：" + n.last_checked_at) : null,
-			n?.last_sent_at ? R("p", { class: "quota-muted" }, "最近发送尝试：" + n.last_sent_at) : null
+			n?.detail_code || n?.status === "blocked" ? R(Kv, { tone: "warning" }, () => ly(n?.detail_code)) : null,
+			n?.last_checked_at ? R("p", { class: "quota-muted" }, ["最近检查：", R("time", { datetime: n.last_checked_at }, sy(n.last_checked_at, f.locale))]) : null,
+			n?.last_sent_at ? R("p", { class: "quota-muted" }, ["最近发送尝试：", R("time", { datetime: n.last_sent_at }, sy(n.last_sent_at, f.locale))]) : null
 		]);
 	}, ne = (e, t) => {
 		let n = E(e.id), r = !!n && [
@@ -12806,20 +12889,23 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 			"response_mapping",
 			"endpoint",
 			"region"
-		].every((t) => JSON.stringify(e[t]) === JSON.stringify(n[t])) && e.balance_alert?.metric === n.balance_alert?.metric, i = r ? f.units?.accounts.find((t) => t.account_id === e.id) : void 0, a = i?.choices.filter((t) => t.metric === (e.balance_alert?.metric || ty(e))) || [], o = !!i && (["ambiguous", "changed"].includes(i.unit_state) || i.unit_state === "unidentified" && a.length === 1), l = i?.unit || iy(e), u = c.value[e.id] || "", h = a.find((e) => e.id === u), _ = i?.unit_state === "ambiguous" ? "发现多个单位，请选择。" : i?.unit_state === "changed" ? "单位已变化，请重新确认。" : i?.unit_state === "stale" ? "已有单位已过期，请先查询余额。" : null;
+		].every((t) => JSON.stringify(e[t]) === JSON.stringify(n[t])) && e.balance_alert?.metric === n.balance_alert?.metric, i = r ? f.units?.accounts.find((t) => t.account_id === e.id) : void 0, a = i?.choices.filter((t) => t.metric === (e.balance_alert?.metric || ty(e))) || [], o = !!i && (["ambiguous", "changed"].includes(i.unit_state) || i.unit_state === "unidentified" && a.length === 1), l = i?.unit || uy(e), u = c.value[e.id] || "", h = a.find((e) => e.id === u), _ = i?.unit_state === "ambiguous" ? "发现多个单位，请选择。" : i?.unit_state === "changed" ? i.change_reason === "metric_changed" ? "监测项已变化：" + oy(i.binding_metric) + " → " + oy(i.metric) + "。请重新确认单位和阈值。" : i.change_reason === "query_identity_changed" ? "查询账户或接口已变化，请重新确认单位和阈值。" : i.change_reason === "unit_changed" ? "查询单位已变化，请重新确认。" : "监测项或单位已变化，请重新确认。" : i?.unit_state === "stale" ? "查询候选已过期，请重新查询。已确认的单位记录仍保留。" : null, v = m() || f.unitsBusy || !n || !r || d.dirty() || !!f.secret;
 		return R("section", {
 			class: "quota-alert-unit",
 			"aria-label": "预警单位"
 		}, [
-			R("div", { class: "quota-alert-runtime-heading" }, [R("strong", { "data-testid": "alert-unit" }, "单位：" + (l || "待获取")), p(f.unitsBusy ? "读取中…" : "刷新", {
+			R("div", { class: "quota-alert-runtime-heading" }, [R("strong", { "data-testid": "alert-unit" }, "单位：" + (l ? ay(l) : "待获取")), p(f.unitsBusy ? "处理中…" : "读取单位状态", {
 				text: !0,
 				"data-action": "alert-units",
 				disabled: !f.ready || f.busy || f.unitsBusy || !n,
 				onClick: () => void d.refreshUnits()
 			})]),
+			i?.unit_state === "verified" ? R("p", { class: "quota-muted" }, i.choices_state === "expired" ? "单位已验证。查询候选已过期，已确认的单位仍有效。" : "单位已验证。") : null,
 			!l && !_ ? R("p", { class: "quota-muted" }, r ? o ? "请确认查询到的单位。" : "查询余额后自动识别。" : n ? "保存设置后重新识别。" : "保存账户后自动识别。") : null,
-			i?.observed_at ? R("p", { class: "quota-muted" }, "更新于 " + i.observed_at) : null,
+			n && !r ? R("p", { class: "quota-muted" }, e.balance_alert?.metric === n.balance_alert?.metric ? "查询配置已修改，保存后重新识别单位。" : "监测项已改为“" + oy(e.balance_alert?.metric) + "”，保存后重新查询并确认。") : null,
+			i?.observed_at ? R("p", { class: "quota-muted" }, ["单位记录：", R("time", { datetime: i.observed_at }, sy(i.observed_at, f.locale))]) : null,
 			_ ? R(Kv, { tone: "warning" }, () => _) : null,
+			o && !a.length ? R("p", { class: "quota-muted" }, i?.choices_state === "expired" ? "可确认候选已过期，重新查询后再选择。" : "当前没有可确认候选，重新查询后再选择。") : null,
 			f.unitsNotice ? R(Kv, { tone: f.unitsUnknown ? "warning" : "neutral" }, () => f.unitsNotice) : null,
 			o && a.length ? R(qv, {
 				controlId: "field-" + t + "-unit-choice",
@@ -12833,11 +12919,16 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				onChange: (t) => {
 					s.cancel(), c.value[e.id] = t.target.value;
 				}
-			}, [R("option", { value: "" }, "请选择"), ...a.map((e) => R("option", { value: e.id }, e.unit))]), p("确认单位", {
+			}, [R("option", { value: "" }, "请选择"), ...a.map((e) => R("option", { value: e.id }, ay(e.unit)))]), p("确认单位", {
 				"data-action": "alert-bind-unit",
 				disabled: m() || f.unitsBusy || f.unitsUnknown || d.dirty() || !h,
-				onClick: () => void g("maintenance", "确认单位 " + h?.unit + "？", e.balance_alert?.threshold !== null && e.balance_alert?.threshold !== void 0 ? "改用 " + h?.unit + "，按阈值 " + e.balance_alert.threshold + " 比较？" : "改用 " + h?.unit + "？阈值尚未设置。", "确认单位", () => d.bindUnit(e.id, u))
-			})]) }) : null
+				onClick: () => void g("maintenance", "确认单位 " + ay(h?.unit) + "？", e.balance_alert?.threshold !== null && e.balance_alert?.threshold !== void 0 ? "改用 " + ay(h?.unit) + "，按阈值 " + e.balance_alert.threshold + " 比较？" : "改用 " + ay(h?.unit) + "？阈值尚未设置。", "确认单位", () => d.bindUnit(e.id, u))
+			})]) }) : null,
+			n ? R("div", { class: "quota-unit-query" }, [p("重新查询单位", {
+				"data-action": "alert-refresh-units",
+				disabled: v,
+				onClick: () => void d.queryUnits(e.id)
+			}), R("p", { class: "quota-muted" }, d.dirty() ? "保存设置后可重新查询单位。" : f.secret ? "完成或取消凭据输入后可重新查询。" : "请求此账户的余额接口，获取新候选；不发送预警。")]) : null
 		]);
 	}, re = (e, t) => {
 		let n = {
@@ -12863,7 +12954,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				s(t, t.includes("threshold") && o === "" ? null : o);
 				for (let e of ["threshold", "recovery_threshold"]) delete a.value[r + e];
 				try {
-					my({
+					by({
 						...n,
 						[t]: t.includes("threshold") && o === "" ? null : o
 					}, e);
@@ -12876,7 +12967,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		let d = u ? l : o.value[r] ?? 15, h = (e) => {
 			let t = /^[0-9]+$/.test(e) ? Number(e) : NaN;
 			Number.isInteger(t) && t >= 1 && t <= 4320 ? (s("check_interval_minutes", t), delete a.value[r + "check_interval_minutes"]) : (s("check_interval_minutes", e), a.value[r + "check_interval_minutes"] = "请输入 1 至 4320 的整数分钟；不会自动截断或夹值。");
-		}, g = gy({
+		}, g = Sy({
 			...f.draft,
 			providers: [e]
 		});
@@ -12925,19 +13016,23 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					onInput: (e) => h(e.target.value)
 				}),
 				R("span", "分钟")
-			]), R("div", { class: "quota-alert-quick-values" }, [
+			]), R("div", {
+				class: "quota-alert-quick-values",
+				role: "group",
+				"aria-label": "检查间隔快捷设置"
+			}, [R("span", { class: "quota-muted" }, "快捷设置："), ...[
 				1,
 				15,
 				60,
 				1440,
 				4320
-			].map((e) => p(String(e), {
+			].map((e) => p(e >= 1440 ? `${e / 1440} 天` : `${e} 分钟`, {
 				size: "small",
-				text: !0,
 				"aria-label": `设为 ${e} 分钟`,
+				"aria-pressed": l === e,
 				disabled: i,
 				onClick: () => h(String(e))
-			})))]) }),
+			}))])]) }),
 			R(Jv, {}, () => [
 				R(qv, {
 					controlId: r + "metric",
@@ -12949,10 +13044,10 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					value: n.metric || ty(e),
 					disabled: i,
 					onChange: (e) => s("metric", e.target.value)
-				}, ny(e).map((e) => R("option", { value: e }, ry[e] + " · " + e))) }),
+				}, ny(e).map((e) => R("option", { value: e }, oy(e)))) }),
 				ne(e, t),
-				c("threshold", "触发阈值", "余额低于或等于此值时提醒。", "请输入明确阈值"),
-				c("recovery_threshold", "恢复阈值（可选）", "留空自动设置，须高于触发阈值。", "自动滞回阈值"),
+				c("threshold", "触发阈值", "余额低于或等于此值时提醒。", "填写触发阈值"),
+				c("recovery_threshold", "恢复阈值（可选）", "留空自动设置，须高于触发阈值。", "留空自动设置"),
 				R(qv, {
 					controlId: r + "repeat_minutes",
 					label: "持续低额重复提醒（分钟）",
@@ -12989,14 +13084,14 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		rows: 5,
 		spellcheck: !1,
 		autocomplete: "off",
-		value: i.value["field-global-balance_alert_targets"] ?? uy(f.draft?.balance_alert_targets),
+		value: i.value["field-global-balance_alert_targets"] ?? gy(f.draft?.balance_alert_targets),
 		placeholder: "Synthetic-QQ:FriendMessage:10001\nSynthetic-QQ:GroupMessage:10002 @10003 @10004",
 		disabled: m(),
 		onInput: (e) => {
 			let t = e.target.value;
 			i.value["field-global-balance_alert_targets"] = t;
 			try {
-				C(["balance_alert_targets"], ly(t), null), delete a.value["field-global-balance_alert_targets"];
+				C(["balance_alert_targets"], hy(t), null), delete a.value["field-global-balance_alert_targets"];
 			} catch (e) {
 				C(["balance_alert_targets"], t, null), a.value["field-global-balance_alert_targets"] = e.message;
 			}
@@ -13014,14 +13109,14 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		class: "ui-control",
 		rows: 3,
 		value: i.value["field-global-balance_alert_admin_qq_ids"] ?? (Array.isArray(f.draft?.balance_alert_admin_qq_ids) ? f.draft?.balance_alert_admin_qq_ids.join("\n") : ""),
-		placeholder: "每行一个 QQ 号；留空仍允许 AstrBot 内置管理员",
+		placeholder: "每行一个 QQ 号",
 		disabled: m(),
 		onInput: (e) => {
 			let t = e.target.value;
 			i.value["field-global-balance_alert_admin_qq_ids"] = t;
 			try {
 				if (/[\p{Cc}\p{Cf}\p{Cs}]/u.test(t.replace(/[\r\n\t]/g, ""))) throw Error("不允许控制字符或不可见字符。");
-				let e = sy(t.split(/\s+/u).filter(Boolean));
+				let e = py(t.split(/\s+/u).filter(Boolean));
 				C(["balance_alert_admin_qq_ids"], e, null), delete a.value["field-global-balance_alert_admin_qq_ids"];
 			} catch (e) {
 				C(["balance_alert_admin_qq_ids"], t, null), a.value["field-global-balance_alert_admin_qq_ids"] = e.message;
@@ -13042,7 +13137,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		onChange: (e) => C(["balance_alert_llm", "enabled"], e.target.checked, null)
 	}), R("span", f.draft?.balance_alert_llm?.enabled === !1 ? "已关闭" : "已开启")]) })] });
 	function se(t, n) {
-		let r = Ey(t).items, i = !!E(t.id), a = t.type === "openai_compatible", o = r.endpoint?.items || yy.provider_account.items.endpoint.items, s = yy.provider_account.items.response_mapping.items;
+		let r = My(t).items, i = !!E(t.id), a = t.type === "openai_compatible", o = r.endpoint?.items || Ty.provider_account.items.endpoint.items, s = Ty.provider_account.items.response_mapping.items;
 		return R(Vv, {}, {
 			default: () => [
 				R(Wv, {
@@ -13056,17 +13151,17 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 					T("display_name", r.display_name, n),
 					T("aliases", r.aliases, n, void 0, { hint: "命令与自然语言使用这些别名。每行一项，避免与其他账户重名。" }),
 					T("enabled", r.enabled, n),
-					R("div", { class: "quota-provider-readonly" }, [R("span", "供应商"), R("strong", yy[t.type]?.name || t.type)]),
+					R("div", { class: "quota-provider-readonly" }, [R("span", "供应商"), R("strong", Ty[t.type]?.name || t.type)]),
 					T("timeout_seconds", r.timeout_seconds, n),
 					T("cache_ttl_seconds", r.cache_ttl_seconds, n)
 				]) }),
 				R(Wv, {
 					title: "供应商设置",
 					number: "02"
-				}, { default: () => [R(Kv, {}, () => t.type === "deepseek" ? "DeepSeek 官方账户余额，查询地址与解析规则已内置。" : t.type === "alibaba_bailian" ? "阿里云 BSS：现金余额、可用额度和信用额度。" : t.type === "meinianda" ? "查询 Meinianda 账户站内额度（site_credit）。建议缓存至少 60 秒。" : t.type === "grsai" ? "Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。" : "余额查询使用供应商专属接口，请按其文档配置只读余额接口。"), R(Jv, {}, () => [...r.region ? [T("region", r.region, n)] : [], ...a ? [
-					T("service_profile", yy.openai_compatible.items.service_profile, n),
-					...t.service_profile === "grsai" ? [T("balance_scope", yy.openai_compatible.items.balance_scope, n)] : [],
-					...t.endpoint?.url ? [T("url", yy.provider_account.items.endpoint.items.url, n, ["endpoint", "url"])] : [],
+				}, { default: () => [R(Kv, {}, () => t.type === "deepseek" ? "DeepSeek 官方账户余额，查询地址与解析规则已内置。" : t.type === "alibaba_bailian" ? "阿里云 BSS：现金余额、可用额度和信用额度。" : t.type === "meinianda" ? "查询 Meinianda 账户站内额度。建议缓存至少 60 秒。" : t.type === "grsai" ? "Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。" : "余额查询使用供应商专属接口，请按其文档配置只读余额接口。"), R(Jv, {}, () => [...r.region ? [T("region", r.region, n)] : [], ...a ? [
+					T("service_profile", Ty.openai_compatible.items.service_profile, n),
+					...t.service_profile === "grsai" ? [T("balance_scope", Ty.openai_compatible.items.balance_scope, n)] : [],
+					...t.endpoint?.url ? [T("url", Ty.provider_account.items.endpoint.items.url, n, ["endpoint", "url"])] : [],
 					T("base_url", o.base_url, n, ["endpoint", "base_url"]),
 					T("path", o.path, n, ["endpoint", "path"])
 				] : []])] }),
@@ -13074,7 +13169,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				a ? R(Wv, {
 					title: "高级接口与响应映射",
 					number: "04"
-				}, { default: () => [T("advanced_options", yy.openai_compatible.items.advanced_options, n), t.advanced_options ? R("div", { class: "quota-advanced" }, [
+				}, { default: () => [T("advanced_options", Ty.openai_compatible.items.advanced_options, n), t.advanced_options ? R("div", { class: "quota-advanced" }, [
 					R("h3", "请求协议"),
 					R(Jv, {}, () => [
 						"method",
@@ -13113,7 +13208,7 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				onClick: (t) => {
 					t.preventDefault(), _("accounts", e.id);
 				}
-			}, e.display_name || e.id)]), R("span", { class: "workspace-state" }, e.enabled === !1 ? "已停用" : "已启用")]), R("p", { class: "workspace-module-summary" }, (yy[e.type]?.name || e.type) + " · " + e.id)])]), R("div", { class: "quota-account-meta" }, [R("span", Dy(e).every(({ key: t }) => f.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? "凭据已配置" : "待配置凭据"), p("账户设置", {
+			}, e.display_name || e.id)]), R("span", { class: "workspace-state" }, e.enabled === !1 ? "已停用" : "已启用")]), R("p", { class: "workspace-module-summary" }, (Ty[e.type]?.name || e.type) + " · " + e.id)])]), R("div", { class: "quota-account-meta" }, [R("span", Ny(e).every(({ key: t }) => f.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? "凭据已配置" : "待配置凭据"), p("账户设置", {
 				text: !0,
 				disabled: !f.ready,
 				onClick: () => void _("accounts", e.id)
@@ -13131,13 +13226,13 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 				value: r.value,
 				disabled: m(),
 				onChange: (e) => r.value = e.target.value
-			}, by.map((e) => R("option", { value: e }, yy[e].name))),
+			}, Ey.map((e) => R("option", { value: e }, Ty[e].name))),
 			p("添加账户", {
 				type: "primary",
 				disabled: m() || d.dirty(),
 				onClick: () => {
 					if (d.dirty()) return;
-					let t = Ty(r.value), n = 1;
+					let t = jy(r.value), n = 1;
 					for (; e.some((e) => e.id === r.value + "-" + n);) n++;
 					t.id = r.value + "-" + n, d.navigate("accounts", t.id), d.edit((e) => e.providers.push(t));
 				}
@@ -13146,10 +13241,10 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		])]);
 	}, le = () => R(Vv, {}, {
 		default: () => [
-			...Sy.map((e) => R(Wv, {
+			...Oy.map((e) => R(Wv, {
 				title: e.title,
 				number: e.number
-			}, { default: () => R(Jv, {}, () => e.keys.map((e) => T(e, xy[e], null))) })),
+			}, { default: () => R(Jv, {}, () => e.keys.map((e) => T(e, Dy[e], null))) })),
 			ie(),
 			ae(),
 			oe(),
@@ -13296,5 +13391,5 @@ var Gy = Po(/* @__PURE__ */ P({ setup() {
 		]) });
 	};
 } }));
-Gy.mount("#app"), window.addEventListener("pagehide", () => Gy.unmount(), { once: !0 });
+Zy.mount("#app"), window.addEventListener("pagehide", () => Zy.unmount(), { once: !0 });
 //#endregion

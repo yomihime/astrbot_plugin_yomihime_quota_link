@@ -12,6 +12,31 @@ from test_entrypoint import entrypoint as _entrypoint_fixture
 entrypoint = _entrypoint_fixture
 
 
+@pytest.mark.parametrize(
+    "state", [True, False, None, 1, "true", RuntimeError("private")]
+)
+def test_session_callback_preserves_disabled_vs_unavailable(
+    entrypoint, monkeypatch, state
+):
+    module = importlib.import_module(entrypoint.__module__)
+
+    async def session_enabled(umo):
+        assert umo == "synthetic:GroupMessage:123"
+        if isinstance(state, Exception):
+            raise state
+        return state
+
+    monkeypatch.setitem(
+        sys.modules,
+        "astrbot.core.star.session_llm_manager",
+        SimpleNamespace(
+            SessionServiceManager=SimpleNamespace(is_session_enabled=session_enabled)
+        ),
+    )
+    actual = asyncio.run(module._alert_session_enabled("synthetic:GroupMessage:123"))
+    assert actual is (state if type(state) is bool else None)
+
+
 async def collect(iterator):
     return [item async for item in iterator]
 

@@ -43,7 +43,12 @@ def test_encrypted_roundtrip_and_restart(tmp_path, store):
     for path in tmp_path.rglob("*"):
         if path.is_file():
             assert secret not in path.read_bytes()
-            assert path.stat().st_mode & 0o077 == 0
+            if os.name == "nt":
+                from windows_storage_helpers import assert_private_file
+
+                assert_private_file(path, tmp_path)
+            else:
+                assert path.stat().st_mode & 0o077 == 0
     assert "sample-credential" not in repr(store)
     assert store.delete(reference) is True
     assert store.delete(reference) is False
@@ -190,11 +195,10 @@ def test_hostile_refs_rejected_without_filesystem_access(store, reference):
             operation(reference)
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX synthetic mode and link checks")
 @pytest.mark.parametrize(
     "target", ["root", "keys", "secrets", "key", "blob", "selector", "config"]
 )
-def test_symlink_targets_are_not_followed(tmp_path, target):
+def test_symlink_targets_are_not_followed(tmp_path, target, unsafe_link):
     safe = tmp_path / "private"
     safe.mkdir(mode=0o700)
     store = SecretStore(safe)
@@ -212,7 +216,7 @@ def test_symlink_targets_are_not_followed(tmp_path, target):
     original = mapping[target]
     moved = tmp_path / "outside"
     original.rename(moved)
-    original.symlink_to(moved, target_is_directory=moved.is_dir())
+    unsafe_link(original, moved, directory=moved.is_dir())
     operation = (
         store.read_config if target == "config" else lambda: store.get(reference)
     )
@@ -250,7 +254,59 @@ def test_unsafe_permissions_rejected_without_repair(tmp_path, store, target, mod
     assert path.stat().st_mode & 0o777 == mode
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX synthetic link and FIFO checks")
+@pytest.mark.skipif(os.name != "nt", reason="native Windows ACL observation")
+@pytest.mark.parametrize("target", ["root", "keys", "secrets", "key", "blob"])
+def test_windows_unsafe_acl_rejected_without_repair(
+    tmp_path, store, target, monkeypatch
+):
+    from quota_link.security.windows import managed_key_io
+    from quota_link.security.windows.maintenance import _Ace
+
+    reference = store.put(b"credential")
+    path = {
+        "root": tmp_path,
+        "keys": tmp_path / "keys",
+        "secrets": tmp_path / "secrets",
+        "key": tmp_path / "keys" / "master.key",
+        "blob": tmp_path / "secrets" / f"{reference}.blob",
+    }[target]
+    before = {
+        str(item): item.read_bytes() for item in tmp_path.rglob("*") if item.is_file()
+    }
+    native_type = managed_key_io._SecurityNative
+    observed = []
+    suffix = "\\" + str(path.relative_to(path.anchor)).casefold()
+
+    def native():
+        result = native_type()
+        descriptor = result.descriptor
+
+        def unsafe_descriptor(handle):
+            owner, aces = descriptor(handle)
+            if result.final_path(handle).casefold().endswith(suffix):
+                observed.append(True)
+                # A real handle and real descriptor with one synthetic broad
+                # allow ACE. No filesystem permissions are ever changed.
+                return owner, (
+                    *aces,
+                    _Ace(0, 0, 0x001F01FF, result._fixed_sid("S-1-1-0")),
+                )
+            return owner, aces
+
+        result.descriptor = unsafe_descriptor
+        return result
+
+    monkeypatch.setattr(managed_key_io, "_SecurityNative", native)
+    with pytest.raises(SecretStoreUnavailable):
+        store.get(reference)
+    assert observed
+    assert {
+        str(item): item.read_bytes() for item in tmp_path.rglob("*") if item.is_file()
+    } == before
+    monkeypatch.setattr(managed_key_io, "_SecurityNative", native_type)
+    assert store.get(reference) == b"credential"
+
+
 @pytest.mark.parametrize("target", ["key", "blob"])
 def test_hardlinks_rejected(tmp_path, store, target):
     reference = store.put(b"credential")
@@ -369,7 +425,16 @@ def test_partial_write_does_not_return_ref_or_expose_plaintext(
         original(handle, value[:4])
         raise OSError("synthetic disk failure")
 
-    monkeypatch.setattr(os, "write", partial_then_fail)
+    if os.name == "nt":
+        from windows_storage_helpers import patch_native
+
+        def partial_native(original, handle, buffer, length, written, overlapped):
+            assert original(handle, buffer, 4, written, overlapped)
+            return False
+
+        patch_native(monkeypatch, WriteFile=partial_native)
+    else:
+        monkeypatch.setattr(os, "write", partial_then_fail)
     with pytest.raises(SecretStoreUnavailable):
         store.put(b"unique-sensitive-plaintext")
     candidates = list((tmp_path / "secrets").iterdir())
@@ -385,7 +450,12 @@ def test_config_replace_failure_preserves_previous_commit(tmp_path, store, monke
     def deny_replace(*args, **kwargs):
         raise OSError("synthetic disk failure")
 
-    monkeypatch.setattr(os, "replace", deny_replace)
+    if os.name == "nt":
+        from windows_storage_helpers import patch_native
+
+        patch_native(monkeypatch, MoveFileExW=lambda *_: False)
+    else:
+        monkeypatch.setattr(os, "replace", deny_replace)
     with pytest.raises(SecretStoreUnavailable):
         store.write_config({"revision": 2})
     assert store.read_config() == {"revision": 1}
@@ -402,7 +472,12 @@ def test_failed_master_key_flush_never_publishes_selector(tmp_path, store, monke
             raise OSError("synthetic flush failure")
         original(handle)
 
-    monkeypatch.setattr(os, "fsync", fail_file_flush)
+    if os.name == "nt":
+        from windows_storage_helpers import patch_native
+
+        restore = patch_native(monkeypatch, FlushFileBuffers=lambda *_: False)
+    else:
+        monkeypatch.setattr(os, "fsync", fail_file_flush)
     with pytest.raises(SecretStoreUnavailable):
         store.put(b"credential")
     assert (tmp_path / "keys" / "master.key").exists()
@@ -413,7 +488,10 @@ def test_failed_master_key_flush_never_publishes_selector(tmp_path, store, monke
     with pytest.raises(SecretStoreUnavailable):
         SecretStore(tmp_path).put(b"credential")
     assert not (tmp_path / "keys" / "selection.json").exists()
-    monkeypatch.setattr(os, "fsync", original)
+    if os.name == "nt":
+        restore()
+    else:
+        monkeypatch.setattr(os, "fsync", original)
     reopened = SecretStore(tmp_path)
     reference = reopened.put(b"credential")
     assert reopened.get(reference) == b"credential"
@@ -470,7 +548,16 @@ def test_final_authorization_denial_preserves_config_and_exception(
         events.append("replace")
         return original_replace(*args, **kwargs)
 
-    monkeypatch.setattr(os, "replace", traced_replace)
+    if os.name == "nt":
+        from windows_storage_helpers import patch_native
+
+        def traced_move(original, *args):
+            events.append("replace")
+            return original(*args)
+
+        patch_native(monkeypatch, MoveFileExW=traced_move)
+    else:
+        monkeypatch.setattr(os, "replace", traced_replace)
 
     def deny():
         events.append("authorize")
@@ -493,7 +580,16 @@ def test_final_authorization_immediately_precedes_posix_replace(store, monkeypat
         events.append("replace")
         return original_replace(*args, **kwargs)
 
-    monkeypatch.setattr(os, "replace", traced_replace)
+    if os.name == "nt":
+        from windows_storage_helpers import patch_native
+
+        def traced_move(original, *args):
+            events.append("replace")
+            return original(*args)
+
+        patch_native(monkeypatch, MoveFileExW=traced_move)
+    else:
+        monkeypatch.setattr(os, "replace", traced_replace)
     store.write_config({"revision": 1}, authorize=lambda: events.append("authorize"))
     assert events == ["authorize", "replace"]
     assert store.read_config() == {"revision": 1}
@@ -505,7 +601,12 @@ def test_failed_initial_publication_leaves_durable_history(
     def deny_replace(*args, **kwargs):
         raise OSError("synthetic failure")
 
-    monkeypatch.setattr(os, "replace", deny_replace)
+    if os.name == "nt":
+        from windows_storage_helpers import patch_native
+
+        patch_native(monkeypatch, MoveFileExW=lambda *_: False)
+    else:
+        monkeypatch.setattr(os, "replace", deny_replace)
     with pytest.raises(SecretStoreUnavailable):
         store.write_config({"revision": 1})
     assert store.read_config() is None

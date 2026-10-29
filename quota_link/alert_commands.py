@@ -12,23 +12,20 @@ import re
 import shlex
 from dataclasses import dataclass
 
+from .alert_cards import (
+    build_alert_admins_card,
+    build_alert_help_card,
+    build_alert_receipt_card,
+    build_alert_status_card,
+    build_alert_targets_card,
+    build_alert_units_card,
+    format_alert_card,
+    format_alert_help,
+)
 from .config_store import ConfigValidation
+from .presentation.bitmap import CardSpec
 
-HELP = """额度预警管理
-/yql alert status
-/yql alert on|off "账户名"
-/yql alert interval "账户名" 15
-/yql alert threshold "账户名" 10 [指标ID]
-/yql alert units "账户名"
-/yql alert bind "账户名" 候选ID
-/yql alert recovery "账户名" 12|auto
-/yql alert repeat "账户名" 0
-/yql alert retry "账户名"
-/yql alert targets list|addhere @123|add UMO @123|remove 目标ID
-/yql alert admins list|add QQ号|remove QQ号
-/yql alert llm on|off
-单位自动获取；确认新单位前请核对阈值。智能提示跟随目标会话。
-"""
+HELP = format_alert_help()
 
 
 def can_manage_alert(event, settings) -> bool:
@@ -91,7 +88,15 @@ def parse_alert_command(argument: str) -> AlertCommand:
         "llm",
     }:
         raise ConfigValidation("未知预警命令；使用 /yql alert help 查看用法。")
-    if operation in {"help", "status"} and words:
+    if operation == "help" and words:
+        if len(words) != 1 or words[0].casefold() not in {
+            "account",
+            "units",
+            "targets",
+        }:
+            raise ConfigValidation("用法：/yql alert help [account|units|targets]。")
+        words[0] = words[0].casefold()
+    if operation == "status" and words:
         raise ConfigValidation("该预警命令不接受附加参数。")
     return AlertCommand(operation, tuple(words))
 
@@ -132,6 +137,22 @@ def _mentions(words):
     return [word[1:] for word in words]
 
 
+@dataclass(frozen=True)
+class AlertCommandResult:
+    """One execution's complete text and optional, already-projected card."""
+
+    text: str
+    card: CardSpec | None = None
+
+    @classmethod
+    def from_card(cls, card: CardSpec) -> AlertCommandResult:
+        return cls(format_alert_card(card), card)
+
+    @classmethod
+    def receipt(cls, text: str, *, private: bool) -> AlertCommandResult:
+        return cls(text, build_alert_receipt_card(text) if private else None)
+
+
 class AlertCommands:
     """One CAS transaction shared with the authenticated web configuration."""
 
@@ -142,6 +163,10 @@ class AlertCommands:
         self._retry = retry
 
     async def execute(self, event, argument: str) -> str:
+        """Compatibility API: render failures must never execute this twice."""
+        return (await self.execute_result(event, argument)).text
+
+    async def execute_result(self, event, argument: str) -> AlertCommandResult:
         def authorize():
             if not can_manage_alert(event, self._settings()):
                 raise PermissionError
@@ -151,10 +176,15 @@ class AlertCommands:
             command = parse_alert_command(argument)
             private = event.is_private_chat() is True
             if command.operation == "help":
+                topic = command.arguments[0] if command.arguments else ""
                 return (
-                    HELP
+                    AlertCommandResult(
+                        format_alert_help(topic), build_alert_help_card(topic)
+                    )
                     if private
-                    else "预警管理：请私聊机器人使用 /yql alert help 查看详细配置用法。"
+                    else AlertCommandResult(
+                        "预警管理：请私聊机器人使用 /yql alert help 查看详细配置用法。"
+                    )
                 )
             if (
                 command.operation in {"status", "targets", "admins", "units"}
@@ -164,7 +194,9 @@ class AlertCommands:
                 )
                 and not private
             ):
-                return "预警详细状态和目标名单仅在私聊显示，请私聊机器人执行此命令。"
+                return AlertCommandResult(
+                    "预警详细状态和目标名单仅在私聊显示，请私聊机器人执行此命令。"
+                )
             dto = await self._dispatch("read", {}, authorize)
             authorize()
             config = copy.deepcopy(dto["config"])
@@ -173,6 +205,13 @@ class AlertCommands:
                 if not args or command.operation == "bind" and len(args) < 2:
                     raise ConfigValidation("请指定账户与候选 ID。")
                 choice = args.pop() if command.operation == "bind" else None
+                refresh = (
+                    command.operation == "units"
+                    and len(args) > 1
+                    and args[-1].casefold() == "refresh"
+                )
+                if refresh:
+                    args.pop()
                 account = _account(config, " ".join(args))
                 if choice is not None:
                     if not re.fullmatch(r"[0-9a-f]{64}", choice):
@@ -187,8 +226,14 @@ class AlertCommands:
                         authorize,
                     )
                     authorize()
-                    return "单位已确认。"
-                data = await self._dispatch("alert-units", {}, authorize)
+                    return AlertCommandResult.receipt("单位已确认。", private=private)
+                data = await self._dispatch(
+                    "alert-refresh-units" if refresh else "alert-units",
+                    {"revision": dto["revision"], "account_id": account["id"]}
+                    if refresh
+                    else {},
+                    authorize,
+                )
                 authorize()
                 row = next(
                     (
@@ -198,44 +243,27 @@ class AlertCommands:
                     ),
                     {},
                 )
-                lines = ["单位：" + (row.get("unit") or "待获取")]
-                lines.extend(
-                    f"{item['id']}  {item['unit']} · {item['metric']}"
-                    for item in row.get("choices", [])
+                return AlertCommandResult.from_card(
+                    build_alert_units_card(account, row, refreshed=refresh)
                 )
-                if not row.get("choices"):
-                    lines.append("查询余额后自动识别。")
-                return "\n".join(lines)
             if command.operation == "status":
-                status = self._status()
-                lines = [
-                    "额度预警："
-                    + ("检查任务已启动" if status["running"] else "检查任务未运行")
-                ]
-                for row in status.get("accounts", []):
-                    lines.append(f"{row['account_id']}：{row['message']}")
-                return "\n".join(lines)
+                return AlertCommandResult.from_card(
+                    build_alert_status_card(config, self._status())
+                )
             if command.operation == "targets" and command.arguments == ("list",):
-                targets = config.get("balance_alert_targets", [])
-                return (
-                    "\n".join(
-                        [
-                            "预警目标：",
-                            *[
-                                f"{target_id(t['umo'])}  {t['umo']}"
-                                + "".join(f" @{qq}" for qq in t["mentions"])
-                                for t in targets
-                            ],
-                        ]
+                return AlertCommandResult.from_card(
+                    build_alert_targets_card(
+                        tuple(
+                            (target_id(t["umo"]), t["umo"], tuple(t["mentions"]))
+                            for t in config.get("balance_alert_targets", [])
+                        )
                     )
-                    if targets
-                    else "尚未配置预警目标。"
                 )
             if command.operation == "admins" and command.arguments == ("list",):
-                return (
-                    "预警 QQ 管理白名单："
-                    + ("、".join(config.get("balance_alert_admin_qq_ids", [])) or "空")
-                    + "；AstrBot 内置管理员也可管理。"
+                return AlertCommandResult.from_card(
+                    build_alert_admins_card(
+                        tuple(config.get("balance_alert_admin_qq_ids", []))
+                    )
                 )
             if command.operation == "retry":
                 if not command.arguments:
@@ -244,26 +272,29 @@ class AlertCommands:
                 authorize()
                 if self._retry is not None:
                     self._retry(account["id"])
-                return "已恢复检查。"
+                return AlertCommandResult.receipt("已恢复检查。", private=private)
             self._mutate(config, command, event)
             authorize()
             await self._dispatch(
                 "update", {"revision": dto["revision"], "config": config}, authorize
             )
             authorize()
-            return (
+            return AlertCommandResult.receipt(
                 "预警配置已保存。"
                 if private
-                else "预警配置已保存。详细状态请私聊查看。"
+                else "预警配置已保存。详细状态请私聊查看。",
+                private=private,
             )
         except PermissionError:
-            return "无权管理额度预警；需要预警 QQ 白名单或 AstrBot 内置管理员权限。"
+            return AlertCommandResult(
+                "无权管理额度预警；需要预警 QQ 白名单或 AstrBot 内置管理员权限。"
+            )
         except ConfigValidation as exc:
             try:
                 private = event.is_private_chat() is True
             except Exception:
                 private = False
-            return (
+            return AlertCommandResult(
                 str(exc)
                 if private
                 else "预警配置未保存；请私聊查看用法或在管理页修正配置。"

@@ -24,6 +24,7 @@ OPERATIONS = (
     "alert-status",
     "alert-units",
     "alert-bind-unit",
+    "alert-refresh-units",
     "read",
     "update",
     "credential-status",
@@ -39,6 +40,7 @@ _MUTATIONS = frozenset(
         "credential-clear",
         "legacy-config-execute",
         "alert-bind-unit",
+        "alert-refresh-units",
     }
 )
 _ERRORS = {
@@ -72,6 +74,8 @@ def _validate_body(operation, body):
         expected = set()
     elif operation == "alert-bind-unit":
         expected = {"revision", "account_id", "choice_id"}
+    elif operation == "alert-refresh-units":
+        expected = {"revision", "account_id"}
     elif operation == "update":
         expected = {"revision", "config"}
     elif operation == "credential-clear":
@@ -92,10 +96,12 @@ def _validate_body(operation, body):
         type(body["revision"]) is not int or not 0 <= body["revision"] <= 2**53 - 1
     ):
         raise ValueError("invalid management revision")
+    if operation in {"alert-bind-unit", "alert-refresh-units"} and (
+        type(body["account_id"]) is not str or not 1 <= len(body["account_id"]) <= 128
+    ):
+        raise ValueError("invalid unit account")
     if operation == "alert-bind-unit" and (
-        type(body["account_id"]) is not str
-        or not 1 <= len(body["account_id"]) <= 128
-        or type(body["choice_id"]) is not str
+        type(body["choice_id"]) is not str
         or len(body["choice_id"]) != 64
         or any(c not in "0123456789abcdef" for c in body["choice_id"])
     ):
