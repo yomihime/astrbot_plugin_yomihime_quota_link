@@ -51,6 +51,7 @@ font-loading and card-rendering path. No real account values enter the samples.
 PNG derivatives, hashes, provenance, and applicable upstream license texts.
 The runtime selects only fixed provider keys, verifies each PNG hash, and draws
 a 40px icon beside the account heading. It never parses SVGs or downloads logos.
+The newer balance and quota presets share the bundled generic API icon.
 Missing or invalid icons preserve the original accent and complete card text.
 The shared bounded renderer accepts PNG bytes only, limits size/dimensions/frame
 count, and does not access file paths or URLs.

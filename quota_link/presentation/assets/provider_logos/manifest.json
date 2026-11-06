@@ -64,9 +64,9 @@
     {
       "provider_type": "openai_compatible",
       "file": "svg/openai_compatible.svg",
-      "name": "OpenAI 兼容服务",
+      "name": "通用接口",
       "classification": "通用接口图标",
-      "note": "只表示兼容协议，不暗示运营方",
+      "note": "用于兼容服务与新增余额和额度预设，不表示品牌或协议兼容性",
       "sha256": "82582e881c77d3fec180812c7421523947e10da0d707398557992c071766847f",
       "png_file": "png-128/openai_compatible.png",
       "png_sha256": "7850cf836a4602ae51a50e4ca32970fcd1608f923002a0a615d253bc423ed9f8",

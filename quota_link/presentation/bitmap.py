@@ -282,7 +282,7 @@ class _Layout:
             lines.append(_Line(value, box, max(size + 8, box[3] - box[1] + 8)))
 
         # Keep all characters and explicit blank lines, including trailing ones.
-        # Character wrapping also handles unbroken English words and numbers.
+        # Prefer a word boundary, with character wrapping for unbroken tokens.
         for explicit_line in text.split("\n"):
             current = ""
             box = self.measure("", size)
@@ -292,6 +292,17 @@ class _Layout:
                 if candidate_box[2] - candidate_box[0] > width:
                     if not current:
                         raise BitmapUnavailable("layout_overflow")
+                    boundary = current.rfind(" ") + 1
+                    if 0 < boundary < len(current) and current[:boundary].strip():
+                        suffix = candidate[boundary:]
+                        suffix_box = self.measure(suffix, size)
+                        if suffix_box[2] - suffix_box[0] <= width:
+                            emit(
+                                current[:boundary],
+                                self.measure(current[:boundary], size),
+                            )
+                            current, box = suffix, suffix_box
+                            continue
                     emit(current, box)
                     current = char
                     box = self.measure(char, size)

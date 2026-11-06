@@ -1,4 +1,4 @@
-"""Bundled, hash-verified provider logos; no network or SVG runtime parser.
+"""Bundled, hash-verified provider icons; no network or SVG runtime parser.
 
 importlib.resources supports both extracted installations and ZIP imports. The
 fixed provider allowlist is the sole filename selector; raw account values,
@@ -7,6 +7,8 @@ URLs and user-supplied paths are never used by command rendering.
 
 from hashlib import sha256
 from importlib.resources import files
+
+from ..models import WALLET_NAMES
 
 LOGO_SHA256 = {
     "deepseek": "22439dedcbbac97acbffd8e952e35203d7670f1d224572300e6a880972af0f03",
@@ -18,8 +20,12 @@ LOGO_SHA256 = {
 
 
 def load_logo(provider: str | None, assets=None) -> bytes | None:
-    """Allowlisted local branding only; missing/unverified assets stay optional."""
-    if type(provider) is not str or provider not in LOGO_SHA256:
+    """Load a verified brand icon or the generic icon for a known preset."""
+    if type(provider) is not str:
+        return None
+    if provider in WALLET_NAMES:
+        provider = "openai_compatible"
+    if provider not in LOGO_SHA256:
         return None
     try:
         root = (

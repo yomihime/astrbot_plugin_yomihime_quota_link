@@ -189,7 +189,26 @@ const App=defineComponent({setup(){
  const accounts=()=>{
   const list=s.draft?.providers||[];const index=s.selected===null?-1:list.findIndex((a:Dict)=>a.id===s.selected),account=list[index];
   if(account)return accountEditor(account,index);
+  const addAccount=()=>{
+   if(controller.dirty())return;
+   const fresh=newAccount(newType.value,s.locale);
+   let count=1;
+   while(list.some((a:Dict)=>a.id===newType.value+'-'+count))count++;
+   fresh.id=newType.value+'-'+count;
+   controller.navigate('accounts',fresh.id);
+   controller.edit((config:Dict)=>config.providers.push(fresh));
+  };
   return h('section',{class:'workspace-index quota-directory'},[
+   h('aside',{class:'workspace-aside','aria-label':t('web.account.add_query')},[
+    h('h2',{class:'shell-eyebrow'},t('web.account.new')),
+    h('label',{for:'new-provider'},t('web.account.provider')),
+    h('select',{
+     id:'new-provider',class:'ui-control',value:newType.value,disabled:ordinaryDisabled(),
+     onChange:(event:Event)=>newType.value=(event.target as HTMLSelectElement).value,
+    },providerOptions.map(type=>h('option',{value:type},providerName(type,s.locale)))),
+    button(t('web.account.add'),{type:'primary',disabled:ordinaryDisabled()||controller.dirty(),onClick:addAccount}),
+    h('p',{class:'workspace-scope-note'},t('web.account.provider_scope')),
+   ]),
    h('div',{class:'workspace-catalog'},[
     h('div',{class:'workspace-index-heading'},[h('h2',{class:'shell-eyebrow'},t('web.account.list')),h('span',{class:'workspace-count'},t('web.account.count',{count:list.length}))]),
     !list.length?h('div',{class:'shell-empty'},[h('h2',t('web.account.empty')),h('p',t('web.account.empty_hint'))]):null,
@@ -199,7 +218,6 @@ const App=defineComponent({setup(){
     ]))),
     controller.dirty()?saveActions():null,
    ]),
-   h('aside',{class:'workspace-aside','aria-label':t('web.account.add_query')},[h('h2',{class:'shell-eyebrow'},t('web.account.new')),h('label',{for:'new-provider'},t('web.account.provider')),h('select',{id:'new-provider',class:'ui-control',value:newType.value,disabled:ordinaryDisabled(),onChange:(e:Event)=>newType.value=(e.target as HTMLSelectElement).value},providerOptions.map(type=>h('option',{value:type},providerName(type,s.locale)))),button(t('web.account.add'),{type:'primary',disabled:ordinaryDisabled()||controller.dirty(),onClick:()=>{if(controller.dirty())return;const fresh=newAccount(newType.value,s.locale);let count=1;while(list.some((a:Dict)=>a.id===newType.value+'-'+count))count++;fresh.id=newType.value+'-'+count;controller.navigate('accounts',fresh.id);controller.edit((config:Dict)=>config.providers.push(fresh));}}),h('p',{class:'workspace-scope-note'},t('web.account.provider_scope'))]),
   ]);
  };
  const globalSettings=()=>h(SettingsLayout,{}, {default:()=>[

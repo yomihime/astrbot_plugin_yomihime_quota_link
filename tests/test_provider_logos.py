@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from examples.provider_logo_preview.render import cases
+from quota_link.models import WALLET_NAMES
 from quota_link.presentation.bitmap import (
     SECTION_ICON_SIZE,
     BitmapBounds,
@@ -20,6 +21,14 @@ from quota_link.presentation.bitmap import (
 )
 from quota_link.presentation.font import CardFontProvider
 from quota_link.presentation.provider_logos import LOGO_SHA256, load_logo
+
+
+def test_new_provider_presets_share_the_verified_generic_api_icon():
+    generic = load_logo("openai_compatible")
+    assert generic is not None
+    for provider in WALLET_NAMES:
+        assert load_logo(provider.value) == generic
+    assert load_logo("unknown_provider") is None
 
 
 @pytest.fixture
@@ -98,6 +107,13 @@ def test_long_heading_with_logo_wraps_completely_above_values(font):
         value, font_provider=font, section_icons=(load_logo("meinianda"),)
     )
     assert content.height <= BitmapBounds().max_height
+
+
+def test_long_english_heading_prefers_word_boundaries(font):
+    layout = _Layout(font, BitmapBounds(), frozenset())
+    left, _, right, _ = layout.measure("Fixture account na", 28)
+    lines = layout.wrap("Fixture account name", 28, right - left)
+    assert [line.text for line in lines] == ["Fixture account ", "name"]
 
 
 @pytest.mark.parametrize("case", cases(), ids=lambda value: value[0])

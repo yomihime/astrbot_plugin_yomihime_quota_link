@@ -14563,27 +14563,7 @@ var Vb = Go(/* @__PURE__ */ _r({ setup() {
 	}
 	let fe = () => {
 		let e = h.draft?.providers || [], t = h.selected === null ? -1 : e.findIndex((e) => e.id === h.selected), n = e[t];
-		return n ? de(n, t) : z("section", { class: "workspace-index quota-directory" }, [z("div", { class: "workspace-catalog" }, [
-			z("div", { class: "workspace-index-heading" }, [z("h2", { class: "shell-eyebrow" }, g("web.account.list")), z("span", { class: "workspace-count" }, g("web.account.count", { count: e.length }))]),
-			e.length ? null : z("div", { class: "shell-empty" }, [z("h2", g("web.account.empty")), z("p", g("web.account.empty_hint"))]),
-			z("div", { class: "workspace-package-grid" }, e.map((e) => z("article", {
-				class: "workspace-module",
-				key: e.id
-			}, [z("div", { class: "workspace-module-heading" }, [z("span", {
-				class: "workspace-emblem",
-				"aria-hidden": "true"
-			}, "◈"), z("div", [z("div", { class: "workspace-module-title" }, [z("h2", [z("a", {
-				href: "#/accounts/" + encodeURIComponent(e.id),
-				onClick: (t) => {
-					t.preventDefault(), w("accounts", e.id);
-				}
-			}, e.display_name || e.id)]), z("span", { class: "workspace-state" }, e.enabled === !1 ? g("web.account.disabled") : g("web.account.enabled"))]), z("p", { class: "workspace-module-summary" }, gb(e.type, h.locale) + " · " + e.id)])]), z("div", { class: "quota-account-meta" }, [z("span", Cb(e).every(({ key: t }) => h.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? g("web.account.credentials_configured") : g("web.account.credentials_pending")), b(g("web.account.settings"), {
-				text: !0,
-				disabled: !h.ready,
-				onClick: () => void w("accounts", e.id)
-			})])]))),
-			m.dirty() ? ne() : null
-		]), z("aside", {
+		return n ? de(n, t) : z("section", { class: "workspace-index quota-directory" }, [z("aside", {
 			class: "workspace-aside",
 			"aria-label": g("web.account.add_query")
 		}, [
@@ -14607,6 +14587,26 @@ var Vb = Go(/* @__PURE__ */ _r({ setup() {
 				}
 			}),
 			z("p", { class: "workspace-scope-note" }, g("web.account.provider_scope"))
+		]), z("div", { class: "workspace-catalog" }, [
+			z("div", { class: "workspace-index-heading" }, [z("h2", { class: "shell-eyebrow" }, g("web.account.list")), z("span", { class: "workspace-count" }, g("web.account.count", { count: e.length }))]),
+			e.length ? null : z("div", { class: "shell-empty" }, [z("h2", g("web.account.empty")), z("p", g("web.account.empty_hint"))]),
+			z("div", { class: "workspace-package-grid" }, e.map((e) => z("article", {
+				class: "workspace-module",
+				key: e.id
+			}, [z("div", { class: "workspace-module-heading" }, [z("span", {
+				class: "workspace-emblem",
+				"aria-hidden": "true"
+			}, "◈"), z("div", [z("div", { class: "workspace-module-title" }, [z("h2", [z("a", {
+				href: "#/accounts/" + encodeURIComponent(e.id),
+				onClick: (t) => {
+					t.preventDefault(), w("accounts", e.id);
+				}
+			}, e.display_name || e.id)]), z("span", { class: "workspace-state" }, e.enabled === !1 ? g("web.account.disabled") : g("web.account.enabled"))]), z("p", { class: "workspace-module-summary" }, gb(e.type, h.locale) + " · " + e.id)])]), z("div", { class: "quota-account-meta" }, [z("span", Cb(e).every(({ key: t }) => h.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? g("web.account.credentials_configured") : g("web.account.credentials_pending")), b(g("web.account.settings"), {
+				text: !0,
+				disabled: !h.ready,
+				onClick: () => void w("accounts", e.id)
+			})])]))),
+			m.dirty() ? ne() : null
 		])]);
 	}, pe = () => z(my, {}, {
 		default: () => [

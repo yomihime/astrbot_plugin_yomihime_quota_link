@@ -8,7 +8,7 @@
 | `alibaba_bailian` | `svg/alibaba_bailian.svg` | [Lobe Icons 固定版本](https://github.com/lobehub/lobe-icons/blob/617448c949ee9620abd9cf989a33a544aa0391ef/packages/static-svg/icons/bailian-color.svg)的百炼彩图；保留路径与配色。MIT 许可见 `licenses/Lobe-Icons-LICENSE.txt`。 |
 | `grsai` | `svg/grsai.svg` | 按 [Grsai 官网 PNG](https://grsai.ai/images/logo.png)的三个几何区域矢量整理，保留方向和分割。额外 `grsai-dark.svg` 为反白主题派生；当前暖纸卡片使用深色主版。 |
 | `meinianda` | `svg/meinianda.svg` | 用户提供并确认的女孩头像手工矢量复刻：棕发、蓝灰格纹衣、吸管与美年达饮料盒。艺术字和细节由静态路径近似；使用用户确认版本，旧 New API 图形已替换。 |
-| `openai_compatible` | `svg/openai_compatible.svg` | 本项目的通用 `</>` 接口符号，用于任意 OpenAI 兼容服务。 |
+| `openai_compatible` | `svg/openai_compatible.svg` | 本项目的通用 `</>` 接口符号。兼容服务及新增的余额与额度预设共用此图标。 |
 
 ## 离线派生与验证
 
