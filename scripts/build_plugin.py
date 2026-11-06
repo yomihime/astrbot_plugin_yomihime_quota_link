@@ -90,6 +90,25 @@ PACKAGE_FILES += (
 )
 PACKAGE_FILES += (
     "quota_link/presentation/assets/provider_logos/README.md",
+    "quota_link/presentation/assets/provider_logos/licenses/Pollinations-LICENSE.txt",
+    "quota_link/presentation/assets/provider_logos/png-128/glm_plan_global.png",
+    "quota_link/presentation/assets/provider_logos/svg/glm_plan_global.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/moonshot.png",
+    "quota_link/presentation/assets/provider_logos/svg/moonshot.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/new_api.png",
+    "quota_link/presentation/assets/provider_logos/svg/new_api.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/novita.png",
+    "quota_link/presentation/assets/provider_logos/svg/novita.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/openrouter.png",
+    "quota_link/presentation/assets/provider_logos/svg/openrouter.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/pollinations.png",
+    "quota_link/presentation/assets/provider_logos/svg/pollinations.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/sub2api.png",
+    "quota_link/presentation/assets/provider_logos/svg/sub2api.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/venice.png",
+    "quota_link/presentation/assets/provider_logos/svg/venice.svg",
+    "quota_link/presentation/assets/provider_logos/png-128/vercel_gateway.png",
+    "quota_link/presentation/assets/provider_logos/svg/vercel_gateway.svg",
     "quota_link/presentation/assets/provider_logos/licenses/DeepSeek-LICENSE-CODE.txt",
     "quota_link/presentation/assets/provider_logos/licenses/Lobe-Icons-LICENSE.txt",
     "quota_link/presentation/assets/provider_logos/manifest.json",
@@ -133,6 +152,7 @@ PAGE_FILES = (
 DOC_FILES = (
     "docs/SECURITY.md",
     "docs/PROVIDER-SOURCES.md",
+    "docs/PROVIDER-LOGOS.md",
     "pages/frontend/PROVENANCE.md",
     "pages/frontend/provenance.json",
 )

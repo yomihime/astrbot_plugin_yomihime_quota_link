@@ -87,6 +87,7 @@ class AccountDirectoryEntry:
     balance_kind: str = "custom"
     balance_scope: str = "generic"
     service_profile: str = "generic"
+    region: str = "china"
 
 
 @dataclass(frozen=True, slots=True)
@@ -1563,6 +1564,7 @@ def load_settings(
             account.balance_kind,
             account.balance_scope,
             account.service_profile,
+            account.region,
         )
         for account in accounts
     )

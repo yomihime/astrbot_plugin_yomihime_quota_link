@@ -5,6 +5,7 @@ import {UiProvider,SettingsLayout,Surface} from './ui/shared-components';
 import {PageHeader,SettingsGroup,ActionBar,StatusHint,FormField,FormGrid,type FormFieldSlot} from './ui/components';
 import {createInlineConfirmation} from './confirmation';
 import {createController} from './controller.js';
+import {selectProviderLogo} from './provider-logo-data.js';
 import {globals,globalGroups,globalLabels,fieldLabels,languageField,fieldHint,optionLabel,providerName,providerHelp,isGatewayProvider,templates,providerOptions,newAccount,templateFor,credentialFields,clone} from './config.js';
 import {alertDefaults,defaultMetric,metricOptions,normalizeAlert,normalizeIds,parseTargetsText,formatTargets,alertDraftErrors,fixedAlertUnit,unitLabel as localizedUnit,metricLabel as localizedMetric,localTime,alertDetailLabel} from './alert-config.js';
 import './ui/tokens.css';
@@ -13,6 +14,18 @@ import './quota.css';
 
 declare global {interface Window{AstrBotPluginView:any}}
 type Dict=Record<string,any>;
+const ProviderEmblem=defineComponent({
+ props:{account:{type:Object,required:true}},
+ setup(props){
+  const failedSrc=ref<string|null>(null);
+  return ()=>{
+   const logo=selectProviderLogo(props.account),failed=failedSrc.value===logo.src;
+   return h('span',{class:'workspace-emblem quota-provider-emblem','aria-hidden':'true','data-provider-logo':logo.key,'data-logo-kind':failed?'load-error':logo.classification},[
+    failed?h('span',{class:'quota-provider-emblem-fallback'},'API'):h('img',{key:logo.src,src:logo.src,alt:'',width:32,height:32,draggable:false,onError:()=>{failedSrc.value=logo.src;}}),
+   ]);
+  };
+ },
+});
 const App=defineComponent({setup(){
  const tick=ref(0),root=ref<HTMLElement|null>(null),main=ref<HTMLElement|null>(null),newType=ref('deepseek'),raw=ref<Record<string,string>>({}),errors=ref<Record<string,unknown>>({}),sliderValues=ref<Record<string,number>>({});
  const confirmation=createInlineConfirmation(document,()=>t('web.common.cancel')),unitChoices=ref<Record<string,string>>(Object.create(null));let lastDraft:unknown,lastUnits:unknown;
@@ -213,7 +226,7 @@ const App=defineComponent({setup(){
     h('div',{class:'workspace-index-heading'},[h('h2',{class:'shell-eyebrow'},t('web.account.list')),h('span',{class:'workspace-count'},t('web.account.count',{count:list.length}))]),
     !list.length?h('div',{class:'shell-empty'},[h('h2',t('web.account.empty')),h('p',t('web.account.empty_hint'))]):null,
     h('div',{class:'workspace-package-grid'},list.map((a:Dict)=>h('article',{class:'workspace-module',key:a.id},[
-     h('div',{class:'workspace-module-heading'},[h('span',{class:'workspace-emblem','aria-hidden':'true'},'◈'),h('div',[h('div',{class:'workspace-module-title'},[h('h2',[h('a',{href:'#/accounts/'+encodeURIComponent(a.id),onClick:(e:Event)=>{e.preventDefault();void navigation('accounts',a.id);}},a.display_name||a.id)]),h('span',{class:'workspace-state'},a.enabled!==false?t('web.account.enabled'):t('web.account.disabled'))]),h('p',{class:'workspace-module-summary'},providerName(a.type,s.locale)+' · '+a.id)])]),
+     h('div',{class:'workspace-module-heading'},[h(ProviderEmblem,{account:a}),h('div',[h('div',{class:'workspace-module-title'},[h('h2',[h('a',{href:'#/accounts/'+encodeURIComponent(a.id),onClick:(e:Event)=>{e.preventDefault();void navigation('accounts',a.id);}},a.display_name||a.id)]),h('span',{class:'workspace-state'},a.enabled!==false?t('web.account.enabled'):t('web.account.disabled'))]),h('p',{class:'workspace-module-summary'},providerName(a.type,s.locale)+' · '+a.id)])]),
      h('div',{class:'quota-account-meta'},[h('span',credentialFields(a).every(({key}:Dict)=>s.snapshot?.credentials[a.id]?.[key]?.configured||key==='security_token')?t('web.account.credentials_configured'):t('web.account.credentials_pending')),button(t('web.account.settings'),{text:true,disabled:!s.ready,onClick:()=>void navigation('accounts',a.id)})]),
     ]))),
     controller.dirty()?saveActions():null,

@@ -1,6 +1,6 @@
 {
   "repo_commit": "74cfdb1be88ae7f4dda1dbf24e47c7311c2b6471",
-  "date_utc": "2026-10-27",
+  "date_utc": "2026-11-06",
   "assets": [
     {
       "provider_type": "deepseek",
@@ -14,7 +14,8 @@
       "png_size": [
         128,
         128
-      ]
+      ],
+      "checked_date_utc": "2026-11-06"
     },
     {
       "provider_type": "alibaba_bailian",
@@ -28,7 +29,8 @@
       "png_size": [
         128,
         128
-      ]
+      ],
+      "checked_date_utc": "2026-11-06"
     },
     {
       "provider_type": "grsai",
@@ -45,7 +47,8 @@
       "png_size": [
         128,
         128
-      ]
+      ],
+      "checked_date_utc": "2026-11-06"
     },
     {
       "provider_type": "meinianda",
@@ -59,24 +62,188 @@
       "png_size": [
         128,
         128
-      ]
+      ],
+      "checked_date_utc": "2026-11-06"
     },
     {
       "provider_type": "openai_compatible",
       "file": "svg/openai_compatible.svg",
       "name": "通用接口",
       "classification": "通用接口图标",
-      "note": "用于兼容服务与新增余额和额度预设，不表示品牌或协议兼容性",
+      "note": "Locally authored generic interface symbol. Used only for generic, unknown or explicitly unresolved brand entries; never certified as a provider logo.",
       "sha256": "82582e881c77d3fec180812c7421523947e10da0d707398557992c071766847f",
       "png_file": "png-128/openai_compatible.png",
       "png_sha256": "7850cf836a4602ae51a50e4ca32970fcd1608f923002a0a615d253bc423ed9f8",
       "png_size": [
         128,
         128
-      ]
+      ],
+      "checked_date_utc": "2026-11-06"
+    },
+    {
+      "provider_type": "moonshot",
+      "file": "svg/moonshot.svg",
+      "name": "moonshot",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/moonshot.svg",
+      "source_sha256": "435f41b74e6a87639b6bf860e9628f20cbe7d6229bece412d548f4cea3081852",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "e249a2e3d1a723a331ca87c26be2dd08a6acf0e0ffde0b99fa56949c223f343e",
+      "png_file": "png-128/moonshot.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "97fffdb319a648ea069325dbe4db24a17a820eb3c1b8c20d65f496249a834108"
+    },
+    {
+      "provider_type": "openrouter",
+      "file": "svg/openrouter.svg",
+      "name": "openrouter",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/openrouter.svg",
+      "source_sha256": "ae671cc83de9bd45db97a47ed5e38a4e1bd9f93a12be495ba4b4f8b284026bca",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "0e7672337d29eda3759b70f5ae425c13a047f8cd5be01793344481b0d862099a",
+      "png_file": "png-128/openrouter.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "8e83605318ddb5ded8e83526f724e8bf9b16e026e583e7ac084746a8bd0cbea7"
+    },
+    {
+      "provider_type": "novita",
+      "file": "svg/novita.svg",
+      "name": "novita",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/novita.svg",
+      "source_sha256": "118af2fde0c68b129f85d28154eedd52f9c0456ecc4870823424c81c7f7bc523",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "c7822056af065402f530bceb0a144ca3a4a448446b68c0e11041985b3370d622",
+      "png_file": "png-128/novita.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "457c2d4ae28df42bcd7922ec001e46ecc04b3755938a4ee78ff82243b37ad6a0"
+    },
+    {
+      "provider_type": "venice",
+      "file": "svg/venice.svg",
+      "name": "venice",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/venice.svg",
+      "source_sha256": "2199c468fef49ebadfdabd4280461d700c290daaf9ab03fbf94564f9230538ee",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "11bfb367e7a1bbb4489c82b553f2b133e9d2a0f15d54caadedf624befaf53904",
+      "png_file": "png-128/venice.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "d55ae42571f4ef2013bae2586b350228cc5a744dce10c48abc84892adb47e24a"
+    },
+    {
+      "provider_type": "vercel_gateway",
+      "file": "svg/vercel_gateway.svg",
+      "name": "vercel_gateway",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/vercel.svg",
+      "source_sha256": "4874d52d8b2ce7c309cbd10c424fee123b2c9483e76d76ad0dca41794483eb24",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "7cf9966251abc9788bb08c55c260c8e7d84aca73b356a303e9a8cda6d9d1ea1d",
+      "png_file": "png-128/vercel_gateway.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "18aa691e39c45c7be7c5ca7bc02464a9868df2556634f561354760b7e54a2515"
+    },
+    {
+      "provider_type": "new_api",
+      "file": "svg/new_api.svg",
+      "name": "new_api",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/newapi-color.svg",
+      "source_sha256": "b54496a735b49c4e5d7d1b5f00be9f33e0e4ef3f04a7c4c167dc9209dcae334b",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "1a7b5e36b8953970e0e40f8c09dbb6003ac2690109c58c2cd8c2acaf03432355",
+      "png_file": "png-128/new_api.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "009df4fb78dc13aa81403853c165fd853d48d2c05443f4b3509d8f504d69211f"
+    },
+    {
+      "provider_type": "sub2api",
+      "file": "svg/sub2api.svg",
+      "name": "sub2api",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/sub2api-color.svg",
+      "source_sha256": "9abd0ad54fba3284d0fb8add6f5c2f10a19e2b7825e167a65a84f3f88c9f3762",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "6d774dcb36bde3ac37ce59bc37e18b60a769a715b283cbda4f99a26741930852",
+      "png_file": "png-128/sub2api.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "efbedb2eb582ea62253274e7e2bd18dfb31da6025915dc69080dd5521e895c05"
+    },
+    {
+      "provider_type": "glm_plan_global",
+      "file": "svg/glm_plan_global.svg",
+      "name": "glm_plan_global",
+      "classification": "community_brand",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/lobehub/lobe-icons/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons/zai.svg",
+      "source_sha256": "e748cb5108ce37b116d7a5ba97d37e0ae97eadf6849b0de11afb248e244a01e1",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "662bd0936c4ef05b4de0b7a4ce8307ecee6a785679f4d798b2deb13e1eb7363b",
+      "png_file": "png-128/glm_plan_global.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "fabe7abb1b6980cdf089b039cbe6d763c4dfbd3dc96f602ee62bc8cb78bb941d"
+    },
+    {
+      "provider_type": "pollinations",
+      "file": "svg/pollinations.svg",
+      "name": "pollinations",
+      "classification": "official_repository_asset",
+      "note": "Static fitted geometry, original paths retained; trademark rights reserved.",
+      "source_url": "https://raw.githubusercontent.com/pollinations/pollinations/8f369ab561838b4b8a7a3de4e34b1ef528436b6f/enter.pollinations.ai/frontend/public/brand-logos/pollinations.svg",
+      "source_sha256": "006c8541113d3d41a3b80c03fbfbfde7ec7001f67ea2a5925d797dd012ac1a0e",
+      "license": "MIT (copyright only; no trademark grant)",
+      "checked_date_utc": "2026-11-06",
+      "sha256": "2c0354fa780b5453534f930da8a7983b9b422408bd1c69363ae33289eb6460ed",
+      "png_file": "png-128/pollinations.png",
+      "png_size": [
+        128,
+        128
+      ],
+      "png_sha256": "b51b029c09802819104de2229879011e7d383f9fc63389456d227f3e64a40f8d"
     }
   ],
-  "revision": "v3-user-reference",
+  "revision": "v4-provider-brand-audit",
   "site_identity_check": {
     "grsai": "Official docs list both configured API hosts and /client/openapi/getCredits; page header uses /images/logo.png",
     "meinianda": "Public /api/status: system_name=Meinianda AI; logo empty. Frontend logo fallback=/logo.png."
@@ -90,5 +257,79 @@
     "sha256": "0b9874d95fbd23432374b85c86adb343196925558f4a8e8d5b30ec9f9d77a49a",
     "user_confirmed_carton_text": "美年达"
   },
-  "runtime": "Bundled fixed PNGs, verified offline; SVG sources retained for provenance."
+  "runtime": "Fixed verified PNGs shared by card rendering and embedded frontend data URIs. No runtime SVG parser or remote asset requests.",
+  "providers": {
+    "deepseek": {
+      "asset": "deepseek",
+      "classification": "brand_reference"
+    },
+    "alibaba_bailian": {
+      "asset": "alibaba_bailian",
+      "classification": "brand_reference"
+    },
+    "grsai": {
+      "asset": "grsai",
+      "classification": "brand_reference"
+    },
+    "meinianda": {
+      "asset": "meinianda",
+      "classification": "user_reference"
+    },
+    "openai_compatible": {
+      "asset": "openai_compatible",
+      "classification": "generic_interface"
+    },
+    "moonshot": {
+      "asset": "moonshot",
+      "classification": "brand_reference"
+    },
+    "openrouter": {
+      "asset": "openrouter",
+      "classification": "brand_reference"
+    },
+    "novita": {
+      "asset": "novita",
+      "classification": "brand_reference"
+    },
+    "venice": {
+      "asset": "venice",
+      "classification": "brand_reference"
+    },
+    "vercel_gateway": {
+      "asset": "vercel_gateway",
+      "classification": "brand_reference"
+    },
+    "new_api": {
+      "asset": "new_api",
+      "classification": "gateway_project"
+    },
+    "sub2api": {
+      "asset": "sub2api",
+      "classification": "gateway_project"
+    },
+    "glm_plan_global": {
+      "asset": "glm_plan_global",
+      "classification": "brand_reference"
+    },
+    "pollinations": {
+      "asset": "pollinations",
+      "classification": "brand_reference"
+    },
+    "stepfun": {
+      "asset": "openai_compatible",
+      "classification": "generic_pending_permission"
+    },
+    "minimax_plan": {
+      "asset": "openai_compatible",
+      "classification": "generic_pending_permission"
+    },
+    "xai": {
+      "asset": "openai_compatible",
+      "classification": "generic_pending_current_identity"
+    },
+    "glm_plan": {
+      "asset": "openai_compatible",
+      "classification": "generic_pending_current_asset"
+    }
+  }
 }

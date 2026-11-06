@@ -9,12 +9,13 @@ const {JSDOM,VirtualConsole}=require('jsdom');
 const js=fs.readFileSync(new URL('../../pages/00-quota-link/app.js',import.meta.url),'utf8');
 const logs=[];
 const flush=async()=>{for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r))};
-async function setup({legacy=false,noBridge=false}={}){
+async function setup({legacy=false,noBridge=false,providers}={}){
  const vc=new VirtualConsole();vc.on('jsdomError',x=>logs.push({type:'jsdomError',text:x.message}));vc.on('error',(...x)=>logs.push({type:'console.error',text:x.join(' ')}));vc.on('warn',(...x)=>logs.push({type:'console.warn',text:x.join(' ')}));
  const dom=new JSDOM('<!doctype html><html><head></head><body><div id="app"></div></body></html>',{url:'https://synthetic-qa.invalid/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});
  const w=dom.window;w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}});w.ResizeObserver=class{observe(){}unobserve(){}disconnect(){}};
  const realm=x=>w.JSON.parse(JSON.stringify(x));
  let snap={revision:1,config:{timeout_seconds:8,total_timeout_seconds:30,cache_ttl_seconds:60,max_concurrency:4,command_admin_only:true,allow_group_queries:false,private_allowed_user_ids:[],group_allowed_user_ids:[],providers:[{__template_key:'deepseek',id:'deepseek-main',type:'deepseek',display_name:'DeepSeek 主账户',aliases:[],enabled:true,timeout_seconds:8,cache_ttl_seconds:60,balance_alert:{unit:'CNY'}}]},credentials:{'deepseek-main':Object.fromEntries(['api_key','token','access_key_id','access_key_secret','security_token','secret','key'].map(k=>[k,{configured:k==='api_key',source:k==='api_key'?'encrypted':'missing'}]))},encryption:{ready:true,state:'ready',reason_code:null},migration:{pending:legacy,account_count:legacy?2:0,cleanup_pending:false,legacy_conflict:false}};
+ if(providers){snap.config.providers=providers;snap.credentials=Object.fromEntries(providers.map(a=>[a.id,{}]));}
  let unitReply={accounts:[]},unitMode=null,unitPending,statusDetail='',statusValue='submitted',refreshedUnits=null;
  let ctx={pluginName:'astrbot_plugin_yomihime_quota_link',pageName:'00-quota-link',session:'synthetic-one',isDark:false,locale:'zh-CN'},onCtx,mode=null,pending,calls=[];
  w.AstrBotPluginView={ready:async()=>realm(ctx),onContext:fn=>{onCtx=fn;return()=>{}},apiPost:async(op,body)=>{calls.push({op,body:JSON.parse(JSON.stringify(body))});if(op==='admin/read')return realm(snap);if(op==='admin/alert-units'||op==='admin/alert-bind-unit'||op==='admin/alert-refresh-units'){const selected=unitMode;unitMode=null;if(selected==='auth')throw {status:403};if(selected==='conflict')throw {status:409};if(selected==='unknown')throw Error('PRIVATE_UNIT_ERROR');if(op==='admin/alert-refresh-units'){assert.equal(body.revision,snap.revision);if(refreshedUnits)unitReply=refreshedUnits;}if(op==='admin/alert-bind-unit'){assert.equal(body.revision,snap.revision);unitReply={accounts:unitReply.accounts.map(a=>a.account_id===body.account_id?{...a,unit_state:'verified',unit:a.choices.find(c=>c.id===body.choice_id)?.unit,choices:[]}:a)}}const reply=realm(unitReply);if(selected==='defer')return new Promise(resolve=>unitPending=()=>resolve(reply));return reply;}if(op==='admin/alert-status')return realm({running:true,storage_available:true,accounts:snap.config.providers.map(a=>({account_id:a.id,status:statusValue,detail_code:statusDetail,message:'PRIVATE_STATUS_PERSONA',last_checked_at:'2026-10-27T00:00:00Z'}))});if(op==='admin/legacy-config-plan')return realm({plan_id:'plan-1',pending:snap.migration.pending,account_count:2,plaintext_count:1,environment_count:1});const selected=mode;mode=null;if(selected==='conflict')throw {status:409,code:'revision_conflict'};if(selected==='auth')throw {status:403,message:'PRIVATE_ERROR_MARKER'};if(selected==='unknown')throw Error('PRIVATE_ERROR_MARKER');assert.equal(body.revision,snap.revision);if(op==='admin/update'){snap.config=body.config;for(const a of snap.config.providers)snap.credentials[a.id]??={api_key:{configured:false,source:'missing'}}}if(op==='admin/credential-replace')snap.credentials[body.account_id][body.field]={configured:true,source:body.environment?'environment':'encrypted'};if(op==='admin/credential-clear')snap.credentials[body.account_id][body.field]={configured:false,source:'missing'};if(op==='admin/legacy-config-execute')snap.migration={pending:false,account_count:0};snap.revision++;let reply=realm(snap);if(selected==='defer')return new Promise(resolve=>pending=()=>resolve(reply));return reply}};
@@ -27,7 +28,50 @@ async function setup({legacy=false,noBridge=false}={}){
  async function check(s,v){const el=q(s);assert.ok(el);el.checked=v;el.dispatchEvent(new w.Event('change',{bubbles:true}));await flush()}
  return {dom,w,q,qs,click,fill,check,textClick,body,get calls(){return calls.filter(c=>c.op!=='admin/alert-units')},allCalls:calls,units:value=>{unitReply=value;},statusDetail:value=>{statusDetail=value;},status:value=>{statusValue=value;},refreshedUnits:value=>{refreshedUnits=value;},unitMode:value=>{unitMode=value;},releaseUnit:async()=>{unitPending?.();await flush();},snap:()=>snap,mode:m=>mode=m,context:async c=>{ctx={...ctx,...c};onCtx(realm(ctx));await flush()},release:async()=>{pending?.();await flush()},close:()=>dom.window.close()};
 }
-async function test(name,fn){ await nodeTest(name,async()=>{ let h;const before=logs.length;try{h=await setup();await fn(h);assert.deepEqual(logs.slice(before),[], 'Production bundle should not log runtime errors or warnings');}finally{h?.close()}})}
+async function test(name,fn,options){ await nodeTest(name,async()=>{ let h;const before=logs.length;try{h=await setup(options);await fn(h);assert.deepEqual(logs.slice(before),[], 'Production bundle should not log runtime errors or warnings');}finally{h?.close()}})}
+
+const logoProviderTypes=['deepseek','alibaba_bailian','grsai','meinianda','moonshot','stepfun','openrouter','novita','xai','venice','vercel_gateway','pollinations','minimax_plan','glm_plan','new_api','sub2api','openai_compatible'];
+const logoSeeds=logoProviderTypes.map((type,index)=>({id:'logo-'+index,type,display_name:'Synthetic '+type,enabled:true}));
+await test('Every native provider renders a bundled decorative logo in the production directory',async h=>{
+ const emblems=h.qs('.quota-provider-emblem');assert.equal(emblems.length,17);
+ for(const [index,emblem]of emblems.entries()){
+  assert.equal(emblem.dataset.providerLogo,logoProviderTypes[index]);
+  assert.ok(emblem.dataset.logoKind);assert.equal(emblem.getAttribute('aria-hidden'),'true');
+  const image=emblem.querySelector('img');assert.ok(image);assert.match(image.getAttribute('src'),/^data:image\/png;base64,[A-Za-z0-9+/]+=*$/);
+  assert.equal(image.alt,'');assert.equal(image.getAttribute('width'),'32');assert.equal(image.getAttribute('height'),'32');
+  assert.match(emblem.closest('article').textContent,new RegExp('Synthetic '+logoProviderTypes[index]));
+ }
+ const lightSources=emblems.map(emblem=>emblem.querySelector('img').getAttribute('src'));
+ await h.context({isDark:true});
+ assert.deepEqual(h.qs('.quota-provider-emblem img').map(image=>image.getAttribute('src')),lightSources);
+},{providers:logoSeeds});
+
+await test('Legacy Grsai and regional GLM accounts select the intended local marks',async h=>{
+ assert.deepEqual(h.qs('.quota-provider-emblem').map(el=>el.dataset.providerLogo),['grsai','glm_plan_global','glm_plan','glm_plan']);
+ for(const image of h.qs('.quota-provider-emblem img'))assert.match(image.getAttribute('src'),/^data:image\/png;base64,/);
+},{providers:[{type:'openai_compatible',service_profile:'grsai'},{type:'glm_plan',region:'global'},{type:'glm_plan',region:'china'},{type:'glm_plan'}].map((account,index)=>({...account,id:'regional-'+index,display_name:'Synthetic regional '+index,enabled:true}))});
+
+await test('Unknown provider names and user image paths cannot become logo URLs',async h=>{
+ const emblems=h.qs('.quota-provider-emblem');assert.equal(emblems.length,4);
+ assert.ok(emblems.every(el=>el.dataset.logoKind==='generic_unknown'));
+ const sources=emblems.map(el=>el.querySelector('img').getAttribute('src'));
+ assert.equal(new Set(sources).size,1);for(const source of sources)assert.match(source,/^data:image\/png;base64,/);
+ assert.ok(!h.w.document.documentElement.innerHTML.includes('untrusted-logo.invalid'));
+},{providers:['future_provider','__proto__','constructor','toString'].map((type,index)=>({id:'unknown-'+index,type,display_name:'Synthetic unknown '+index,endpoint:{base_url:'https://untrusted-logo.invalid/x.png',path:'C:/private/image.png'},enabled:true}))});
+
+await test('Unsupported user logo fields fail closed before any directory logo renders',async h=>{
+ assert.equal(h.qs('.quota-provider-emblem').length,0);assert.equal(h.qs('img').length,0);
+ assert.ok(!h.w.document.documentElement.innerHTML.includes('untrusted-logo.invalid'));
+ assert.equal(h.allCalls.length,1);assert.equal(h.allCalls[0].op,'admin/read');
+},{providers:[{id:'invalid-logo',type:'deepseek',display_name:'Synthetic invalid logo',logo:'https://untrusted-logo.invalid/x.png',image_path:'C:/private/image.png',enabled:true}]});
+
+await test('A failed bundled logo becomes text without a broken image or retry loop',async h=>{
+ const emblem=h.q('.quota-provider-emblem'),image=emblem.querySelector('img'),key=emblem.dataset.providerLogo;
+ image.dispatchEvent(new h.w.Event('error'));await flush();
+ assert.equal(emblem.querySelector('img'),null);assert.equal(emblem.textContent,'API');assert.equal(emblem.dataset.logoKind,'load-error');assert.equal(emblem.dataset.providerLogo,key);
+ image.dispatchEvent(new h.w.Event('error'));await h.context({isDark:true});
+ assert.equal(emblem.querySelector('img'),null);assert.equal(emblem.textContent,'API');assert.equal(h.allCalls.filter(call=>call.op!=='admin/read').length,0);
+});
 
 await test('Production bundle mounts official DTO with seven credential status fields',async h=>{assert.match(h.body(),/已读取最新配置/);assert.match(h.body(),/DeepSeek 主账户/);assert.equal(h.calls.length,1)});
 await test('Create account, change stable ID, save ordinary config, edit existing display name',async h=>{await h.textClick('button','添加账户');await h.fill('#field-1-id','qa-account');await h.fill('#field-1-display_name','QA 第二账户');await h.click('[data-action="save"]');assert.equal(h.snap().config.providers[1].id,'qa-account');assert.equal(h.q('#field-1-id').disabled,true);await h.fill('#field-1-display_name','QA 已编辑');await h.click('[data-action="save"]');assert.equal(h.snap().config.providers[1].display_name,'QA 已编辑');assert.ok(!JSON.stringify(h.calls.filter(c=>c.op==='admin/update')).includes('api_key'))});
