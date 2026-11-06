@@ -35,6 +35,10 @@ npm run build
 
 卡片回归需要完整的固定 Noto 字体：将 `QUOTA_TEST_FONT` 指向已通过大小与 SHA256 校验的 `NotoSansCJKsc-Regular.otf`，设置 `QUOTA_REQUIRE_TEST_FONT=1` 后运行测试。字体常量见 `quota_link/presentation/font.py`；CI 使用现有固定来源和校验流程准备独立夹具，准备失败会阻止通过。依赖矩阵在 Python 3.12 下覆盖 Pillow 10.0.0、12.3.0 和宿主固定 13.0.0；最低组合同时覆盖 httpx 0.28.0、cryptography 46.0.3。`tests/fixtures/host-pillow13.txt` 只记录本次安装冲突涉及的宿主保护项。
 
+完整回归还需将 `QUOTA_TEST_ASTRBOT_SOURCE` 指向独立的 AstrBot 4.29.1 源码夹具，固定提交为 `dffe922773725e9c178392c423676ad65044748c`；依赖与准备步骤见 [兼容性工作流](.github/workflows/dependency-compatibility.yml)。夹具须保留上游 LF 字节，打包链测试会校验 SDK 原始文件 SHA256；Windows 自动转换为 CRLF 会导致校验失败。新建夹具 checkout 时可使用命令级 `core.autocrlf=false`，不改全局 Git 配置或测试哈希。
+
+Windows 离线测试建议设置 `PYTHONUTF8=1`。安全存储测试会检查临时目录及其祖先的原生所有者与可写权限；默认 Temp 或项目路径不符合安全条件时，用 pytest `--basetemp` 指定受信任祖先下一个尚不存在的专用合成测试目录。记录原路径的拒绝证据及新路径的检查结果，保留测试断言和现有 ACL。
+
 新增平台适配器或监控逻辑时，请同时补充对应的测试和 README 文档。
 
 安全存储与管理页的移植来源、宿主契约和验证限制见 `docs/SECURITY.md`。只用合成凭据测试；禁止用测试脚本迁移真实实例。原生 Windows I/O 与真实宿主部署需要分别验证，不可由 Linux 单测替代。

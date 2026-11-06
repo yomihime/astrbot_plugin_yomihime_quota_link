@@ -5,7 +5,8 @@ import {UiProvider,SettingsLayout,Surface} from './ui/shared-components';
 import {PageHeader,SettingsGroup,ActionBar,StatusHint,FormField,FormGrid,type FormFieldSlot} from './ui/components';
 import {createInlineConfirmation} from './confirmation';
 import {createController} from './controller.js';
-import {globals,globalGroups,globalLabels,fieldLabels,languageField,fieldHint,optionLabel,providerName,templates,providerOptions,newAccount,templateFor,credentialFields,clone} from './config.js';
+import {selectProviderLogo} from './provider-logo-data.js';
+import {globals,globalGroups,globalLabels,fieldLabels,languageField,fieldHint,optionLabel,providerName,providerHelp,isGatewayProvider,templates,providerOptions,newAccount,templateFor,credentialFields,clone} from './config.js';
 import {alertDefaults,defaultMetric,metricOptions,normalizeAlert,normalizeIds,parseTargetsText,formatTargets,alertDraftErrors,fixedAlertUnit,unitLabel as localizedUnit,metricLabel as localizedMetric,localTime,alertDetailLabel} from './alert-config.js';
 import './ui/tokens.css';
 import './shell.css';
@@ -13,6 +14,18 @@ import './quota.css';
 
 declare global {interface Window{AstrBotPluginView:any}}
 type Dict=Record<string,any>;
+const ProviderEmblem=defineComponent({
+ props:{account:{type:Object,required:true}},
+ setup(props){
+  const failedSrc=ref<string|null>(null);
+  return ()=>{
+   const logo=selectProviderLogo(props.account),failed=failedSrc.value===logo.src;
+   return h('span',{class:'workspace-emblem quota-provider-emblem','aria-hidden':'true','data-provider-logo':logo.key,'data-logo-kind':failed?'load-error':logo.classification},[
+    failed?h('span',{class:'quota-provider-emblem-fallback'},'API'):h('img',{key:logo.src,src:logo.src,alt:'',width:32,height:32,draggable:false,onError:()=>{failedSrc.value=logo.src;}}),
+   ]);
+  };
+ },
+});
 const App=defineComponent({setup(){
  const tick=ref(0),root=ref<HTMLElement|null>(null),main=ref<HTMLElement|null>(null),newType=ref('deepseek'),raw=ref<Record<string,string>>({}),errors=ref<Record<string,unknown>>({}),sliderValues=ref<Record<string,number>>({});
  const confirmation=createInlineConfirmation(document,()=>t('web.common.cancel')),unitChoices=ref<Record<string,string>>(Object.create(null));let lastDraft:unknown,lastUnits:unknown;
@@ -47,7 +60,7 @@ const App=defineComponent({setup(){
  };
  function field(key:string,descriptor:Dict,index:number|null,path:string[]=[key],extra:Dict={}){
   const account=index===null?s.draft:s.draft?.providers[index];if(!account)return null;
-  const controlId='field-'+(index===null?'global':index)+'-'+path.join('-'),value=readPath(account,path)??descriptor.default??'',label=t(key==='language'?'web.settings.language':((index===null?globalLabels:fieldLabels) as Record<string,string>)[key]);
+  const controlId='field-'+(index===null?'global':index)+'-'+path.join('-'),value=readPath(account,path)??descriptor.default??'',label=extra.label??t(key==='language'?'web.settings.language':((index===null?globalLabels:fieldLabels) as Record<string,string>)[key]);
   const locked=extra.locked||ordinaryDisabled();
   const setValue=(value:unknown)=>{delete errors.value[controlId];if(index!==null&&path.length===1&&key==='service_profile'){void changeProfile(index,String(value));return;}change(path,value,index);};
   let control:(attrs:FormFieldSlot['controlAttrs'])=>VNodeChild;
@@ -93,7 +106,7 @@ const App=defineComponent({setup(){
   ]);
  };
  const unitPanel=(account:Dict,index:number)=>{
-  const saved=savedAccount(account.id),keys=['type','service_profile','balance_scope','prefer_split_endpoint','response_mapping','endpoint','region'];
+  const saved=savedAccount(account.id),keys=['type','service_profile','balance_scope','prefer_split_endpoint','response_mapping','endpoint','region','team_id'];
   const current=!!saved&&keys.every(k=>JSON.stringify(account[k])===JSON.stringify(saved[k]))&&account.balance_alert?.metric===saved.balance_alert?.metric;
   const entry=current?s.units?.accounts.find(a=>a.account_id===account.id):undefined;
   const candidates=entry?.choices.filter(c=>c.metric===(account.balance_alert?.metric||defaultMetric(account)))||[];
@@ -153,6 +166,7 @@ const App=defineComponent({setup(){
   h(FormField,{controlId:'field-global-balance_alert_llm-enabled',label:t('web.alert.smart_hint'),hint:t('web.alert.smart_hint_help')},{default:({controlAttrs}:FormFieldSlot)=>h('label',{class:'ui-check-label'},[h('input',{...controlAttrs,type:'checkbox',checked:s.draft?.balance_alert_llm?.enabled!==false,disabled:ordinaryDisabled(),onChange:(e:Event)=>change(['balance_alert_llm','enabled'],(e.target as HTMLInputElement).checked,null)}),h('span',s.draft?.balance_alert_llm?.enabled!==false?t('web.common.on'):t('web.common.off'))])}),
  ]});
  function accountEditor(account:Dict,index:number){const descriptors=templateFor(account).items,isExisting=!!savedAccount(account.id),compatible=account.type==='openai_compatible',endpoint=descriptors.endpoint?.items||templates.provider_account.items.endpoint.items,mapping:Dict=templates.provider_account.items.response_mapping.items;
+  const gatewayCredential=s.snapshot?.credentials?.[account.id]?.api_key?.configured===true;
   return h(SettingsLayout,{}, {default:()=>[
    h(SettingsGroup,{title:t('web.account.settings'),number:'01'},{default:()=>h(FormGrid,{},()=>[
     field('id',descriptors.id,index,undefined,{locked:isExisting,hint:isExisting?t('web.account.id_locked'):t('web.account.id_hint')}),
@@ -161,14 +175,19 @@ const App=defineComponent({setup(){
     field('timeout_seconds',descriptors.timeout_seconds,index),field('cache_ttl_seconds',descriptors.cache_ttl_seconds,index),
    ])}),
    h(SettingsGroup,{title:t('web.account.provider_settings'),number:'02'},{default:()=>[
-    h(StatusHint,{},()=>account.type==='deepseek'?t('web.provider.deepseek_help'):account.type==='alibaba_bailian'?t('web.provider.alibaba_help'):account.type==='meinianda'?t('web.provider.meinianda_help'):account.type==='grsai'?t('web.provider.grsai_help'):t('web.provider.compatible_help')),
+    h(StatusHint,{},()=>t(providerHelp(account.type))),
     h(FormGrid,{},()=>[
      ...(descriptors.region?[field('region',descriptors.region,index)]:[]),
+     ...(descriptors.team_id?[field('team_id',descriptors.team_id,index,undefined,{label:t('web.field.team_id')})]:[]),
+     ...(isGatewayProvider(account.type)?[field('base_url',endpoint.base_url,index,['endpoint','base_url'],{
+      label:t('web.field.gateway_origin'),locked:gatewayCredential,
+      hint:t(gatewayCredential?'config.wallet_origin_credential':'web.hint.gateway_origin'),
+     })]:[]),
      ...(compatible?[field('service_profile',templates.openai_compatible.items.service_profile,index),...(account.service_profile==='grsai'?[field('balance_scope',templates.openai_compatible.items.balance_scope,index)]:[]),
       ...(account.endpoint?.url?[field('url',templates.provider_account.items.endpoint.items.url,index,['endpoint','url'])]:[]),field('base_url',endpoint.base_url,index,['endpoint','base_url']),field('path',endpoint.path,index,['endpoint','path'])]:[]),
     ]),
    ]}),
-   alertAccountPanel(account,index),
+   metricOptions(account).length?alertAccountPanel(account,index):h(StatusHint,{},()=>t('web.alert.query_only')),
    compatible?h(SettingsGroup,{title:t('web.account.advanced'),number:'04'},{default:()=>[
     field('advanced_options',templates.openai_compatible.items.advanced_options,index),
     account.advanced_options?h('div',{class:'quota-advanced'},[
@@ -183,17 +202,35 @@ const App=defineComponent({setup(){
  const accounts=()=>{
   const list=s.draft?.providers||[];const index=s.selected===null?-1:list.findIndex((a:Dict)=>a.id===s.selected),account=list[index];
   if(account)return accountEditor(account,index);
+  const addAccount=()=>{
+   if(controller.dirty())return;
+   const fresh=newAccount(newType.value,s.locale);
+   let count=1;
+   while(list.some((a:Dict)=>a.id===newType.value+'-'+count))count++;
+   fresh.id=newType.value+'-'+count;
+   controller.navigate('accounts',fresh.id);
+   controller.edit((config:Dict)=>config.providers.push(fresh));
+  };
   return h('section',{class:'workspace-index quota-directory'},[
+   h('aside',{class:'workspace-aside','aria-label':t('web.account.add_query')},[
+    h('h2',{class:'shell-eyebrow'},t('web.account.new')),
+    h('label',{for:'new-provider'},t('web.account.provider')),
+    h('select',{
+     id:'new-provider',class:'ui-control',value:newType.value,disabled:ordinaryDisabled(),
+     onChange:(event:Event)=>newType.value=(event.target as HTMLSelectElement).value,
+    },providerOptions.map(type=>h('option',{value:type},providerName(type,s.locale)))),
+    button(t('web.account.add'),{type:'primary',disabled:ordinaryDisabled()||controller.dirty(),onClick:addAccount}),
+    h('p',{class:'workspace-scope-note'},t('web.account.provider_scope')),
+   ]),
    h('div',{class:'workspace-catalog'},[
     h('div',{class:'workspace-index-heading'},[h('h2',{class:'shell-eyebrow'},t('web.account.list')),h('span',{class:'workspace-count'},t('web.account.count',{count:list.length}))]),
     !list.length?h('div',{class:'shell-empty'},[h('h2',t('web.account.empty')),h('p',t('web.account.empty_hint'))]):null,
     h('div',{class:'workspace-package-grid'},list.map((a:Dict)=>h('article',{class:'workspace-module',key:a.id},[
-     h('div',{class:'workspace-module-heading'},[h('span',{class:'workspace-emblem','aria-hidden':'true'},'◈'),h('div',[h('div',{class:'workspace-module-title'},[h('h2',[h('a',{href:'#/accounts/'+encodeURIComponent(a.id),onClick:(e:Event)=>{e.preventDefault();void navigation('accounts',a.id);}},a.display_name||a.id)]),h('span',{class:'workspace-state'},a.enabled!==false?t('web.account.enabled'):t('web.account.disabled'))]),h('p',{class:'workspace-module-summary'},providerName(a.type,s.locale)+' · '+a.id)])]),
+     h('div',{class:'workspace-module-heading'},[h(ProviderEmblem,{account:a}),h('div',[h('div',{class:'workspace-module-title'},[h('h2',[h('a',{href:'#/accounts/'+encodeURIComponent(a.id),onClick:(e:Event)=>{e.preventDefault();void navigation('accounts',a.id);}},a.display_name||a.id)]),h('span',{class:'workspace-state'},a.enabled!==false?t('web.account.enabled'):t('web.account.disabled'))]),h('p',{class:'workspace-module-summary'},providerName(a.type,s.locale)+' · '+a.id)])]),
      h('div',{class:'quota-account-meta'},[h('span',credentialFields(a).every(({key}:Dict)=>s.snapshot?.credentials[a.id]?.[key]?.configured||key==='security_token')?t('web.account.credentials_configured'):t('web.account.credentials_pending')),button(t('web.account.settings'),{text:true,disabled:!s.ready,onClick:()=>void navigation('accounts',a.id)})]),
     ]))),
     controller.dirty()?saveActions():null,
    ]),
-   h('aside',{class:'workspace-aside','aria-label':t('web.account.add_query')},[h('h2',{class:'shell-eyebrow'},t('web.account.new')),h('label',{for:'new-provider'},t('web.account.provider')),h('select',{id:'new-provider',class:'ui-control',value:newType.value,disabled:ordinaryDisabled(),onChange:(e:Event)=>newType.value=(e.target as HTMLSelectElement).value},providerOptions.map(type=>h('option',{value:type},providerName(type,s.locale)))),button(t('web.account.add'),{type:'primary',disabled:ordinaryDisabled()||controller.dirty(),onClick:()=>{if(controller.dirty())return;const fresh=newAccount(newType.value,s.locale);let count=1;while(list.some((a:Dict)=>a.id===newType.value+'-'+count))count++;fresh.id=newType.value+'-'+count;controller.navigate('accounts',fresh.id);controller.edit((config:Dict)=>config.providers.push(fresh));}}),h('p',{class:'workspace-scope-note'},t('web.account.provider_scope'))]),
   ]);
  };
  const globalSettings=()=>h(SettingsLayout,{}, {default:()=>[

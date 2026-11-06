@@ -5,9 +5,14 @@ const controls=/[\p{Cc}\p{Cf}\p{Cs}]/u;
 const positiveId=/^[1-9][0-9]{0,19}$/;
 export const alertDefaults=()=>({enabled:false,check_interval_minutes:15,metric:'',unit:'',threshold:null,recovery_threshold:null,repeat_minutes:0});
 export const llmDefaults=()=>({enabled:true});
-export function defaultMetric(account){return account.type==='alibaba_bailian'?'AvailableAmount':account.type==='deepseek'?'total_balance':account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?'credit':account.type==='meinianda'?'site_credit':account.type==='openai_compatible'?'mapped_balance':'';}
-export function metricOptions(account){return account.type==='alibaba_bailian'?['AvailableAmount','AvailableCashAmount','CreditAmount']:account.type==='deepseek'?['total_balance','granted_balance','topped_up_balance']:account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?['credit']:account.type==='meinianda'?['site_credit']:account.type==='openai_compatible'?['mapped_balance']:[];}
-export const metricLabels={AvailableAmount:'web.metric.AvailableAmount',AvailableCashAmount:'web.metric.AvailableCashAmount',CreditAmount:'web.metric.CreditAmount',total_balance:'web.metric.total_balance',granted_balance:'web.metric.granted_balance',topped_up_balance:'web.metric.topped_up_balance',credit:'web.metric.credit',site_credit:'web.metric.site_credit',mapped_balance:'web.metric.mapped_balance'};
+const walletAlertProviders=new Set(['moonshot','stepfun','openrouter','novita','venice','vercel_gateway','pollinations']);
+export function defaultMetric(account){return metricOptions(account)[0]??'';}
+export function metricOptions(account){
+ if(walletAlertProviders.has(account.type))return ['available_balance'];
+ if(account.type==='xai')return ['posted_prepaid_balance'];
+ return account.type==='alibaba_bailian'?['AvailableAmount','AvailableCashAmount','CreditAmount']:account.type==='deepseek'?['total_balance','granted_balance','topped_up_balance']:account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?['credit']:account.type==='meinianda'?['site_credit']:account.type==='openai_compatible'?['mapped_balance']:[];
+}
+export const metricLabels={AvailableAmount:'web.metric.AvailableAmount',AvailableCashAmount:'web.metric.AvailableCashAmount',CreditAmount:'web.metric.CreditAmount',total_balance:'web.metric.total_balance',granted_balance:'web.metric.granted_balance',topped_up_balance:'web.metric.topped_up_balance',credit:'web.metric.credit',site_credit:'web.metric.site_credit',mapped_balance:'web.metric.mapped_balance',available_balance:'provider.wallet.available_balance',posted_prepaid_balance:'provider.xai.posted_balance'};
 const unitLabels={credit:'web.metric.credit',site_credit:'web.metric.site_credit'};
 export const unitLabel=(unit,locale)=>Object.hasOwn(unitLabels,unit)?translate(unitLabels[unit],locale):unit;
 export const metricLabel=(metric,locale)=>translate(Object.hasOwn(metricLabels,metric)?metricLabels[metric]:'web.metric.monitored',locale);

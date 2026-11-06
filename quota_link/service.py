@@ -14,6 +14,8 @@ from typing import Mapping
 from .cache import BalanceCache
 from .i18n import message as localized
 from .models import (
+    WALLET_GATEWAY_PROVIDERS,
+    WALLET_REGION_PROVIDERS,
     BalanceSnapshot,
     NormalizedProviderError,
     ProviderErrorCategory,
@@ -24,9 +26,10 @@ from .models import (
     SnapshotStatus,
 )
 from .providers.base import AsyncProviderClient, ProviderAdapter
-from .settings import AccountSettings, PluginSettings
+from .settings import AccountSettings, PluginSettings, gateway_origin
 
-_CooldownKey = ProviderType | tuple[str, str]
+_ProviderBudget = ProviderType | tuple[str, ProviderType, str]
+_CooldownKey = _ProviderBudget | tuple[str, str]
 
 
 class QueryService:
@@ -60,7 +63,7 @@ class QueryService:
         self._adapter_tasks: set[asyncio.Task] = set()
         self._inflight: dict[tuple[str, str], asyncio.Task] = {}
         self._waiters: dict[tuple[str, str], int] = {}
-        self._provider_locks: dict[ProviderType, asyncio.Lock] = {}
+        self._provider_locks: dict[_ProviderBudget, asyncio.Lock] = {}
         self._cooldowns: dict[_CooldownKey, tuple[float, NormalizedProviderError]] = {}
         self._failures: dict[_CooldownKey, int] = {}
         self._auth_paused: dict[str, NormalizedProviderError] = {}
@@ -243,12 +246,19 @@ class QueryService:
         self._waiters.clear()
         self._cache.clear()
 
-    def _provider(self, account: AccountSettings) -> ProviderType:
-        return (
-            ProviderType.GRSAI
-            if account.service_profile == "grsai"
-            else account.provider_type
-        )
+    def _provider(self, account: AccountSettings) -> _ProviderBudget:
+        provider = account.provider_type
+        if account.service_profile == "grsai":
+            return ProviderType.GRSAI
+        if provider in WALLET_GATEWAY_PROVIDERS and account.endpoint is not None:
+            return (
+                "origin",
+                provider,
+                gateway_origin(account.endpoint.get("base_url")),
+            )
+        if provider in WALLET_REGION_PROVIDERS:
+            return ("region", provider, account.region)
+        return provider
 
     def _blocked(self, account: AccountSettings) -> BalanceSnapshot | None:
         error = self._auth_paused.get(account.config_fingerprint)

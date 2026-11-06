@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from .formatter import _single_line
 from .i18n import message, render_text, tr
 from .presentation.bitmap import CardSpec, Row, Section
+from .presentation.provider_logos import select_logo_key
 
 HELP_GROUPS = (
     (
@@ -211,10 +212,10 @@ def _account_title(account: dict) -> str:
 
 
 def _account_icon(account: dict) -> str:
-    return (
-        "grsai"
-        if account.get("service_profile") == "grsai"
-        else account.get("type", "")
+    return select_logo_key(
+        account.get("type", ""),
+        account.get("service_profile", "generic"),
+        account.get("region", "china"),
     )
 
 

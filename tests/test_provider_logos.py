@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from examples.provider_logo_preview.render import cases
+from quota_link.models import WALLET_NAMES, ProviderType
 from quota_link.presentation.bitmap import (
     SECTION_ICON_SIZE,
     BitmapBounds,
@@ -19,7 +20,112 @@ from quota_link.presentation.bitmap import (
     render_card,
 )
 from quota_link.presentation.font import CardFontProvider
-from quota_link.presentation.provider_logos import LOGO_SHA256, load_logo
+from quota_link.presentation.provider_logos import (
+    LOGO_ASSETS,
+    LOGO_SHA256,
+    load_logo,
+    select_logo_key,
+)
+
+
+def test_native_presets_have_explicit_brand_or_documented_generic_mapping():
+    generic = load_logo("openai_compatible")
+    assert generic is not None
+    unresolved = {"stepfun", "minimax_plan", "xai", "glm_plan"}
+    assert set(ProviderType) <= LOGO_ASSETS.keys()
+    for provider in WALLET_NAMES:
+        icon = load_logo(provider.value)
+        assert icon is not None
+        assert (icon == generic) is (provider.value in unresolved)
+    assert load_logo("unknown_provider") is None
+
+
+def test_region_and_legacy_logo_selection_is_independent_of_names_and_urls():
+    assert select_logo_key("glm_plan", region="global") == "glm_plan_global"
+    assert select_logo_key("glm_plan", region="china") == "glm_plan"
+    assert select_logo_key("openai_compatible", "grsai") == "grsai"
+    assert select_logo_key("deepseek", "grsai") == "deepseek"
+    assert load_logo("glm_plan_global") != load_logo("glm_plan")
+
+
+def test_frontend_catalog_uses_same_validated_png_bytes_and_registry():
+    from scripts.build_provider_logos import ROOT, frontend_source
+
+    assert (ROOT / "pages/frontend/src/provider-logo-data.js").read_text(
+        encoding="utf-8"
+    ) == frontend_source()
+
+
+def test_glm_region_survives_directory_and_all_card_projections(font):
+    from datetime import UTC, datetime
+
+    from quota_link.alert_cards import build_alert_units_card
+    from quota_link.cards import (
+        build_result_card,
+        build_status_card,
+        render_result_card,
+    )
+    from quota_link.models import (
+        BalanceSnapshot,
+        QueryRequest,
+        QueryRequestKind,
+        QueryResult,
+        SnapshotStatus,
+    )
+    from quota_link.settings import load_settings
+
+    config = {
+        "providers": [
+            {
+                "id": "cn",
+                "display_name": "Synthetic China plan",
+                "type": "glm_plan",
+                "region": "china",
+                "auth": {"api_key": "synthetic"},
+            },
+            {
+                "id": "global",
+                "display_name": "Synthetic global plan",
+                "type": "glm_plan",
+                "region": "global",
+                "auth": {"api_key": "synthetic"},
+            },
+        ]
+    }
+    settings = load_settings(config, environ={})
+    assert [entry.region for entry in settings.directory.entries] == ["china", "global"]
+    assert [
+        section.icon_key for section in build_status_card(settings).sections[1:]
+    ] == ["glm_plan", "glm_plan_global"]
+    for account, key in zip(
+        config["providers"], ("glm_plan", "glm_plan_global"), strict=True
+    ):
+        assert build_alert_units_card(account, {}).sections[0].icon_key == key
+    now = datetime(2026, 11, 6, tzinfo=UTC)
+    result = QueryResult(
+        QueryRequest(QueryRequestKind.ALL),
+        (
+            BalanceSnapshot(
+                "global",
+                ProviderType.GLM_PLAN,
+                "Synthetic global plan",
+                SnapshotStatus.AVAILABLE,
+                (),
+                "synthetic",
+                now,
+            ),
+        ),
+        now,
+    )
+    assert (
+        build_result_card(result, settings.directory).sections[0].icon_key
+        == "glm_plan_global"
+    )
+    assert build_result_card(result).sections[0].icon_key == "glm_plan"
+    font_path = Path(os.environ["QUOTA_TEST_FONT"])
+    actual = render_result_card(result, font_path, directory=settings.directory)
+    assert actual is not None
+    assert actual != render_result_card(result, font_path)
 
 
 @pytest.fixture
@@ -100,6 +206,13 @@ def test_long_heading_with_logo_wraps_completely_above_values(font):
     assert content.height <= BitmapBounds().max_height
 
 
+def test_long_english_heading_prefers_word_boundaries(font):
+    layout = _Layout(font, BitmapBounds(), frozenset())
+    left, _, right, _ = layout.measure("Fixture account na", 28)
+    lines = layout.wrap("Fixture account name", 28, right - left)
+    assert [line.text for line in lines] == ["Fixture account ", "name"]
+
+
 @pytest.mark.parametrize("case", cases(), ids=lambda value: value[0])
 def test_real_demo_pipeline_is_bounded_offline_and_preserves_text(font, case):
     from PIL import Image
@@ -173,6 +286,8 @@ def test_bundled_manifest_matches_static_sources_and_png_derivatives():
                 "path",
                 "defs",
                 "clipPath",
+                "linearGradient",
+                "stop",
             }
             for key, value in node.attrib.items():
                 assert not key.lower().startswith("on")

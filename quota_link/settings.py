@@ -27,6 +27,10 @@ from .alert_config import (
 from .i18n import LANGUAGE_OPTIONS
 from .i18n import message as localized
 from .models import (
+    WALLET_GATEWAY_PROVIDERS,
+    WALLET_NAMES,
+    WALLET_REGION_PROVIDERS,
+    XAI_TEAM_ID,
     ProviderType,
     QueryParseError,
     QueryParseErrorCode,
@@ -83,6 +87,7 @@ class AccountDirectoryEntry:
     balance_kind: str = "custom"
     balance_scope: str = "generic"
     service_profile: str = "generic"
+    region: str = "china"
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +159,7 @@ class AccountSettings:
     balance_alert: BalanceAlertSettings = field(
         default_factory=BalanceAlertSettings, repr=False
     )
+    team_id: str = field(default="", repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -301,6 +307,7 @@ def _config_fingerprint(
     balance_scope: str = "generic",
     prefer_split_endpoint: bool = False,
     region: str = "china",
+    team_id: str = "",
 ) -> str:
     payload = {
         "provider_type": provider_type.value,
@@ -313,6 +320,8 @@ def _config_fingerprint(
         "prefer_split_endpoint": prefer_split_endpoint,
         "region": region,
     }
+    if team_id:
+        payload["team_id"] = team_id
     encoded = json.dumps(
         payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
     ).encode("utf-8")
@@ -445,6 +454,24 @@ def _has_fields(auth: Mapping[str, Any], fields: tuple[str, ...]) -> bool:
     return all(
         isinstance(auth.get(name), str) and bool(auth[name].strip()) for name in fields
     )
+
+
+def gateway_origin(value: Any) -> str:
+    """Validate the HTTPS origin supplied for a self-hosted gateway."""
+    if not isinstance(value, str) or not re.fullmatch(
+        r"https://(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(?::[0-9]{1,5})?/?",
+        value,
+        flags=re.IGNORECASE,
+    ):
+        raise ValueError("invalid gateway origin")
+    parsed = urlsplit(value)
+    port = parsed.port
+    if not parsed.hostname or port == 0:
+        raise ValueError("invalid gateway origin")
+    host = parsed.hostname.lower()
+    if ":" in host:
+        host = f"[{host}]"
+    return f"https://{host}" + (f":{port}" if port not in {None, 443} else "")
 
 
 def _valid_pointer(value: Any) -> bool:
@@ -716,6 +743,10 @@ def _provider_aliases() -> dict[str, ProviderType]:
         "deepseek": ("deepseek", "ds", "深度求索"),
         "grsai": ("grsai",),
         "meinianda": ("meinianda", "meinianda.top"),
+        **{
+            provider.value: (provider.value, name)
+            for provider, name in WALLET_NAMES.items()
+        },
         "openai_compatible": (
             "openai_compatible",
             "openai compatible",
@@ -1139,6 +1170,44 @@ def load_settings(
         )
         capability_issue: tuple[str, str] | None = None
         region = "china"
+        team_id = ""
+        if provider_type in WALLET_NAMES:
+            balance_scope = (
+                "api_key" if provider_type in WALLET_GATEWAY_PROVIDERS else "account"
+            )
+            balance_kind = {
+                ProviderType.MINIMAX_PLAN: "subscription",
+                ProviderType.GLM_PLAN: "subscription",
+                ProviderType.NEW_API: "quota",
+                ProviderType.SUB2API: "quota",
+                ProviderType.XAI: "cash",
+            }.get(provider_type, "credits")
+        if provider_type in WALLET_REGION_PROVIDERS:
+            raw_region = record.get("region", "china")
+            if raw_region in ("china", "global"):
+                region = raw_region
+            else:
+                capability_issue = (
+                    "invalid_wallet_region",
+                    localized("config.wallet_region"),
+                )
+        if provider_type is ProviderType.XAI:
+            value = record.get("team_id")
+            if isinstance(value, str) and XAI_TEAM_ID.fullmatch(value):
+                team_id = value
+            else:
+                capability_issue = (
+                    "invalid_wallet_team",
+                    localized("config.wallet_team"),
+                )
+        if provider_type in WALLET_GATEWAY_PROVIDERS:
+            try:
+                gateway_origin(endpoint.get("base_url") if endpoint else None)
+            except ValueError:
+                capability_issue = (
+                    "invalid_wallet_origin",
+                    localized("config.wallet_origin"),
+                )
         if provider_type is ProviderType.MEINIANDA:
             balance_kind = "credits"
         if provider_type is ProviderType.GRSAI:
@@ -1268,7 +1337,11 @@ def load_settings(
                 else "service_profile"
                 if code == "invalid_service_profile"
                 else "region"
-                if code == "invalid_grsai_region"
+                if code in {"invalid_grsai_region", "invalid_wallet_region"}
+                else "team_id"
+                if code == "invalid_wallet_team"
+                else "endpoint.base_url"
+                if code == "invalid_wallet_origin"
                 else "balance_scope"
             )
             errors.append(
@@ -1292,7 +1365,7 @@ def load_settings(
         elif provider_type in {
             ProviderType.DEEPSEEK,
             ProviderType.MEINIANDA,
-        } and not _has_fields(auth, ("api_key",)):
+        } | WALLET_NAMES.keys() and not _has_fields(auth, ("api_key",)):
             reason = "missing_credentials"
             errors.append(
                 ConfigDiagnostic(
@@ -1400,6 +1473,7 @@ def load_settings(
             balance_scope,
             prefer_split_endpoint,
             region,
+            team_id,
         )
         try:
             alert = parse_balance_alert(
@@ -1451,6 +1525,7 @@ def load_settings(
             prefer_split_endpoint=prefer_split_endpoint,
             region=region,
             balance_alert=alert,
+            team_id=team_id,
         )
         parsed.append(candidate)
         parsed_paths.append(path)
@@ -1489,6 +1564,7 @@ def load_settings(
             account.balance_kind,
             account.balance_scope,
             account.service_profile,
+            account.region,
         )
         for account in accounts
     )

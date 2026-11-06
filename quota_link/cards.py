@@ -24,7 +24,7 @@ from .models import (
 )
 from .presentation.bitmap import CardSpec, Row, Section, render_card
 from .presentation.font import CardFontProvider
-from .presentation.provider_logos import load_logo
+from .presentation.provider_logos import load_logo, select_logo_key
 from .settings import AccountDirectory, AccountDirectoryEntry, PluginSettings
 
 
@@ -86,7 +86,9 @@ def _item_rows(
 
 
 def _account_icon_key(entry: AccountDirectoryEntry) -> str:
-    return "grsai" if entry.service_profile == "grsai" else entry.provider_type.value
+    return select_logo_key(
+        entry.provider_type.value, entry.service_profile, entry.region
+    )
 
 
 def build_result_card(

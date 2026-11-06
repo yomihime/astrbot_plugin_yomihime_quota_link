@@ -1,10 +1,29 @@
 import {isLanguage,locales,translate} from './i18n.js';
-/** Credential-free descriptors derived from Quota Link v0.1.3's actual schema. */
+/** Legacy descriptors and additional presets for the managed account page. */
 import {normalizeAlert,normalizeTargets,normalizeIds,normalizeLlm,alertDraftErrors} from './alert-config.js';
 import schema from './legacy-schema.json' with {type: 'json'};
 /** @type {Record<string, any>} */
-export const templates = schema.providers.templates;
-export const providerOptions = ['deepseek','alibaba_bailian','grsai','meinianda','openai_compatible'];
+const legacyTemplates = schema.providers.templates;
+const walletNames = {moonshot:'Moonshot',stepfun:'StepFun',openrouter:'OpenRouter',novita:'Novita AI',xai:'xAI',venice:'Venice',vercel_gateway:'Vercel AI Gateway',pollinations:'Pollinations',minimax_plan:'MiniMax Token Plan',glm_plan:'GLM Coding Plan',new_api:'New API',sub2api:'Sub2API'};
+const regionalWallets = new Set(['moonshot','stepfun','minimax_plan','glm_plan']);
+const gateways = new Set(['new_api','sub2api']);
+const gatewayAddressField = {type:'string',default:''};
+const walletTemplates = Object.fromEntries(Object.entries(walletNames).map(([type,name])=>{
+ /** @type {Record<string, any>} */
+ const items = {...legacyTemplates.deepseek.items,type:{...legacyTemplates.deepseek.items.type,default:type}};
+ if(regionalWallets.has(type))items.region={...legacyTemplates.grsai.items.region};
+ if(type==='xai')items.team_id={type:'string',default:''};
+ if(gateways.has(type))items.endpoint={type:'object',items:{base_url:gatewayAddressField}};
+ return [type,{name,items}];
+}));
+export const templates = {...legacyTemplates,...walletTemplates};
+export const providerOptions = ['deepseek','alibaba_bailian','grsai','meinianda',...Object.keys(walletNames),'openai_compatible'];
+export function providerHelp(type){
+ if(Object.hasOwn(walletNames,type))return 'web.provider.'+type+'_help';
+ if(type==='alibaba_bailian')return 'web.provider.alibaba_help';
+ return ['deepseek','grsai','meinianda'].includes(type)?'web.provider.'+type+'_help':'web.provider.compatible_help';
+}
+export const isGatewayProvider = type=>gateways.has(type);
 export const globals = Object.fromEntries(Object.entries(schema).filter(([key])=>key!=='providers'));
 export const languageField = {type:'string',default:'auto',options:['auto',...locales]};
 export const globalGroups = [
@@ -61,6 +80,8 @@ export function credentialFields(account,locale){
   const t=id=>translate(id,locale);
   if(account?.type==='alibaba_bailian')return [{key:'access_key_id',label:'RAM AccessKey ID'},{key:'access_key_secret',label:'RAM AccessKey Secret'},{key:'security_token',label:t('web.credential.optional_sts')}];
   if(account?.type==='grsai'||account?.service_profile==='grsai'&&account?.balance_scope==='account')return [{key:'token',label:t('web.credential.grsai_token')}];
+ const specific = {openrouter:'web.credential.openrouter_management',venice:'web.credential.venice_admin',xai:'web.credential.xai_management',vercel_gateway:'web.credential.vercel_gateway',minimax_plan:'web.credential.minimax_plan',glm_plan:'web.credential.glm_plan',new_api:'web.credential.gateway_key',sub2api:'web.credential.gateway_key'};
+ if(Object.hasOwn(specific,account?.type))return [{key:'api_key',label:t(specific[account.type])}];
   return [{key:'api_key',label:account?.type==='deepseek'?'DeepSeek API Key':account?.type==='meinianda'?'Meinianda API Key':t('web.credential.balance_key')}];
 }
 export function visible(field,account){return !field.invisible&&(!field.condition||Object.entries(field.condition).every(([key,value])=>account?.[key]===value));}
@@ -93,6 +114,15 @@ export function validateDraft(config,locale){
  const t=id=>translate(id,locale);
  const errors=[];if(config.language!==undefined&&!isLanguage(config.language))errors.push(t('web.validation.language'));for(const key of ['timeout_seconds','total_timeout_seconds','cache_ttl_seconds','max_concurrency'])if(!(typeof config[key]==='number'&&Number.isFinite(config[key])&&config[key]>0)||key==='max_concurrency'&&!Number.isInteger(config[key]))errors.push(t('web.validation.query_parameters'));
  const ids=new Set();for(const a of config.providers){if(!a.id?.trim()||ids.has(a.id.trim()))errors.push(t('web.validation.account_id'));ids.add(a.id?.trim());if(!a.display_name?.trim())errors.push(t('web.validation.account_name'));for(const key of ['timeout_seconds','cache_ttl_seconds'])if(a[key]!==undefined&&!(typeof a[key]==='number'&&Number.isFinite(a[key])&&a[key]>0))errors.push(t('web.validation.account_positive'));}
+ for(const account of config.providers){
+  if(account.type==='xai'&&!/^[A-Za-z0-9_-]{1,128}$/.test(account.team_id??''))errors.push(t('config.wallet_team'));
+  if(gateways.has(account.type)){
+   const origin=account.endpoint?.base_url;
+   try {
+    if(typeof origin!=='string'||!/^https:\/\/(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(?::[0-9]{1,5})?\/?$/i.test(origin)||new URL(origin).port==='0')throw new TypeError();
+   }catch{errors.push(t('config.wallet_origin'));}
+  }
+ }
  if(config.private_allowed_user_ids?.some(v=>!/^\S+:\S+$/.test(v)))errors.push(t('web.validation.private_allowlist'));
  if(config.timeout_seconds>120||config.total_timeout_seconds>300||config.cache_ttl_seconds>86400||config.max_concurrency>32)errors.push(t('web.validation.global_bounds'));if(config.providers.some(a=>a.timeout_seconds>120||a.cache_ttl_seconds>86400))errors.push(t('web.validation.account_bounds'));return [...new Set([...errors,...alertDraftErrors(config,locale)])];
 }

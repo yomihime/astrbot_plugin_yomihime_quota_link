@@ -51,6 +51,15 @@ font-loading and card-rendering path. No real account values enter the samples.
 PNG derivatives, hashes, provenance, and applicable upstream license texts.
 The runtime selects only fixed provider keys, verifies each PNG hash, and draws
 a 40px icon beside the account heading. It never parses SVGs or downloads logos.
+The management page and query/status/alert cards share these PNG mappings;
+GLM selects its mark by configured region. The 14 primary assets include the
+generic API icon, which remains the explicit fallback for StepFun, MiniMax
+Token Plan, xAI, GLM China, and otherwise unmapped compatible services.
+See [provider provenance and coverage](../../docs/PROVIDER-LOGOS.md) for the
+pending brand conditions and the Novita, New API and Sub2API community-variant
+differences. Bundled copyright licenses do not grant trademark rights or
+imply provider endorsement. Applicable upstream notices remain in
+`assets/provider_logos/licenses/`.
 Missing or invalid icons preserve the original accent and complete card text.
 The shared bounded renderer accepts PNG bytes only, limits size/dimensions/frame
 count, and does not access file paths or URLs.

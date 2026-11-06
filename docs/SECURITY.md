@@ -50,4 +50,8 @@ POSIX 新目录 0700、新文件 0600，拒绝不安全已有目录权限、链�
 - `adapters/astrbot/web_admin.py`、`admin_pages.py`：移植宿主 verifier 与请求 fence 逻辑。
 - `pages/frontend/src/ui/*`、shell/tokens/confirmation：复用 Oil Vue/Naive UI 组件和视觉语言，Quota 页面仅承载额度配置。
 
-宿主验证基准：[AstrBot 4.29.1 / dffe922773725e9c178392c423676ad65044748c](https://github.com/AstrBotDevs/AstrBot/tree/dffe922773725e9c178392c423676ad65044748c)。安装要求为 AstrBot 4.29.1 或更新版本；当前验证基准为 4.29.1，后续版本按兼容回归验证。契约变化时拒绝访问，不使用不安全兼容降级。测试包含真实固定版本宿主源码的 verifier/中间件/插件 API 调度契约及原始配置 normalization 方法。真实运行中的用户 Host 未安装或测试此分支；生产 bundle 的 jsdom DOM/状态测试采用合成桥和合成凭据，不冒充真实浏览器或部署验证。随后已在实际云端 Chromium、同机合成宿主桥上检查五种供应商明暗概览、完整编辑表单、通用高级映射与 390px 明暗概览，未见重叠或移动概览横向溢出。该视觉检查不等于真实 Host 部署、真实凭据或完整浏览器交互验收；原生 Windows I/O 仍未实测。
+宿主验证基准：[AstrBot 4.29.1 / dffe922773725e9c178392c423676ad65044748c](https://github.com/AstrBotDevs/AstrBot/tree/dffe922773725e9c178392c423676ad65044748c)。安装要求为 AstrBot 4.29.1 或更新版本；当前验证基准为 4.29.1，后续版本按兼容回归验证。契约变化时拒绝访问，不使用不安全兼容降级。测试包含固定版本宿主源码的 verifier、中间件、插件 API 调度及配置 normalization 契约，以及从候选 ZIP 导入插件的合成预警完整链。
+
+原生 Windows I/O 已在隔离合成目录执行离线全量回归，覆盖安全存储与原生拒绝路径。测试目录及祖先仍须通过正常所有者与权限检查；目录不受信时记录环境失败，使用符合条件的新测试目录复验，不修改现有 ACL 或放宽安全判断。字体、SDK 固定哈希与 Windows 夹具准备见 [开发指南](../CONTRIBUTING.md)。
+
+管理页的生产 bundle 已在本地 Chromium 配合合成宿主桥检查四语、明暗主题、17 个预设及 GLM 地区分支，覆盖 320–1440px、长名称、凭据表单和图标失败回退；卡片使用生产渲染器与固定字体。当前供应商扩充分支未安装到真实用户 Host，新增供应商生产响应、实际密钥权限和真实消息投递尚未验证；网关分支也可能随上游版本变化。接口来源和覆盖边界见 [供应商来源](PROVIDER-SOURCES.md)，图标许可与商标边界见 [图标来源](PROVIDER-LOGOS.md)。

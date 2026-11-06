@@ -25,6 +25,7 @@ def request_identity(account: Any) -> str:
                 account.region,
                 getattr(account, "prefer_split_endpoint", False),
                 account.balance_alert.metric,
+                *([account.team_id] if getattr(account, "team_id", "") else []),
             ],
             sort_keys=True,
             ensure_ascii=True,

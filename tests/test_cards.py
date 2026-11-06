@@ -73,20 +73,39 @@ def all_text(spec):
 
 
 class ProjectionTests(unittest.TestCase):
-    def test_all_five_provider_types_preserve_independent_units(self):
-        units = ["CNY", "USD", "credit", "site_credit", "tokens"]
+    def test_provider_types_preserve_independent_units(self):
+        units = {
+            ProviderType.ALIBABA_BAILIAN: "CNY",
+            ProviderType.DEEPSEEK: "USD",
+            ProviderType.GRSAI: "credit",
+            ProviderType.MEINIANDA: "site_credit",
+            ProviderType.OPENAI_COMPATIBLE: "tokens",
+            ProviderType.GLM_PLAN: "%",
+            ProviderType.MINIMAX_PLAN: "plan_count",
+            ProviderType.MOONSHOT: "CNY",
+            ProviderType.NEW_API: "quota_points",
+            ProviderType.NOVITA: "USD",
+            ProviderType.OPENROUTER: "USD",
+            ProviderType.POLLINATIONS: "Pollen",
+            ProviderType.STEPFUN: "USD",
+            ProviderType.SUB2API: "USD",
+            ProviderType.VENICE: "DIEM",
+            ProviderType.VERCEL_GATEWAY: "USD",
+            ProviderType.XAI: "USD",
+        }
+        self.assertEqual(set(units), set(ProviderType))
         snapshots = tuple(
             snapshot(
                 provider_type=provider,
                 display_name=provider.value,
                 balances=(BalanceItem(BalanceItemKind.CUSTOM, Decimal(i + 1), unit),),
             )
-            for i, (provider, unit) in enumerate(zip(ProviderType, units, strict=True))
+            for i, (provider, unit) in enumerate(units.items())
         )
         spec = cards.build_result_card(result(*snapshots))
-        self.assertEqual(len(spec.sections), 5)
+        self.assertEqual(len(spec.sections), len(units))
         text = all_text(spec)
-        for i, (provider, unit) in enumerate(zip(ProviderType, units, strict=True)):
+        for i, (provider, unit) in enumerate(units.items()):
             self.assertIn(provider.value, text)
             self.assertIn(f"{i + 1} {unit}", text)
         self.assertNotIn("不合并", text)
