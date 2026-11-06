@@ -187,6 +187,12 @@ async def test_mentions_use_actual_adapter_and_message_type(
     [
         "",
         "余额还有9999元",
+        "このアカウントの残高はゼロです。",
+        "このアカウントには残高がありません。",
+        "もうクレジットがありません。",
+        "帳戶餘額已經歸零。",
+        "目前這個帳戶已經沒有餘額了。",
+        "請儲值才能繼續使用。",
         "@all",
         "[CQ:at,qq=all]",
         "https://evil.test",
@@ -213,6 +219,37 @@ async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
     assert "custom:FriendMessage" not in prompt and "model-secret" not in prompt
     assert context.prompts[0]["tools"] is None
     assert context.prompts[0]["contexts"] == []
+
+
+@run_async
+@pytest.mark.parametrize("change_language", [False, True])
+async def test_notification_uses_current_language_when_model_completes(change_language):
+    context = FakeContext()
+    language = "en-US"
+    generated = "Please check the details below."
+
+    async def generate(**kwargs):
+        nonlocal language
+        context.prompts.append(kwargs)
+        if change_language:
+            language = "ja-JP"
+        return SimpleNamespace(completion_text=generated)
+
+    context.llm_generate = generate
+    result = await delivery(context, locale=lambda: language).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.status == "submitted"
+    assert "Write the introduction in English." in context.prompts[0]["system_prompt"]
+    assert len(context.prompts) == 1 and len(context.sent) == 1
+    sent = context.sent[0][1][1]
+    assert (generated in sent) is not change_language
+    assert ("クォータアラート" in sent) is change_language
+    assert "-8.25 CNY ≤ 10 CNY" in sent
 
 
 @run_async

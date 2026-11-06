@@ -13,6 +13,7 @@ from .formatter import (
     display_target,
     local_account_state,
 )
+from .i18n import render_text, tr
 from .local_status import LocalStorageStatus, credential_label, storage_summary
 from .models import (
     BalanceItem,
@@ -34,14 +35,14 @@ def _time(value: datetime) -> str:
 def _item_rows(
     item: BalanceItem, provider_type: ProviderType, *, identify_notes: bool = False
 ) -> tuple[Row, ...]:
-    label = _single_line(item.label) or _KIND_LABELS[item.kind]
-    unit = _single_line(item.unit) or "未知单位"
+    label = _single_line(item.label) or render_text(_KIND_LABELS[item.kind])
+    unit = _single_line(item.unit) or tr("balance.unknown_unit")
     rows = []
     for key, suffix in (
         ("amount", ""),
-        ("total", "总量"),
-        ("remaining", "剩余"),
-        ("used", "已用"),
+        ("total", tr("balance.total")),
+        ("remaining", tr("balance.remaining")),
+        ("used", tr("balance.used")),
     ):
         value = getattr(item, key)
         if value is not None:
@@ -52,23 +53,34 @@ def _item_rows(
             Row(
                 (
                     label,
-                    f"未提供（单位：{unit}）"
+                    tr("balance.unreported", unit=unit)
                     if provider_type is ProviderType.ALIBABA_BAILIAN
-                    else f"数值未知（单位：{unit}）",
+                    else tr("balance.unknown_amount", unit=unit),
                 )
             )
         )
     if item.expires_at is not None:
         rows.append(
             Row(
-                (f"{label}到期" if identify_notes else "到期", _time(item.expires_at)),
+                (
+                    tr("balance.item_expiry", label=label)
+                    if identify_notes
+                    else tr("balance.expiry"),
+                    _time(item.expires_at),
+                ),
                 role="note",
             )
         )
     semantics = display_semantics(item, provider_type)
     if semantics:
         rows.append(
-            Row((f"{label}说明" if identify_notes else "", semantics), role="note")
+            Row(
+                (
+                    tr("balance.item_note", label=label) if identify_notes else "",
+                    semantics,
+                ),
+                role="note",
+            )
         )
     return tuple(rows)
 
@@ -82,11 +94,11 @@ def build_result_card(
 ) -> CardSpec:
     """Project every visible fact into YGL-style stat and property panels."""
     if result.request.kind is QueryRequestKind.ACCOUNT:
-        title = "账户额度与用量"
+        title = tr("query.account_card_title")
     elif result.request.kind is QueryRequestKind.PROVIDER:
-        title = "供应商额度与用量"
+        title = tr("query.provider_card_title")
     else:
-        title = "额度与用量"
+        title = tr("query.all_card_title")
     icons = (
         {
             (entry.id, entry.provider_type): _account_icon_key(entry)
@@ -98,7 +110,7 @@ def build_result_card(
     sections = []
     for snapshot in result.snapshots:
         state = display_snapshot_status(snapshot)
-        cache_mark = " · 缓存数据" if snapshot.cached else ""
+        cache_mark = tr("query.cached_card") if snapshot.cached else ""
         rows = tuple(
             row
             for item in snapshot.balances
@@ -107,11 +119,11 @@ def build_result_card(
             )
         )
         if not rows and snapshot.error is None:
-            rows = (Row(("", "没有可显示的余额或用量项目"), role="note"),)
+            rows = (Row(("", tr("query.no_items")), role="note"),)
         if snapshot.error is not None:
             rows += (
                 Row(
-                    ("查询失败", _single_line(snapshot.error.safe_message)),
+                    (tr("query.failed"), _single_line(snapshot.error.safe_message)),
                     role="error",
                 ),
             )
@@ -123,18 +135,22 @@ def build_result_card(
                     snapshot.provider_type.value,
                 ),
                 paragraphs=(
-                    f"来源：{_single_line(snapshot.source)} · 获取：{_time(snapshot.fetched_at)}",
+                    tr(
+                        "query.source_time_card",
+                        source=_single_line(snapshot.source),
+                        time=_time(snapshot.fetched_at),
+                    ),
                 ),
                 rows=rows,
             )
         )
     if not sections:
         message = (
-            "当前没有配置可查询的账户。"
+            tr("query.no_accounts")
             if result.request.kind is QueryRequestKind.ALL
-            else "没有可显示的查询结果。"
+            else tr("query.no_results")
         )
-        sections.append(Section(heading="暂无结果", paragraphs=(message,)))
+        sections.append(Section(heading=tr("query.empty_title"), paragraphs=(message,)))
     successes = sum(
         s.status is SnapshotStatus.AVAILABLE and s.error is None
         for s in result.snapshots
@@ -144,19 +160,23 @@ def build_result_card(
         for s in result.snapshots
     )
     failures = len(result.snapshots) - successes - partial
-    summary = [f"{len(result.snapshots)} 个账户"]
+    summary = [tr("query.accounts_count", count=len(result.snapshots))]
     for count, label in (
-        (successes, "查询成功"),
-        (partial, "部分成功"),
-        (failures, "查询失败"),
+        (successes, tr("query.success")),
+        (partial, tr("query.partial_success")),
+        (failures, tr("query.failed")),
     ):
         if count:
-            summary.append(f"{count} 个{label}")
-    target = f"目标：{display_target(result)}\n" if result.request.target else ""
+            summary.append(tr("query.account_outcome_count", count=count, label=label))
+    target = (
+        tr("query.target_card", target=display_target(result))
+        if result.request.target
+        else ""
+    )
     return CardSpec(
         title=title,
         subtitle=target + " · ".join(summary),
-        caption=f"查询：{_time(result.queried_at)}",
+        caption=tr("query.time_card", time=_time(result.queried_at)),
         sections=tuple(sections),
     )
 
@@ -187,40 +207,47 @@ def build_help_card(settings: PluginSettings) -> CardSpec:
         if entry.enabled
     )
     return CardSpec(
-        title="YQL 使用帮助",
+        title=tr("help.card_title"),
         width=720,
         layout="compact",
-        subtitle="查询额度 · 查看本地配置",
+        subtitle=tr("help.card_subtitle"),
         sections=(
             Section(
-                heading="查询额度",
+                heading=tr("help.query"),
                 rows=(
-                    Row(("全部账户", "/yql  或  /yql all"), role="command"),
-                    Row(("指定账户", "/yql account <名称>"), role="command"),
-                    Row(("指定供应商", "/yql provider <名称>"), role="command"),
+                    Row(
+                        (tr("help.all_accounts"), tr("help.all_command")),
+                        role="command",
+                    ),
+                    Row(
+                        (tr("help.select_account"), tr("help.account_command")),
+                        role="command",
+                    ),
+                    Row(
+                        (tr("help.select_provider"), tr("help.provider_command")),
+                        role="command",
+                    ),
                 ),
-                paragraphs=("也可使用 /yql <名称>；名称支持显示名、别名与供应商名。",),
+                paragraphs=(tr("help.name_note"),),
             ),
             Section(
-                heading="帮助与状态",
+                heading=tr("help.status_heading"),
                 rows=(
-                    Row(("使用帮助", "/yql help"), role="command"),
-                    Row(("本地配置", "/yql status"), role="command"),
-                    Row(("额度预警", "/yql alert help"), role="command"),
+                    Row((tr("help.usage"), "/yql help"), role="command"),
+                    Row((tr("help.local_config"), "/yql status"), role="command"),
+                    Row((tr("help.alerts"), "/yql alert help"), role="command"),
                 ),
-                paragraphs=("help 和 status 读取本地信息。",),
+                paragraphs=(tr("help.local_note"),),
             ),
             Section(
-                heading=f"已启用账户 · {len(names)} 个",
+                heading=tr("help.enabled_accounts", count=len(names)),
                 rows=tuple(Row(("", name), role="note") for name in names),
-                paragraphs=()
-                if names
-                else ("尚未配置启用的账户。请先在管理页添加账户。",),
+                paragraphs=() if names else (tr("help.no_enabled_accounts"),),
             ),
         ),
         limitations=(
-            "启用函数工具后，可用自然语言查询额度。",
-            "供应商接口与凭据请在管理页配置。",
+            tr("help.card_tool_note"),
+            tr("help.management_note"),
         ),
     )
 
@@ -234,20 +261,27 @@ def build_status_card(
     ready = sum(entry.enabled and entry.queryable for entry in accounts)
     sections = [
         Section(
-            heading="访问与凭据",
+            heading=tr("status.card_access"),
             rows=(
-                Row(("凭据存储", storage_summary(storage)), role="note"),
+                Row(
+                    (tr("status.credential_storage"), storage_summary(storage)),
+                    role="note",
+                ),
                 Row(
                     (
-                        "群聊查询",
-                        "已开启" if settings.allow_group_queries else "已关闭",
+                        tr("status.group_queries"),
+                        tr("status.enabled")
+                        if settings.allow_group_queries
+                        else tr("status.off"),
                     ),
                     role="note",
                 ),
                 Row(
                     (
-                        "命令权限",
-                        "仅管理员" if settings.command_admin_only else "按会话授权",
+                        tr("status.permissions"),
+                        tr("status.admin_only")
+                        if settings.command_admin_only
+                        else tr("status.session_permissions"),
                     ),
                     role="note",
                 ),
@@ -255,19 +289,7 @@ def build_status_card(
         )
     ]
     for index, entry in enumerate(accounts):
-        state = local_account_state(entry)
-        if entry.enabled and not entry.queryable:
-            reason = state.removeprefix("不可查询：")
-            if reason.startswith("配置不全："):
-                state = "待补齐：" + reason.removeprefix("配置不全：")
-            elif entry.unavailable_reason in {
-                "missing_environment_variable",
-                "missing_credentials",
-                "missing_grsai_token",
-            }:
-                state = "待配置：" + reason
-            else:
-                state = "待检查：" + reason
+        state = local_account_state(entry, card=True)
         sections.append(
             Section(
                 heading=_single_line(entry.display_name),
@@ -282,25 +304,29 @@ def build_status_card(
                         if entry.queryable or not entry.enabled
                         else "error",
                     ),
-                    Row(("凭据保存", credential_label(storage, index)), role="note"),
+                    Row(
+                        (
+                            tr("status.saved_credentials"),
+                            credential_label(storage, index),
+                        ),
+                        role="note",
+                    ),
                 ),
-                paragraphs=(f"供应商：{display_provider(entry)}",),
+                paragraphs=(tr("status.provider", provider=display_provider(entry)),),
             )
         )
     if not accounts:
         sections.append(
             Section(
-                heading="尚未配置账户",
-                rows=(Row(("下一步", "在管理页添加账户与凭据")),),
-                paragraphs=(
-                    "保存后发送 /yql status 查看本地配置，再用 /yql 查询额度。",
-                ),
+                heading=tr("status.card_no_accounts"),
+                rows=(Row((tr("status.next_step"), tr("status.add_account"))),),
+                paragraphs=(tr("status.after_save"),),
             )
         )
     if settings.errors:
         sections.append(
             Section(
-                heading=f"配置问题 · {len(settings.errors)} 项",
+                heading=tr("status.card_issues", count=len(settings.errors)),
                 rows=tuple(
                     Row(
                         (str(index + 1), display_diagnostic(issue.safe_message)),
@@ -311,13 +337,15 @@ def build_status_card(
             )
         )
     return CardSpec(
-        title="本地配置状态",
+        title=tr("status.card_title"),
         width=720,
         layout="compact",
-        subtitle=f"{len(accounts)} 个账户 · {enabled} 个启用 · {ready} 个配置完整",
-        caption="依据本地账户目录与凭据保存记录",
+        subtitle=tr(
+            "status.card_counts", total=len(accounts), enabled=enabled, ready=ready
+        ),
+        caption=tr("status.card_source"),
         sections=tuple(sections),
-        limitations=("连通性和余额可通过 /yql 查询。",),
+        limitations=(tr("status.card_online_check"),),
     )
 
 

@@ -7,6 +7,7 @@ this boundary. Saved records describe local persistence, not provider validity.
 from dataclasses import dataclass
 from typing import Literal
 
+from .i18n import message, render_text
 from .settings import AccountDirectory
 
 StorageState = Literal["unknown", "ready", "migration_pending", "unavailable"]
@@ -24,17 +25,17 @@ _CREDENTIAL_FIELDS = frozenset(
     }
 )
 _STORAGE_LABELS = {
-    "unknown": "凭据保存状态待确认",
-    "ready": "安全存储已就绪",
-    "migration_pending": "旧配置待迁移",
-    "unavailable": "安全存储待检查",
+    "unknown": message("storage.unknown"),
+    "ready": message("storage.ready"),
+    "migration_pending": message("storage.migration_pending"),
+    "unavailable": message("storage.unavailable"),
 }
 _CREDENTIAL_LABELS = {
-    "encrypted": "加密凭据已保存",
-    "environment": "环境变量引用已保存",
-    "mixed": "加密凭据与环境变量引用已保存",
-    "missing": "尚未保存凭据",
-    "unknown": "保存状态待确认",
+    "encrypted": message("credential.encrypted"),
+    "environment": message("credential.environment"),
+    "mixed": message("credential.mixed"),
+    "missing": message("credential.missing"),
+    "unknown": message("credential.unknown"),
 }
 
 
@@ -115,15 +116,17 @@ def project_storage_status(
 
 def storage_summary(status: LocalStorageStatus) -> str:
     """Return fixed, safe text even for an invalid externally built state."""
-    return _STORAGE_LABELS.get(status.state, _STORAGE_LABELS["unknown"])
+    return render_text(_STORAGE_LABELS.get(status.state, _STORAGE_LABELS["unknown"]))
 
 
 def credential_label(status: LocalStorageStatus, index: int) -> str:
     """Describe a saved record without claiming credential or network validity."""
     if status.state != "ready" or type(index) is not int:
-        return _CREDENTIAL_LABELS["unknown"]
+        return render_text(_CREDENTIAL_LABELS["unknown"])
     if index < 0 or index >= len(status.account_states):
-        return _CREDENTIAL_LABELS["unknown"]
-    return _CREDENTIAL_LABELS.get(
-        status.account_states[index], _CREDENTIAL_LABELS["unknown"]
+        return render_text(_CREDENTIAL_LABELS["unknown"])
+    return render_text(
+        _CREDENTIAL_LABELS.get(
+            status.account_states[index], _CREDENTIAL_LABELS["unknown"]
+        )
     )

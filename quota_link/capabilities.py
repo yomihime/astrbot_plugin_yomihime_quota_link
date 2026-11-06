@@ -2,40 +2,41 @@
 
 from __future__ import annotations
 
+from .i18n import message as localized
 from .models import ProviderType
 from .settings import AccountDirectory
 
 _PROVIDER_NAMES = {
     ProviderType.DEEPSEEK: "DeepSeek",
-    ProviderType.ALIBABA_BAILIAN: "阿里云百炼",
+    ProviderType.ALIBABA_BAILIAN: localized("capability.alibaba"),
     ProviderType.GRSAI: "Grsai",
     ProviderType.MEINIANDA: "Meinianda",
-    ProviderType.OPENAI_COMPATIBLE: "OpenAI 兼容服务",
+    ProviderType.OPENAI_COMPATIBLE: localized("capability.compatible"),
 }
 _BALANCE_KIND_NAMES = {
-    "cash": "现金余额",
-    "quota": "额度",
-    "free_quota": "免费额度",
-    "subscription": "订阅额度",
-    "credits": "积分",
-    "usage": "用量",
-    "custom": "用户配置的余额类别",
+    "cash": localized("capability.cash"),
+    "quota": localized("capability.quota"),
+    "free_quota": localized("capability.free_quota"),
+    "subscription": localized("capability.subscription"),
+    "credits": localized("capability.credits"),
+    "usage": localized("capability.usage"),
+    "custom": localized("capability.custom"),
 }
 _SAFE_REASONS = {
-    "missing_environment_variable": "未配置可用凭据",
-    "missing_credentials": "未配置可用凭据",
-    "missing_grsai_token": "未配置 Grsai 账户请求令牌",
-    "invalid_grsai_region": "Grsai 节点配置无效",
-    "missing_endpoint": "缺少余额查询端点",
-    "missing_base_url": "缺少 HTTPS 服务根地址 Host",
-    "missing_api_path": "缺少以 / 开头的相对 API Path",
-    "invalid_endpoint": "余额查询端点配置无效",
-    "invalid_base_url": "Host 配置无效",
-    "invalid_api_path": "API Path 配置无效",
-    "invalid_response_mapping": "余额字段映射未配置或无效",
-    "invalid_balance_scope": "余额范围配置无效",
-    "invalid_balance_kind": "Grsai 积分类别必须映射为 credits",
-    "invalid_service_profile": "服务类型配置无效",
+    "missing_environment_variable": localized("capability.credential_missing"),
+    "missing_credentials": localized("capability.credential_missing"),
+    "missing_grsai_token": localized("capability.grsai_token_missing"),
+    "invalid_grsai_region": localized("capability.grsai_region"),
+    "missing_endpoint": localized("config.missing_endpoint"),
+    "missing_base_url": localized("capability.host_missing"),
+    "missing_api_path": localized("capability.path_missing"),
+    "invalid_endpoint": localized("capability.endpoint_invalid"),
+    "invalid_base_url": localized("capability.host_invalid"),
+    "invalid_api_path": localized("capability.path_invalid"),
+    "invalid_response_mapping": localized("capability.mapping_invalid"),
+    "invalid_balance_scope": localized("capability.scope_invalid"),
+    "invalid_balance_kind": localized("capability.kind_invalid"),
+    "invalid_service_profile": localized("capability.profile_invalid"),
 }
 
 
@@ -54,20 +55,20 @@ def describe_capabilities(
             else _PROVIDER_NAMES[entry.provider_type]
         )
         if entry.provider_type is ProviderType.DEEPSEEK:
-            balance_kind = "多币种账户余额"
+            balance_kind = localized("capability.deepseek_balance")
         elif entry.provider_type is ProviderType.ALIBABA_BAILIAN:
-            balance_kind = "阿里云账户余额（BSS：现金 / 可用 / 信用）"
+            balance_kind = localized("capability.alibaba_balance")
         elif entry.provider_type is ProviderType.MEINIANDA:
-            balance_kind = "账户站内额度（site_credit）"
+            balance_kind = localized("capability.meinianda_balance")
         else:
             balance_kind = _BALANCE_KIND_NAMES.get(
-                entry.balance_kind, "用户配置的余额类别"
+                entry.balance_kind, localized("capability.custom")
             )
         queryable = entry.queryable
         reason = None
         if not queryable:
             reason = _SAFE_REASONS.get(
-                entry.unavailable_reason or "", "当前配置不可查询"
+                entry.unavailable_reason or "", localized("capability.unqueryable")
             )
         descriptions.append(
             {

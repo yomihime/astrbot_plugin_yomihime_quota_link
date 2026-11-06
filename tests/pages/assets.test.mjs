@@ -9,5 +9,17 @@ test('production is a native Host-discoverable page, no obsolete root entry',asy
 test('production manifest matches every packaged runtime asset',async()=>{const directory=resolve(pages,'00-quota-link'),manifest=JSON.parse(await readFile(resolve(directory,'assets.json'),'utf8'));assert.equal(manifest.schema_version,1);for(const asset of manifest.assets){assert.match(asset.path,/^(?:index\.html|app\.js|styles\.css|THIRD_PARTY_NOTICES\.txt|licenses\/[A-Za-z0-9@_.-]+\.txt)$/);const bytes=await readFile(resolve(directory,asset.path));assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);}});
 test('client source never persists credentials in browser storage or fetches a secret',async()=>{for(const file of ['controller.js','main.ts','config.js','alert-config.js']){const text=await readFile(resolve(pages,'frontend/src',file),'utf8');assert.doesNotMatch(text,/localStorage|sessionStorage|indexedDB|document\.cookie/);assert.doesNotMatch(text,/credential-(?:get|read)|console\.(?:log|error|warn)/);}});
 test('actual copied Game Link reusable UI is pinned and licensed',async()=>{const provenance=JSON.parse(await readFile(resolve(pages,'frontend/provenance.json'),'utf8'));assert.equal(provenance.commit,'cf755ed4ac455e8be48a9b99c285078cdb696510');for(const item of provenance.files){const bytes=await readFile(resolve(pages,'frontend',item.destination));assert.equal(createHash('sha256').update(bytes).digest('hex'),item.sha256,item.destination);}const notices=await readFile(resolve(pages,'00-quota-link/THIRD_PARTY_NOTICES.txt'),'utf8');assert.match(notices,/AGPL-3\.0/);assert.match(notices,/naive-ui 2\.45\.3/);assert.match(notices,/vue 3\.5\.43/);});
-test('page name is localized while native route and series branding remain stable',async()=>{const html=await readFile(resolve(pages,'00-quota-link/index.html'),'utf8');assert.match(html,/<title>额度查询<\/title>/);assert.match(html,/data-page-name="00-quota-link"/);const source=await readFile(resolve(pages,'frontend/src/main.ts'),'utf8');assert.match(source,/插件详情页打开「额度查询」/);assert.match(source,/如月怜的额度连结/);assert.match(source,/凭据已保存，将在余额查询时验证有效性/);assert.doesNotMatch(source,/凭据[^。]{0,50}(?:不是|不代表)/);assert.match(source,/已提交平台；不代表最终送达/);assert.match(source,/额度已回升，尚未达到恢复阈值/);assert.match(source,/结果过期或指标、单位不匹配/);});
+test('page name is localized while native route and series branding remain stable',async()=>{
+ const html=await readFile(resolve(pages,'00-quota-link/index.html'),'utf8');
+ assert.match(html,/<title>额度查询<\/title>/);
+ assert.match(html,/data-page-name="00-quota-link"/);
+ const {strings}=JSON.parse(await readFile(resolve(root,'.astrbot-plugin/i18n/zh-CN.json'),'utf8'));
+ assert.match(strings['web.shell.open_from_host'],/插件详情页打开「额度查询」/);
+ assert.equal(strings['web.shell.project_name'],'如月怜的额度连结');
+ assert.match(strings['web.credential.saved_hint'],/凭据已保存，将在余额查询时验证有效性/);
+ assert.doesNotMatch(strings['web.credential.saved_hint'],/凭据[^。]{0,50}(?:不是|不代表)/);
+ assert.match(strings['web.status.submitted'],/已提交平台，最终送达情况尚未确认/);
+ assert.match(strings['web.status.recovering'],/额度已回升，尚未达到恢复阈值/);
+ assert.match(strings['web.status.stale'],/结果过期或指标、单位不匹配/);
+});
 test('frontend descriptors stay synchronized with credential-filtered root schema',async()=>{const backend=JSON.parse(await readFile(resolve(root,'_conf_schema.json'),'utf8'));delete backend.enable_admin_page;const frontend=JSON.parse(await readFile(resolve(pages,'frontend/src/legacy-schema.json'),'utf8'));assert.deepEqual(frontend,backend);});

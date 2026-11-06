@@ -1,80 +1,179 @@
+var e = {
+	views: { "00-quota-link": { title: "额度查询" } },
+	pages: { "00-quota-link": { title: "额度查询" } },
+	strings: /* @__PURE__ */ JSON.parse("{\"alert.account_missing\":\"未找到该预警账户。\",\"alert.account_unqueryable\":\"账户尚不可查询；请先核对账户启用状态和查询配置。\",\"alert.admins.count\":\"{count} 位 QQ 用户 · 仅私聊显示\",\"alert.admins.host_admin_note\":\"AstrBot 内置管理员也可管理。\",\"alert.admins.permissions\":\"管理权限\",\"alert.admins.qq_list\":\"QQ 白名单\",\"alert.admins.separate_permissions\":\"额度查询与推送收件权限分别配置。\",\"alert.admins.title\":\"预警 QQ 管理白名单\",\"alert.command.account_candidate_required\":\"请指定账户与候选 ID。\",\"alert.command.account_not_unique\":\"账户不存在或名称不唯一，请使用管理页中的账户 ID。\",\"alert.command.account_required\":\"请指定账户。\",\"alert.command.admin_required\":\"无权管理额度预警；需要预警 QQ 白名单或 AstrBot 内置管理员权限。\",\"alert.command.extra_arguments\":\"该预警命令不接受附加参数。\",\"alert.command.help_syntax\":\"用法：/yql alert help [account|units|targets]。\",\"alert.command.interval_range\":\"间隔必须是范围内的整数分钟。\",\"alert.command.invalid_arguments\":\"预警命令参数无效；请私聊使用 /yql alert help。\",\"alert.command.invalid_target_arguments\":\"目标命令参数无效。\",\"alert.command.latest_candidate_required\":\"请选择最新单位候选 ID。\",\"alert.command.mention_syntax\":\"提及必须写成 @QQ号；不支持昵称、@all 或 CQ 代码。\",\"alert.command.parameters_required\":\"请指定账户及必要参数。\",\"alert.command.private_help\":\"预警管理：请私聊机器人使用 /yql alert help 查看详细配置用法。\",\"alert.command.private_status\":\"预警详细状态和目标名单仅在私聊显示，请私聊机器人执行此命令。\",\"alert.command.qq_not_allowlisted\":\"该 QQ 号不在预警管理白名单中。\",\"alert.command.resumed\":\"已恢复检查。\",\"alert.command.save_failed\":\"预警配置未保存；请私聊查看用法或在管理页修正配置。\",\"alert.command.saved\":\"预警配置已保存。\",\"alert.command.saved_private\":\"预警配置已保存。详细状态请私聊查看。\",\"alert.command.target_missing\":\"目标 ID 不存在；请私聊使用 targets list。\",\"alert.command.targets_syntax\":\"请使用 targets list/add/addhere/remove。\",\"alert.command.threshold_syntax\":\"用法：threshold \\\"账户名\\\" 金额 [指标ID]。\",\"alert.command.too_long\":\"预警命令过长。\",\"alert.command.unclosed_quote\":\"引号未配对；多词账户名请使用双引号。\",\"alert.command.unit_confirmed\":\"单位已确认。\",\"alert.command.unknown\":\"未知预警命令；使用 /yql alert help 查看用法。\",\"alert.command.untrusted_session\":\"宿主没有提供可信当前会话，未保存目标。\",\"alert.command.value_required\":\"请指定账户及数值。\",\"alert.delivery.budget\":\"配置已变更或发送预算暂不可用\",\"alert.delivery.cancelled\":\"配置已变更或预警已停止\",\"alert.delivery.failed\":\"平台未接受发送；冷却后可重试\",\"alert.delivery.fixed_hint\":\"会话 AI 不可用或输出未通过检查；已使用固定提示和精确事实\",\"alert.delivery.llm_changed\":\"会话模型或人格已变更，已用固定提醒\",\"alert.delivery.llm_config_unavailable\":\"会话 AI 配置不可用，已用固定提醒\",\"alert.delivery.llm_failed\":\"AI 润色不可用，已用固定提醒\",\"alert.delivery.llm_language\":\"请用简体中文写引言。\",\"alert.delivery.llm_locale_changed\":\"生成引言期间语言已更改，改用固定提示\",\"alert.delivery.llm_model_unavailable\":\"会话模型不可用，已用固定提醒\",\"alert.delivery.llm_nonlocal\":\"当前会话非本地 Agent，已用固定提醒\",\"alert.delivery.llm_not_called\":\"目标会话已停用或状态不可用，未调用 AI\",\"alert.delivery.llm_off\":\"会话 AI 已关闭，已用固定提醒\",\"alert.delivery.llm_persona_unavailable\":\"会话人格不可用，已用固定提醒\",\"alert.delivery.llm_session_unavailable\":\"目标会话已停用或状态不可用，未使用 AI 引言\",\"alert.delivery.llm_unavailable\":\"会话 AI 已关闭或状态不可用，已用固定提醒\",\"alert.delivery.llm_webchat_persona\":\"会话使用专用 WebChat 人格，已用固定提醒\",\"alert.delivery.mention_invalid\":\"群目标或提及 QQ 号格式无效；请核对群会话标识和数字 QQ 号\",\"alert.delivery.mention_unsupported\":\"目标适配器或会话类型不支持 QQ 提及；请移除 @ 或使用 aiocqhttp 群目标\",\"alert.delivery.message_components_unavailable\":\"消息组件构造失败；请检查 AstrBot 消息组件接口\",\"alert.delivery.note_suffix\":\"；{note}\",\"alert.delivery.platform_not_found\":\"目标平台实例未找到；请核对 UMO 中的平台实例 ID\",\"alert.delivery.platform_unavailable\":\"目标平台实例状态不可用；请检查适配器是否正常运行\",\"alert.delivery.platform_unsupported\":\"目标平台不支持此主动发送接口；请更换支持的目标平台\",\"alert.delivery.session_check_failed\":\"无法确认目标会话状态；请检查 AstrBot 会话状态接口\",\"alert.delivery.session_disabled\":\"目标会话已停用；请在 AstrBot 中启用该会话后等待下次检查\",\"alert.delivery.submitted\":\"已提交平台；不代表最终送达\",\"alert.delivery.target_invalid\":\"目标 UMO 格式无效；请重新选择或填写完整会话标识\",\"alert.delivery.transport_unavailable\":\"宿主主动发送接口不可用；请检查 AstrBot 版本及平台适配器\",\"alert.delivery.unknown\":\"发送结果未知；为避免重复不自动重发\",\"alert.fact.line\":\"{name} · {metric}：{amount} {unit} ≤ {threshold} {unit}（预警阈值）\",\"alert.fact.source\":\"数据来自本次有效查询；请以供应商控制台为准。\",\"alert.fact.title\":\"【额度预警】\",\"alert.help.account_heading\":\"账户预警\",\"alert.help.account_rules\":\"账户规则\",\"alert.help.account_title\":\"账户预警规则\",\"alert.help.admin_note\":\"管理权限：预警 QQ 白名单或 AstrBot 内置管理员。详细状态和名单请私聊查看。\",\"alert.help.admins\":\"预警 QQ 白名单\",\"alert.help.admins_command\":\"/yql alert admins list|add QQ号|remove QQ号\",\"alert.help.admins_short\":\"管理白名单\",\"alert.help.bind\":\"确认单位\",\"alert.help.bind_command\":\"/yql alert bind \\\"账户名\\\" 候选ID\",\"alert.help.common_actions\":\"常用操作\",\"alert.help.confirm_note\":\"确认前核对单位，确认后阈值数值不变。\",\"alert.help.delivery_permissions\":\"推送与权限\",\"alert.help.interval\":\"检查间隔（分钟）\",\"alert.help.interval_command\":\"/yql alert interval \\\"账户名\\\" 15\",\"alert.help.interval_note\":\"间隔单位为分钟；重复间隔 0 表示不重复。\",\"alert.help.interval_short\":\"检查间隔\",\"alert.help.llm\":\"智能提示\",\"alert.help.manage_note\":\"预警 QQ 白名单或 AstrBot 内置管理员可管理。\",\"alert.help.more_settings\":\"更多设置\",\"alert.help.persona_note\":\"智能提示的人格跟随目标会话。\",\"alert.help.prefix\":\"表内命令前缀：/yql alert\",\"alert.help.private_notice\":\"仅管理员可用 · 详细信息请私聊查看\",\"alert.help.recipients_note\":\"先确认收件人与群成员；保存不会立即推送。\",\"alert.help.recovery\":\"恢复阈值\",\"alert.help.recovery_command\":\"/yql alert recovery \\\"账户名\\\" 12|auto\",\"alert.help.refresh_note\":\"查看候选只读；refresh 会重新查询余额。\",\"alert.help.repeat\":\"重复间隔（0 为不重复）\",\"alert.help.repeat_command\":\"/yql alert repeat \\\"账户名\\\" 0\",\"alert.help.repeat_short\":\"重复间隔\",\"alert.help.retry\":\"解除认证暂停\",\"alert.help.retry_command\":\"/yql alert retry \\\"账户名\\\"\",\"alert.help.retry_short\":\"恢复检查\",\"alert.help.return\":\"返回总览：/yql alert help\",\"alert.help.set_threshold\":\"设置阈值\",\"alert.help.status\":\"预警状态\",\"alert.help.targets_add\":\"添加指定会话\",\"alert.help.targets_add_short\":\"指定会话\",\"alert.help.targets_heading\":\"目标与管理权限\",\"alert.help.targets_here\":\"添加当前会话\",\"alert.help.targets_here_short\":\"当前会话\",\"alert.help.targets_list\":\"查看目标\",\"alert.help.targets_remove\":\"移除目标\",\"alert.help.targets_remove_command\":\"/yql alert targets remove 目标ID\",\"alert.help.targets_title\":\"推送与管理权限\",\"alert.help.threshold_command\":\"/yql alert threshold \\\"账户名\\\" 10 [指标ID]\",\"alert.help.threshold_note\":\"阈值按当前单位判定；确认单位见 help units。\",\"alert.help.threshold_quick_command\":\"threshold \\\"账户名\\\" 10\",\"alert.help.title\":\"额度预警管理\",\"alert.help.toggle\":\"启用或关闭\",\"alert.help.toggle_command\":\"/yql alert on|off \\\"账户名\\\"\",\"alert.help.toggle_quick_command\":\"on|off \\\"账户名\\\"\",\"alert.help.toggle_short\":\"开启 / 关闭\",\"alert.help.trigger\":\"触发阈值\",\"alert.help.unit_confirmation\":\"单位确认\",\"alert.help.unit_note\":\"单位自动识别，阈值按当前单位判定；提示人格跟随目标会话。\",\"alert.help.units_read\":\"单位候选（只读）\",\"alert.help.units_read_command\":\"/yql alert units \\\"账户名\\\"\",\"alert.help.units_read_short\":\"查看候选\",\"alert.help.units_refresh\":\"刷新单位候选\",\"alert.help.units_refresh_command\":\"/yql alert units \\\"账户名\\\" refresh\",\"alert.help.units_refresh_short\":\"刷新候选\",\"alert.help.units_title\":\"识别与确认单位\",\"alert.help.view_status\":\"查看状态\",\"alert.invalid_unit\":\"单位候选无效或预警运行时已更新，请刷新后重试。\",\"alert.metric.available\":\"可用额度\",\"alert.metric.available_cash\":\"现金余额\",\"alert.metric.credit\":\"积分余额\",\"alert.metric.credit_amount\":\"信用额度\",\"alert.metric.granted\":\"赠送余额\",\"alert.metric.mapped\":\"映射余额\",\"alert.metric.site_credit\":\"站内额度\",\"alert.metric.topped_up\":\"充值余额\",\"alert.metric.total\":\"总余额\",\"alert.metric_changed\":\"监测项已变更，请确认阈值和单位\",\"alert.no_metric_unit\":\"本次未取得当前监测项的有效单位候选；请检查查询结果与监测项后重试。\",\"alert.no_unit\":\"本次未取得有效单位候选；请检查查询状态，稍后重新查询。\",\"alert.query_identity_changed\":\"账户查询配置已变更，请重新确认阈值和单位\",\"alert.receipt.result\":\"处理结果\",\"alert.receipt.title\":\"操作完成\",\"alert.runtime_changed\":\"预警运行时已更新，请刷新后重试。\",\"alert.state.blocked\":\"预警配置不完整或目标不可用\",\"alert.state.disabled\":\"预警已关闭\",\"alert.state.error\":\"查询失败；保留原预警状态，不将错误视为零余额\",\"alert.state.failed\":\"平台未接受发送；冷却后可重试\",\"alert.state.low\":\"额度低于或等于阈值，等待满足发送间隔或目标恢复\",\"alert.state.monitoring\":\"监测中，未触发预警\",\"alert.state.paused\":\"认证或权限校验失败；修正配置或手动重试后恢复检查\",\"alert.state.recovered\":\"已达到恢复阈值，等待下一次低额事件\",\"alert.state.recovering\":\"额度已回升，尚未达到恢复阈值\",\"alert.state.stale\":\"未获得新鲜且指标、单位一致的余额；保留原状态\",\"alert.state.storage_unavailable\":\"预警状态存储不可用；已停止检查和发送\",\"alert.state.submitted\":\"已提交平台；不代表最终送达\",\"alert.state.unit_changed\":\"监测项、单位或查询身份变化，请确认后继续\",\"alert.state.unit_unidentified\":\"等待有效查询识别额度单位\",\"alert.state.units_ambiguous\":\"存在多个或重复单位，请确认实际候选单位\",\"alert.state.unknown\":\"发送结果未知；为避免重复不自动重发\",\"alert.state.waiting\":\"等待下一次检查\",\"alert.state.waiting_budget\":\"同一推送目标共用至少 300 秒发送间隔；等待后续有效检查\",\"alert.status.account_count\":\"{count} 个账户 · 本地运行记录\",\"alert.status.account_id\":\"账户 ID\",\"alert.status.blocked\":\"需要检查配置\",\"alert.status.delivery_note\":\"本地记录 · 实际送达请查看平台记录。\",\"alert.status.empty\":\"当前没有可显示的预警检查记录。\",\"alert.status.empty_heading\":\"暂无账户状态\",\"alert.status.failed\":\"发送未被接受\",\"alert.status.last_checked\":\"最近检查\",\"alert.status.last_sent\":\"最近提交平台\",\"alert.status.low\":\"额度偏低\",\"alert.status.monitoring\":\"监测中\",\"alert.status.no_record\":\"暂无记录\",\"alert.status.paused\":\"检查已暂停\",\"alert.status.recovered\":\"已恢复\",\"alert.status.recovering\":\"额度回升中\",\"alert.status.running\":\"检查任务已启动\",\"alert.status.scheduler\":\"{task} · 状态存储{storage}\",\"alert.status.stale\":\"等待有效余额\",\"alert.status.stopped\":\"检查任务未运行\",\"alert.status.storage_unavailable\":\"存储不可用\",\"alert.status.submitted\":\"已提交平台\",\"alert.status.title\":\"额度预警状态\",\"alert.status.unit_changed\":\"需要重新确认\",\"alert.status.unit_unidentified\":\"等待识别单位\",\"alert.status.units_ambiguous\":\"待确认单位\",\"alert.status.unknown\":\"发送结果未知\",\"alert.status.waiting\":\"等待检查\",\"alert.status.waiting_budget\":\"等待发送间隔\",\"alert.targets.add_note\":\"使用 targets add 或 targets addhere 添加已确认的目标。\",\"alert.targets.count\":\"{count} 个目标 · 仅私聊显示\",\"alert.targets.empty\":\"尚未配置预警目标\",\"alert.targets.item\":\"目标 {index} · {key}\",\"alert.targets.mentions\":\"群内提及\",\"alert.targets.remove_command\":\"移除命令\",\"alert.targets.save_note\":\"管理员确认收件人和群成员后配置；保存仅更新本地目标。\",\"alert.targets.title\":\"预警推送目标\",\"alert.targets.umo\":\"会话 UMO\",\"alert.unit_changed\":\"查询单位已变更，请重新确认阈值和单位\",\"alert.unit_expired\":\"候选已过期或不再匹配；请先查询余额，再刷新单位候选。\",\"alert.units.ambiguous\":\"多个单位待确认\",\"alert.units.auto_detect_note\":\"查询余额后自动识别。\",\"alert.units.bind_command\":\"确认命令：/yql alert bind \\\"账户名\\\" 候选ID\",\"alert.units.binding_valid_note\":\"已有有效绑定不会因候选过期而失效。\",\"alert.units.bound_metric\":\"已绑定指标\",\"alert.units.candidate\":\"候选 {index} · {unit}\",\"alert.units.candidate_id\":\"候选 ID\",\"alert.units.candidate_updated\":\"候选更新时间\",\"alert.units.candidates_empty\":\"暂无可确认候选\",\"alert.units.candidates_expired\":\"候选已过期\",\"alert.units.change_reason\":\"变更原因\",\"alert.units.current_and_bound\":\"当前 / 已绑定指标\",\"alert.units.current_metric\":\"当前指标\",\"alert.units.current_unit\":\"当前单位\",\"alert.units.identity_changed\":\"查询身份已变化，请重新确认\",\"alert.units.last_verified\":\"最近验证\",\"alert.units.metric\":\"指标\",\"alert.units.metric_changed\":\"指标已变化，请重新确认\",\"alert.units.metric_unknown\":\"待识别\",\"alert.units.not_bound\":\"尚未绑定\",\"alert.units.pending_query\":\"待获取\",\"alert.units.readonly\":\"已有查询结果 · 只读状态\",\"alert.units.readonly_note\":\"列表读取现有查询结果；候选过期时可显式刷新。\",\"alert.units.refresh_command\":\"使用 /yql alert units \\\"账户名\\\" refresh 显式刷新候选。\",\"alert.units.refreshed\":\"已请求刷新 · 最新本地状态\",\"alert.units.refreshed_note\":\"本次按请求刷新账户余额。\",\"alert.units.stale\":\"单位验证已过期\",\"alert.units.threshold_note\":\"确认前核对阈值含义；确认后保留阈值原值。\",\"alert.units.title\":\"预警单位与候选\",\"alert.units.unit_changed\":\"单位已变化，请重新确认\",\"alert.units.verified\":\"单位已验证\",\"balance.expiry\":\"到期\",\"balance.expiry_date\":\"到期 {time}\",\"balance.item_expiry\":\"{label}到期\",\"balance.item_note\":\"{label}说明\",\"balance.kind.cash\":\"现金余额\",\"balance.kind.credits\":\"积分\",\"balance.kind.custom\":\"自定义项目\",\"balance.kind.free_quota\":\"免费额度\",\"balance.kind.quota\":\"额度\",\"balance.kind.subscription\":\"套餐\",\"balance.kind.usage\":\"用量\",\"balance.remaining\":\"剩余\",\"balance.remaining_amount\":\"剩余 {amount}\",\"balance.semantics\":\"语义说明 {meaning}\",\"balance.site_credit_meaning\":\"账户站内额度以 site_credit 计量。\",\"balance.total\":\"总量\",\"balance.total_amount\":\"总量 {amount}\",\"balance.unknown_amount\":\"数值未知（单位：{unit}）\",\"balance.unknown_unit\":\"未知单位\",\"balance.unreported\":\"未提供（单位：{unit}）\",\"balance.used\":\"已用\",\"balance.used_amount\":\"已用 {amount}\",\"balance.value_separator\":\"；\",\"capability.alibaba\":\"阿里云百炼\",\"capability.alibaba_balance\":\"阿里云账户余额（BSS：现金 / 可用 / 信用）\",\"capability.cash\":\"现金余额\",\"capability.compatible\":\"OpenAI 兼容服务\",\"capability.credential_missing\":\"未配置可用凭据\",\"capability.credits\":\"积分\",\"capability.custom\":\"用户配置的余额类别\",\"capability.deepseek_balance\":\"多币种账户余额\",\"capability.endpoint_invalid\":\"余额查询端点配置无效\",\"capability.free_quota\":\"免费额度\",\"capability.grsai_region\":\"Grsai 节点配置无效\",\"capability.grsai_token_missing\":\"未配置 Grsai 账户请求令牌\",\"capability.host_invalid\":\"Host 配置无效\",\"capability.host_missing\":\"缺少 HTTPS 服务根地址 Host\",\"capability.kind_invalid\":\"Grsai 积分类别必须映射为 credits\",\"capability.mapping_invalid\":\"余额字段映射未配置或无效\",\"capability.meinianda_balance\":\"账户站内额度（site_credit）\",\"capability.path_invalid\":\"API Path 配置无效\",\"capability.path_missing\":\"缺少以 / 开头的相对 API Path\",\"capability.profile_invalid\":\"服务类型配置无效\",\"capability.quota\":\"额度\",\"capability.scope_invalid\":\"余额范围配置无效\",\"capability.subscription\":\"订阅额度\",\"capability.unqueryable\":\"当前配置不可查询\",\"capability.usage\":\"用量\",\"common.empty\":\"空\",\"common.field_separator\":\"：\",\"common.label_value\":\"{label}：{value}\",\"common.list_separator\":\"、\",\"common.none\":\"无\",\"common.unknown\":\"未知\",\"config.account_id\":\"账户 id 必须为非空文本\",\"config.account_mapping\":\"账户配置必须为映射\",\"config.admin_boolean\":\"command_admin_only 必须为布尔值；已使用默认值\",\"config.aliases\":\"aliases 必须为非空文本列表\",\"config.auth_mapping\":\"auth 必须为映射\",\"config.balance_scope\":\"余额范围只能是 generic、account 或 api_key\",\"config.bss_auth\":\"阿里云 BSS 查询需要独立 AccessKey ID 和 AccessKey Secret\",\"config.compatible_auth\":\"兼容接口需要配置 API 密钥\",\"config.conflict\":\"配置已改变，请刷新后重新确认。\",\"config.conflicting_account\":\"账户名称与其他账户冲突\",\"config.credential_in_field\":\"普通配置字段不得包含凭据。\",\"config.credential_operation\":\"凭据只能通过独立凭据操作保存。\",\"config.display_name\":\"display_name 必须为非空文本\",\"config.duplicate_credential\":\"凭据不得与普通配置字段重复。\",\"config.duplicate_id\":\"账户 id 重复\",\"config.enabled_boolean\":\"enabled 必须为布尔值；已禁用账户\",\"config.endpoint_mapping\":\"endpoint 必须为映射\",\"config.group_boolean\":\"allow_group_queries 必须为布尔值；已使用默认值\",\"config.group_list\":\"group_allowed_user_ids 必须为非空文本列表；已使用空列表\",\"config.grsai_account_only\":\"Grsai 当前仅支持账户积分，API Key 积分预设尚未实现\",\"config.grsai_account_path\":\"Grsai 账户积分仅支持 /client/openapi/getCredits\",\"config.grsai_api_key_scope\":\"Grsai API Key 积分预设尚未实现，请选择账户积分\",\"config.grsai_credits\":\"Grsai 积分查询必须将 kind 固定映射为 credits\",\"config.grsai_path_scope\":\"Grsai getCredits 端点应选择 account；getAPIKeyCredits 端点应选择 api_key\",\"config.grsai_post\":\"该 Grsai 积分端点要求使用 POST\",\"config.grsai_region\":\"Grsai 节点只能选择国内直连或海外\",\"config.grsai_required\":\"账户余额或 API Key 余额范围仅适用于已选择的 Grsai 服务\",\"config.grsai_scope\":\"Grsai 当前仅支持账户积分预设\",\"config.grsai_token\":\"Grsai 账户积分需要用户信息中的请求令牌 token\",\"config.invalid\":\"配置无效；请检查字段和数据类型。\",\"config.invalid_amount_mapping\":\"兼容接口必须配置有效的 amount_path 映射\",\"config.invalid_endpoint\":\"余额端点必须是安全的 HTTPS GET 或 POST 配置\",\"config.invalid_host\":\"Host 必须是没有路径、查询参数或片段的 HTTPS 服务根地址\",\"config.invalid_path\":\"API Path 必须以单个 / 开头，且不能包含完整 URL、查询参数或片段\",\"config.invalid_root\":\"配置根节点必须是映射\",\"config.legacy_credential_in_field\":\"旧配置的普通字段包含凭据，原配置未删除。\",\"config.legacy_credential_shape\":\"旧凭据结构无法安全迁移，原配置未删除。\",\"config.migrate_first\":\"请先确认并迁移旧配置，再修改设置。\",\"config.missing_auth\":\"缺少可用凭据\",\"config.missing_endpoint\":\"缺少余额查询端点\",\"config.missing_env\":\"引用的凭据环境变量未设置\",\"config.missing_host\":\"请填写 HTTPS 服务根地址 Host\",\"config.missing_path\":\"请填写以 / 开头的相对 API Path\",\"config.positive_integer\":\"{path} 必须为正整数；已使用默认值\",\"config.positive_number\":\"{path} 必须为正数；已使用默认值\",\"config.private_list\":\"private_allowed_user_ids 必须为 平台名:用户ID 文本列表；已使用空列表\",\"config.provider_immutable\":\"现有账户的供应商类型不可更改；请新建账户。\",\"config.provider_type\":\"未知供应商类型\",\"config.providers_list\":\"providers 必须为列表\",\"config.response_mapping\":\"response_mapping 必须为映射；已使用空映射\",\"config.secret_in_name\":\"账户名称不得包含凭据\",\"config.service_profile\":\"兼容服务类型只能是 generic 或 grsai\",\"config.storage_unavailable\":\"安全存储暂不可用；未回退到明文，请检查密钥与存储状态。\",\"config.template_mismatch\":\"账户模板与供应商类型不一致\",\"credential.encrypted\":\"加密凭据已保存\",\"credential.environment\":\"环境变量引用已保存\",\"credential.missing\":\"尚未保存凭据\",\"credential.mixed\":\"加密凭据与环境变量引用已保存\",\"credential.unknown\":\"保存状态待确认\",\"error.alert_config.account_disabled\":\"启用预警前须先启用账户。\",\"error.alert_config.decimal_format\":\"{label}须为普通十进制文本，不支持科学计数法。\",\"error.alert_config.duplicate_target\":\"预警目标 UMO 重复，请合并为同一行。\",\"error.alert_config.group_mention_only\":\"仅数字 QQ 群会话可配置 @QQ号；私聊请删除提及。\",\"error.alert_config.integer_range\":\"{label}必须为 {low}–{high} 的整数。\",\"error.alert_config.invalid_enabled\":\"预警开关必须为布尔值。\",\"error.alert_config.invalid_model_enabled\":\"预警模型开关必须为布尔值。\",\"error.alert_config.invalid_model_object\":\"预警模型配置结构无效。\",\"error.alert_config.invalid_object\":\"账户预警配置必须为对象。\",\"error.alert_config.invalid_qq_id\":\"{label}仅支持 ASCII 正整数 QQ 号，不能 @全体。\",\"error.alert_config.invalid_target_fields\":\"每个预警目标必须仅包含 umo 和 mentions。\",\"error.alert_config.invalid_text\":\"{label}必须为不含控制字符的文本。\",\"error.alert_config.invalid_text_format\":\"{label}长度或格式无效。\",\"error.alert_config.invalid_umo\":\"UMO 须为 平台实例:消息类型:会话ID。\",\"error.alert_config.label.admin_qq\":\"预警管理 QQ 白名单\",\"error.alert_config.label.check_interval\":\"检查间隔（分钟）\",\"error.alert_config.label.mentions\":\"群内提及\",\"error.alert_config.label.metric\":\"预警指标\",\"error.alert_config.label.model\":\"模型 ID\",\"error.alert_config.label.persona\":\"人格 ID\",\"error.alert_config.label.recovery_threshold\":\"恢复阈值\",\"error.alert_config.label.repeat_interval\":\"持续低额重复间隔（分钟，0 表示不重复）\",\"error.alert_config.label.threshold\":\"额度阈值\",\"error.alert_config.label.unit\":\"预警单位\",\"error.alert_config.list_limit\":\"{label}须为最多 {limit} 项的列表。\",\"error.alert_config.missing_targets\":\"启用预警前须设置至少一个推送目标。\",\"error.alert_config.missing_threshold_or_metric\":\"请设置阈值和指标。\",\"error.alert_config.recovery_threshold_order\":\"恢复阈值必须大于额度阈值。\",\"error.alert_config.target_limit\":\"预警推送目标须为最多 {limit} 项的列表。\",\"error.alert_config.unknown_fields\":\"账户预警配置含未知字段。\",\"error.alert_config.unsupported_metric\":\"预警指标不受该供应商支持。\",\"error.query.empty_target\":\"目标名称不能为空\",\"error.query.invalid_arguments\":\"该命令不接受目标参数\",\"error.query.multiple_targets\":\"检测到多个账户或供应商，请指定一个目标\",\"error.query.unknown_target\":\"未找到匹配的账户或供应商\",\"help.account_command\":\"/yql account <名称>\",\"help.alerts\":\"额度预警\",\"help.aliyun_note\":\"阿里云 BSS 查询现金余额、可用额度、信用额度；RAM 身份至少需要 AliyunBSSReadOnlyAccess。\",\"help.all_accounts\":\"全部账户\",\"help.all_command\":\"/yql  或  /yql all\",\"help.card_subtitle\":\"查询额度 · 查看本地配置\",\"help.card_title\":\"YQL 使用帮助\",\"help.card_tool_note\":\"启用函数工具后，可用自然语言查询额度。\",\"help.command_body\":\"如月怜的额度连结\\n用法：\\n  /yql                 查询所有账户\\n  /yql help            查看帮助\\n  /yql status          查看本地配置状态\\n  /yql all             查询所有账户\\n  /yql <名称>          查询指定账户或供应商\\n  /yql account <名称>  查询指定账户\\n  /yql provider <名称> 查询指定供应商\\n\",\"help.compatible_note\":\"OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写服务地址、接口路径和高级认证/响应映射。配置完整后即可查询。\",\"help.configured_accounts\":\"已配置账户：{names}\",\"help.enabled_accounts\":\"已启用账户 · {count} 个\",\"help.local_config\":\"本地配置\",\"help.local_note\":\"help 和 status 读取本地信息。\",\"help.management_note\":\"供应商接口与凭据请在管理页配置。\",\"help.name_note\":\"也可使用 /yql <名称>；名称支持显示名、别名与供应商名。\",\"help.no_accounts\":\"当前没有配置账户。\",\"help.no_enabled_accounts\":\"尚未配置启用的账户。请先在管理页添加账户。\",\"help.provider_command\":\"/yql provider <名称>\",\"help.query\":\"查询额度\",\"help.select_account\":\"指定账户\",\"help.select_provider\":\"指定供应商\",\"help.status_heading\":\"帮助与状态\",\"help.tool_note\":\"在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。\",\"help.usage\":\"使用帮助\",\"provider.alibaba_bailian.authentication\":\"阿里云访问密钥认证失败\",\"provider.alibaba_bailian.available_credit\":\"可用额度\",\"provider.alibaba_bailian.cash_balance\":\"现金余额\",\"provider.alibaba_bailian.connection\":\"无法连接阿里云余额服务\",\"provider.alibaba_bailian.credit_limit\":\"信用额度\",\"provider.alibaba_bailian.fallback_account\":\"阿里云账户\",\"provider.alibaba_bailian.invalid_credentials\":\"阿里云余额查询凭据配置无效\",\"provider.alibaba_bailian.invalid_request\":\"阿里云余额查询请求配置无效\",\"provider.alibaba_bailian.invalid_response\":\"阿里云返回的余额数据格式无法识别\",\"provider.alibaba_bailian.permission\":\"阿里云拒绝访问账户现金余额。请为查询当前 BSS 现金余额的 RAM 身份至少授予 AliyunBSSReadOnlyAccess；DashScope 模型 API Key 不能替代此 RAM 授权。无需授予 BSS FullAccess。\",\"provider.alibaba_bailian.query_failed\":\"阿里云账户现金余额查询失败\",\"provider.alibaba_bailian.rate_limited\":\"阿里云余额查询被限流，请稍后重试\",\"provider.alibaba_bailian.request_denied\":\"阿里云拒绝了账户现金余额查询请求\",\"provider.alibaba_bailian.source\":\"阿里云账户余额与额度\",\"provider.alibaba_bailian.timeout\":\"阿里云现金余额查询超时\",\"provider.alibaba_bailian.too_many_requests\":\"阿里云余额查询过于频繁，请稍后重试\",\"provider.alibaba_bailian.unavailable\":\"阿里云余额服务暂时不可用\",\"provider.deepseek.authentication\":\"DeepSeek API 密钥认证失败\",\"provider.deepseek.connection\":\"无法连接 DeepSeek 余额服务\",\"provider.deepseek.granted_balance\":\"未过期赠金余额\",\"provider.deepseek.insufficient_balance\":\"DeepSeek 账户余额不足，当前无法调用 API\",\"provider.deepseek.invalid_request\":\"DeepSeek 余额查询请求配置无效\",\"provider.deepseek.invalid_response\":\"DeepSeek 返回的余额数据格式无法识别\",\"provider.deepseek.missing_key\":\"DeepSeek 账户缺少有效 API 密钥\",\"provider.deepseek.permission\":\"DeepSeek 拒绝了余额查询\",\"provider.deepseek.rate_limited\":\"DeepSeek 请求过于频繁，请稍后重试\",\"provider.deepseek.request_denied\":\"DeepSeek 拒绝了余额查询请求\",\"provider.deepseek.source\":\"DeepSeek API\",\"provider.deepseek.timeout\":\"DeepSeek 余额查询超时\",\"provider.deepseek.topped_up_balance\":\"充值余额\",\"provider.deepseek.total_balance\":\"总可用余额\",\"provider.deepseek.unavailable\":\"DeepSeek 余额查询暂时失败\",\"provider.meinianda.authentication\":\"Meinianda API Key 认证失败\",\"provider.meinianda.connection\":\"无法连接 Meinianda 余额服务\",\"provider.meinianda.invalid_request\":\"Meinianda 余额查询请求配置无效\",\"provider.meinianda.invalid_response\":\"Meinianda 返回的余额数据格式无法识别\",\"provider.meinianda.missing_key\":\"Meinianda 账户缺少有效 API Key\",\"provider.meinianda.permission\":\"Meinianda 拒绝了余额查询\",\"provider.meinianda.query_failed\":\"Meinianda 未能完成余额查询\",\"provider.meinianda.rate_limited\":\"Meinianda 请求过于频繁，请稍后重试\",\"provider.meinianda.site_credit\":\"账户站内额度\",\"provider.meinianda.site_credit_note\":\"账户站内额度，不是 API Key 限额；不换算为货币\",\"provider.meinianda.source\":\"Meinianda 余额 API\",\"provider.meinianda.timeout\":\"Meinianda 余额查询超时\",\"provider.meinianda.unavailable\":\"Meinianda 余额查询暂时失败\",\"provider.openai_compatible.authentication\":\"余额接口认证失败\",\"provider.openai_compatible.business_failure\":\"余额服务报告查询失败\",\"provider.openai_compatible.connection\":\"余额接口连接失败\",\"provider.openai_compatible.grsai_authentication\":\"账户积分接口返回 HTTP 401，需核对认证配置\",\"provider.openai_compatible.grsai_permission\":\"账户积分接口返回 HTTP 403，需核对访问配置\",\"provider.openai_compatible.grsai_query_failed\":\"账户积分接口请求失败\",\"provider.openai_compatible.grsai_rate_limited\":\"账户积分接口返回 HTTP 429，请稍后重试\",\"provider.openai_compatible.grsai_source\":\"Grsai 账户积分接口\",\"provider.openai_compatible.https_required\":\"余额接口必须使用 HTTPS\",\"provider.openai_compatible.invalid_configuration\":\"兼容平台余额查询配置无效\",\"provider.openai_compatible.invalid_request\":\"余额接口请求配置无效\",\"provider.openai_compatible.invalid_response\":\"余额接口返回的数据格式无法识别\",\"provider.openai_compatible.not_found\":\"余额接口路径或版本不存在\",\"provider.openai_compatible.permission\":\"余额接口拒绝访问\",\"provider.openai_compatible.rate_limited\":\"余额接口请求过于频繁，请稍后重试\",\"provider.openai_compatible.source\":\"OpenAI-compatible 余额接口\",\"provider.openai_compatible.timeout\":\"余额接口查询超时\",\"provider.openai_compatible.unavailable\":\"余额接口请求暂时失败\",\"provider.retry.explicit_throttling\":\"余额服务明确返回限流，请稍后重试\",\"query.account_card_title\":\"账户额度与用量\",\"query.account_incomplete\":\"账户配置不完整，暂时无法查询\",\"query.account_outcome_count\":\"{count} 个{label}\",\"query.account_timeout\":\"账户查询超过时限\",\"query.account_title\":\"账户查询：{target}\",\"query.accounts_count\":\"{count} 个账户\",\"query.all_card_title\":\"额度与用量\",\"query.all_title\":\"额度与用量查询\",\"query.authentication_paused\":\"认证或权限失败，已暂停；更新配置或明确重试后恢复\",\"query.available\":\"可用\",\"query.cached\":\"（缓存）\",\"query.cached_card\":\" · 缓存数据\",\"query.client_unconfigured\":\"查询客户端未配置\",\"query.cooldown_account\":\"账户查询冷却中，请在 {seconds} 秒后重试\",\"query.cooldown_provider\":\"供应商查询冷却中，请在 {seconds} 秒后重试\",\"query.empty_title\":\"暂无结果\",\"query.error_detail\":\"  查询失败：{message}\",\"query.failed\":\"查询失败\",\"query.failed_short\":\"失败\",\"query.invalid_operation\":\"操作类型必须为 query 或 list。\",\"query.invalid_provider_result\":\"供应商返回的账户结果无效\",\"query.invalid_request\":\"无法识别查询请求。\",\"query.invalid_target\":\"查询目标必须是账户、供应商名称或 all。\",\"query.matches\":\"{message}\\n匹配项：{candidates}\",\"query.no_accounts\":\"当前没有配置可查询的账户。\",\"query.no_items\":\"没有可显示的余额或用量项目\",\"query.no_results\":\"没有可显示的查询结果。\",\"query.outcome_count\":\"{label} {count}\",\"query.partial\":\"部分可用\",\"query.partial_data\":\"部分数据已获取\",\"query.partial_success\":\"部分成功\",\"query.permission_denied\":\"当前会话无权查询额度信息。\",\"query.provider_card_title\":\"供应商额度与用量\",\"query.provider_title\":\"供应商查询：{target}\",\"query.provider_unsupported\":\"该供应商的余额查询尚未实现\",\"query.queue_timeout\":\"等待查询时超过账户时限\",\"query.service_closed\":\"查询服务已关闭\",\"query.source_time\":\"  获取时间：{time} · 来源：{source}\",\"query.source_time_card\":\"来源：{source} · 获取：{time}\",\"query.status_unavailable\":\"不可用\",\"query.success\":\"查询成功\",\"query.success_short\":\"成功\",\"query.summary\":\"查询汇总：{summary}。\",\"query.summary_separator\":\"，\",\"query.target_card\":\"目标：{target}\\n\",\"query.time\":\"查询时间：{time}\",\"query.time_card\":\"查询：{time}\",\"query.total_timeout\":\"查询超过总时限\",\"query.unavailable\":\"查询暂时不可用\",\"query.unknown_status\":\"状态未知\",\"status.account_list\":\"账户列表：\",\"status.accounts_count\":\"账户：共 {total} 个，启用 {enabled} 个，可查询 {ready} 个\",\"status.add_account\":\"在管理页添加账户与凭据\",\"status.admin_only\":\"仅管理员\",\"status.after_save\":\"保存后发送 /yql status 查看本地配置，再用 /yql 查询额度。\",\"status.api_path\":\"请填写以 / 开头的相对接口路径\",\"status.card_access\":\"访问与凭据\",\"status.card_counts\":\"{total} 个账户 · {enabled} 个启用 · {ready} 个配置完整\",\"status.card_incomplete\":\"待补齐：{reason}\",\"status.card_issues\":\"配置问题 · {count} 项\",\"status.card_needs_check\":\"待检查：{reason}\",\"status.card_needs_setup\":\"待配置：{reason}\",\"status.card_no_accounts\":\"尚未配置账户\",\"status.card_online_check\":\"连通性和余额可通过 /yql 查询。\",\"status.card_source\":\"依据本地账户目录与凭据保存记录\",\"status.card_title\":\"本地配置状态\",\"status.credential_storage\":\"凭据存储\",\"status.credential_storage_state\":\"凭据存储：{state}\",\"status.disabled\":\"已禁用\",\"status.enabled\":\"已开启\",\"status.group_queries\":\"群聊查询\",\"status.group_queries_state\":\"群聊查询：{state}\",\"status.incomplete\":\"配置不全：{reason}\",\"status.issue_count\":\"配置问题：{count} 项\",\"status.next_step\":\"下一步\",\"status.no_accounts\":\"尚未配置账户。\",\"status.not_queryable\":\"不可查询：{reason}\",\"status.off\":\"已关闭\",\"status.permissions\":\"命令权限\",\"status.permissions_state\":\"命令权限：{state}\",\"status.provider\":\"供应商：{provider}\",\"status.queryable\":\"已配置，可查询\",\"status.reason.grsai_account_path_mismatch\":\"请使用 Grsai 账户积分接口\",\"status.reason.grsai_balance_scope_mismatch\":\"请按 Grsai 接口选择对应余额范围\",\"status.reason.grsai_method_must_post\":\"Grsai 积分接口使用 POST\",\"status.reason.invalid_api_path\":\"接口路径配置无效；请填写以 / 开头且不含参数的相对路径\",\"status.reason.invalid_balance_kind\":\"Grsai 积分类别应配置为 credits\",\"status.reason.invalid_balance_scope\":\"请检查余额查询范围\",\"status.reason.invalid_base_url\":\"服务地址配置无效；请填写不含路径、参数或凭据的 HTTPS 服务根地址\",\"status.reason.invalid_endpoint\":\"服务地址或接口路径配置无效；服务地址填 HTTPS 服务根地址，接口路径以 / 开头\",\"status.reason.invalid_grsai_region\":\"请选择有效的 Grsai 节点\",\"status.reason.invalid_response_mapping\":\"请在高级设置中按服务商响应文档填写余额映射\",\"status.reason.invalid_service_profile\":\"请检查服务类型\",\"status.reason.missing_api_path\":\"请填写以 / 开头的接口路径\",\"status.reason.missing_base_url\":\"请填写 HTTPS 服务根地址\",\"status.reason.missing_credentials\":\"缺少可用凭据\",\"status.reason.missing_endpoint\":\"请按服务商文档补齐服务地址与接口路径\",\"status.reason.missing_environment_variable\":\"凭据环境变量未设置\",\"status.reason.missing_grsai_token\":\"请配置 Grsai 账户请求令牌\",\"status.saved_credentials\":\"凭据保存\",\"status.session_permissions\":\"按会话授权\",\"status.source\":\"数据来源：本地配置与凭据保存记录；连通性和余额可通过 /yql 查询。\",\"status.title\":\"如月怜的额度连结状态\",\"status.unknown_reason\":\"配置不全或暂不可查询\",\"storage.migration_pending\":\"旧配置待迁移\",\"storage.ready\":\"安全存储已就绪\",\"storage.unavailable\":\"安全存储待检查\",\"storage.unknown\":\"凭据保存状态待确认\",\"web.account.add\":\"添加账户\",\"web.account.add_query\":\"添加查询账户\",\"web.account.advanced\":\"高级接口与响应映射\",\"web.account.aliases_hint\":\"命令与自然语言使用这些别名。每行一项，避免与其他账户重名。\",\"web.account.count\":\"{count} 个账户\",\"web.account.credentials_configured\":\"凭据已配置\",\"web.account.credentials_pending\":\"待配置凭据\",\"web.account.disabled\":\"已停用\",\"web.account.editor_subtitle\":\"配置查询参数与来源凭据。\",\"web.account.empty\":\"还没有查询账户\",\"web.account.empty_hint\":\"选择供应商添加账户，再单独配置加密凭据。\",\"web.account.enabled\":\"已启用\",\"web.account.id_hint\":\"使用稳定、唯一的 ID；保存后不可更改。\",\"web.account.id_locked\":\"已有账户 ID 不可修改，避免凭据误绑定。\",\"web.account.list\":\"查询账户\",\"web.account.list_subtitle\":\"管理 AI 服务的余额、用量与额度查询账户。\",\"web.account.mapping\":\"余额响应映射\",\"web.account.mapping_hint\":\"使用 JSON Pointer，例如 /data/remaining。静态请求体和映射中不允许放入凭据。\",\"web.account.new\":\"新建账户\",\"web.account.profile_action\":\"更换并清空阈值\",\"web.account.profile_body\":\"将清空阈值并关闭预警，单位会重新识别。\",\"web.account.profile_title\":\"更换服务类型并重设预警？\",\"web.account.protocol\":\"请求协议\",\"web.account.provider\":\"供应商\",\"web.account.provider_scope\":\"各供应商使用自己的余额协议和查询凭据，不复用模型聊天配置。\",\"web.account.provider_settings\":\"供应商设置\",\"web.account.remove\":\"移除账户\",\"web.account.remove_action\":\"从草稿移除\",\"web.account.remove_body\":\"将从草稿移除此账户。保存设置后才会生效，并移除其已保存凭据；其他账户不受影响。\",\"web.account.remove_hint\":\"移除操作在保存设置后生效。\",\"web.account.remove_title\":\"移除账户「{account}」？\",\"web.account.settings\":\"账户设置\",\"web.alert.admin_list\":\"预警管理 QQ 白名单\",\"web.alert.admin_list_hint\":\"每行一个 QQ 号；名单成员或 AstrBot 管理员可管理预警。\",\"web.alert.admin_list_placeholder\":\"每行一个 QQ 号\",\"web.alert.enable_account\":\"启用此账户预警\",\"web.alert.hints_title\":\"预警提示\",\"web.alert.interval\":\"检查间隔（分钟）\",\"web.alert.interval_days\":\"{count} 天\",\"web.alert.interval_hint\":\"1–4320 分钟，默认 15。\",\"web.alert.interval_minutes\":\"{count} 分钟\",\"web.alert.interval_set\":\"设为 {count} 分钟\",\"web.alert.interval_slider\":\"检查间隔滑条（分钟）\",\"web.alert.metric\":\"预警指标\",\"web.alert.metric_hint\":\"选择需要监测的余额。\",\"web.alert.minutes\":\"分钟\",\"web.alert.permissions\":\"预警管理权限\",\"web.alert.quick_group\":\"检查间隔快捷设置\",\"web.alert.quick_label\":\"快捷设置：\",\"web.alert.recovery\":\"恢复阈值（可选）\",\"web.alert.recovery_hint\":\"留空自动设置，须高于触发阈值。\",\"web.alert.recovery_placeholder\":\"留空自动设置\",\"web.alert.repeat\":\"持续低额重复提醒（分钟）\",\"web.alert.repeat_hint\":\"0 不重复，最多 4320 分钟。\",\"web.alert.smart_hint\":\"智能提示\",\"web.alert.smart_hint_help\":\"使用目标会话的模型与人格。\",\"web.alert.targets\":\"目标 UMO（每行一个）\",\"web.alert.targets_hint\":\"每行一个 UMO，群聊可追加 @QQ号。\",\"web.alert.targets_title\":\"额度预警推送目标\",\"web.alert.threshold\":\"触发阈值\",\"web.alert.threshold_hint\":\"余额低于或等于此值时触发预警。\",\"web.alert.threshold_placeholder\":\"填写触发阈值\",\"web.alert.title\":\"额度预警\",\"web.common.cancel\":\"取消\",\"web.common.choose\":\"请选择\",\"web.common.off\":\"已关闭\",\"web.common.on\":\"已开启\",\"web.common.one_per_line\":\"每行一项\",\"web.common.time_unavailable\":\"时间不可用\",\"web.credential.balance_key\":\"余额查询 API Key\",\"web.credential.cancel_entry\":\"取消输入\",\"web.credential.clear\":\"清除凭据\",\"web.credential.clear_body\":\"将移除账户「{account}」的此项凭据或引用。账户设置保留；之后需重新配置才能查询。\",\"web.credential.clear_title\":\"清除 {credential}？\",\"web.credential.confirm_clear\":\"确认清除\",\"web.credential.encrypted_status\":\"已配置 · 加密存储\",\"web.credential.enter_new\":\"输入新凭据\",\"web.credential.environment_hint\":\"仅填写环境变量名，例如 QUOTA_API_KEY；凭据值由运行环境提供。\",\"web.credential.environment_name\":\"环境变量名\",\"web.credential.environment_status\":\"已配置 · 环境变量引用\",\"web.credential.eyebrow\":\"SOURCE ACCESS\",\"web.credential.finish_settings\":\"请先保存或放弃普通设置修改，再操作凭据。\",\"web.credential.grsai_token\":\"Grsai 请求令牌\",\"web.credential.legacy_field\":\"旧版凭据（{field}）\",\"web.credential.missing\":\"未配置\",\"web.credential.new_source\":\"新凭据来源\",\"web.credential.new_value\":\"新凭据\",\"web.credential.new_value_hint\":\"空值不会清除已有凭据。提交后立即清空输入。\",\"web.credential.optional_sts\":\"STS Security Token（可选）\",\"web.credential.replace\":\"更换凭据\",\"web.credential.save_account\":\"请先保存新账户，再配置凭据。\",\"web.credential.save_new\":\"保存新凭据\",\"web.credential.saved_hint\":\"凭据已保存，将在余额查询时验证有效性。\",\"web.credential.separate\":\"凭据单独保存。\",\"web.credential.status_unread\":\"状态未读取\",\"web.credential.title\":\"查询凭据\",\"web.credential.use_environment\":\"引用环境变量\",\"web.detail.fixed_hint\":\"已使用固定提示。\",\"web.detail.mention_invalid\":\"QQ 提及格式无效，请核对群会话与 @QQ 号。\",\"web.detail.mention_unsupported\":\"目标不支持 QQ 提及，请移除 @ 后缀或使用支持的 QQ 群目标。\",\"web.detail.message_components_unavailable\":\"消息组件无法构造，请检查宿主组件与日志。\",\"web.detail.platform_not_found\":\"未找到目标平台实例，请核对 UMO 的平台实例 ID。\",\"web.detail.platform_unavailable\":\"目标平台实例暂不可用，请检查连接状态与宿主日志。\",\"web.detail.platform_unsupported\":\"目标平台不支持此主动发送方式，请改用支持的推送目标。\",\"web.detail.session_check_failed\":\"无法核对目标会话状态，请检查 AstrBot 会话设置与日志。\",\"web.detail.session_disabled\":\"目标会话已停用，请在 AstrBot 中启用会话。\",\"web.detail.target_invalid\":\"推送目标格式无效，请在全局设置中核对 UMO。\",\"web.detail.transport_unavailable\":\"宿主主动发送接口不可用，请检查 AstrBot 版本与日志。\",\"web.detail.unknown\":\"暂无明确阻止原因，请核对全局推送目标、平台连接与宿主预警日志。\",\"web.field.advanced_options\":\"显示高级设置\",\"web.field.aliases\":\"查询别名\",\"web.field.amount_path\":\"主余额路径\",\"web.field.auth_mode\":\"认证方式\",\"web.field.auth_name\":\"认证参数名\",\"web.field.balance_scope\":\"积分范围\",\"web.field.base_url\":\"服务地址\",\"web.field.cache_ttl_seconds\":\"成功结果缓存（秒）\",\"web.field.display_name\":\"显示名称\",\"web.field.enabled\":\"启用账户\",\"web.field.expires_at_path\":\"到期时间路径\",\"web.field.expiry_path\":\"旧版到期路径\",\"web.field.failure_path\":\"业务失败路径\",\"web.field.failure_value\":\"业务失败值\",\"web.field.id\":\"账户 ID\",\"web.field.json_body\":\"静态 JSON 请求体\",\"web.field.kind\":\"余额类别\",\"web.field.kind_path\":\"类别路径\",\"web.field.method\":\"请求方法\",\"web.field.path\":\"接口路径\",\"web.field.region\":\"连接区域\",\"web.field.remaining_path\":\"剩余量路径\",\"web.field.service_profile\":\"服务类型\",\"web.field.status_path\":\"状态路径\",\"web.field.status_values\":\"状态值映射\",\"web.field.success_path\":\"业务成功路径\",\"web.field.success_value\":\"业务成功值\",\"web.field.timeout_seconds\":\"账户超时（秒）\",\"web.field.total_path\":\"总量路径\",\"web.field.unit\":\"固定单位\",\"web.field.unit_path\":\"单位路径\",\"web.field.url\":\"旧版完整 URL\",\"web.field.used_path\":\"已用量路径\",\"web.global.allow_group_queries\":\"允许群聊查询\",\"web.global.command_admin_only\":\"余额查询命令仅管理员\",\"web.global.group_allowed_user_ids\":\"群聊用户白名单\",\"web.global.max_concurrency\":\"最大并发数\",\"web.global.private_allowed_user_ids\":\"私聊白名单\",\"web.global.timeout_seconds\":\"单账户超时（秒）\",\"web.global.total_timeout_seconds\":\"整次查询超时（秒）\",\"web.hint.advanced_options\":\"通用服务配置认证、方法与响应映射；Grsai 账户积分使用固定协议并忽略旧映射。\",\"web.hint.amount_path\":\"必需的 JSON Pointer，例如 /data/remaining。\",\"web.hint.auth_mode\":\"按余额文档确认；Grsai 账户积分忽略此栏，token 固定放入 JSON 请求体。\",\"web.hint.auth_name\":\"仅认证方式为「请求头」或「查询参数」时使用。\",\"web.hint.balance_scope\":\"账户积分已支持；API Key 积分暂不可查询。\",\"web.hint.base_url\":\"HTTPS 服务根地址，不含 API 路径。https://api.example.invalid 仅为不可访问的格式示例。\",\"web.hint.expiry_path\":\"兼容旧版 expires_at_path。\",\"web.hint.json_body\":\"仅供通用服务使用，不支持模板或凭据。Grsai 账户积分留空；旧条目切换时清除旧请求体。\",\"web.hint.kind_path\":\"可选 JSON Pointer；仅接受 cash/quota/free_quota/subscription/credits/usage/custom。\",\"web.hint.legacy_base_url\":\"HTTPS 服务根地址，可与接口路径配合。\",\"web.hint.legacy_json_body\":\"仅用于有文档依据的只读 POST，不支持模板或凭据。\",\"web.hint.legacy_method\":\"只允许 GET 或已确认无副作用的 POST。\",\"web.hint.meinianda_cache\":\"站点建议每分钟查询一次，默认缓存 60 秒。\",\"web.hint.method\":\"通用服务按文档填写。Grsai 账户积分固定 POST；旧条目切换时清除原 GET。\",\"web.hint.path\":\"通用服务按文档填写。Grsai 账户积分留空或填 /client/openapi/getCredits；旧条目切换时清除原路径。/account/balance 仅为占位示例。\",\"web.hint.private_allowlist\":\"填写完整 平台名:用户ID，例如 aiocqhttp:123456；管理员无需加入。/yql 余额查询还受上方管理员开关限制。\",\"web.hint.region\":\"国内与海外均使用内置官方节点，无需手填服务器地址。\",\"web.hint.service_profile\":\"余额查询使用服务商专属接口。新 Grsai 账户请直接添加 Grsai 模板；本模板旧条目可切换账户积分预设。\",\"web.hint.status_values\":\"将供应商状态值映射到 available/unavailable/partial/unknown。\",\"web.hint.unit\":\"可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；设置 unit_path 时必填。\",\"web.hint.unit_path\":\"可选 JSON Pointer；运行时值必须与固定 unit 一致。\",\"web.hint.url\":\"完整 HTTPS 地址，不含 query、凭据或 fragment。\",\"web.language.auto\":\"跟随 AstrBot\",\"web.language.en-US\":\"English\",\"web.language.ja-JP\":\"日本語\",\"web.language.zh-CN\":\"简体中文\",\"web.language.zh-TW\":\"繁體中文\",\"web.metric.AvailableAmount\":\"可用额度\",\"web.metric.AvailableCashAmount\":\"现金余额\",\"web.metric.CreditAmount\":\"信用额度\",\"web.metric.credit\":\"积分\",\"web.metric.granted_balance\":\"赠送余额\",\"web.metric.mapped_balance\":\"已配置映射余额\",\"web.metric.monitored\":\"监测余额\",\"web.metric.site_credit\":\"站内额度\",\"web.metric.topped_up_balance\":\"充值余额\",\"web.metric.total_balance\":\"总余额\",\"web.migration.accounts\":\"账户\",\"web.migration.cleanup_hint\":\"仅在迁移成功后清理宿主中的旧配置。若源配置变化，将拒绝执行，请重新预览。\",\"web.migration.cleanup_pending\":\"迁移已保存，但宿主旧字段尚未清理完成。请重新预览后重试清理。\",\"web.migration.confirm\":\"确认迁移旧配置\",\"web.migration.confirm_body\":\"将迁移预览中的 {count} 个账户；明文凭据加密后保存，并清理旧版插件字段。不会展示或发送凭据到其他服务。\",\"web.migration.confirm_title\":\"迁移旧配置？\",\"web.migration.conflict\":\"发现与当前加密存储不同的旧配置。不会自动覆盖现有存储，也不会清理这份新出现的旧配置。请人工核对来源。\",\"web.migration.environment\":\"环境变量引用\",\"web.migration.execute\":\"执行迁移\",\"web.migration.lock_warning\":\"有旧版配置等待迁移。普通设置与凭据操作暂时锁定。\",\"web.migration.no_pending\":\"没有待迁移的旧版配置。\",\"web.migration.open\":\"前往迁移\",\"web.migration.overview\":\"将旧版插件配置中的普通设置、凭据和环境变量引用迁移到独立管理存储。凭据加密保存，不会在页面显示。\",\"web.migration.pending\":\"检测到旧版配置，迁移完成前不能保存新设置。\",\"web.migration.plaintext\":\"需要加密的凭据\",\"web.migration.preview\":\"读取迁移预览\",\"web.migration.retry_cleanup\":\"重试清理旧字段\",\"web.migration.scope\":\"本次迁移范围\",\"web.migration.title\":\"旧配置迁移\",\"web.navigation.accounts\":\"账户管理\",\"web.navigation.back_to_accounts\":\"返回账户\",\"web.navigation.global\":\"全局设置\",\"web.navigation.leave_action\":\"放弃草稿并离开\",\"web.navigation.leave_body\":\"未保存的设置和凭据输入将清空。已发出的请求无法撤回，结果不明时需重新读取，不会自动重试。\",\"web.navigation.leave_title\":\"离开当前设置？\",\"web.navigation.maintenance\":\"配置维护\",\"web.navigation.mobile\":\"移动端导航\",\"web.navigation.primary\":\"主导航\",\"web.navigation.reload\":\"重新读取状态\",\"web.navigation.reload_action\":\"丢弃草稿并读取\",\"web.navigation.reload_body\":\"这会清空当前未保存的设置和凭据输入。\",\"web.navigation.reload_title\":\"重新读取配置？\",\"web.navigation.skip\":\"跳至正文\",\"web.notice.alert_loading\":\"正在读取预警运行状态…\",\"web.notice.alert_read_failed\":\"无法读取预警运行状态，请稍后重试。\",\"web.notice.authorization_lost\":\"管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。\",\"web.notice.authorization_reopen\":\"管理授权已失效，请重新打开。\",\"web.notice.config_changed\":\"配置已改变，请重新读取。\",\"web.notice.connecting\":\"正在连接宿主管理会话…\",\"web.notice.discarded\":\"未保存的草稿已丢弃。\",\"web.notice.invalid_context\":\"宿主管理上下文无效。请从 AstrBot 插件管理打开此页。\",\"web.notice.invalid_environment\":\"请输入有效的环境变量名，不要填写变量的值。\",\"web.notice.left_during_write\":\"已离开原设置。已发出的请求无法撤回，请重新读取确认结果。\",\"web.notice.legacy_cleanup_incomplete\":\"配置已迁移，但宿主旧字段清理尚未完成，请在配置维护中重新预览并完成清理。\",\"web.notice.legacy_cleanup_retry\":\"迁移已保存，可重试清理宿主中的旧字段。\",\"web.notice.legacy_conflict\":\"旧配置与当前存储不一致。两份配置均保留，请核对来源。\",\"web.notice.legacy_not_pending\":\"没有待迁移的旧配置。\",\"web.notice.legacy_preview_ready\":\"迁移预览已就绪。执行前请核对下方范围。\",\"web.notice.loaded\":\"已读取最新配置。\",\"web.notice.missing_credential\":\"请输入新凭据；留空不会执行清除。\",\"web.notice.open_in_host\":\"请从 AstrBot 插件管理页面打开此页。\",\"web.notice.read_failed\":\"无法确认当前配置状态。请重新读取，或从 AstrBot 重新打开。\",\"web.notice.reading\":\"正在读取最新状态…\",\"web.notice.revision_conflict\":\"配置已被其他页面修改。请重新读取，再核对并提交；不会自动重试。\",\"web.notice.saved\":\"已保存，当前状态已重新核对。\",\"web.notice.saving\":\"正在提交，请勿重复操作…\",\"web.notice.session_unavailable\":\"宿主管理会话不可用，请重新打开此页。\",\"web.notice.unit_candidate_changed\":\"候选已变化或过期，请重新查询后确认。\",\"web.notice.unit_candidates\":\"已获取最新候选，请核对后确认。\",\"web.notice.unit_confirm_uncertain\":\"确认结果未知，请刷新单位后再操作。\",\"web.notice.unit_confirmed\":\"单位已确认。\",\"web.notice.unit_current\":\"已读取最新单位状态，已确认的单位仍有效。\",\"web.notice.unit_no_candidates\":\"暂未取得可确认候选，请检查凭据、接口配置或查询退避状态后再查询。\",\"web.notice.unit_querying\":\"正在查询余额以获取最新单位…\",\"web.notice.unit_read_failed\":\"单位获取失败，请刷新。\",\"web.notice.unit_unverified_candidates\":\"无法确认新的单位候选。请检查凭据、接口与查询状态，再重新查询。\",\"web.notice.validation_failed\":\"提交未通过校验。请检查字段和凭据类型；敏感输入已清空。\",\"web.notice.write_uncertain\":\"提交结果尚未确认，敏感输入已清空。请先重新读取状态，再决定是否提交。\",\"web.option.auth.bearer\":\"Bearer 令牌\",\"web.option.auth.header\":\"请求头\",\"web.option.auth.query\":\"查询参数\",\"web.option.profile.generic\":\"OpenAI 兼容服务 / 第三方服务\",\"web.option.region.cn\":\"国内直连\",\"web.option.region.overseas\":\"海外节点\",\"web.option.scope.account\":\"账户积分（已支持预设）\",\"web.option.scope.api_key\":\"API Key 积分（暂不可查询）\",\"web.option.scope.none\":\"请选择积分范围\",\"web.provider.alibaba_help\":\"阿里云 BSS：现金余额、可用额度和信用额度。\",\"web.provider.compatible_help\":\"余额查询使用供应商专属接口，请按其文档配置只读余额接口。\",\"web.provider.compatible_name\":\"其他兼容服务\",\"web.provider.deepseek_help\":\"DeepSeek 官方账户余额，查询地址与解析规则已内置。\",\"web.provider.grsai_help\":\"Grsai 使用请求令牌，通过固定接口 POST /client/openapi/getCredits 查询账户积分。模型 API Key 不用于余额查询。\",\"web.provider.legacy_name\":\"旧版通用账户\",\"web.provider.meinianda_help\":\"查询 Meinianda 账户站内额度。建议缓存至少 60 秒。\",\"web.runtime.last_checked\":\"最近检查：\",\"web.runtime.last_sent\":\"最近发送尝试：\",\"web.runtime.loading\":\"读取中…\",\"web.runtime.no_account_record\":\"此账户尚无运行记录。\",\"web.runtime.refresh\":\"刷新预警状态\",\"web.runtime.running\":\"检查任务已运行；仅配置完整且单独开启的账户参与。\",\"web.runtime.stopped\":\"检查任务未运行。\",\"web.runtime.storage_unavailable\":\"预警状态存储不可用，预警未运行。\",\"web.runtime.title\":\"运行状态\",\"web.runtime.unknown_status\":\"状态已更新，请通过预警命令查看详情。\",\"web.settings.access_eyebrow\":\"QUERY ACCESS\",\"web.settings.access_title\":\"访问权限\",\"web.settings.account_alerts\":\"各账户可单独开启预警。\",\"web.settings.admin_access\":\"此页面仅供 AstrBot 管理员配置。查询权限不会授予管理页面访问权。\",\"web.settings.admin_allowlist\":\"管理员不需要加入私聊白名单。\",\"web.settings.appearance\":\"语言设置\",\"web.settings.applies_after_save\":\"保存后生效。\",\"web.settings.command_access\":\"/yql 余额查询命令受管理员开关限制；预警命令按独立规则。\",\"web.settings.discard\":\"放弃修改\",\"web.settings.group_access\":\"开启群聊查询后，管理员和白名单中的用户可以在群内查询。\",\"web.settings.language\":\"插件语言\",\"web.settings.language_hint\":\"保存后生效。自动模式采用 AstrBot 提供的语言。没有可用语言时（例如定时预警）使用简体中文。\",\"web.settings.private_format\":\"私聊白名单使用完整 平台名:用户ID。\",\"web.settings.query_access\":\"查询权限\",\"web.settings.query_and_cache\":\"查询与缓存\",\"web.settings.save\":\"保存设置\",\"web.settings.save_first\":\"请先保存设置。\",\"web.settings.separate_credentials\":\"普通设置与凭据分别保存\",\"web.settings.unsaved\":\"有未保存修改\",\"web.shell.auth_required\":\"需要宿主管理授权\",\"web.shell.brand_author\":\"如月怜的\",\"web.shell.brand_name\":\"额度连结\",\"web.shell.eyebrow\":\"YOMIHIME QUOTA LINK / ADMIN\",\"web.shell.loading_config\":\"正在读取配置\",\"web.shell.open_from_host\":\"请先登录 AstrBot，再从插件详情页打开「额度查询」。\",\"web.shell.page_title\":\"额度查询\",\"web.shell.project_name\":\"如月怜的额度连结\",\"web.shell.revision\":\"配置版本 {revision}\",\"web.shell.scope\":\"统一查询 · 独立凭据\",\"web.shell.waiting\":\"等待管理会话\",\"web.status.accepted\":\"发送请求已受理（不代表送达）\",\"web.status.auth_paused\":\"凭据被拒绝，检查已暂停\",\"web.status.blocked\":\"预警发送已暂停，请检查下方原因\",\"web.status.disabled\":\"预警已关闭\",\"web.status.error\":\"检查失败，保留上次预警状态\",\"web.status.failed\":\"发送失败\",\"web.status.incomplete\":\"配置不完整，未启动\",\"web.status.low\":\"余额低于或等于阈值，预警持续中\",\"web.status.monitoring\":\"余额监测中\",\"web.status.normal\":\"余额在阈值以上\",\"web.status.paused\":\"认证或权限校验失败；修正配置或手动重试后恢复检查\",\"web.status.pending\":\"等待检查\",\"web.status.pending_send\":\"等待合并提醒\",\"web.status.recovered\":\"余额已恢复\",\"web.status.recovering\":\"额度已回升，尚未达到恢复阈值\",\"web.status.stale\":\"结果过期或指标、单位不匹配，不用于预警判断\",\"web.status.storage_unavailable\":\"预警状态存储不可用，预警未运行。\",\"web.status.submitted\":\"已提交平台，最终送达情况尚未确认\",\"web.status.unit_changed\":\"监测项或单位已变化，请确认\",\"web.status.unit_unidentified\":\"等待识别单位\",\"web.status.units_ambiguous\":\"多个单位待确认\",\"web.status.unknown\":\"发送结果未知；不会盲目重试\",\"web.status.waiting\":\"等待下次检查\",\"web.status.waiting_budget\":\"等待同一推送目标的发送间隔（至少 300 秒 / 5 分钟）；将在后续有效检查中重试\",\"web.storage.eyebrow\":\"LOCAL ENCRYPTION\",\"web.storage.key_handling\":\"主密钥由运行环境管理，不在此页面输入、导出或恢复。\",\"web.storage.ready\":\"加密存储就绪\",\"web.storage.title\":\"存储安全\",\"web.storage.troubleshooting\":\"遇到存储故障请检查宿主日志中的安全错误代码。不要在公开日志或截图中粘贴密钥。\",\"web.storage.unavailable\":\"加密存储不可用\",\"web.storage.unavailable_warning\":\"加密存储不可用。新的明文凭据不能保存，请先检查运行环境；不会改用明文存储。\",\"web.unit.ambiguous\":\"发现多个单位，请选择。\",\"web.unit.awaiting\":\"待获取\",\"web.unit.candidates_stale\":\"查询候选已过期，请重新查询。已确认的单位记录仍保留。\",\"web.unit.changed\":\"查询单位已变化，请重新确认。\",\"web.unit.choices_expired\":\"可确认候选已过期，重新查询后再选择。\",\"web.unit.choose\":\"选择单位\",\"web.unit.confirm\":\"确认单位\",\"web.unit.confirm_no_threshold\":\"改用 {unit}？阈值尚未设置。\",\"web.unit.confirm_observed\":\"请确认查询到的单位。\",\"web.unit.confirm_threshold\":\"改用 {unit}，按阈值 {threshold} 比较？\",\"web.unit.confirm_title\":\"确认单位 {unit}？\",\"web.unit.current\":\"单位：{unit}\",\"web.unit.detect_on_account_save\":\"保存账户后自动识别。\",\"web.unit.detect_on_query\":\"查询余额后自动识别。\",\"web.unit.detect_on_save\":\"保存设置后重新识别。\",\"web.unit.finish_credential_before_query\":\"完成或取消凭据输入后可重新查询。\",\"web.unit.loading\":\"处理中…\",\"web.unit.metric_changed\":\"监测项已变化：{previous} → {current}。请重新确认单位和阈值。\",\"web.unit.metric_edited\":\"监测项已改为“{metric}”，保存后重新查询并确认。\",\"web.unit.metric_or_unit_changed\":\"监测项或单位已变化，请重新确认。\",\"web.unit.no_choices\":\"当前没有可确认候选，重新查询后再选择。\",\"web.unit.query\":\"重新查询单位\",\"web.unit.query_changed\":\"查询账户或接口已变化，请重新确认单位和阈值。\",\"web.unit.query_edited\":\"查询配置已修改，保存后重新识别单位。\",\"web.unit.query_hint\":\"请求此账户的余额接口，获取新候选；不发送预警。\",\"web.unit.read\":\"读取单位状态\",\"web.unit.recorded\":\"单位记录：\",\"web.unit.save_before_query\":\"保存设置后可重新查询单位。\",\"web.unit.title\":\"预警单位\",\"web.unit.verified\":\"单位已验证。\",\"web.unit.verified_expired\":\"单位已验证。查询候选已过期，已确认的单位仍有效。\",\"web.validation.account_alert\":\"{account}：{message}\",\"web.validation.account_bounds\":\"账户超时最多 120 秒，缓存最多 86400 秒。\",\"web.validation.account_id\":\"账户 ID 不能为空或重复。\",\"web.validation.account_name\":\"请填写账户显示名称。\",\"web.validation.account_positive\":\"账户超时和缓存必须为正数。\",\"web.validation.alert_fields\":\"预警配置字段无效。\",\"web.validation.alert_prerequisites\":\"启用预警前，请启用账户并填写阈值和至少一个全局推送目标。\",\"web.validation.decimal_length\":\"阈值最多 30 位整数、18 位小数，不支持指数形式。\",\"web.validation.duplicate_umo\":\"UMO 重复，请合并为一行。\",\"web.validation.finite_decimal\":\"阈值须为不含指数的有限十进制字符串。\",\"web.validation.global_bounds\":\"全局参数超出允许范围。\",\"web.validation.group_mentions\":\"仅数字 QQ 群会话可附加 @QQ 号；私聊或其他会话请删除 @ 后缀。\",\"web.validation.id_limit\":\"QQ 号最多 {limit} 项。\",\"web.validation.interval_input\":\"请输入 1 至 4320 的整数分钟；不会自动截断或夹值。\",\"web.validation.interval_range\":\"检查间隔须为 1 至 4320 的整数分钟。\",\"web.validation.invalid_input\":\"请检查输入。\",\"web.validation.invisible_chars\":\"不允许控制字符或不可见字符。\",\"web.validation.json_object\":\"请输入有效的 JSON 对象，不要填写凭据。\",\"web.validation.language\":\"请选择受支持的插件语言。\",\"web.validation.llm_fields\":\"提示模型配置无效。\",\"web.validation.llm_ids\":\"模型与人格 ID 须为不超过 128 字的文本。\",\"web.validation.llm_switch\":\"提示模型开关无效。\",\"web.validation.mentions_suffix\":\"UMO 后请使用空格分隔的 @QQ号。\",\"web.validation.metric\":\"请选择该供应商支持的预警指标。\",\"web.validation.private_allowlist\":\"私聊白名单需使用 平台名:用户ID。\",\"web.validation.qq_id\":\"QQ 号须为 1 至 20 位 ASCII 正整数字串；不支持 @all、昵称或 CQ 码。\",\"web.validation.query_parameters\":\"请填写有效的查询参数。\",\"web.validation.recovery_order\":\"恢复阈值须严格大于触发阈值。\",\"web.validation.repeat_input\":\"请输入 0 至 4320 的整数分钟。\",\"web.validation.repeat_range\":\"重复提醒须为 0 至 4320 的整数分钟；0 表示不重复。\",\"web.validation.target_fields\":\"每个目标须包含 UMO 和提及列表。\",\"web.validation.target_limit\":\"推送目标最多 20 个。\",\"web.validation.target_line\":\"第 {line} 行：{message}\",\"web.validation.targets_text\":\"请输入推送目标。\",\"web.validation.umo_format\":\"请填写完整 UMO：平台实例:消息类型:会话 ID。\",\"web.validation.umo_invisible\":\"UMO 不允许控制字符或不可见字符。\",\"web.validation.umo_type\":\"消息类型需为 FriendMessage、GroupMessage 或 OtherMessage。\",\"web.validation.unit\":\"单位须为不超过 32 字的明确文本。\"}"),
+	metadata: {
+		display_name: "如月怜的额度连结",
+		short_desc: "多平台 AI API 余额与用量监控",
+		desc: "查询 AI API 的余额、用量与额度，统一管理账户并设置额度预警。"
+	},
+	config: { enable_admin_page: {
+		description: "启用插件管理页面",
+		hint: "账户、凭据、查询权限与超时设置均在插件页面管理。旧配置仅保留用于确认迁移，不会自动删除。"
+	} }
+}, t = {
+	views: { "00-quota-link": { title: "額度查詢" } },
+	pages: { "00-quota-link": { title: "額度查詢" } },
+	strings: /* @__PURE__ */ JSON.parse("{\"alert.account_missing\":\"找不到該預警帳戶。\",\"alert.account_unqueryable\":\"帳戶暫時無法查詢，請檢查帳戶是否啟用以及查詢設定。\",\"alert.admins.count\":\"{count} 位 QQ 使用者 · 僅私訊顯示\",\"alert.admins.host_admin_note\":\"AstrBot 內建管理員也可管理。\",\"alert.admins.permissions\":\"管理權限\",\"alert.admins.qq_list\":\"QQ 允許名單\",\"alert.admins.separate_permissions\":\"額度查詢與推播收件權限分開設定。\",\"alert.admins.title\":\"警示 QQ 管理允許名單\",\"alert.command.account_candidate_required\":\"請指定帳戶與候選 ID。\",\"alert.command.account_not_unique\":\"帳戶不存在或名稱不唯一，請使用管理頁面中的帳戶 ID。\",\"alert.command.account_required\":\"請指定帳戶。\",\"alert.command.admin_required\":\"沒有權限管理額度警示。需要警示 QQ 允許名單或 AstrBot 內建管理員權限。\",\"alert.command.extra_arguments\":\"此警示指令不接受額外參數。\",\"alert.command.help_syntax\":\"用法：/yql alert help [account|units|targets]。\",\"alert.command.interval_range\":\"間隔須為範圍內的整數分鐘。\",\"alert.command.invalid_arguments\":\"警示指令參數無效。請私訊使用 /yql alert help。\",\"alert.command.invalid_target_arguments\":\"目標指令參數無效。\",\"alert.command.latest_candidate_required\":\"請選擇最新的單位候選 ID。\",\"alert.command.mention_syntax\":\"請使用 @QQ號碼 的格式，只接受數字。\",\"alert.command.parameters_required\":\"請指定帳戶及必要參數。\",\"alert.command.private_help\":\"警示管理：請私訊機器人並輸入 /yql alert help 查看詳細用法。\",\"alert.command.private_status\":\"詳細警示狀態及目標清單僅在私訊顯示。請私訊機器人執行此指令。\",\"alert.command.qq_not_allowlisted\":\"此 QQ 號碼不在警示管理允許名單中。\",\"alert.command.resumed\":\"已恢復檢查。\",\"alert.command.save_failed\":\"警示設定未儲存。請私訊查看用法，或在管理頁面修正設定。\",\"alert.command.saved\":\"警示設定已儲存。\",\"alert.command.saved_private\":\"警示設定已儲存。請私訊查看詳細狀態。\",\"alert.command.target_missing\":\"目標 ID 不存在。請私訊使用 targets list。\",\"alert.command.targets_syntax\":\"請使用 targets list/add/addhere/remove。\",\"alert.command.threshold_syntax\":\"用法：threshold \\\"帳戶名稱\\\" 金額 [指標ID]。\",\"alert.command.too_long\":\"警示指令過長。\",\"alert.command.unclosed_quote\":\"引號未配對。含空格的帳戶名稱請使用雙引號。\",\"alert.command.unit_confirmed\":\"單位已確認。\",\"alert.command.unknown\":\"未知的警示指令。請使用 /yql alert help 查看用法。\",\"alert.command.untrusted_session\":\"宿主未提供可信的目前會話，目標未儲存。\",\"alert.command.value_required\":\"請指定帳戶及數值。\",\"alert.delivery.budget\":\"設定已變更或暫時無法傳送\",\"alert.delivery.cancelled\":\"設定已變更或警示已停止\",\"alert.delivery.failed\":\"平台未接受傳送，冷卻後可重試\",\"alert.delivery.fixed_hint\":\"會話 AI 無法使用或輸出未通過檢查。已改用固定提示和精確事實\",\"alert.delivery.llm_changed\":\"會話模型或人格已變更，已改用固定提醒\",\"alert.delivery.llm_config_unavailable\":\"會話 AI 設定無法使用，已改用固定提醒\",\"alert.delivery.llm_failed\":\"AI 潤飾無法使用，已改用固定提醒\",\"alert.delivery.llm_language\":\"請用繁體中文撰寫引言。\",\"alert.delivery.llm_locale_changed\":\"產生引言期間語言已變更，已改用固定提示\",\"alert.delivery.llm_model_unavailable\":\"會話模型無法使用，已改用固定提醒\",\"alert.delivery.llm_nonlocal\":\"目前會話未使用本機 Agent，已改用固定提醒\",\"alert.delivery.llm_not_called\":\"目標會話已停用或狀態無法確認，未呼叫 AI\",\"alert.delivery.llm_off\":\"會話 AI 已關閉，已改用固定提醒\",\"alert.delivery.llm_persona_unavailable\":\"會話人格無法使用，已改用固定提醒\",\"alert.delivery.llm_session_unavailable\":\"目標會話已停用或狀態無法確認，未使用 AI 引言\",\"alert.delivery.llm_unavailable\":\"會話 AI 已關閉或狀態無法確認，已改用固定提醒\",\"alert.delivery.llm_webchat_persona\":\"會話使用專用 WebChat 人格，已改用固定提醒\",\"alert.delivery.mention_invalid\":\"群組目標或提及的 QQ 號碼格式無效。請核對群組識別碼及純數字的 QQ 號碼\",\"alert.delivery.mention_unsupported\":\"目標介接器或會話類型不支援 QQ 提及。請移除 @ 或改用 aiocqhttp 群組目標\",\"alert.delivery.message_components_unavailable\":\"無法建立訊息元件。請檢查 AstrBot 訊息元件介面\",\"alert.delivery.note_suffix\":\"；{note}\",\"alert.delivery.platform_not_found\":\"找不到目標平台執行個體。請核對 UMO 中的平台執行個體 ID\",\"alert.delivery.platform_unavailable\":\"目標平台執行個體無法使用。請檢查介接器是否正常執行\",\"alert.delivery.platform_unsupported\":\"目標平台不支援主動傳送介面。請選擇支援此介面的目標平台\",\"alert.delivery.session_check_failed\":\"無法確認目標會話狀態。請檢查 AstrBot 會話狀態介面\",\"alert.delivery.session_disabled\":\"目標會話已停用。請在 AstrBot 中啟用該會話，然後等待下次檢查\",\"alert.delivery.submitted\":\"已提交平台，實際送達情況請查看平台記錄\",\"alert.delivery.target_invalid\":\"目標 UMO 格式無效。請重新選擇或填寫完整會話識別碼\",\"alert.delivery.transport_unavailable\":\"宿主的主動傳送介面無法使用。請檢查 AstrBot 版本及平台介接器\",\"alert.delivery.unknown\":\"傳送結果未知。為避免重複，系統不會自動重送\",\"alert.fact.line\":\"{name} · {metric}：{amount} {unit} ≤ {threshold} {unit}（警示門檻）\",\"alert.fact.source\":\"資料來自本次有效查詢。請以供應商控制台為準。\",\"alert.fact.title\":\"【額度警示】\",\"alert.help.account_heading\":\"帳戶警示\",\"alert.help.account_rules\":\"帳戶規則\",\"alert.help.account_title\":\"帳戶警示規則\",\"alert.help.admin_note\":\"管理權限限警示 QQ 允許名單或 AstrBot 內建管理員。請私訊查看詳細狀態及名單。\",\"alert.help.admins\":\"警示 QQ 允許名單\",\"alert.help.admins_command\":\"/yql alert admins list|add QQ號碼|remove QQ號碼\",\"alert.help.admins_short\":\"管理允許名單\",\"alert.help.bind\":\"確認單位\",\"alert.help.bind_command\":\"/yql alert bind \\\"帳戶名稱\\\" 候選ID\",\"alert.help.common_actions\":\"常用操作\",\"alert.help.confirm_note\":\"確認前請核對單位，確認後門檻數值維持原值。\",\"alert.help.delivery_permissions\":\"推播與權限\",\"alert.help.interval\":\"檢查間隔（分鐘）\",\"alert.help.interval_command\":\"/yql alert interval \\\"帳戶名稱\\\" 15\",\"alert.help.interval_note\":\"間隔以分鐘為單位。重複間隔設為 0 可停用重複通知。\",\"alert.help.interval_short\":\"檢查間隔\",\"alert.help.llm\":\"AI 提示\",\"alert.help.manage_note\":\"警示 QQ 允許名單中的使用者或 AstrBot 內建管理員可管理。\",\"alert.help.more_settings\":\"更多設定\",\"alert.help.persona_note\":\"AI 提示沿用目標會話的人格。\",\"alert.help.prefix\":\"表內指令前綴：/yql alert\",\"alert.help.private_notice\":\"僅限管理員 · 請私訊查看詳細資訊\",\"alert.help.recipients_note\":\"請先確認收件人及群組成員。儲存時不會立即推播。\",\"alert.help.recovery\":\"恢復門檻\",\"alert.help.recovery_command\":\"/yql alert recovery \\\"帳戶名稱\\\" 12|auto\",\"alert.help.refresh_note\":\"查看候選為唯讀。refresh 會重新查詢餘額。\",\"alert.help.repeat\":\"重複間隔（0 表示不重複）\",\"alert.help.repeat_command\":\"/yql alert repeat \\\"帳戶名稱\\\" 0\",\"alert.help.repeat_short\":\"重複間隔\",\"alert.help.retry\":\"解除驗證暫停\",\"alert.help.retry_command\":\"/yql alert retry \\\"帳戶名稱\\\"\",\"alert.help.retry_short\":\"恢復檢查\",\"alert.help.return\":\"返回總覽：/yql alert help\",\"alert.help.set_threshold\":\"設定門檻\",\"alert.help.status\":\"警示狀態\",\"alert.help.targets_add\":\"新增指定會話\",\"alert.help.targets_add_short\":\"指定會話\",\"alert.help.targets_heading\":\"目標與管理權限\",\"alert.help.targets_here\":\"新增目前會話\",\"alert.help.targets_here_short\":\"目前會話\",\"alert.help.targets_list\":\"查看目標\",\"alert.help.targets_remove\":\"移除目標\",\"alert.help.targets_remove_command\":\"/yql alert targets remove 目標ID\",\"alert.help.targets_title\":\"推播與管理權限\",\"alert.help.threshold_command\":\"/yql alert threshold \\\"帳戶名稱\\\" 10 [指標ID]\",\"alert.help.threshold_note\":\"餘額低於或等於門檻時觸發警示。請用 help units 確認單位。\",\"alert.help.threshold_quick_command\":\"threshold \\\"帳戶名稱\\\" 10\",\"alert.help.title\":\"額度警示管理\",\"alert.help.toggle\":\"啟用或關閉\",\"alert.help.toggle_command\":\"/yql alert on|off \\\"帳戶名稱\\\"\",\"alert.help.toggle_quick_command\":\"on|off \\\"帳戶名稱\\\"\",\"alert.help.toggle_short\":\"開啟 / 關閉\",\"alert.help.trigger\":\"觸發門檻\",\"alert.help.unit_confirmation\":\"單位確認\",\"alert.help.unit_note\":\"系統自動辨識單位，並以目前單位判斷門檻。AI 提示沿用目標會話的人格。\",\"alert.help.units_read\":\"單位候選（唯讀）\",\"alert.help.units_read_command\":\"/yql alert units \\\"帳戶名稱\\\"\",\"alert.help.units_read_short\":\"查看候選\",\"alert.help.units_refresh\":\"重新整理單位候選\",\"alert.help.units_refresh_command\":\"/yql alert units \\\"帳戶名稱\\\" refresh\",\"alert.help.units_refresh_short\":\"重新整理候選\",\"alert.help.units_title\":\"辨識與確認單位\",\"alert.help.view_status\":\"查看狀態\",\"alert.invalid_unit\":\"候選單位無效，或預警執行狀態已更新。請重新整理後再試。\",\"alert.metric.available\":\"可用額度\",\"alert.metric.available_cash\":\"現金餘額\",\"alert.metric.credit\":\"點數餘額\",\"alert.metric.credit_amount\":\"信用額度\",\"alert.metric.granted\":\"贈送餘額\",\"alert.metric.mapped\":\"對應餘額\",\"alert.metric.site_credit\":\"站內額度\",\"alert.metric.topped_up\":\"儲值餘額\",\"alert.metric.total\":\"總餘額\",\"alert.metric_changed\":\"監測項目已變更，請確認門檻與單位\",\"alert.no_metric_unit\":\"此次未取得目前監測項目的有效候選單位，請檢查查詢結果與監測項目後重試。\",\"alert.no_unit\":\"此次未取得有效的候選單位，請檢查查詢狀態，稍後重試。\",\"alert.query_identity_changed\":\"帳戶查詢設定已變更，請重新確認門檻與單位\",\"alert.receipt.result\":\"處理結果\",\"alert.receipt.title\":\"操作完成\",\"alert.runtime_changed\":\"預警執行狀態已更新，請重新整理後再試。\",\"alert.state.blocked\":\"預警設定不完整或目標無法使用\",\"alert.state.disabled\":\"預警已關閉\",\"alert.state.error\":\"查詢失敗，保留原有預警狀態。錯誤不視為零餘額\",\"alert.state.failed\":\"平台未接受傳送，稍後可重試\",\"alert.state.low\":\"額度低於或等於門檻，等待滿足傳送間隔或目標恢復\",\"alert.state.monitoring\":\"監測中，尚未觸發預警\",\"alert.state.paused\":\"驗證或權限檢查失敗。修正設定或手動重試後恢復檢查\",\"alert.state.recovered\":\"已達到恢復門檻，等待下次低額事件\",\"alert.state.recovering\":\"額度已回升，尚未達到恢復門檻\",\"alert.state.stale\":\"未取得指標與單位相符的新餘額資料，保留原有狀態\",\"alert.state.storage_unavailable\":\"預警狀態儲存無法使用，已停止檢查與傳送\",\"alert.state.submitted\":\"已提交至平台，尚未確認送達\",\"alert.state.unit_changed\":\"監測項目、單位或查詢設定已變更，請確認後繼續\",\"alert.state.unit_unidentified\":\"等待有效查詢辨識額度單位\",\"alert.state.units_ambiguous\":\"有多個或重複的單位，請確認實際候選單位\",\"alert.state.unknown\":\"傳送結果不明。為避免重複，系統不會自動重傳\",\"alert.state.waiting\":\"等待下次檢查\",\"alert.state.waiting_budget\":\"傳送至同一目標的訊息須至少間隔 300 秒，等待下一次有效檢查\",\"alert.status.account_count\":\"{count} 個帳戶 · 本機執行記錄\",\"alert.status.account_id\":\"帳戶 ID\",\"alert.status.blocked\":\"需要檢查設定\",\"alert.status.delivery_note\":\"本機記錄 · 實際送達情況請查看平台記錄。\",\"alert.status.empty\":\"目前沒有可顯示的警示檢查記錄。\",\"alert.status.empty_heading\":\"暫無帳戶狀態\",\"alert.status.failed\":\"平台未接受傳送\",\"alert.status.last_checked\":\"最近檢查\",\"alert.status.last_sent\":\"最近提交平台\",\"alert.status.low\":\"額度偏低\",\"alert.status.monitoring\":\"監測中\",\"alert.status.no_record\":\"暫無記錄\",\"alert.status.paused\":\"檢查已暫停\",\"alert.status.recovered\":\"已恢復\",\"alert.status.recovering\":\"額度回升中\",\"alert.status.running\":\"檢查工作已啟動\",\"alert.status.scheduler\":\"{task} · 狀態儲存{storage}\",\"alert.status.stale\":\"等待有效餘額\",\"alert.status.stopped\":\"檢查工作未執行\",\"alert.status.storage_unavailable\":\"儲存空間無法使用\",\"alert.status.submitted\":\"已提交平台\",\"alert.status.title\":\"額度警示狀態\",\"alert.status.unit_changed\":\"需要重新確認\",\"alert.status.unit_unidentified\":\"等待辨識單位\",\"alert.status.units_ambiguous\":\"待確認單位\",\"alert.status.unknown\":\"傳送結果未知\",\"alert.status.waiting\":\"等待檢查\",\"alert.status.waiting_budget\":\"等待傳送間隔\",\"alert.targets.add_note\":\"使用 targets add 或 targets addhere 新增已確認的目標。\",\"alert.targets.count\":\"{count} 個目標 · 僅私訊顯示\",\"alert.targets.empty\":\"尚未設定警示目標\",\"alert.targets.item\":\"目標 {index} · {key}\",\"alert.targets.mentions\":\"群組提及\",\"alert.targets.remove_command\":\"移除指令\",\"alert.targets.save_note\":\"管理員確認收件人及群組成員後再設定。儲存時僅更新本機目標。\",\"alert.targets.title\":\"警示推播目標\",\"alert.targets.umo\":\"會話 UMO\",\"alert.unit_changed\":\"查詢單位已變更，請重新確認門檻與單位\",\"alert.unit_expired\":\"候選單位已過期或不再相符，請先查詢餘額，再重新整理候選單位。\",\"alert.units.ambiguous\":\"多個單位待確認\",\"alert.units.auto_detect_note\":\"查詢餘額後自動辨識。\",\"alert.units.bind_command\":\"確認指令：/yql alert bind \\\"帳戶名稱\\\" 候選ID\",\"alert.units.binding_valid_note\":\"候選逾期時，既有的有效繫結仍然有效。\",\"alert.units.bound_metric\":\"已繫結指標\",\"alert.units.candidate\":\"候選 {index} · {unit}\",\"alert.units.candidate_id\":\"候選 ID\",\"alert.units.candidate_updated\":\"候選更新時間\",\"alert.units.candidates_empty\":\"暫無可確認候選\",\"alert.units.candidates_expired\":\"候選已逾期\",\"alert.units.change_reason\":\"變更原因\",\"alert.units.current_and_bound\":\"目前 / 已繫結指標\",\"alert.units.current_metric\":\"目前指標\",\"alert.units.current_unit\":\"目前單位\",\"alert.units.identity_changed\":\"查詢身分已變更，請重新確認\",\"alert.units.last_verified\":\"最近驗證\",\"alert.units.metric\":\"指標\",\"alert.units.metric_changed\":\"指標已變更，請重新確認\",\"alert.units.metric_unknown\":\"待辨識\",\"alert.units.not_bound\":\"尚未繫結\",\"alert.units.pending_query\":\"待取得\",\"alert.units.readonly\":\"既有查詢結果 · 唯讀狀態\",\"alert.units.readonly_note\":\"清單讀取既有查詢結果。候選逾期時可手動更新。\",\"alert.units.refresh_command\":\"使用 /yql alert units \\\"帳戶名稱\\\" refresh 手動更新候選。\",\"alert.units.refreshed\":\"已要求更新 · 最新本機狀態\",\"alert.units.refreshed_note\":\"此次依要求更新帳戶餘額。\",\"alert.units.stale\":\"單位驗證已逾期\",\"alert.units.threshold_note\":\"確認前請核對門檻含義，確認後保留門檻原值。\",\"alert.units.title\":\"警示單位與候選\",\"alert.units.unit_changed\":\"單位已變更，請重新確認\",\"alert.units.verified\":\"單位已驗證\",\"balance.expiry\":\"到期\",\"balance.expiry_date\":\"到期 {time}\",\"balance.item_expiry\":\"{label}到期\",\"balance.item_note\":\"{label}說明\",\"balance.kind.cash\":\"現金餘額\",\"balance.kind.credits\":\"點數\",\"balance.kind.custom\":\"自訂項目\",\"balance.kind.free_quota\":\"免費額度\",\"balance.kind.quota\":\"額度\",\"balance.kind.subscription\":\"方案\",\"balance.kind.usage\":\"用量\",\"balance.remaining\":\"剩餘\",\"balance.remaining_amount\":\"剩餘 {amount}\",\"balance.semantics\":\"語義說明 {meaning}\",\"balance.site_credit_meaning\":\"帳戶站內額度以 site_credit 計量。\",\"balance.total\":\"總量\",\"balance.total_amount\":\"總量 {amount}\",\"balance.unknown_amount\":\"數值未知（單位：{unit}）\",\"balance.unknown_unit\":\"未知單位\",\"balance.unreported\":\"未提供（單位：{unit}）\",\"balance.used\":\"已用\",\"balance.used_amount\":\"已用 {amount}\",\"balance.value_separator\":\"；\",\"capability.alibaba\":\"阿里雲百煉\",\"capability.alibaba_balance\":\"阿里雲帳戶餘額（BSS：現金／可用／信用）\",\"capability.cash\":\"現金餘額\",\"capability.compatible\":\"OpenAI 相容服務\",\"capability.credential_missing\":\"未設定可用憑證\",\"capability.credits\":\"點數\",\"capability.custom\":\"使用者設定的餘額類別\",\"capability.deepseek_balance\":\"多幣別帳戶餘額\",\"capability.endpoint_invalid\":\"餘額查詢端點設定無效\",\"capability.free_quota\":\"免費額度\",\"capability.grsai_region\":\"Grsai 節點設定無效\",\"capability.grsai_token_missing\":\"未設定 Grsai 帳戶請求權杖\",\"capability.host_invalid\":\"Host 設定無效\",\"capability.host_missing\":\"缺少 HTTPS 服務根網址 Host\",\"capability.kind_invalid\":\"Grsai 點數類別必須對應為 credits\",\"capability.mapping_invalid\":\"餘額欄位對應尚未設定或無效\",\"capability.meinianda_balance\":\"帳戶站內額度（site_credit）\",\"capability.path_invalid\":\"API Path 設定無效\",\"capability.path_missing\":\"缺少以 / 開頭的相對 API Path\",\"capability.profile_invalid\":\"服務類型設定無效\",\"capability.quota\":\"額度\",\"capability.scope_invalid\":\"餘額範圍設定無效\",\"capability.subscription\":\"訂閱額度\",\"capability.unqueryable\":\"目前的設定無法查詢\",\"capability.usage\":\"用量\",\"common.empty\":\"空白\",\"common.field_separator\":\"：\",\"common.label_value\":\"{label}：{value}\",\"common.list_separator\":\"、\",\"common.none\":\"無\",\"common.unknown\":\"未知\",\"config.account_id\":\"帳戶 id 必須為非空字串\",\"config.account_mapping\":\"帳戶設定必須是物件\",\"config.admin_boolean\":\"command_admin_only 必須為布林值，已使用預設值\",\"config.aliases\":\"aliases 必須是由非空字串組成的清單\",\"config.auth_mapping\":\"auth 必須是物件\",\"config.balance_scope\":\"餘額範圍只能是 generic、account 或 api_key\",\"config.bss_auth\":\"阿里雲 BSS 查詢需要獨立的 AccessKey ID 和 AccessKey Secret\",\"config.compatible_auth\":\"相容介面需要設定 API 金鑰\",\"config.conflict\":\"設定已變更，請重新整理後再次確認。\",\"config.conflicting_account\":\"帳戶名稱與其他帳戶衝突\",\"config.credential_in_field\":\"一般設定欄位不得包含憑證。\",\"config.credential_operation\":\"憑證只能透過專用的憑證操作儲存。\",\"config.display_name\":\"display_name 必須為非空字串\",\"config.duplicate_credential\":\"憑證不得與一般設定欄位重複。\",\"config.duplicate_id\":\"帳戶 id 重複\",\"config.enabled_boolean\":\"enabled 必須為布林值，已停用帳戶\",\"config.endpoint_mapping\":\"endpoint 必須是物件\",\"config.group_boolean\":\"allow_group_queries 必須為布林值，已使用預設值\",\"config.group_list\":\"group_allowed_user_ids 必須是由非空字串組成的清單，已使用空清單\",\"config.grsai_account_only\":\"Grsai 目前僅支援帳戶點數，尚未提供 API Key 點數預設\",\"config.grsai_account_path\":\"Grsai 帳戶點數僅支援 /client/openapi/getCredits\",\"config.grsai_api_key_scope\":\"尚未提供 Grsai API Key 點數預設，請選擇帳戶點數\",\"config.grsai_credits\":\"Grsai 點數查詢必須將 kind 固定對應為 credits\",\"config.grsai_path_scope\":\"Grsai getCredits 端點應選擇 account，getAPIKeyCredits 端點應選擇 api_key\",\"config.grsai_post\":\"此 Grsai 點數端點要求使用 POST\",\"config.grsai_region\":\"Grsai 節點只能選擇中國大陸直連或海外\",\"config.grsai_required\":\"帳戶餘額或 API Key 餘額範圍僅適用於所選的 Grsai 服務\",\"config.grsai_scope\":\"Grsai 目前僅支援帳戶點數預設\",\"config.grsai_token\":\"Grsai 帳戶點數需要使用者資訊中的請求權杖 token\",\"config.invalid\":\"設定無效，請檢查欄位與資料類型。\",\"config.invalid_amount_mapping\":\"相容介面必須設定有效的 amount_path 對應\",\"config.invalid_endpoint\":\"餘額端點必須是安全的 HTTPS GET 或 POST 設定\",\"config.invalid_host\":\"Host 必須是沒有路徑、查詢參數或片段的 HTTPS 服務根網址\",\"config.invalid_path\":\"API Path 必須以單個 / 開頭，且不得包含完整 URL、查詢參數或片段\",\"config.invalid_root\":\"設定根節點必須是物件\",\"config.legacy_credential_in_field\":\"舊設定的一般欄位包含憑證，原有設定未刪除。\",\"config.legacy_credential_shape\":\"舊憑證結構無法安全移轉，原有設定未刪除。\",\"config.migrate_first\":\"請先確認並移轉舊設定，再修改設定。\",\"config.missing_auth\":\"缺少可用憑證\",\"config.missing_endpoint\":\"缺少餘額查詢端點\",\"config.missing_env\":\"尚未設定所引用的憑證環境變數\",\"config.missing_host\":\"請填寫 HTTPS 服務根網址 Host\",\"config.missing_path\":\"請填寫以 / 開頭的相對 API Path\",\"config.positive_integer\":\"{path} 必須為正整數，已使用預設值\",\"config.positive_number\":\"{path} 必須為正數，已使用預設值\",\"config.private_list\":\"private_allowed_user_ids 必須為「平台名稱:使用者 ID」格式的文字清單，已使用空清單\",\"config.provider_immutable\":\"現有帳戶的供應商類型無法變更，請建立新帳戶。\",\"config.provider_type\":\"未知的供應商類型\",\"config.providers_list\":\"providers 必須為清單\",\"config.response_mapping\":\"response_mapping 必須是物件，已使用空物件\",\"config.secret_in_name\":\"帳戶名稱不得包含憑證\",\"config.service_profile\":\"相容服務類型只能是 generic 或 grsai\",\"config.storage_unavailable\":\"安全儲存暫時無法使用，未改用明文。請檢查金鑰與儲存狀態。\",\"config.template_mismatch\":\"帳戶範本與供應商類型不一致\",\"credential.encrypted\":\"已儲存加密憑證\",\"credential.environment\":\"已儲存環境變數參照\",\"credential.missing\":\"尚未儲存憑證\",\"credential.mixed\":\"已儲存加密憑證及環境變數參照\",\"credential.unknown\":\"儲存狀態待確認\",\"error.alert_config.account_disabled\":\"啟用預警前，請先啟用帳戶。\",\"error.alert_config.decimal_format\":\"{label}須為一般十進位文字，且不支援科學記號。\",\"error.alert_config.duplicate_target\":\"預警目標的 UMO 重複，請合併為同一列。\",\"error.alert_config.group_mention_only\":\"只有群組 ID 為數字的 QQ 群組可設定 @QQ 號碼。私訊請移除提及。\",\"error.alert_config.integer_range\":\"{label}必須為 {low}–{high} 的整數。\",\"error.alert_config.invalid_enabled\":\"預警開關必須為布林值。\",\"error.alert_config.invalid_model_enabled\":\"預警模型開關必須為布林值。\",\"error.alert_config.invalid_model_object\":\"預警模型設定結構無效。\",\"error.alert_config.invalid_object\":\"帳戶預警設定必須為物件。\",\"error.alert_config.invalid_qq_id\":\"{label}僅支援以 ASCII 正整數表示的 QQ 號碼，無法 @全體。\",\"error.alert_config.invalid_target_fields\":\"每個預警目標只能包含 umo 和 mentions。\",\"error.alert_config.invalid_text\":\"{label}必須為不含控制字元的文字。\",\"error.alert_config.invalid_text_format\":\"{label}長度或格式無效。\",\"error.alert_config.invalid_umo\":\"UMO 格式須為「平台執行個體:訊息類型:工作階段ID」。\",\"error.alert_config.label.admin_qq\":\"預警管理 QQ 允許清單\",\"error.alert_config.label.check_interval\":\"檢查間隔（分鐘）\",\"error.alert_config.label.mentions\":\"群組內提及\",\"error.alert_config.label.metric\":\"預警指標\",\"error.alert_config.label.model\":\"模型 ID\",\"error.alert_config.label.persona\":\"人格 ID\",\"error.alert_config.label.recovery_threshold\":\"恢復門檻\",\"error.alert_config.label.repeat_interval\":\"持續低額時的重複通知間隔（分鐘，0 表示不重複）\",\"error.alert_config.label.threshold\":\"額度門檻\",\"error.alert_config.label.unit\":\"預警單位\",\"error.alert_config.list_limit\":\"{label}須為最多 {limit} 個項目的清單。\",\"error.alert_config.missing_targets\":\"啟用預警前，請至少設定一個推播目標。\",\"error.alert_config.missing_threshold_or_metric\":\"請設定門檻和指標。\",\"error.alert_config.recovery_threshold_order\":\"恢復門檻必須高於額度門檻。\",\"error.alert_config.target_limit\":\"預警推播目標須為最多 {limit} 個項目的清單。\",\"error.alert_config.unknown_fields\":\"帳戶預警設定含有未知欄位。\",\"error.alert_config.unsupported_metric\":\"此供應商不支援該預警指標。\",\"error.query.empty_target\":\"目標名稱不得為空\",\"error.query.invalid_arguments\":\"此命令不接受目標參數\",\"error.query.multiple_targets\":\"偵測到多個帳戶或供應商，請指定一個目標\",\"error.query.unknown_target\":\"找不到相符的帳戶或供應商\",\"help.account_command\":\"/yql account <名稱>\",\"help.alerts\":\"額度警示\",\"help.aliyun_note\":\"阿里雲 BSS 查詢現金餘額、可用額度和信用額度。RAM 身分至少需要 AliyunBSSReadOnlyAccess。\",\"help.all_accounts\":\"所有帳戶\",\"help.all_command\":\"/yql  或  /yql all\",\"help.card_subtitle\":\"查詢額度 · 查看本機設定\",\"help.card_title\":\"YQL 使用說明\",\"help.card_tool_note\":\"啟用函式工具後，可用自然語言查詢額度。\",\"help.command_body\":\"如月怜的額度連結\\n用法：\\n  /yql                 查詢所有帳戶\\n  /yql help            查看說明\\n  /yql status          查看本機設定狀態\\n  /yql all             查詢所有帳戶\\n  /yql <名稱>          查詢指定帳戶或供應商\\n  /yql account <名稱>  查詢指定帳戶\\n  /yql provider <名稱> 查詢指定供應商\\n\",\"help.compatible_note\":\"OpenAI 相容服務的餘額查詢使用供應商專屬介面。請依餘額文件填寫服務位址、介面路徑及進階驗證／回應對應。完成設定後即可查詢。\",\"help.configured_accounts\":\"已設定帳戶：{names}\",\"help.enabled_accounts\":\"已啟用帳戶 · {count} 個\",\"help.local_config\":\"本機設定\",\"help.local_note\":\"help 和 status 讀取本機資訊。\",\"help.management_note\":\"請在管理頁面設定供應商介面與憑證。\",\"help.name_note\":\"也可使用 /yql <名稱>，支援顯示名稱、別名和供應商名稱。\",\"help.no_accounts\":\"目前未設定帳戶。\",\"help.no_enabled_accounts\":\"尚未設定啟用的帳戶。請先在管理頁面新增帳戶。\",\"help.provider_command\":\"/yql provider <名稱>\",\"help.query\":\"查詢額度\",\"help.select_account\":\"指定帳戶\",\"help.select_provider\":\"指定供應商\",\"help.status_heading\":\"說明與狀態\",\"help.tool_note\":\"在啟用函式工具的 AI 對話中，也可用自然語言讓模型呼叫 yql_query_balance。\",\"help.usage\":\"使用說明\",\"provider.alibaba_bailian.authentication\":\"阿里雲存取金鑰驗證失敗\",\"provider.alibaba_bailian.available_credit\":\"可用額度\",\"provider.alibaba_bailian.cash_balance\":\"現金餘額\",\"provider.alibaba_bailian.connection\":\"無法連線至阿里雲餘額服務\",\"provider.alibaba_bailian.credit_limit\":\"信用額度\",\"provider.alibaba_bailian.fallback_account\":\"阿里雲帳戶\",\"provider.alibaba_bailian.invalid_credentials\":\"阿里雲餘額查詢憑證設定無效\",\"provider.alibaba_bailian.invalid_request\":\"阿里雲餘額查詢請求設定無效\",\"provider.alibaba_bailian.invalid_response\":\"無法辨識阿里雲傳回的餘額資料格式\",\"provider.alibaba_bailian.permission\":\"阿里雲拒絕存取帳戶現金餘額。請至少將 AliyunBSSReadOnlyAccess 授予查詢目前 BSS 現金餘額的 RAM 身分。DashScope 模型 API Key 無法取代此 RAM 授權，無須授予 BSS FullAccess。\",\"provider.alibaba_bailian.query_failed\":\"阿里雲帳戶現金餘額查詢失敗\",\"provider.alibaba_bailian.rate_limited\":\"阿里雲餘額查詢受到流量限制，請稍後再試\",\"provider.alibaba_bailian.request_denied\":\"阿里雲拒絕了帳戶現金餘額查詢請求\",\"provider.alibaba_bailian.source\":\"阿里雲帳戶餘額與額度\",\"provider.alibaba_bailian.timeout\":\"阿里雲現金餘額查詢逾時\",\"provider.alibaba_bailian.too_many_requests\":\"阿里雲餘額查詢過於頻繁，請稍後再試\",\"provider.alibaba_bailian.unavailable\":\"阿里雲餘額服務暫時無法使用\",\"provider.deepseek.authentication\":\"DeepSeek API 金鑰驗證失敗\",\"provider.deepseek.connection\":\"無法連線至 DeepSeek 餘額服務\",\"provider.deepseek.granted_balance\":\"未到期贈金餘額\",\"provider.deepseek.insufficient_balance\":\"DeepSeek 帳戶餘額不足，目前無法呼叫 API\",\"provider.deepseek.invalid_request\":\"DeepSeek 餘額查詢請求設定無效\",\"provider.deepseek.invalid_response\":\"無法辨識 DeepSeek 傳回的餘額資料格式\",\"provider.deepseek.missing_key\":\"DeepSeek 帳戶缺少有效的 API 金鑰\",\"provider.deepseek.permission\":\"DeepSeek 拒絕了餘額查詢\",\"provider.deepseek.rate_limited\":\"DeepSeek 請求過於頻繁，請稍後再試\",\"provider.deepseek.request_denied\":\"DeepSeek 拒絕了餘額查詢請求\",\"provider.deepseek.source\":\"DeepSeek API\",\"provider.deepseek.timeout\":\"DeepSeek 餘額查詢逾時\",\"provider.deepseek.topped_up_balance\":\"儲值餘額\",\"provider.deepseek.total_balance\":\"總可用餘額\",\"provider.deepseek.unavailable\":\"DeepSeek 餘額查詢暫時失敗\",\"provider.meinianda.authentication\":\"Meinianda API Key 驗證失敗\",\"provider.meinianda.connection\":\"無法連線至 Meinianda 餘額服務\",\"provider.meinianda.invalid_request\":\"Meinianda 餘額查詢請求設定無效\",\"provider.meinianda.invalid_response\":\"無法辨識 Meinianda 傳回的餘額資料格式\",\"provider.meinianda.missing_key\":\"Meinianda 帳戶缺少有效的 API Key\",\"provider.meinianda.permission\":\"Meinianda 拒絕了餘額查詢\",\"provider.meinianda.query_failed\":\"Meinianda 未能完成餘額查詢\",\"provider.meinianda.rate_limited\":\"Meinianda 請求過於頻繁，請稍後再試\",\"provider.meinianda.site_credit\":\"帳戶站內額度\",\"provider.meinianda.site_credit_note\":\"帳戶站內額度與 API Key 限額是不同的額度，且不換算為貨幣\",\"provider.meinianda.source\":\"Meinianda 餘額 API\",\"provider.meinianda.timeout\":\"Meinianda 餘額查詢逾時\",\"provider.meinianda.unavailable\":\"Meinianda 餘額查詢暫時失敗\",\"provider.openai_compatible.authentication\":\"餘額介面驗證失敗\",\"provider.openai_compatible.business_failure\":\"餘額服務回報查詢失敗\",\"provider.openai_compatible.connection\":\"餘額介面連線失敗\",\"provider.openai_compatible.grsai_authentication\":\"帳戶點數介面傳回 HTTP 401，請檢查驗證設定\",\"provider.openai_compatible.grsai_permission\":\"帳戶點數介面傳回 HTTP 403，請檢查存取設定\",\"provider.openai_compatible.grsai_query_failed\":\"帳戶點數介面請求失敗\",\"provider.openai_compatible.grsai_rate_limited\":\"帳戶點數介面傳回 HTTP 429，請稍後重試\",\"provider.openai_compatible.grsai_source\":\"Grsai 帳戶點數介面\",\"provider.openai_compatible.https_required\":\"餘額介面必須使用 HTTPS\",\"provider.openai_compatible.invalid_configuration\":\"相容平台餘額查詢設定無效\",\"provider.openai_compatible.invalid_request\":\"餘額介面請求設定無效\",\"provider.openai_compatible.invalid_response\":\"無法辨識餘額介面傳回的資料格式\",\"provider.openai_compatible.not_found\":\"餘額介面路徑或版本不存在\",\"provider.openai_compatible.permission\":\"餘額介面拒絕存取\",\"provider.openai_compatible.rate_limited\":\"餘額介面請求過於頻繁，請稍後再試\",\"provider.openai_compatible.source\":\"OpenAI 相容餘額介面\",\"provider.openai_compatible.timeout\":\"餘額介面查詢逾時\",\"provider.openai_compatible.unavailable\":\"餘額介面請求暫時失敗\",\"provider.retry.explicit_throttling\":\"餘額服務回報已達請求速率限制，請稍後重試\",\"query.account_card_title\":\"帳戶額度與用量\",\"query.account_incomplete\":\"帳戶設定不完整，暫時無法查詢\",\"query.account_outcome_count\":\"{count} 個{label}\",\"query.account_timeout\":\"帳戶查詢超過時限\",\"query.account_title\":\"帳戶查詢：{target}\",\"query.accounts_count\":\"{count} 個帳戶\",\"query.all_card_title\":\"額度與用量\",\"query.all_title\":\"額度與用量查詢\",\"query.authentication_paused\":\"驗證或權限檢查失敗，已暫停。更新設定或手動重試後恢復\",\"query.available\":\"可用\",\"query.cached\":\"（快取）\",\"query.cached_card\":\" · 快取資料\",\"query.client_unconfigured\":\"尚未設定查詢用戶端\",\"query.cooldown_account\":\"帳戶查詢暫停中，請在 {seconds} 秒後重試\",\"query.cooldown_provider\":\"供應商查詢暫停中，請在 {seconds} 秒後重試\",\"query.empty_title\":\"暫無結果\",\"query.error_detail\":\"  查詢失敗：{message}\",\"query.failed\":\"查詢失敗\",\"query.failed_short\":\"失敗\",\"query.invalid_operation\":\"操作類型必須為 query 或 list。\",\"query.invalid_provider_result\":\"供應商傳回的帳戶結果無效\",\"query.invalid_request\":\"無法辨識查詢要求。\",\"query.invalid_target\":\"查詢目標必須是帳戶、供應商名稱或 all。\",\"query.matches\":\"{message}\\n符合項目：{candidates}\",\"query.no_accounts\":\"目前未設定可查詢的帳戶。\",\"query.no_items\":\"沒有可顯示的餘額或用量項目\",\"query.no_results\":\"沒有可顯示的查詢結果。\",\"query.outcome_count\":\"{label} {count}\",\"query.partial\":\"部分可用\",\"query.partial_data\":\"已取得部分資料\",\"query.partial_success\":\"部分成功\",\"query.permission_denied\":\"目前的對話沒有查詢額度的權限。\",\"query.provider_card_title\":\"供應商額度與用量\",\"query.provider_title\":\"供應商查詢：{target}\",\"query.provider_unsupported\":\"尚未支援此供應商的餘額查詢\",\"query.queue_timeout\":\"等待查詢時超過帳戶時限\",\"query.service_closed\":\"查詢服務已關閉\",\"query.source_time\":\"  取得時間：{time} · 來源：{source}\",\"query.source_time_card\":\"來源：{source} · 取得：{time}\",\"query.status_unavailable\":\"無法使用\",\"query.success\":\"查詢成功\",\"query.success_short\":\"成功\",\"query.summary\":\"查詢摘要：{summary}。\",\"query.summary_separator\":\"，\",\"query.target_card\":\"目標：{target}\\n\",\"query.time\":\"查詢時間：{time}\",\"query.time_card\":\"查詢：{time}\",\"query.total_timeout\":\"查詢超過總時限\",\"query.unavailable\":\"查詢暫時無法使用\",\"query.unknown_status\":\"狀態未知\",\"status.account_list\":\"帳戶清單：\",\"status.accounts_count\":\"帳戶：共 {total} 個，啟用 {enabled} 個，可查詢 {ready} 個\",\"status.add_account\":\"在管理頁面新增帳戶與憑證\",\"status.admin_only\":\"僅限管理員\",\"status.after_save\":\"儲存後輸入 /yql status 查看本機設定，再用 /yql 查詢額度。\",\"status.api_path\":\"請填寫以 / 開頭的相對介面路徑\",\"status.card_access\":\"存取與憑證\",\"status.card_counts\":\"{total} 個帳戶 · {enabled} 個已啟用 · {ready} 個設定完整\",\"status.card_incomplete\":\"待補齊：{reason}\",\"status.card_issues\":\"設定問題 · {count} 項\",\"status.card_needs_check\":\"待檢查：{reason}\",\"status.card_needs_setup\":\"待設定：{reason}\",\"status.card_no_accounts\":\"尚未設定帳戶\",\"status.card_online_check\":\"可用 /yql 查詢連線及餘額。\",\"status.card_source\":\"依據本機帳戶清單與憑證儲存記錄\",\"status.card_title\":\"本機設定狀態\",\"status.credential_storage\":\"憑證儲存\",\"status.credential_storage_state\":\"憑證儲存：{state}\",\"status.disabled\":\"已停用\",\"status.enabled\":\"已開啟\",\"status.group_queries\":\"群組查詢\",\"status.group_queries_state\":\"群組查詢：{state}\",\"status.incomplete\":\"設定不完整：{reason}\",\"status.issue_count\":\"設定問題：{count} 項\",\"status.next_step\":\"下一步\",\"status.no_accounts\":\"尚未設定帳戶。\",\"status.not_queryable\":\"無法查詢：{reason}\",\"status.off\":\"已關閉\",\"status.permissions\":\"指令權限\",\"status.permissions_state\":\"指令權限：{state}\",\"status.provider\":\"供應商：{provider}\",\"status.queryable\":\"已設定，可查詢\",\"status.reason.grsai_account_path_mismatch\":\"請使用 Grsai 帳戶點數介面\",\"status.reason.grsai_balance_scope_mismatch\":\"請依 Grsai 介面選擇對應餘額範圍\",\"status.reason.grsai_method_must_post\":\"Grsai 點數介面使用 POST\",\"status.reason.invalid_api_path\":\"介面路徑無效。請填寫以 / 開頭且不含參數的相對路徑\",\"status.reason.invalid_balance_kind\":\"Grsai 點數類別應設定為 credits\",\"status.reason.invalid_balance_scope\":\"請檢查餘額查詢範圍\",\"status.reason.invalid_base_url\":\"服務位址無效。請填寫不含路徑、參數或憑證的 HTTPS 服務根位址\",\"status.reason.invalid_endpoint\":\"服務位址或介面路徑無效。請填寫 HTTPS 服務根位址及以 / 開頭的介面路徑\",\"status.reason.invalid_grsai_region\":\"請選擇有效的 Grsai 節點\",\"status.reason.invalid_response_mapping\":\"請依供應商回應文件在進階設定中填寫餘額對應\",\"status.reason.invalid_service_profile\":\"請檢查服務類型\",\"status.reason.missing_api_path\":\"請填寫以 / 開頭的介面路徑\",\"status.reason.missing_base_url\":\"請填寫 HTTPS 服務根位址\",\"status.reason.missing_credentials\":\"缺少可用憑證\",\"status.reason.missing_endpoint\":\"請依供應商文件填寫服務位址及介面路徑\",\"status.reason.missing_environment_variable\":\"未設定憑證環境變數\",\"status.reason.missing_grsai_token\":\"請設定 Grsai 帳戶請求權杖\",\"status.saved_credentials\":\"憑證儲存\",\"status.session_permissions\":\"依會話授權\",\"status.source\":\"資料來源：本機設定與憑證儲存記錄。可用 /yql 查詢連線及餘額。\",\"status.title\":\"如月怜的額度連結狀態\",\"status.unknown_reason\":\"設定不完整或暫時無法查詢\",\"storage.migration_pending\":\"舊設定待移轉\",\"storage.ready\":\"安全儲存已就緒\",\"storage.unavailable\":\"安全儲存待檢查\",\"storage.unknown\":\"憑證儲存狀態待確認\",\"web.account.add\":\"新增帳戶\",\"web.account.add_query\":\"新增查詢帳戶\",\"web.account.advanced\":\"進階介面與回應對應\",\"web.account.aliases_hint\":\"指令與自然語言使用這些別名。每行一項，避免與其他帳戶重名。\",\"web.account.count\":\"{count} 個帳戶\",\"web.account.credentials_configured\":\"憑證已設定\",\"web.account.credentials_pending\":\"待設定憑證\",\"web.account.disabled\":\"已停用\",\"web.account.editor_subtitle\":\"管理查詢參數與來源憑證。\",\"web.account.empty\":\"還沒有查詢帳戶\",\"web.account.empty_hint\":\"選擇供應商新增帳戶，再單獨設定加密憑證。\",\"web.account.enabled\":\"已啟用\",\"web.account.id_hint\":\"請使用穩定且唯一的 ID。儲存後無法變更。\",\"web.account.id_locked\":\"為避免憑證綁錯帳戶，既有帳戶 ID 無法變更。\",\"web.account.list\":\"查詢帳戶\",\"web.account.list_subtitle\":\"管理 AI 服務的餘額、用量與額度查詢帳戶。\",\"web.account.mapping\":\"餘額回應對應\",\"web.account.mapping_hint\":\"使用 JSON Pointer，例如 /data/remaining。靜態請求本文和對應中不允許放入憑證。\",\"web.account.new\":\"新增帳戶\",\"web.account.profile_action\":\"更換並清空門檻\",\"web.account.profile_body\":\"將清空門檻並關閉警示，單位會重新辨識。\",\"web.account.profile_title\":\"更換服務類型並重設警示？\",\"web.account.protocol\":\"請求協定\",\"web.account.provider\":\"供應商\",\"web.account.provider_scope\":\"各供應商使用自己的餘額查詢協定和憑證，與模型聊天設定分開管理。\",\"web.account.provider_settings\":\"供應商設定\",\"web.account.remove\":\"移除帳戶\",\"web.account.remove_action\":\"從草稿移除\",\"web.account.remove_body\":\"將從草稿移除此帳戶。儲存設定後才會生效，並移除其已儲存憑證；其他帳戶不受影響。\",\"web.account.remove_hint\":\"移除操作在儲存設定後生效。\",\"web.account.remove_title\":\"移除帳戶「{account}」？\",\"web.account.settings\":\"帳戶設定\",\"web.alert.admin_list\":\"警示管理 QQ 允許名單\",\"web.alert.admin_list_hint\":\"每行一個 QQ 號碼；名單成員或 AstrBot 管理員可管理警示。\",\"web.alert.admin_list_placeholder\":\"每行一個 QQ 號碼\",\"web.alert.enable_account\":\"啟用此帳戶的警示\",\"web.alert.hints_title\":\"警示提示\",\"web.alert.interval\":\"檢查間隔（分鐘）\",\"web.alert.interval_days\":\"{count} 天\",\"web.alert.interval_hint\":\"1–4320 分鐘，預設 15。\",\"web.alert.interval_minutes\":\"{count} 分鐘\",\"web.alert.interval_set\":\"設為 {count} 分鐘\",\"web.alert.interval_slider\":\"檢查間隔滑桿（分鐘）\",\"web.alert.metric\":\"警示指標\",\"web.alert.metric_hint\":\"選擇需要監測的餘額。\",\"web.alert.minutes\":\"分鐘\",\"web.alert.permissions\":\"警示管理權限\",\"web.alert.quick_group\":\"檢查間隔快速設定\",\"web.alert.quick_label\":\"快速設定：\",\"web.alert.recovery\":\"恢復門檻（可選）\",\"web.alert.recovery_hint\":\"留空時會自動設定。指定數值時，須高於觸發門檻。\",\"web.alert.recovery_placeholder\":\"留空自動設定\",\"web.alert.repeat\":\"持續低額時的重複提醒間隔（分鐘）\",\"web.alert.repeat_hint\":\"設為 0 可停用重複通知，上限為 4320 分鐘。\",\"web.alert.smart_hint\":\"AI 提示\",\"web.alert.smart_hint_help\":\"使用目標會話的模型與人格。\",\"web.alert.targets\":\"目標 UMO（每行一個）\",\"web.alert.targets_hint\":\"每行一個 UMO。群組目標可在尾端加入 @QQ 號碼。\",\"web.alert.targets_title\":\"額度警示推播目標\",\"web.alert.threshold\":\"觸發門檻\",\"web.alert.threshold_hint\":\"餘額低於或等於此值時提醒。\",\"web.alert.threshold_placeholder\":\"填寫觸發門檻\",\"web.alert.title\":\"額度警示\",\"web.common.cancel\":\"取消\",\"web.common.choose\":\"請選擇\",\"web.common.off\":\"已關閉\",\"web.common.on\":\"已開啟\",\"web.common.one_per_line\":\"每行一項\",\"web.common.time_unavailable\":\"時間不可用\",\"web.credential.balance_key\":\"餘額查詢 API Key\",\"web.credential.cancel_entry\":\"取消輸入\",\"web.credential.clear\":\"清除憑證\",\"web.credential.clear_body\":\"將移除帳戶「{account}」的此項憑證或引用。帳戶設定保留；之後需重新設定才能查詢。\",\"web.credential.clear_title\":\"清除 {credential}？\",\"web.credential.confirm_clear\":\"確認清除\",\"web.credential.encrypted_status\":\"已設定 · 加密儲存\",\"web.credential.enter_new\":\"輸入新憑證\",\"web.credential.environment_hint\":\"僅輸入環境變數名稱，例如 QUOTA_API_KEY。憑證值由執行環境提供。\",\"web.credential.environment_name\":\"環境變數名稱\",\"web.credential.environment_status\":\"已設定 · 環境變數引用\",\"web.credential.eyebrow\":\"來源存取\",\"web.credential.finish_settings\":\"請先儲存或放棄一般設定修改，再操作憑證。\",\"web.credential.grsai_token\":\"Grsai 請求權杖\",\"web.credential.legacy_field\":\"舊版憑證（{field}）\",\"web.credential.missing\":\"未設定\",\"web.credential.new_source\":\"新憑證來源\",\"web.credential.new_value\":\"新憑證\",\"web.credential.new_value_hint\":\"留空會保留現有憑證。送出後會立即清除輸入內容。\",\"web.credential.optional_sts\":\"STS Security Token（可選）\",\"web.credential.replace\":\"更換憑證\",\"web.credential.save_account\":\"請先儲存新帳戶，再設定憑證。\",\"web.credential.save_new\":\"儲存新憑證\",\"web.credential.saved_hint\":\"憑證已儲存，將在餘額查詢時驗證有效性。\",\"web.credential.separate\":\"憑證單獨儲存。\",\"web.credential.status_unread\":\"狀態未讀取\",\"web.credential.title\":\"查詢憑證\",\"web.credential.use_environment\":\"引用環境變數\",\"web.detail.fixed_hint\":\"已使用固定提示。\",\"web.detail.mention_invalid\":\"QQ 提及格式無效，請核對群組會話與 @QQ 號碼。\",\"web.detail.mention_unsupported\":\"目標不支援 QQ 提及，請移除尾端的 @ 指定或改用支援的 QQ 群組。\",\"web.detail.message_components_unavailable\":\"訊息元件無法建立，請檢查宿主元件與記錄。\",\"web.detail.platform_not_found\":\"未找到目標平台執行個體，請核對 UMO 的平台執行個體 ID。\",\"web.detail.platform_unavailable\":\"目標平台執行個體暫不可用，請檢查連線狀態與宿主記錄。\",\"web.detail.platform_unsupported\":\"目標平台不支援此主動傳送方式，請改用支援的推播目標。\",\"web.detail.session_check_failed\":\"無法核對目標會話狀態，請檢查 AstrBot 會話設定與記錄。\",\"web.detail.session_disabled\":\"目標會話已停用，請在 AstrBot 中啟用會話。\",\"web.detail.target_invalid\":\"推播目標格式無效，請在全域設定中核對 UMO。\",\"web.detail.transport_unavailable\":\"宿主主動傳送介面不可用，請檢查 AstrBot 版本與記錄。\",\"web.detail.unknown\":\"暫無明確阻止原因，請核對全域推播目標、平台連線與宿主警示記錄。\",\"web.field.advanced_options\":\"顯示進階設定\",\"web.field.aliases\":\"查詢別名\",\"web.field.amount_path\":\"主餘額路徑\",\"web.field.auth_mode\":\"認證方式\",\"web.field.auth_name\":\"認證參數名稱\",\"web.field.balance_scope\":\"點數範圍\",\"web.field.base_url\":\"服務位址\",\"web.field.cache_ttl_seconds\":\"成功結果快取（秒）\",\"web.field.display_name\":\"顯示名稱\",\"web.field.enabled\":\"啟用帳戶\",\"web.field.expires_at_path\":\"到期時間路徑\",\"web.field.expiry_path\":\"舊版到期路徑\",\"web.field.failure_path\":\"業務失敗路徑\",\"web.field.failure_value\":\"業務失敗值\",\"web.field.id\":\"帳戶 ID\",\"web.field.json_body\":\"靜態 JSON 請求本文\",\"web.field.kind\":\"餘額類別\",\"web.field.kind_path\":\"類別路徑\",\"web.field.method\":\"請求方法\",\"web.field.path\":\"介面路徑\",\"web.field.region\":\"連線區域\",\"web.field.remaining_path\":\"剩餘量路徑\",\"web.field.service_profile\":\"服務類型\",\"web.field.status_path\":\"狀態路徑\",\"web.field.status_values\":\"狀態值對應\",\"web.field.success_path\":\"業務成功路徑\",\"web.field.success_value\":\"業務成功值\",\"web.field.timeout_seconds\":\"帳戶逾時（秒）\",\"web.field.total_path\":\"總量路徑\",\"web.field.unit\":\"固定單位\",\"web.field.unit_path\":\"單位路徑\",\"web.field.url\":\"舊版完整 URL\",\"web.field.used_path\":\"已使用量路徑\",\"web.global.allow_group_queries\":\"允許群組查詢\",\"web.global.command_admin_only\":\"餘額查詢指令僅管理員\",\"web.global.group_allowed_user_ids\":\"群組查詢使用者允許名單\",\"web.global.max_concurrency\":\"查詢並行數上限\",\"web.global.private_allowed_user_ids\":\"私訊允許名單\",\"web.global.timeout_seconds\":\"單一帳戶逾時（秒）\",\"web.global.total_timeout_seconds\":\"整次查詢逾時（秒）\",\"web.hint.advanced_options\":\"通用服務設定認證、方法與回應對應；Grsai 帳戶點數使用固定協定並忽略舊對應。\",\"web.hint.amount_path\":\"必需的 JSON Pointer，例如 /data/remaining。\",\"web.hint.auth_mode\":\"按餘額文件確認；Grsai 帳戶點數忽略此欄位，token 固定放入 JSON 請求本文。\",\"web.hint.auth_name\":\"僅認證方式為「請求標頭」或「查詢參數」時使用。\",\"web.hint.balance_scope\":\"帳戶點數已支援；API Key 點數暫不可查詢。\",\"web.hint.base_url\":\"不含 API 路徑的 HTTPS 根網址。https://api.example.invalid 僅供格式參考，無法存取。\",\"web.hint.expiry_path\":\"用於相容舊版 expires_at_path。\",\"web.hint.json_body\":\"僅供通用服務使用，不支援範本或憑證。Grsai 帳戶點數留空；舊項目切換時清除舊請求本文。\",\"web.hint.kind_path\":\"可選 JSON Pointer；僅接受 cash/quota/free_quota/subscription/credits/usage/custom。\",\"web.hint.legacy_base_url\":\"HTTPS 服務根網址，可與介面路徑配合。\",\"web.hint.legacy_json_body\":\"僅用於有文件依據的唯讀 POST。不支援範本或憑證。\",\"web.hint.legacy_method\":\"允許 GET，或已確認無副作用的 POST。\",\"web.hint.meinianda_cache\":\"網站建議每分鐘查詢一次。預設快取時間為 60 秒。\",\"web.hint.method\":\"通用服務按文件填寫。Grsai 帳戶點數固定 POST；舊項目切換時清除原 GET。\",\"web.hint.path\":\"通用服務按文件填寫。Grsai 帳戶點數留空或填 /client/openapi/getCredits；舊項目切換時清除原路徑。/account/balance 僅為占位範例。\",\"web.hint.private_allowlist\":\"輸入完整的「平台名稱:使用者 ID」，例如 aiocqhttp:123456。管理員無須加入。上方的管理員開關也適用於 /yql 餘額查詢。\",\"web.hint.region\":\"中國與海外區域皆使用內建官方節點，無須自行填寫伺服器位址。\",\"web.hint.service_profile\":\"餘額查詢使用服務供應商專屬介面。新 Grsai 帳戶請直接新增 Grsai 範本；本範本舊項目可切換帳戶點數預設。\",\"web.hint.status_values\":\"將供應商狀態值對應到 available/unavailable/partial/unknown。\",\"web.hint.unit\":\"可用 CNY/USD/JPY/credit/credits/tokens/requests/custom；設定 unit_path 時必填。\",\"web.hint.unit_path\":\"可選 JSON Pointer；執行時值必須與固定 unit 一致。\",\"web.hint.url\":\"完整 HTTPS 地址，不含 query、憑證或 fragment。\",\"web.language.auto\":\"跟隨 AstrBot\",\"web.language.en-US\":\"English\",\"web.language.ja-JP\":\"日本語\",\"web.language.zh-CN\":\"简体中文\",\"web.language.zh-TW\":\"繁體中文\",\"web.metric.AvailableAmount\":\"可用額度\",\"web.metric.AvailableCashAmount\":\"現金餘額\",\"web.metric.CreditAmount\":\"信用額度\",\"web.metric.credit\":\"點數\",\"web.metric.granted_balance\":\"贈送餘額\",\"web.metric.mapped_balance\":\"已設定對應餘額\",\"web.metric.monitored\":\"監測餘額\",\"web.metric.site_credit\":\"站內額度\",\"web.metric.topped_up_balance\":\"儲值餘額\",\"web.metric.total_balance\":\"總餘額\",\"web.migration.accounts\":\"帳戶\",\"web.migration.cleanup_hint\":\"舊版宿主設定只會在遷移成功後清除。如果來源設定有變更，請重新預覽後再執行。\",\"web.migration.cleanup_pending\":\"遷移已儲存，但宿主舊欄位尚未清理完成。請重新預覽後重試清理。\",\"web.migration.confirm\":\"確認遷移舊設定\",\"web.migration.confirm_body\":\"將遷移預覽中的 {count} 個帳戶；明文憑證加密後儲存，並清理舊版外掛欄位。不會顯示或傳送憑證到其他服務。\",\"web.migration.confirm_title\":\"遷移舊設定？\",\"web.migration.conflict\":\"發現與目前加密儲存不同的舊設定。不會自動覆蓋現有儲存，也不會清理這份新出現的舊設定。請人工核對來源。\",\"web.migration.environment\":\"環境變數引用\",\"web.migration.execute\":\"執行遷移\",\"web.migration.lock_warning\":\"有舊版設定等待遷移。一般設定與憑證操作暫時鎖定。\",\"web.migration.no_pending\":\"沒有待遷移的舊版設定。\",\"web.migration.open\":\"前往遷移\",\"web.migration.overview\":\"將舊版外掛設定中的一般設定、憑證和環境變數引用遷移到獨立管理儲存。憑證加密儲存，不會在頁面顯示。\",\"web.migration.pending\":\"偵測到舊版設定，遷移完成前不能儲存新設定。\",\"web.migration.plaintext\":\"需要加密的憑證\",\"web.migration.preview\":\"讀取遷移預覽\",\"web.migration.retry_cleanup\":\"重試清除舊欄位\",\"web.migration.scope\":\"本次遷移範圍\",\"web.migration.title\":\"舊設定遷移\",\"web.navigation.accounts\":\"帳戶管理\",\"web.navigation.back_to_accounts\":\"返回帳戶\",\"web.navigation.global\":\"全域設定\",\"web.navigation.leave_action\":\"放棄草稿並離開\",\"web.navigation.leave_body\":\"未儲存的設定和憑證輸入將清空。已發出的請求無法撤回，結果不明時需重新讀取，不會自動重試。\",\"web.navigation.leave_title\":\"離開目前設定？\",\"web.navigation.maintenance\":\"設定維護\",\"web.navigation.mobile\":\"行動版導覽\",\"web.navigation.primary\":\"主導覽\",\"web.navigation.reload\":\"重新讀取狀態\",\"web.navigation.reload_action\":\"丟棄草稿並讀取\",\"web.navigation.reload_body\":\"這會清空目前未儲存的設定和憑證輸入。\",\"web.navigation.reload_title\":\"重新讀取設定？\",\"web.navigation.skip\":\"跳到主要內容\",\"web.notice.alert_loading\":\"正在讀取警示執行狀態…\",\"web.notice.alert_read_failed\":\"無法確認警示執行狀態，請稍後重試。\",\"web.notice.authorization_lost\":\"管理授權已失效。所有草稿已清空，請從 AstrBot 外掛管理重新開啟。\",\"web.notice.authorization_reopen\":\"管理授權已失效，請重新開啟。\",\"web.notice.config_changed\":\"設定已變更，請重新讀取。\",\"web.notice.connecting\":\"正在連線至宿主管理工作階段…\",\"web.notice.discarded\":\"未儲存的草稿已丟棄。\",\"web.notice.invalid_context\":\"宿主的管理工作階段資訊無效。請從 AstrBot 的外掛管理開啟此頁面。\",\"web.notice.invalid_environment\":\"請輸入有效的環境變數名稱。變數的值由執行環境提供。\",\"web.notice.left_during_write\":\"已離開原設定。已發出的請求無法撤回，請重新讀取確認結果。\",\"web.notice.legacy_cleanup_incomplete\":\"設定已遷移，但宿主舊欄位清理尚未完成，請在設定維護中重新預覽並完成清理。\",\"web.notice.legacy_cleanup_retry\":\"遷移已儲存，可重試清理原來的宿主舊欄位。\",\"web.notice.legacy_conflict\":\"舊設定與目前儲存不一致。不會覆蓋現有儲存或清理新的舊設定。\",\"web.notice.legacy_not_pending\":\"沒有待遷移的舊設定。\",\"web.notice.legacy_preview_ready\":\"遷移預覽已就緒。執行前請核對下方範圍。\",\"web.notice.loaded\":\"已讀取最新設定。\",\"web.notice.missing_credential\":\"請輸入新憑證；留空不會執行清除。\",\"web.notice.open_in_host\":\"請從 AstrBot 外掛管理頁面開啟此頁。\",\"web.notice.read_failed\":\"無法確認設定狀態。請重新讀取，或從宿主重新開啟。\",\"web.notice.reading\":\"正在讀取最新狀態…\",\"web.notice.revision_conflict\":\"設定已被其他頁面修改。請重新讀取，再核對並送出；不會自動重試。\",\"web.notice.saved\":\"已儲存，目前狀態已重新核對。\",\"web.notice.saving\":\"正在送出，請勿重複操作…\",\"web.notice.session_unavailable\":\"宿主管理工作階段無法使用，請重新開啟此頁面。\",\"web.notice.unit_candidate_changed\":\"候選已變更或過期，請重新查詢後確認。\",\"web.notice.unit_candidates\":\"已取得最新候選，請核對後確認。\",\"web.notice.unit_confirm_uncertain\":\"確認結果未知，請重新整理單位後再操作。\",\"web.notice.unit_confirmed\":\"單位已確認。\",\"web.notice.unit_current\":\"已讀取最新單位狀態，已確認的單位仍有效。\",\"web.notice.unit_no_candidates\":\"暫未取得可確認候選，請檢查憑證、介面設定或查詢重試等待狀態後再查詢。\",\"web.notice.unit_querying\":\"正在查詢餘額以取得最新單位…\",\"web.notice.unit_read_failed\":\"單位取得失敗，請重新整理。\",\"web.notice.unit_unverified_candidates\":\"未取得可信的新候選。請檢查憑證、介面與查詢狀態後重新查詢。\",\"web.notice.validation_failed\":\"送出未透過驗證。請檢查欄位和憑證類型；敏感輸入已清空。\",\"web.notice.write_uncertain\":\"送出結果尚未確認，敏感輸入已清空。請重新讀取狀態後再決定，切勿直接重複送出。\",\"web.option.auth.bearer\":\"Bearer 權杖\",\"web.option.auth.header\":\"請求標頭\",\"web.option.auth.query\":\"查詢參數\",\"web.option.profile.generic\":\"OpenAI 相容服務 / 第三方服務\",\"web.option.region.cn\":\"國內直連\",\"web.option.region.overseas\":\"海外節點\",\"web.option.scope.account\":\"帳戶點數（已支援預設）\",\"web.option.scope.api_key\":\"API Key 點數（暫不可查詢）\",\"web.option.scope.none\":\"請選擇點數範圍\",\"web.provider.alibaba_help\":\"阿里雲 BSS：現金餘額、可用額度及信用額度。\",\"web.provider.compatible_help\":\"餘額查詢使用供應商專屬介面，請按其文件設定唯讀餘額介面。\",\"web.provider.compatible_name\":\"其他相容服務\",\"web.provider.deepseek_help\":\"DeepSeek 官方帳戶餘額，查詢地址與解析規則已內建。\",\"web.provider.grsai_help\":\"Grsai 帳戶點數使用請求權杖，固定呼叫 POST /client/openapi/getCredits，無須提供模型 API Key。\",\"web.provider.legacy_name\":\"舊版通用帳戶\",\"web.provider.meinianda_help\":\"查詢 Meinianda 帳戶的站內額度。建議將快取時間設為至少 60 秒。\",\"web.runtime.last_checked\":\"最近檢查：\",\"web.runtime.last_sent\":\"最近一次傳送嘗試：\",\"web.runtime.loading\":\"讀取中…\",\"web.runtime.no_account_record\":\"此帳戶尚無執行記錄。\",\"web.runtime.refresh\":\"重新整理警示狀態\",\"web.runtime.running\":\"檢查工作執行中，只會檢查已完成設定並啟用警示的帳戶。\",\"web.runtime.stopped\":\"檢查工作未執行。\",\"web.runtime.storage_unavailable\":\"警示狀態儲存不可用，警示未執行。\",\"web.runtime.title\":\"執行狀態\",\"web.runtime.unknown_status\":\"狀態已更新，請透過警示指令查看詳細資訊。\",\"web.settings.access_eyebrow\":\"查詢權限\",\"web.settings.access_title\":\"查詢權限\",\"web.settings.account_alerts\":\"各帳戶可單獨開啟警示。\",\"web.settings.admin_access\":\"此頁面僅供 AstrBot 管理員設定。查詢權限無法用於存取管理頁面。\",\"web.settings.admin_allowlist\":\"管理員不需要加入私訊允許名單。\",\"web.settings.appearance\":\"語言設定\",\"web.settings.applies_after_save\":\"儲存後生效。\",\"web.settings.command_access\":\"管理員開關只限制 /yql 餘額查詢。警示指令適用獨立的權限規則。\",\"web.settings.discard\":\"放棄修改\",\"web.settings.group_access\":\"群組查詢須先開啟群組查詢功能，並符合使用者允許名單的規則。\",\"web.settings.language\":\"外掛語言\",\"web.settings.language_hint\":\"儲存後生效。自動模式採用 AstrBot 提供的語言。沒有可用語言時（例如定時警示）會使用簡體中文。\",\"web.settings.private_format\":\"私訊允許名單使用完整的「平台名稱:使用者 ID」。\",\"web.settings.query_access\":\"查詢權限\",\"web.settings.query_and_cache\":\"查詢與快取\",\"web.settings.save\":\"儲存設定\",\"web.settings.save_first\":\"請先儲存設定。\",\"web.settings.separate_credentials\":\"一般設定與憑證分別儲存\",\"web.settings.unsaved\":\"有未儲存的變更\",\"web.shell.auth_required\":\"需要宿主管理授權\",\"web.shell.brand_author\":\"如月憐的\",\"web.shell.brand_name\":\"額度連結\",\"web.shell.eyebrow\":\"YOMIHIME QUOTA LINK / 管理\",\"web.shell.loading_config\":\"正在讀取設定\",\"web.shell.open_from_host\":\"請先登入 AstrBot，再從外掛詳細資訊頁面開啟「額度查詢」。\",\"web.shell.page_title\":\"額度查詢\",\"web.shell.project_name\":\"如月憐的額度連結\",\"web.shell.revision\":\"設定版本 {revision}\",\"web.shell.scope\":\"統一查詢 · 獨立憑證\",\"web.shell.waiting\":\"等待管理工作階段\",\"web.status.accepted\":\"傳送請求已受理（不代表送達）\",\"web.status.auth_paused\":\"憑證被拒絕，檢查已暫停\",\"web.status.blocked\":\"警示傳送已暫停，請檢查下方原因\",\"web.status.disabled\":\"警示已關閉\",\"web.status.error\":\"檢查失敗，保留上次警示狀態\",\"web.status.failed\":\"傳送失敗\",\"web.status.incomplete\":\"設定不完整，未啟動\",\"web.status.low\":\"低於或等於門檻，目前警示持續中\",\"web.status.monitoring\":\"餘額監測中\",\"web.status.normal\":\"餘額在門檻以上\",\"web.status.paused\":\"身分或權限驗證失敗。修正設定或手動重試後會恢復檢查。\",\"web.status.pending\":\"等待檢查\",\"web.status.pending_send\":\"等待合並提醒\",\"web.status.recovered\":\"餘額已恢復\",\"web.status.recovering\":\"額度已回升，尚未達到恢復門檻\",\"web.status.stale\":\"結果過期或指標、單位不匹配，不用於警示判斷\",\"web.status.storage_unavailable\":\"警示狀態儲存不可用，警示未執行\",\"web.status.submitted\":\"已送出平台；不代表最終送達\",\"web.status.unit_changed\":\"監測指標或單位已變更，請確認\",\"web.status.unit_unidentified\":\"等待辨識單位\",\"web.status.units_ambiguous\":\"多個單位待確認\",\"web.status.unknown\":\"傳送結果不明，請先核對再重試。\",\"web.status.waiting\":\"等待下次檢查\",\"web.status.waiting_budget\":\"正在等待同一推播目標的傳送間隔（至少 300 秒／5 分鐘），後續檢查有效時將重試。\",\"web.storage.eyebrow\":\"本機加密\",\"web.storage.key_handling\":\"主金鑰由執行環境管理，不在此頁面輸入、匯出或恢復。\",\"web.storage.ready\":\"加密儲存就緒\",\"web.storage.title\":\"儲存安全\",\"web.storage.troubleshooting\":\"遇到儲存故障請檢查宿主記錄中的安全錯誤代碼。不要在公開記錄或螢幕擷取畫面中貼上金鑰。\",\"web.storage.unavailable\":\"加密儲存不可用\",\"web.storage.unavailable_warning\":\"加密儲存不可用。新的明文憑證不能儲存，請先檢查執行環境；不會改用明文儲存。\",\"web.unit.ambiguous\":\"發現多個單位，請選擇。\",\"web.unit.awaiting\":\"待取得\",\"web.unit.candidates_stale\":\"查詢候選已過期，請重新查詢。已確認的單位記錄仍保留。\",\"web.unit.changed\":\"查詢單位已變更，請重新確認。\",\"web.unit.choices_expired\":\"可確認候選已過期，重新查詢後再選擇。\",\"web.unit.choose\":\"選擇單位\",\"web.unit.confirm\":\"確認單位\",\"web.unit.confirm_no_threshold\":\"改用 {unit}？門檻尚未設定。\",\"web.unit.confirm_observed\":\"請確認查詢到的單位。\",\"web.unit.confirm_threshold\":\"改用 {unit}，按門檻 {threshold} 比較？\",\"web.unit.confirm_title\":\"確認單位 {unit}？\",\"web.unit.current\":\"單位：{unit}\",\"web.unit.detect_on_account_save\":\"儲存帳戶後自動辨識。\",\"web.unit.detect_on_query\":\"查詢餘額後自動辨識。\",\"web.unit.detect_on_save\":\"儲存設定後重新辨識。\",\"web.unit.finish_credential_before_query\":\"完成或取消憑證輸入後可重新查詢。\",\"web.unit.loading\":\"處理中…\",\"web.unit.metric_changed\":\"監測指標已從「{previous}」變更為「{current}」。請重新確認單位及門檻。\",\"web.unit.metric_edited\":\"監測指標已改為「{metric}」。儲存後請重新查詢並確認單位。\",\"web.unit.metric_or_unit_changed\":\"監測指標或單位已變更，請重新確認。\",\"web.unit.no_choices\":\"目前沒有可確認候選，重新查詢後再選擇。\",\"web.unit.query\":\"重新查詢單位\",\"web.unit.query_changed\":\"查詢帳戶或介面已變更，請重新確認單位和門檻。\",\"web.unit.query_edited\":\"查詢設定已修改，儲存後重新辨識單位。\",\"web.unit.query_hint\":\"查詢此帳戶的餘額介面以取得新候選單位，這項操作不會傳送警示。\",\"web.unit.read\":\"讀取單位狀態\",\"web.unit.recorded\":\"單位記錄：\",\"web.unit.save_before_query\":\"儲存設定後可重新查詢單位。\",\"web.unit.title\":\"警示單位\",\"web.unit.verified\":\"單位已驗證。\",\"web.unit.verified_expired\":\"單位已驗證。查詢候選已過期，已確認的單位仍有效。\",\"web.validation.account_alert\":\"{account}：{message}\",\"web.validation.account_bounds\":\"帳戶逾時上限為 120 秒，快取時間上限為 86400 秒。\",\"web.validation.account_id\":\"帳戶 ID 不能為空或重複。\",\"web.validation.account_name\":\"請填寫帳戶顯示名稱。\",\"web.validation.account_positive\":\"帳戶逾時和快取時間都必須為正數。\",\"web.validation.alert_fields\":\"警示設定欄位無效。\",\"web.validation.alert_prerequisites\":\"啟用警示前，請啟用帳戶並填寫門檻和至少一個全域推播目標。\",\"web.validation.decimal_length\":\"門檻最多 30 位整數、18 位小數，不支援指數形式。\",\"web.validation.duplicate_umo\":\"UMO 重複，請合並為一行。\",\"web.validation.finite_decimal\":\"請輸入不含指數記法的有限十進位字串。\",\"web.validation.global_bounds\":\"全域參數超出允許範圍。\",\"web.validation.group_mentions\":\"只有數字 ID 的 QQ 群組會話支援 @QQ 號碼。請從私訊或其他會話移除尾端的 @ 指定。\",\"web.validation.id_limit\":\"QQ 號碼最多 {limit} 項。\",\"web.validation.interval_input\":\"請輸入 1 至 4320 分鐘的整數。系統不會自動調整數值。\",\"web.validation.interval_range\":\"檢查間隔須為 1 至 4320 的整數分鐘。\",\"web.validation.invalid_input\":\"請檢查輸入。\",\"web.validation.invisible_chars\":\"不允許控制字元或不可見字元。\",\"web.validation.json_object\":\"請輸入有效的 JSON 物件，不要填寫憑證。\",\"web.validation.language\":\"請選擇受支援的外掛語言。\",\"web.validation.llm_fields\":\"提示模型設定無效。\",\"web.validation.llm_ids\":\"模型與人格 ID 須為不超過 128 字的文字。\",\"web.validation.llm_switch\":\"提示模型開關無效。\",\"web.validation.mentions_suffix\":\"UMO 後的 @QQ 號碼請以空格分隔。\",\"web.validation.metric\":\"請選擇該供應商支援的警示指標。\",\"web.validation.private_allowlist\":\"私訊允許名單須使用「平台名稱:使用者 ID」。\",\"web.validation.qq_id\":\"QQ 號碼須為 1 至 20 位 ASCII 正整數字串；不支援 @all、暱稱或 CQ 碼。\",\"web.validation.query_parameters\":\"請填寫有效的查詢參數。\",\"web.validation.recovery_order\":\"恢復門檻須嚴格大於觸發門檻。\",\"web.validation.repeat_input\":\"請輸入 0 至 4320 的整數分鐘。\",\"web.validation.repeat_range\":\"重複提醒須為 0 至 4320 的整數分鐘；0 表示不重複。\",\"web.validation.target_fields\":\"每個目標須包含 UMO 與提及清單。\",\"web.validation.target_limit\":\"推播目標最多 20 個。\",\"web.validation.target_line\":\"第 {line} 行：{message}\",\"web.validation.targets_text\":\"請輸入推播目標。\",\"web.validation.umo_format\":\"請輸入完整 UMO，格式為「平台執行個體:訊息類型:會話 ID」。\",\"web.validation.umo_invisible\":\"UMO 不允許控制字元或不可見字元。\",\"web.validation.umo_type\":\"訊息類型需為 FriendMessage、GroupMessage 或 OtherMessage。\",\"web.validation.unit\":\"單位須為不超過 32 字的明確文字。\"}"),
+	metadata: {
+		display_name: "如月憐的額度連結",
+		short_desc: "多平台 AI API 餘額與用量監控",
+		desc: "查詢 AI API 的餘額、用量與額度，集中管理帳戶並設定額度警示。"
+	},
+	config: { enable_admin_page: {
+		description: "啟用外掛管理頁面",
+		hint: "帳戶、憑證、查詢權限與逾時設定都在外掛頁面管理。舊設定僅供確認遷移，不會自動刪除。"
+	} }
+}, n = {
+	views: { "00-quota-link": { title: "クォータ照会" } },
+	pages: { "00-quota-link": { title: "クォータ照会" } },
+	strings: /* @__PURE__ */ JSON.parse("{\"alert.account_missing\":\"該当するアラートのアカウントが見つかりません。\",\"alert.account_unqueryable\":\"アカウントを照会できません。アカウントが有効かどうかと、照会設定を確認してください。\",\"alert.admins.count\":\"{count} 人の QQ ユーザー · プライベートチャットのみ\",\"alert.admins.host_admin_note\":\"AstrBot の管理者も設定できます。\",\"alert.admins.permissions\":\"管理権限\",\"alert.admins.qq_list\":\"QQ 許可リスト\",\"alert.admins.separate_permissions\":\"クォータ照会と通知の受信権限は個別に設定します。\",\"alert.admins.title\":\"アラート管理用 QQ 許可リスト\",\"alert.command.account_candidate_required\":\"アカウントと候補 ID を指定してください。\",\"alert.command.account_not_unique\":\"アカウントが存在しないか、名前が重複しています。管理画面のアカウント ID を使ってください。\",\"alert.command.account_required\":\"アカウントを指定してください。\",\"alert.command.admin_required\":\"クォータアラートを管理するには QQ 許可リストへの登録、または AstrBot の管理者権限が必要です。\",\"alert.command.extra_arguments\":\"このアラートコマンドに追加の引数は指定できません。\",\"alert.command.help_syntax\":\"使い方：/yql alert help [account|units|targets]。\",\"alert.command.interval_range\":\"間隔は指定範囲内の整数分で入力してください。\",\"alert.command.invalid_arguments\":\"アラートコマンドの引数が無効です。プライベートチャットで /yql alert help を使ってください。\",\"alert.command.invalid_target_arguments\":\"送信先コマンドの引数が無効です。\",\"alert.command.latest_candidate_required\":\"最新の単位候補 ID を選択してください。\",\"alert.command.mention_syntax\":\"メンションは @QQ番号 の形式で入力してください。ニックネーム、@all、CQ コードは使用できません。\",\"alert.command.parameters_required\":\"アカウントと必要な引数を指定してください。\",\"alert.command.private_help\":\"アラートの設定方法は、ボットとのプライベートチャットで /yql alert help を使って確認してください。\",\"alert.command.private_status\":\"詳しいアラートの状態と送信先一覧はプライベートチャットでのみ表示されます。ボットとのプライベートチャットで実行してください。\",\"alert.command.qq_not_allowlisted\":\"その QQ 番号はアラート管理の許可リストにありません。\",\"alert.command.resumed\":\"チェックを再開しました。\",\"alert.command.save_failed\":\"アラート設定を保存できませんでした。プライベートチャットで使い方を確認するか、管理画面で設定を修正してください。\",\"alert.command.saved\":\"アラート設定を保存しました。\",\"alert.command.saved_private\":\"アラート設定を保存しました。詳細はプライベートチャットで確認してください。\",\"alert.command.target_missing\":\"送信先 ID が見つかりません。プライベートチャットで targets list を使ってください。\",\"alert.command.targets_syntax\":\"targets list/add/addhere/remove を使用してください。\",\"alert.command.threshold_syntax\":\"使い方：threshold \\\"アカウント名\\\" 金額 [指標ID]。\",\"alert.command.too_long\":\"アラートコマンドが長すぎます。\",\"alert.command.unclosed_quote\":\"引用符が閉じていません。空白を含むアカウント名は二重引用符で囲んでください。\",\"alert.command.unit_confirmed\":\"単位を確認しました。\",\"alert.command.unknown\":\"不明なアラートコマンドです。使い方は /yql alert help で確認できます。\",\"alert.command.untrusted_session\":\"ホストから信頼できる現在の会話情報を取得できなかったため、送信先を保存できませんでした。\",\"alert.command.value_required\":\"アカウントと数値を指定してください。\",\"alert.delivery.budget\":\"設定が変更されたか、送信枠を一時的に利用できません\",\"alert.delivery.cancelled\":\"設定が変更されたか、アラートが停止されました\",\"alert.delivery.failed\":\"プラットフォームが送信を受理しませんでした。待機時間の経過後に再試行できます\",\"alert.delivery.fixed_hint\":\"会話の AI を利用できないか、出力がチェックを通過しなかったため、定型文と正確な数値を使用しました\",\"alert.delivery.llm_changed\":\"会話のモデルかペルソナが変わったため、定型文を使用しました\",\"alert.delivery.llm_config_unavailable\":\"会話の AI 設定を利用できないため、定型文を使用しました\",\"alert.delivery.llm_failed\":\"AI の案内文を利用できないため、定型文を使用しました\",\"alert.delivery.llm_language\":\"導入文は日本語で書いてください。\",\"alert.delivery.llm_locale_changed\":\"導入文の生成中に言語が変わったため、定型文を使用しました\",\"alert.delivery.llm_model_unavailable\":\"会話のモデルを利用できないため、定型文を使用しました\",\"alert.delivery.llm_nonlocal\":\"会話でローカルエージェントを使用していないため、定型文を使用しました\",\"alert.delivery.llm_not_called\":\"送信先の会話が無効か状態を確認できないため、AI を呼び出しませんでした\",\"alert.delivery.llm_off\":\"会話の AI が無効のため、定型文を使用しました\",\"alert.delivery.llm_persona_unavailable\":\"会話のペルソナを利用できないため、定型文を使用しました\",\"alert.delivery.llm_session_unavailable\":\"送信先の会話が無効か状態を確認できないため、AI の案内文を使用しませんでした\",\"alert.delivery.llm_unavailable\":\"会話の AI が無効か状態を確認できないため、定型文を使用しました\",\"alert.delivery.llm_webchat_persona\":\"会話は専用の WebChat ペルソナを使用しているため、定型文を使用しました\",\"alert.delivery.mention_invalid\":\"グループの送信先またはメンションの QQ 番号の形式が無効です。グループの識別子と数字の QQ 番号を確認してください\",\"alert.delivery.mention_unsupported\":\"送信先のアダプターまたは会話の種類は QQ メンションに対応していません。@ を削除するか、aiocqhttp のグループを選んでください\",\"alert.delivery.message_components_unavailable\":\"メッセージコンポーネントの作成に失敗しました。AstrBot のメッセージコンポーネント API を確認してください\",\"alert.delivery.note_suffix\":\"。{note}\",\"alert.delivery.platform_not_found\":\"送信先のプラットフォームインスタンスが見つかりません。UMO 内のインスタンス ID を確認してください\",\"alert.delivery.platform_unavailable\":\"送信先のプラットフォームインスタンスを利用できません。アダプターの動作を確認してください\",\"alert.delivery.platform_unsupported\":\"送信先プラットフォームはこの自発送信 API に対応していません。対応プラットフォームを選んでください\",\"alert.delivery.session_check_failed\":\"送信先の会話の状態を確認できません。AstrBot の会話状態 API を確認してください\",\"alert.delivery.session_disabled\":\"送信先の会話は無効です。AstrBot でその会話を有効にし、次のチェックを待ってください\",\"alert.delivery.submitted\":\"プラットフォームに送信済みです。配信結果はプラットフォームで確認してください\",\"alert.delivery.target_invalid\":\"送信先 UMO の形式が無効です。会話を選び直すか、完全な識別子を入力してください\",\"alert.delivery.transport_unavailable\":\"ホストの自発送信 API を利用できません。AstrBot のバージョンとプラットフォームアダプターを確認してください\",\"alert.delivery.unknown\":\"送信結果は不明です。重複を防ぐため、自動で再送しません\",\"alert.fact.line\":\"{name} · {metric}：{amount} {unit} ≤ {threshold} {unit}（アラートしきい値）\",\"alert.fact.source\":\"今回の有効な照会結果です。最終的な値はプロバイダーのコンソールで確認してください。\",\"alert.fact.title\":\"【クォータアラート】\",\"alert.help.account_heading\":\"アカウントアラート\",\"alert.help.account_rules\":\"アカウントのルール\",\"alert.help.account_title\":\"アカウントのアラートルール\",\"alert.help.admin_note\":\"QQ 許可リストの登録者と AstrBot 管理者が設定できます。詳細な状態と一覧はプライベートチャットで確認してください。\",\"alert.help.admins\":\"アラート用 QQ 許可リスト\",\"alert.help.admins_command\":\"/yql alert admins list|add QQ番号|remove QQ番号\",\"alert.help.admins_short\":\"管理者の許可リスト\",\"alert.help.bind\":\"単位を確認\",\"alert.help.bind_command\":\"/yql alert bind \\\"アカウント名\\\" 候補ID\",\"alert.help.common_actions\":\"よく使う操作\",\"alert.help.confirm_note\":\"確認前に単位を確認してください。しきい値の数値は確認後も維持されます。\",\"alert.help.delivery_permissions\":\"通知と権限\",\"alert.help.interval\":\"チェック間隔（分）\",\"alert.help.interval_command\":\"/yql alert interval \\\"アカウント名\\\" 15\",\"alert.help.interval_note\":\"間隔は分単位です。繰り返し間隔を 0 にすると再通知を無効にできます。\",\"alert.help.interval_short\":\"チェック間隔\",\"alert.help.llm\":\"AI による案内\",\"alert.help.manage_note\":\"QQ 許可リストの登録者と AstrBot 管理者が設定できます。\",\"alert.help.more_settings\":\"その他の設定\",\"alert.help.persona_note\":\"AI の案内文は送信先会話のペルソナを使います。\",\"alert.help.prefix\":\"コマンドの先頭：/yql alert\",\"alert.help.private_notice\":\"管理者のみ · 詳細はプライベートチャットで確認\",\"alert.help.recipients_note\":\"受信者とグループメンバーを先に確認してください。保存時に通知は送信されません。\",\"alert.help.recovery\":\"復旧しきい値\",\"alert.help.recovery_command\":\"/yql alert recovery \\\"アカウント名\\\" 12|auto\",\"alert.help.refresh_note\":\"候補の表示は読み取り専用です。refresh は残高を再照会します。\",\"alert.help.repeat\":\"繰り返し間隔（0 で無効）\",\"alert.help.repeat_command\":\"/yql alert repeat \\\"アカウント名\\\" 0\",\"alert.help.repeat_short\":\"繰り返し間隔\",\"alert.help.retry\":\"認証による一時停止を解除\",\"alert.help.retry_command\":\"/yql alert retry \\\"アカウント名\\\"\",\"alert.help.retry_short\":\"チェック再開\",\"alert.help.return\":\"概要に戻る：/yql alert help\",\"alert.help.set_threshold\":\"しきい値を設定\",\"alert.help.status\":\"アラートの状態\",\"alert.help.targets_add\":\"指定した会話を追加\",\"alert.help.targets_add_short\":\"指定した会話\",\"alert.help.targets_heading\":\"送信先と管理権限\",\"alert.help.targets_here\":\"現在の会話を追加\",\"alert.help.targets_here_short\":\"現在の会話\",\"alert.help.targets_list\":\"送信先を表示\",\"alert.help.targets_remove\":\"送信先を削除\",\"alert.help.targets_remove_command\":\"/yql alert targets remove 送信先ID\",\"alert.help.targets_title\":\"通知と管理権限\",\"alert.help.threshold_command\":\"/yql alert threshold \\\"アカウント名\\\" 10 [指標ID]\",\"alert.help.threshold_note\":\"残高が通知しきい値以下になると通知します。単位の確認方法は help units を参照してください。\",\"alert.help.threshold_quick_command\":\"threshold \\\"アカウント名\\\" 10\",\"alert.help.title\":\"クォータアラートの管理\",\"alert.help.toggle\":\"有効化または無効化\",\"alert.help.toggle_command\":\"/yql alert on|off \\\"アカウント名\\\"\",\"alert.help.toggle_quick_command\":\"on|off \\\"アカウント名\\\"\",\"alert.help.toggle_short\":\"有効 / 無効\",\"alert.help.trigger\":\"通知しきい値\",\"alert.help.unit_confirmation\":\"単位の確認\",\"alert.help.unit_note\":\"単位は自動で識別し、現在の単位でしきい値を判定します。AI の案内文は送信先会話のペルソナを使います。\",\"alert.help.units_read\":\"単位候補（読み取り専用）\",\"alert.help.units_read_command\":\"/yql alert units \\\"アカウント名\\\"\",\"alert.help.units_read_short\":\"候補を表示\",\"alert.help.units_refresh\":\"単位候補を更新\",\"alert.help.units_refresh_command\":\"/yql alert units \\\"アカウント名\\\" refresh\",\"alert.help.units_refresh_short\":\"候補を更新\",\"alert.help.units_title\":\"単位の識別と確認\",\"alert.help.view_status\":\"状態を表示\",\"alert.invalid_unit\":\"単位の候補が無効か、アラートの実行状態が更新されました。更新して再試行してください。\",\"alert.metric.available\":\"利用可能額\",\"alert.metric.available_cash\":\"現金残高\",\"alert.metric.credit\":\"クレジット残高\",\"alert.metric.credit_amount\":\"与信枠\",\"alert.metric.granted\":\"付与残高\",\"alert.metric.mapped\":\"マッピング済み残高\",\"alert.metric.site_credit\":\"サイト内クォータ\",\"alert.metric.topped_up\":\"チャージ残高\",\"alert.metric.total\":\"合計残高\",\"alert.metric_changed\":\"監視項目が変わりました。しきい値と単位を確認してください\",\"alert.no_metric_unit\":\"現在の監視項目に有効な単位の候補がありません。照会結果と監視項目を確認してから再試行してください。\",\"alert.no_unit\":\"有効な単位の候補が得られませんでした。照会状態を確認してから再試行してください。\",\"alert.query_identity_changed\":\"アカウントの照会設定が変わりました。しきい値と単位を再確認してください\",\"alert.receipt.result\":\"処理結果\",\"alert.receipt.title\":\"操作完了\",\"alert.runtime_changed\":\"アラートの実行状態が変わりました。更新してから再試行してください。\",\"alert.state.blocked\":\"アラートの設定が不完全か、送信先を利用できません\",\"alert.state.disabled\":\"アラートはオフです\",\"alert.state.error\":\"照会に失敗しました。現在のアラート状態を維持し、残高をゼロとして扱いません\",\"alert.state.failed\":\"プラットフォームが送信を受け付けませんでした。待機後に再試行できます\",\"alert.state.low\":\"残高がしきい値以下です。次の送信可能時刻、または送信先の復旧を待っています\",\"alert.state.monitoring\":\"監視中です。アラートは発生していません\",\"alert.state.paused\":\"認証または権限の確認に失敗しました。設定を修正するか、手動で再試行するとチェックを再開します\",\"alert.state.recovered\":\"回復しきい値に達しました。次に残高が発動しきい値以下になるまで待機します\",\"alert.state.recovering\":\"残高は上昇しましたが、回復しきい値には達していません\",\"alert.state.stale\":\"指標と単位が一致する新しい残高データを取得できませんでした。現在の状態を維持します\",\"alert.state.storage_unavailable\":\"アラート状態を保存できないため、チェックと送信を停止しました\",\"alert.state.submitted\":\"プラットフォームに送信を依頼しました。配信の完了は未確認です\",\"alert.state.unit_changed\":\"監視項目、単位、またはアカウントの照会設定が変わりました。確認してから続行してください\",\"alert.state.unit_unidentified\":\"有効な照会で残高の単位が判明するまで待機します\",\"alert.state.units_ambiguous\":\"複数または重複する単位があります。実際の候補を確認してください\",\"alert.state.unknown\":\"送信結果が不明です。重複を防ぐため自動再送は行いません\",\"alert.state.waiting\":\"次回のチェックを待っています\",\"alert.state.waiting_budget\":\"同じ送信先への送信間隔は最低 300 秒です。次回の有効なチェックを待っています\",\"alert.status.account_count\":\"{count} アカウント · ローカル実行記録\",\"alert.status.account_id\":\"アカウント ID\",\"alert.status.blocked\":\"設定の確認が必要\",\"alert.status.delivery_note\":\"ローカル記録 · 配信結果はプラットフォームの記録を確認してください。\",\"alert.status.empty\":\"表示できるアラートのチェック記録はありません。\",\"alert.status.empty_heading\":\"アカウントの状態なし\",\"alert.status.failed\":\"送信は受理されませんでした\",\"alert.status.last_checked\":\"最終チェック\",\"alert.status.last_sent\":\"プラットフォームへの最終送信\",\"alert.status.low\":\"クォータ低下\",\"alert.status.monitoring\":\"監視中\",\"alert.status.no_record\":\"記録なし\",\"alert.status.paused\":\"チェックを一時停止中\",\"alert.status.recovered\":\"回復済み\",\"alert.status.recovering\":\"クォータ回復中\",\"alert.status.running\":\"チェックタスク稼働中\",\"alert.status.scheduler\":\"{task} · 状態ストレージ：{storage}\",\"alert.status.stale\":\"有効な残高を待機中\",\"alert.status.stopped\":\"チェックタスク停止中\",\"alert.status.storage_unavailable\":\"ストレージ利用不可\",\"alert.status.submitted\":\"プラットフォームに送信済み\",\"alert.status.title\":\"クォータアラートの状態\",\"alert.status.unit_changed\":\"再確認が必要\",\"alert.status.unit_unidentified\":\"単位の識別待ち\",\"alert.status.units_ambiguous\":\"単位の確認待ち\",\"alert.status.unknown\":\"送信結果不明\",\"alert.status.waiting\":\"チェック待ち\",\"alert.status.waiting_budget\":\"送信間隔の経過待ち\",\"alert.targets.add_note\":\"確認済みの送信先を targets add または targets addhere で追加してください。\",\"alert.targets.count\":\"{count} 件の送信先 · プライベートチャットのみ\",\"alert.targets.empty\":\"アラートの送信先が未設定\",\"alert.targets.item\":\"送信先 {index} · {key}\",\"alert.targets.mentions\":\"グループ内メンション\",\"alert.targets.remove_command\":\"削除コマンド\",\"alert.targets.save_note\":\"管理者が受信者とグループメンバーを確認してから設定します。保存時はローカルの送信先だけを更新します。\",\"alert.targets.title\":\"アラート通知先\",\"alert.targets.umo\":\"会話 UMO\",\"alert.unit_changed\":\"照会の単位が変わりました。しきい値と単位を再確認してください\",\"alert.unit_expired\":\"候補の有効期限が切れたか一致しなくなりました。残高を照会してから単位の候補を更新してください。\",\"alert.units.ambiguous\":\"複数の単位候補あり\",\"alert.units.auto_detect_note\":\"残高の照会後に自動で識別します。\",\"alert.units.bind_command\":\"確認コマンド：/yql alert bind \\\"アカウント名\\\" 候補ID\",\"alert.units.binding_valid_note\":\"候補の期限が切れても既存の有効な紐付けは維持されます。\",\"alert.units.bound_metric\":\"紐付け済みの指標\",\"alert.units.candidate\":\"候補 {index} · {unit}\",\"alert.units.candidate_id\":\"候補 ID\",\"alert.units.candidate_updated\":\"候補の更新日時\",\"alert.units.candidates_empty\":\"確認可能な候補なし\",\"alert.units.candidates_expired\":\"候補の期限切れ\",\"alert.units.change_reason\":\"変更理由\",\"alert.units.current_and_bound\":\"現在 / 紐付け済みの指標\",\"alert.units.current_metric\":\"現在の指標\",\"alert.units.current_unit\":\"現在の単位\",\"alert.units.identity_changed\":\"照会に使う識別情報が変わりました。再確認してください\",\"alert.units.last_verified\":\"最終検証\",\"alert.units.metric\":\"指標\",\"alert.units.metric_changed\":\"指標が変わりました。再確認してください\",\"alert.units.metric_unknown\":\"識別待ち\",\"alert.units.not_bound\":\"未設定\",\"alert.units.pending_query\":\"取得待ち\",\"alert.units.readonly\":\"既存の照会結果 · 読み取り専用\",\"alert.units.readonly_note\":\"一覧には既存の照会結果を表示します。期限切れの候補は手動で更新できます。\",\"alert.units.refresh_command\":\"候補を手動で更新するには /yql alert units \\\"アカウント名\\\" refresh を使います。\",\"alert.units.refreshed\":\"更新をリクエスト済み · 最新のローカル状態\",\"alert.units.refreshed_note\":\"リクエストに従ってアカウント残高を更新しました。\",\"alert.units.stale\":\"単位の検証期限切れ\",\"alert.units.threshold_note\":\"確認前にしきい値の意味を確認してください。しきい値の数値は確認後も維持されます。\",\"alert.units.title\":\"アラートの単位と候補\",\"alert.units.unit_changed\":\"単位が変わりました。再確認してください\",\"alert.units.verified\":\"単位を検証済み\",\"balance.expiry\":\"有効期限\",\"balance.expiry_date\":\"有効期限 {time}\",\"balance.item_expiry\":\"{label}の有効期限\",\"balance.item_note\":\"{label}の説明\",\"balance.kind.cash\":\"現金残高\",\"balance.kind.credits\":\"クレジット\",\"balance.kind.custom\":\"カスタム項目\",\"balance.kind.free_quota\":\"無料クォータ\",\"balance.kind.quota\":\"クォータ\",\"balance.kind.subscription\":\"プラン\",\"balance.kind.usage\":\"使用量\",\"balance.remaining\":\"残り\",\"balance.remaining_amount\":\"残り {amount}\",\"balance.semantics\":\"意味：{meaning}\",\"balance.site_credit_meaning\":\"アカウントのサイト内クォータは site_credit 単位です。\",\"balance.total\":\"合計\",\"balance.total_amount\":\"合計 {amount}\",\"balance.unknown_amount\":\"値不明（単位：{unit}）\",\"balance.unknown_unit\":\"単位不明\",\"balance.unreported\":\"未提供（単位：{unit}）\",\"balance.used\":\"使用済み\",\"balance.used_amount\":\"使用済み {amount}\",\"balance.value_separator\":\"；\",\"capability.alibaba\":\"Alibaba Cloud 百煉\",\"capability.alibaba_balance\":\"Alibaba Cloud のアカウント残高（BSS：現金・利用可能額・信用枠）\",\"capability.cash\":\"現金残高\",\"capability.compatible\":\"OpenAI 互換サービス\",\"capability.credential_missing\":\"使用できる認証情報が設定されていません\",\"capability.credits\":\"ポイント\",\"capability.custom\":\"ユーザー設定の残高区分\",\"capability.deepseek_balance\":\"複数通貨のアカウント残高\",\"capability.endpoint_invalid\":\"残高照会エンドポイントの設定が無効です\",\"capability.free_quota\":\"無料枠\",\"capability.grsai_region\":\"Grsai の接続先設定が無効です\",\"capability.grsai_token_missing\":\"Grsai のアカウントリクエストトークンが設定されていません\",\"capability.host_invalid\":\"Host の設定が無効です\",\"capability.host_missing\":\"HTTPS ベース URL の Host が設定されていません\",\"capability.kind_invalid\":\"Grsai のポイントの種類は credits に設定してください\",\"capability.mapping_invalid\":\"残高フィールドの割り当てが未設定か無効です\",\"capability.meinianda_balance\":\"アカウントのサイト内クレジット（site_credit）\",\"capability.path_invalid\":\"API Path の設定が無効です\",\"capability.path_missing\":\"/ で始まる相対 API Path が設定されていません\",\"capability.profile_invalid\":\"サービスの種類の設定が無効です\",\"capability.quota\":\"利用枠\",\"capability.scope_invalid\":\"残高の範囲の設定が無効です\",\"capability.subscription\":\"サブスクリプション枠\",\"capability.unqueryable\":\"現在の設定では照会できません\",\"capability.usage\":\"使用量\",\"common.empty\":\"空\",\"common.field_separator\":\"：\",\"common.label_value\":\"{label}：{value}\",\"common.list_separator\":\"、\",\"common.none\":\"なし\",\"common.unknown\":\"不明\",\"config.account_id\":\"アカウントの id には空でない文字列を指定してください\",\"config.account_mapping\":\"アカウント設定はオブジェクトである必要があります\",\"config.admin_boolean\":\"command_admin_only には真偽値を指定してください。既定値を使用しました\",\"config.aliases\":\"aliases には空でない文字列のリストを指定してください\",\"config.auth_mapping\":\"auth にはオブジェクトを指定してください\",\"config.balance_scope\":\"残高の範囲には generic、account、api_key のいずれかを指定してください\",\"config.bss_auth\":\"Alibaba Cloud BSS の照会には専用の AccessKey ID と AccessKey Secret が必要です\",\"config.compatible_auth\":\"互換 API には API キーが必要です\",\"config.conflict\":\"設定が変更されました。更新してから再確認してください。\",\"config.conflicting_account\":\"アカウント名が別のアカウントと重複しています\",\"config.credential_in_field\":\"通常の設定項目に認証情報を含めることはできません。\",\"config.credential_operation\":\"認証情報は専用の操作で保存してください。\",\"config.display_name\":\"display_name には空でない文字列を指定してください\",\"config.duplicate_credential\":\"認証情報と通常の設定項目に同じ値は使えません。\",\"config.duplicate_id\":\"アカウントの id が重複しています\",\"config.enabled_boolean\":\"enabled には真偽値を指定してください。アカウントは無効になりました\",\"config.endpoint_mapping\":\"endpoint にはオブジェクトを指定してください\",\"config.group_boolean\":\"allow_group_queries には真偽値を指定してください。既定値を使用しました\",\"config.group_list\":\"group_allowed_user_ids には空でない文字列のリストを指定してください。空のリストを使用しました\",\"config.grsai_account_only\":\"Grsai は現在、アカウントポイントにのみ対応しています。API キーのポイント用プリセットは未対応です\",\"config.grsai_account_path\":\"Grsai のアカウントポイントには /client/openapi/getCredits を使用してください\",\"config.grsai_api_key_scope\":\"Grsai の API キーのポイント用プリセットは未対応です。アカウントポイントを選択してください\",\"config.grsai_credits\":\"Grsai のポイント照会では kind を credits に固定してください\",\"config.grsai_path_scope\":\"Grsai では getCredits に account、getAPIKeyCredits に api_key を指定してください\",\"config.grsai_post\":\"この Grsai ポイント API には POST が必要です\",\"config.grsai_region\":\"Grsai の接続先には中国本土への直接接続か、海外向け接続を選択してください\",\"config.grsai_required\":\"アカウントまたは API Key の残高範囲は Grsai を選択した場合のみ使用できます\",\"config.grsai_scope\":\"Grsai は現在、アカウントポイントのプリセットにのみ対応しています\",\"config.grsai_token\":\"Grsai のアカウントポイントには、ユーザー情報にあるリクエストトークン（token）が必要です\",\"config.invalid\":\"設定が無効です。項目とデータ型を確認してください。\",\"config.invalid_amount_mapping\":\"互換 API には有効な amount_path の割り当てが必要です\",\"config.invalid_endpoint\":\"残高エンドポイントには安全な HTTPS GET または POST を設定してください\",\"config.invalid_host\":\"Host にはパス、クエリ、フラグメントを含まない HTTPS ベース URL を指定してください\",\"config.invalid_path\":\"API Path は単一の / で始まり、完全な URL、クエリ、フラグメントを含めることはできません\",\"config.invalid_root\":\"設定のルートはオブジェクトである必要があります\",\"config.legacy_credential_in_field\":\"旧設定の通常項目に認証情報があります。元の設定は削除されていません。\",\"config.legacy_credential_shape\":\"旧認証情報を安全に移行できません。元の設定は削除されていません。\",\"config.migrate_first\":\"設定を変更する前に、旧設定を確認して移行してください。\",\"config.missing_auth\":\"使用できる認証情報がありません\",\"config.missing_endpoint\":\"残高照会のエンドポイントが設定されていません\",\"config.missing_env\":\"参照先の認証情報の環境変数が設定されていません\",\"config.missing_host\":\"サービスの HTTPS ベース URL を Host に入力してください\",\"config.missing_path\":\"/ で始まる相対 API Path を入力してください\",\"config.positive_integer\":\"{path} には正の整数を指定してください。既定値を使用しました\",\"config.positive_number\":\"{path} には正の数を指定してください。既定値を使用しました\",\"config.private_list\":\"private_allowed_user_ids には platform:userID 形式の文字列リストを指定してください。空のリストを使用しました\",\"config.provider_immutable\":\"既存のアカウントのプロバイダーは変更できません。新しいアカウントを作成してください。\",\"config.provider_type\":\"不明なプロバイダーの種類です\",\"config.providers_list\":\"providers にはリストを指定してください\",\"config.response_mapping\":\"response_mapping にはオブジェクトを指定してください。空のオブジェクトを使用しました\",\"config.secret_in_name\":\"アカウント名に認証情報を含めることはできません\",\"config.service_profile\":\"互換サービスには generic または grsai を指定してください\",\"config.storage_unavailable\":\"安全なストレージを一時的に利用できません。平文での保存には切り替えていません。鍵とストレージの状態を確認してください。\",\"config.template_mismatch\":\"アカウントテンプレートとプロバイダーの種類が一致しません\",\"credential.encrypted\":\"暗号化された認証情報を保存済み\",\"credential.environment\":\"環境変数の参照を保存済み\",\"credential.missing\":\"認証情報は未保存\",\"credential.mixed\":\"暗号化された認証情報と環境変数の参照を保存済み\",\"credential.unknown\":\"保存状態は未確認\",\"error.alert_config.account_disabled\":\"アラートを有効にする前に、アカウントを有効にしてください。\",\"error.alert_config.decimal_format\":\"{label}は通常の10進表記で入力してください。指数表記は使用できません。\",\"error.alert_config.duplicate_target\":\"アラート通知先の UMO が重複しています。同じ行にまとめてください。\",\"error.alert_config.group_mention_only\":\"QQ 番号でのメンションは、数値 ID の QQ グループでのみ設定できます。個別チャットではメンションを削除してください。\",\"error.alert_config.integer_range\":\"{label}には {low}〜{high} の整数を指定してください。\",\"error.alert_config.invalid_enabled\":\"アラートのオン・オフには真偽値を指定してください。\",\"error.alert_config.invalid_model_enabled\":\"アラート用モデルのオン・オフには真偽値を指定してください。\",\"error.alert_config.invalid_model_object\":\"アラート用モデルの設定構造が無効です。\",\"error.alert_config.invalid_object\":\"アカウントのアラート設定にはオブジェクトを指定してください。\",\"error.alert_config.invalid_qq_id\":\"{label}に指定できるのは、ASCII の数字で表した正の整数の QQ 番号のみです。全員へのメンションはできません。\",\"error.alert_config.invalid_target_fields\":\"各アラート通知先には umo と mentions のみを含めてください。\",\"error.alert_config.invalid_text\":\"{label}には制御文字を含まないテキストを指定してください。\",\"error.alert_config.invalid_text_format\":\"{label}の長さまたは形式が無効です。\",\"error.alert_config.invalid_umo\":\"UMO は「プラットフォームインスタンス:メッセージ種別:セッションID」の形式で指定してください。\",\"error.alert_config.label.admin_qq\":\"アラート管理用 QQ 許可リスト\",\"error.alert_config.label.check_interval\":\"確認間隔（分）\",\"error.alert_config.label.mentions\":\"グループ内メンション\",\"error.alert_config.label.metric\":\"アラート指標\",\"error.alert_config.label.model\":\"モデル ID\",\"error.alert_config.label.persona\":\"ペルソナ ID\",\"error.alert_config.label.recovery_threshold\":\"回復しきい値\",\"error.alert_config.label.repeat_interval\":\"残高が低い間の再通知間隔（分、0 で再通知なし）\",\"error.alert_config.label.threshold\":\"発動しきい値\",\"error.alert_config.label.unit\":\"アラートの単位\",\"error.alert_config.list_limit\":\"{label}は {limit} 件以下のリストで指定してください。\",\"error.alert_config.missing_targets\":\"アラートを有効にする前に、通知先を1件以上設定してください。\",\"error.alert_config.missing_threshold_or_metric\":\"しきい値と指標を設定してください。\",\"error.alert_config.recovery_threshold_order\":\"回復しきい値は発動しきい値より大きい値を指定してください。\",\"error.alert_config.target_limit\":\"アラート通知先は {limit} 件以下のリストで指定してください。\",\"error.alert_config.unknown_fields\":\"アカウントのアラート設定に不明なフィールドがあります。\",\"error.alert_config.unsupported_metric\":\"このプロバイダーは指定されたアラート指標に対応していません。\",\"error.query.empty_target\":\"対象名を入力してください\",\"error.query.invalid_arguments\":\"このコマンドには対象を指定できません\",\"error.query.multiple_targets\":\"複数のアカウントまたはプロバイダーが見つかりました。対象を1つ指定してください\",\"error.query.unknown_target\":\"一致するアカウントまたはプロバイダーが見つかりません\",\"help.account_command\":\"/yql account <名前>\",\"help.alerts\":\"クォータアラート\",\"help.aliyun_note\":\"Alibaba Cloud BSS では現金残高、利用可能額、与信枠を照会します。RAM ID には AliyunBSSReadOnlyAccess が必要です。\",\"help.all_accounts\":\"全アカウント\",\"help.all_command\":\"/yql または /yql all\",\"help.card_subtitle\":\"クォータ照会 · ローカル設定の確認\",\"help.card_title\":\"YQL ヘルプ\",\"help.card_tool_note\":\"関数ツールを有効にすると、自然言語でクォータを照会できます。\",\"help.command_body\":\"如月怜のクォータリンク\\n使い方：\\n  /yql                 全アカウントを照会\\n  /yql help            ヘルプを表示\\n  /yql status          ローカル設定を表示\\n  /yql all             全アカウントを照会\\n  /yql <名前>          アカウントまたはプロバイダーを照会\\n  /yql account <名前>  アカウントを照会\\n  /yql provider <名前> プロバイダーを照会\\n\",\"help.compatible_note\":\"OpenAI 互換サービスの残高照会にはプロバイダー固有の API を使用します。残高 API の文書に従い、サービス URL、API パス、高度な認証と応答マッピングを設定してください。\",\"help.configured_accounts\":\"設定済みアカウント：{names}\",\"help.enabled_accounts\":\"有効なアカウント · {count} 件\",\"help.local_config\":\"ローカル設定\",\"help.local_note\":\"help と status はローカル情報を表示します。\",\"help.management_note\":\"プロバイダーの API と認証情報は管理画面で設定してください。\",\"help.name_note\":\"/yql <名前> も使えます。表示名、別名、プロバイダー名に対応します。\",\"help.no_accounts\":\"アカウントが設定されていません。\",\"help.no_enabled_accounts\":\"有効なアカウントがありません。管理画面でアカウントを追加してください。\",\"help.provider_command\":\"/yql provider <名前>\",\"help.query\":\"クォータ照会\",\"help.select_account\":\"指定アカウント\",\"help.select_provider\":\"指定プロバイダー\",\"help.status_heading\":\"ヘルプと状態\",\"help.tool_note\":\"関数ツールが有効な AI 会話では、自然言語でモデルに yql_query_balance の呼び出しを依頼できます。\",\"help.usage\":\"使い方\",\"provider.alibaba_bailian.authentication\":\"Alibaba Cloud のアクセスキー認証に失敗しました\",\"provider.alibaba_bailian.available_credit\":\"利用可能枠\",\"provider.alibaba_bailian.cash_balance\":\"現金残高\",\"provider.alibaba_bailian.connection\":\"Alibaba Cloud の残高サービスに接続できません\",\"provider.alibaba_bailian.credit_limit\":\"与信枠\",\"provider.alibaba_bailian.fallback_account\":\"Alibaba Cloud アカウント\",\"provider.alibaba_bailian.invalid_credentials\":\"Alibaba Cloud の残高照会に使用する認証情報の設定が無効です\",\"provider.alibaba_bailian.invalid_request\":\"Alibaba Cloud の残高照会リクエスト設定が無効です\",\"provider.alibaba_bailian.invalid_response\":\"Alibaba Cloud が返した残高データの形式を認識できません\",\"provider.alibaba_bailian.permission\":\"Alibaba Cloud がアカウントの現金残高へのアクセスを拒否しました。BSS の現金残高を照会する RAM ID に少なくとも AliyunBSSReadOnlyAccess を付与してください。DashScope モデルの API キーはこの RAM 権限の代わりにはなりません。BSS FullAccess の付与は不要です。\",\"provider.alibaba_bailian.query_failed\":\"Alibaba Cloud のアカウント現金残高照会に失敗しました\",\"provider.alibaba_bailian.rate_limited\":\"Alibaba Cloud の残高照会がレート制限されました。しばらくしてから再試行してください\",\"provider.alibaba_bailian.request_denied\":\"Alibaba Cloud がアカウントの現金残高照会を拒否しました\",\"provider.alibaba_bailian.source\":\"Alibaba Cloud アカウントの残高と利用枠\",\"provider.alibaba_bailian.timeout\":\"Alibaba Cloud の現金残高照会がタイムアウトしました\",\"provider.alibaba_bailian.too_many_requests\":\"Alibaba Cloud への残高照会が多すぎます。しばらくしてから再試行してください\",\"provider.alibaba_bailian.unavailable\":\"Alibaba Cloud の残高サービスは一時的に利用できません\",\"provider.deepseek.authentication\":\"DeepSeek API キーの認証に失敗しました\",\"provider.deepseek.connection\":\"DeepSeek の残高サービスに接続できません\",\"provider.deepseek.granted_balance\":\"有効期限内の付与残高\",\"provider.deepseek.insufficient_balance\":\"DeepSeek アカウントの残高が不足しているため、現在 API を呼び出せません\",\"provider.deepseek.invalid_request\":\"DeepSeek の残高照会リクエスト設定が無効です\",\"provider.deepseek.invalid_response\":\"DeepSeek が返した残高データの形式を認識できません\",\"provider.deepseek.missing_key\":\"DeepSeek アカウントに有効な API キーがありません\",\"provider.deepseek.permission\":\"DeepSeek が残高照会を拒否しました\",\"provider.deepseek.rate_limited\":\"DeepSeek へのリクエストが多すぎます。しばらくしてから再試行してください\",\"provider.deepseek.request_denied\":\"DeepSeek が残高照会リクエストを拒否しました\",\"provider.deepseek.source\":\"DeepSeek API\",\"provider.deepseek.timeout\":\"DeepSeek の残高照会がタイムアウトしました\",\"provider.deepseek.topped_up_balance\":\"チャージ残高\",\"provider.deepseek.total_balance\":\"利用可能な残高の合計\",\"provider.deepseek.unavailable\":\"DeepSeek の残高照会が一時的に失敗しました\",\"provider.meinianda.authentication\":\"Meinianda API キーの認証に失敗しました\",\"provider.meinianda.connection\":\"Meinianda の残高サービスに接続できません\",\"provider.meinianda.invalid_request\":\"Meinianda の残高照会リクエスト設定が無効です\",\"provider.meinianda.invalid_response\":\"Meinianda が返した残高データの形式を認識できません\",\"provider.meinianda.missing_key\":\"Meinianda アカウントに有効な API キーがありません\",\"provider.meinianda.permission\":\"Meinianda が残高照会を拒否しました\",\"provider.meinianda.query_failed\":\"Meinianda の残高照会を完了できませんでした\",\"provider.meinianda.rate_limited\":\"Meinianda へのリクエストが多すぎます。しばらくしてから再試行してください\",\"provider.meinianda.site_credit\":\"サイト内クレジット\",\"provider.meinianda.site_credit_note\":\"アカウントのサイト内クレジットです。API キーの上限とは別で、通貨には換算しません。\",\"provider.meinianda.source\":\"Meinianda 残高 API\",\"provider.meinianda.timeout\":\"Meinianda の残高照会がタイムアウトしました\",\"provider.meinianda.unavailable\":\"Meinianda の残高照会が一時的に失敗しました\",\"provider.openai_compatible.authentication\":\"残高 API の認証に失敗しました\",\"provider.openai_compatible.business_failure\":\"残高サービスが照会の失敗を報告しました\",\"provider.openai_compatible.connection\":\"残高 API に接続できません\",\"provider.openai_compatible.grsai_authentication\":\"アカウントのポイント API が HTTP 401 を返しました。認証設定を確認してください\",\"provider.openai_compatible.grsai_permission\":\"アカウントのポイント API が HTTP 403 を返しました。アクセス設定を確認してください\",\"provider.openai_compatible.grsai_query_failed\":\"アカウントのポイント API へのリクエストに失敗しました\",\"provider.openai_compatible.grsai_rate_limited\":\"アカウントのポイント API が HTTP 429 を返しました。しばらくしてから再試行してください\",\"provider.openai_compatible.grsai_source\":\"Grsai アカウントのポイント API\",\"provider.openai_compatible.https_required\":\"残高 API には HTTPS が必要です\",\"provider.openai_compatible.invalid_configuration\":\"互換プラットフォームの残高照会設定が無効です\",\"provider.openai_compatible.invalid_request\":\"残高 API のリクエスト設定が無効です\",\"provider.openai_compatible.invalid_response\":\"残高 API が返したデータの形式を認識できません\",\"provider.openai_compatible.not_found\":\"残高 API のパスまたはバージョンが見つかりません\",\"provider.openai_compatible.permission\":\"残高 API がアクセスを拒否しました\",\"provider.openai_compatible.rate_limited\":\"残高 API へのリクエストが多すぎます。しばらくしてから再試行してください\",\"provider.openai_compatible.source\":\"OpenAI 互換の残高 API\",\"provider.openai_compatible.timeout\":\"残高 API の照会がタイムアウトしました\",\"provider.openai_compatible.unavailable\":\"残高 API へのリクエストが一時的に失敗しました\",\"provider.retry.explicit_throttling\":\"残高サービスがレート制限を通知しました。しばらくしてから再試行してください\",\"query.account_card_title\":\"アカウントのクォータと使用量\",\"query.account_incomplete\":\"アカウントの設定が不完全なため照会できません\",\"query.account_outcome_count\":\"{label} {count} 件\",\"query.account_timeout\":\"アカウントの照会がタイムアウトしました\",\"query.account_title\":\"アカウント照会：{target}\",\"query.accounts_count\":\"{count} アカウント\",\"query.all_card_title\":\"クォータと使用量\",\"query.all_title\":\"クォータと使用量の照会\",\"query.authentication_paused\":\"認証または権限のエラーで一時停止しました。設定を更新するか、手動で再試行してください\",\"query.available\":\"利用可能\",\"query.cached\":\"（キャッシュ）\",\"query.cached_card\":\" · キャッシュデータ\",\"query.client_unconfigured\":\"照会クライアントが設定されていません\",\"query.cooldown_account\":\"このアカウントの照会は一時停止中です。{seconds} 秒後に再試行してください\",\"query.cooldown_provider\":\"このプロバイダーの照会は一時停止中です。{seconds} 秒後に再試行してください\",\"query.empty_title\":\"結果なし\",\"query.error_detail\":\"  照会失敗：{message}\",\"query.failed\":\"照会失敗\",\"query.failed_short\":\"失敗\",\"query.invalid_operation\":\"操作には query または list を指定してください。\",\"query.invalid_provider_result\":\"プロバイダーから無効な照会結果が返されました\",\"query.invalid_request\":\"照会リクエストを認識できません。\",\"query.invalid_target\":\"アカウント、プロバイダー名、または all を指定してください。\",\"query.matches\":\"{message}\\n候補：{candidates}\",\"query.no_accounts\":\"照会可能なアカウントが設定されていません。\",\"query.no_items\":\"表示できる残高や使用量の項目はありません\",\"query.no_results\":\"表示できる照会結果はありません。\",\"query.outcome_count\":\"{label} {count} 件\",\"query.partial\":\"一部利用可能\",\"query.partial_data\":\"一部のデータを取得済み\",\"query.partial_success\":\"一部成功\",\"query.permission_denied\":\"この会話には残高を照会する権限がありません。\",\"query.provider_card_title\":\"プロバイダーのクォータと使用量\",\"query.provider_title\":\"プロバイダー照会：{target}\",\"query.provider_unsupported\":\"このプロバイダーの残高照会にはまだ対応していません\",\"query.queue_timeout\":\"照会の順番待ち中にアカウントの制限時間を超えました\",\"query.service_closed\":\"照会サービスは停止しています\",\"query.source_time\":\"  取得日時：{time} · ソース：{source}\",\"query.source_time_card\":\"ソース：{source} · 取得：{time}\",\"query.status_unavailable\":\"利用不可\",\"query.success\":\"照会成功\",\"query.success_short\":\"成功\",\"query.summary\":\"照会結果：{summary}。\",\"query.summary_separator\":\"、\",\"query.target_card\":\"対象：{target}\\n\",\"query.time\":\"照会日時：{time}\",\"query.time_card\":\"照会：{time}\",\"query.total_timeout\":\"照会全体の制限時間を超えました\",\"query.unavailable\":\"現在は照会できません\",\"query.unknown_status\":\"状態不明\",\"status.account_list\":\"アカウント一覧：\",\"status.accounts_count\":\"アカウント：全 {total} 件、有効 {enabled} 件、照会可能 {ready} 件\",\"status.add_account\":\"管理画面でアカウントと認証情報を追加\",\"status.admin_only\":\"管理者のみ\",\"status.after_save\":\"保存後、/yql status でローカル設定を確認し、/yql でクォータを照会します。\",\"status.api_path\":\"/ で始まる相対 API パスを入力してください\",\"status.card_access\":\"アクセスと認証情報\",\"status.card_counts\":\"{total} アカウント · 有効 {enabled} 件 · 設定済み {ready} 件\",\"status.card_incomplete\":\"未設定：{reason}\",\"status.card_issues\":\"設定の問題 · {count} 件\",\"status.card_needs_check\":\"要確認：{reason}\",\"status.card_needs_setup\":\"要設定：{reason}\",\"status.card_no_accounts\":\"アカウント未設定\",\"status.card_online_check\":\"接続と残高は /yql で照会できます。\",\"status.card_source\":\"ローカルアカウント一覧と認証情報の保存記録に基づく\",\"status.card_title\":\"ローカル設定の状態\",\"status.credential_storage\":\"認証情報の保存\",\"status.credential_storage_state\":\"認証情報の保存：{state}\",\"status.disabled\":\"無効\",\"status.enabled\":\"有効\",\"status.group_queries\":\"グループでの照会\",\"status.group_queries_state\":\"グループでの照会：{state}\",\"status.incomplete\":\"設定不足：{reason}\",\"status.issue_count\":\"設定の問題：{count} 件\",\"status.next_step\":\"次の手順\",\"status.no_accounts\":\"アカウントが設定されていません。\",\"status.not_queryable\":\"照会不可：{reason}\",\"status.off\":\"無効\",\"status.permissions\":\"コマンド権限\",\"status.permissions_state\":\"コマンド権限：{state}\",\"status.provider\":\"プロバイダー：{provider}\",\"status.queryable\":\"設定済み、照会可能\",\"status.reason.grsai_account_path_mismatch\":\"Grsai アカウントのクレジット API を使用してください\",\"status.reason.grsai_balance_scope_mismatch\":\"Grsai の API に対応する残高範囲を選んでください\",\"status.reason.grsai_method_must_post\":\"Grsai のクレジット API は POST を使います\",\"status.reason.invalid_api_path\":\"API パスが無効です。/ で始まるクエリなしの相対パスを入力してください\",\"status.reason.invalid_balance_kind\":\"Grsai の残高種別は credits に設定してください\",\"status.reason.invalid_balance_scope\":\"残高の照会範囲を確認してください\",\"status.reason.invalid_base_url\":\"サービス URL が無効です。パス、クエリ、認証情報を含まない HTTPS のベース URL を入力してください\",\"status.reason.invalid_endpoint\":\"サービス URL または API パスが無効です。HTTPS のベース URL と / で始まる API パスを入力してください\",\"status.reason.invalid_grsai_region\":\"有効な Grsai リージョンを選択してください\",\"status.reason.invalid_response_mapping\":\"プロバイダーの応答仕様に従い、詳細設定で残高のマッピングを入力してください\",\"status.reason.invalid_service_profile\":\"サービスの種類を確認してください\",\"status.reason.missing_api_path\":\"/ で始まる API パスを入力してください\",\"status.reason.missing_base_url\":\"HTTPS のベース URL を入力してください\",\"status.reason.missing_credentials\":\"有効な認証情報がありません\",\"status.reason.missing_endpoint\":\"プロバイダーの文書に従いサービス URL と API パスを入力してください\",\"status.reason.missing_environment_variable\":\"認証情報の環境変数が未設定です\",\"status.reason.missing_grsai_token\":\"Grsai アカウントのリクエストトークンを設定してください\",\"status.saved_credentials\":\"認証情報の保存\",\"status.session_permissions\":\"会話ごとに許可\",\"status.source\":\"情報源：ローカル設定と認証情報の保存記録。接続と残高は /yql で照会できます。\",\"status.title\":\"如月怜のクォータリンクの状態\",\"status.unknown_reason\":\"設定が不完全か、一時的に照会できません\",\"storage.migration_pending\":\"旧設定の移行が必要\",\"storage.ready\":\"安全なストレージを利用可能\",\"storage.unavailable\":\"安全なストレージの確認が必要\",\"storage.unknown\":\"認証情報の保存状態は未確認\",\"web.account.add\":\"アカウントを追加\",\"web.account.add_query\":\"照会アカウントを追加\",\"web.account.advanced\":\"API とレスポンスの詳細設定\",\"web.account.aliases_hint\":\"コマンドと自然言語の照会で使う別名です。1 行に 1 件入力し、他のアカウントと重複しないようにしてください。\",\"web.account.count\":\"アカウント {count} 件\",\"web.account.credentials_configured\":\"認証情報設定済み\",\"web.account.credentials_pending\":\"認証情報未設定\",\"web.account.disabled\":\"無効\",\"web.account.editor_subtitle\":\"照会設定と照会先の認証情報を管理します。\",\"web.account.empty\":\"照会アカウントがありません\",\"web.account.empty_hint\":\"プロバイダーを選んでアカウントを追加し、暗号化する認証情報を別途設定してください。\",\"web.account.enabled\":\"有効\",\"web.account.id_hint\":\"変更が不要な一意の ID を選んでください。保存後は変更できません。\",\"web.account.id_locked\":\"認証情報の誤った紐付けを防ぐため、既存のアカウント ID は変更できません。\",\"web.account.list\":\"照会アカウント\",\"web.account.list_subtitle\":\"AI サービスの残高、使用量、クォータを照会するアカウントを管理します。\",\"web.account.mapping\":\"残高レスポンスのマッピング\",\"web.account.mapping_hint\":\"/data/remaining のような JSON Pointer を使用してください。固定リクエスト本文やマッピングに認証情報を含めないでください。\",\"web.account.new\":\"新しいアカウント\",\"web.account.profile_action\":\"変更してしきい値を消去\",\"web.account.profile_body\":\"しきい値を消去し、アラートを無効にします。単位は再検出されます。\",\"web.account.profile_title\":\"サービスの種類を変更し、アラートをリセットしますか？\",\"web.account.protocol\":\"リクエストの仕様\",\"web.account.provider\":\"プロバイダー\",\"web.account.provider_scope\":\"プロバイダーごとに残高照会の仕様と認証情報が異なり、モデルのチャット設定とは別に管理されます。\",\"web.account.provider_settings\":\"プロバイダー設定\",\"web.account.remove\":\"アカウントを削除\",\"web.account.remove_action\":\"下書きから削除\",\"web.account.remove_body\":\"このアカウントを下書きから削除します。設定を保存すると削除が適用され、保存済みの認証情報も削除されます。他のアカウントには影響しません。\",\"web.account.remove_hint\":\"削除は設定の保存後に適用されます。\",\"web.account.remove_title\":\"アカウント「{account}」を削除しますか？\",\"web.account.settings\":\"アカウント設定\",\"web.alert.admin_list\":\"アラート管理用 QQ 許可リスト\",\"web.alert.admin_list_hint\":\"1 行に 1 つの QQ 番号を入力してください。リスト内のユーザーまたは AstrBot 管理者がアラートを管理できます。\",\"web.alert.admin_list_placeholder\":\"1 行に 1 つの QQ 番号\",\"web.alert.enable_account\":\"このアカウントのアラートを有効にする\",\"web.alert.hints_title\":\"アラートメッセージ\",\"web.alert.interval\":\"チェック間隔（分）\",\"web.alert.interval_days\":\"{count} 日\",\"web.alert.interval_hint\":\"1～4320 分。既定値は 15 分です。\",\"web.alert.interval_minutes\":\"{count} 分\",\"web.alert.interval_set\":\"{count} 分に設定\",\"web.alert.interval_slider\":\"チェック間隔のスライダー（分）\",\"web.alert.metric\":\"アラート指標\",\"web.alert.metric_hint\":\"監視する残高を選択します。\",\"web.alert.minutes\":\"分\",\"web.alert.permissions\":\"アラートの管理権限\",\"web.alert.quick_group\":\"チェック間隔のプリセット\",\"web.alert.quick_label\":\"プリセット：\",\"web.alert.recovery\":\"復旧しきい値（任意）\",\"web.alert.recovery_hint\":\"空欄の場合は自動で設定します。通知しきい値より大きい値を指定してください。\",\"web.alert.recovery_placeholder\":\"空欄で自動設定\",\"web.alert.repeat\":\"残高不足通知の繰り返し間隔（分）\",\"web.alert.repeat_hint\":\"0 で繰り返しなし。最大 4320 分です。\",\"web.alert.smart_hint\":\"AI による案内\",\"web.alert.smart_hint_help\":\"送信先セッションのモデルとペルソナを使用します。\",\"web.alert.targets\":\"送信先 UMO（1 行に 1 件）\",\"web.alert.targets_hint\":\"UMO を 1 行に 1 件入力してください。グループでは末尾に @QQ 番号を追加できます。\",\"web.alert.targets_title\":\"クォータアラートの送信先\",\"web.alert.threshold\":\"通知しきい値\",\"web.alert.threshold_hint\":\"残高がこの値以下になったときに通知します。\",\"web.alert.threshold_placeholder\":\"通知しきい値を入力\",\"web.alert.title\":\"クォータアラート\",\"web.common.cancel\":\"キャンセル\",\"web.common.choose\":\"選択してください\",\"web.common.off\":\"オフ\",\"web.common.on\":\"オン\",\"web.common.one_per_line\":\"1 行に 1 件\",\"web.common.time_unavailable\":\"時刻を取得できません\",\"web.credential.balance_key\":\"残高照会用 API キー\",\"web.credential.cancel_entry\":\"入力をキャンセル\",\"web.credential.clear\":\"認証情報を削除\",\"web.credential.clear_body\":\"「{account}」のこの認証情報または参照を削除します。アカウント設定は保持されます。再度照会するには認証情報を設定してください。\",\"web.credential.clear_title\":\"{credential}を削除しますか？\",\"web.credential.confirm_clear\":\"削除を確定\",\"web.credential.encrypted_status\":\"設定済み · 暗号化ストレージ\",\"web.credential.enter_new\":\"新しい認証情報を入力\",\"web.credential.environment_hint\":\"QUOTA_API_KEY などの環境変数名だけを入力してください。値は実行環境から取得します。\",\"web.credential.environment_name\":\"環境変数名\",\"web.credential.environment_status\":\"設定済み · 環境変数参照\",\"web.credential.eyebrow\":\"照会先へのアクセス\",\"web.credential.finish_settings\":\"認証情報を操作する前に、一般設定の変更を保存または破棄してください。\",\"web.credential.grsai_token\":\"Grsai リクエストトークン\",\"web.credential.legacy_field\":\"旧形式の認証情報（{field}）\",\"web.credential.missing\":\"未設定\",\"web.credential.new_source\":\"新しい認証情報の取得元\",\"web.credential.new_value\":\"新しい認証情報\",\"web.credential.new_value_hint\":\"空欄の場合は既存の認証情報を保持します。送信後すぐに入力欄が消去されます。\",\"web.credential.optional_sts\":\"STS Security Token（任意）\",\"web.credential.replace\":\"認証情報を更新\",\"web.credential.save_account\":\"認証情報を設定する前に、新しいアカウントを保存してください。\",\"web.credential.save_new\":\"新しい認証情報を保存\",\"web.credential.saved_hint\":\"認証情報を保存しました。残高照会時に有効性を確認します。\",\"web.credential.separate\":\"認証情報は個別に保存されます。\",\"web.credential.status_unread\":\"状態未取得\",\"web.credential.title\":\"照会用の認証情報\",\"web.credential.use_environment\":\"環境変数を参照\",\"web.detail.fixed_hint\":\"定型のアラートメッセージを使用しました。\",\"web.detail.mention_invalid\":\"QQ メンションの形式が無効です。グループセッションと @QQ 番号を確認してください。\",\"web.detail.mention_unsupported\":\"送信先は QQ メンションに対応していません。末尾の @ 指定を削除するか、対応する QQ グループを指定してください。\",\"web.detail.message_components_unavailable\":\"メッセージのコンポーネントを組み立てられませんでした。ホストのコンポーネントとログを確認してください。\",\"web.detail.platform_not_found\":\"送信先のプラットフォームインスタンスが見つかりません。UMO 内のプラットフォームインスタンス ID を確認してください。\",\"web.detail.platform_unavailable\":\"送信先のプラットフォームインスタンスを利用できません。接続状態とホストログを確認してください。\",\"web.detail.platform_unsupported\":\"送信先のプラットフォームはこの自動送信方法に対応していません。対応する送信先を指定してください。\",\"web.detail.session_check_failed\":\"送信先セッションの状態を確認できませんでした。AstrBot のセッション設定とログを確認してください。\",\"web.detail.session_disabled\":\"送信先セッションが無効です。AstrBot で有効にしてください。\",\"web.detail.target_invalid\":\"送信先の形式が無効です。全体設定で UMO を確認してください。\",\"web.detail.transport_unavailable\":\"ホストの自動送信 API を利用できません。AstrBot のバージョンとログを確認してください。\",\"web.detail.unknown\":\"停止理由を特定できません。全体設定の送信先、プラットフォームの接続状態、ホストのアラートログを確認してください。\",\"web.field.advanced_options\":\"詳細設定を表示\",\"web.field.aliases\":\"照会用の別名\",\"web.field.amount_path\":\"主残高のパス\",\"web.field.auth_mode\":\"認証方式\",\"web.field.auth_name\":\"認証パラメーター名\",\"web.field.balance_scope\":\"クレジットの範囲\",\"web.field.base_url\":\"サービスのアドレス\",\"web.field.cache_ttl_seconds\":\"成功した結果のキャッシュ時間（秒）\",\"web.field.display_name\":\"表示名\",\"web.field.enabled\":\"アカウントを有効にする\",\"web.field.expires_at_path\":\"有効期限のパス\",\"web.field.expiry_path\":\"旧形式の有効期限のパス\",\"web.field.failure_path\":\"業務処理失敗のパス\",\"web.field.failure_value\":\"業務処理失敗の値\",\"web.field.id\":\"アカウント ID\",\"web.field.json_body\":\"固定 JSON リクエスト本文\",\"web.field.kind\":\"残高の種類\",\"web.field.kind_path\":\"種類のパス\",\"web.field.method\":\"リクエストメソッド\",\"web.field.path\":\"API パス\",\"web.field.region\":\"接続リージョン\",\"web.field.remaining_path\":\"残量のパス\",\"web.field.service_profile\":\"サービスの種類\",\"web.field.status_path\":\"状態のパス\",\"web.field.status_values\":\"状態値のマッピング\",\"web.field.success_path\":\"業務処理成功のパス\",\"web.field.success_value\":\"業務処理成功の値\",\"web.field.timeout_seconds\":\"アカウントのタイムアウト（秒）\",\"web.field.total_path\":\"合計量のパス\",\"web.field.unit\":\"固定単位\",\"web.field.unit_path\":\"単位のパス\",\"web.field.url\":\"旧形式の完全な URL\",\"web.field.used_path\":\"使用量のパス\",\"web.global.allow_group_queries\":\"グループでの照会を許可\",\"web.global.command_admin_only\":\"残高照会コマンドを管理者に限定\",\"web.global.group_allowed_user_ids\":\"グループ照会のユーザー許可リスト\",\"web.global.max_concurrency\":\"最大同時照会数\",\"web.global.private_allowed_user_ids\":\"プライベートチャットの許可リスト\",\"web.global.timeout_seconds\":\"アカウントごとのタイムアウト（秒）\",\"web.global.total_timeout_seconds\":\"照会全体のタイムアウト（秒）\",\"web.hint.advanced_options\":\"汎用サービスの認証方式、メソッド、レスポンスマッピングを設定します。Grsai のアカウントのクレジットでは固定のプロトコルを使用し、旧マッピングは無視されます。\",\"web.hint.amount_path\":\"必須の JSON Pointer です。例は /data/remaining です。\",\"web.hint.auth_mode\":\"残高 API のドキュメントに従ってください。Grsai のアカウントのクレジットではこの項目を使わず、トークンを常に JSON 本文に入れます。\",\"web.hint.auth_name\":\"認証方式が「リクエストヘッダー」または「クエリパラメーター」の場合に使用します。\",\"web.hint.balance_scope\":\"アカウントのクレジットに対応しています。API キーのポイントは現在照会できません。\",\"web.hint.base_url\":\"API パスを含まない HTTPS のベース URL です。https://api.example.invalid は形式の例で、アクセスできません。\",\"web.hint.expiry_path\":\"旧形式の expires_at_path との互換用です。\",\"web.hint.json_body\":\"汎用サービス専用です。テンプレートや認証情報は使えません。Grsai のアカウントのクレジットでは空欄にし、既存項目を切り替える際は元の本文を消去してください。\",\"web.hint.kind_path\":\"任意の JSON Pointer です。cash/quota/free_quota/subscription/credits/usage/custom を指定できます。\",\"web.hint.legacy_base_url\":\"HTTPS のベース URL です。API パスと組み合わせて使えます。\",\"web.hint.legacy_json_body\":\"ドキュメントに記載された読み取り専用の POST でのみ使用します。テンプレートや認証情報は使えません。\",\"web.hint.legacy_method\":\"GET、または副作用がないと確認済みの POST を使用してください。\",\"web.hint.meinianda_cache\":\"サイトでは 1 分に 1 回の照会を推奨しています。既定のキャッシュ時間は 60 秒です。\",\"web.hint.method\":\"汎用サービスではドキュメントに従ってください。Grsai のアカウントのクレジットでは POST に固定されます。既存項目を切り替える際は元の GET を消去してください。\",\"web.hint.path\":\"汎用サービスではドキュメントに従ってください。Grsai のアカウントのクレジットでは空欄にするか /client/openapi/getCredits を入力します。既存項目を切り替える際は元のパスを削除してください。/account/balance は入力例です。\",\"web.hint.private_allowlist\":\"aiocqhttp:123456 のような完全な「プラットフォーム名:ユーザー ID」を入力してください。管理者の登録は不要です。上の管理者限定設定は /yql の残高照会にも適用されます。\",\"web.hint.region\":\"中国と海外のどちらも組み込みの公式ノードを使用するため、サーバーアドレスの入力は不要です。\",\"web.hint.service_profile\":\"残高照会は各サービスの専用 API を使用します。新規 Grsai アカウントには Grsai テンプレートを選択してください。このテンプレートの既存項目はアカウントのクレジットのプリセットに切り替えられます。\",\"web.hint.status_values\":\"プロバイダーの状態値を available/unavailable/partial/unknown にマッピングします。\",\"web.hint.unit\":\"CNY/USD/JPY/credit/credits/tokens/requests/custom を指定できます。unit_path を設定する場合は必須です。\",\"web.hint.unit_path\":\"任意の JSON Pointer です。実行時の値は固定の unit と一致する必要があります。\",\"web.hint.url\":\"クエリ、認証情報、フラグメントを含まない完全な HTTPS URL です。\",\"web.language.auto\":\"AstrBot に合わせる\",\"web.language.en-US\":\"English\",\"web.language.ja-JP\":\"日本語\",\"web.language.zh-CN\":\"简体中文\",\"web.language.zh-TW\":\"繁體中文\",\"web.metric.AvailableAmount\":\"利用可能枠\",\"web.metric.AvailableCashAmount\":\"現金残高\",\"web.metric.CreditAmount\":\"与信枠\",\"web.metric.credit\":\"クレジット残高\",\"web.metric.granted_balance\":\"付与分の残高\",\"web.metric.mapped_balance\":\"マッピングで指定した残高\",\"web.metric.monitored\":\"監視対象の残高\",\"web.metric.site_credit\":\"サイト内クォータ\",\"web.metric.topped_up_balance\":\"チャージ残高\",\"web.metric.total_balance\":\"合計残高\",\"web.migration.accounts\":\"アカウント\",\"web.migration.cleanup_hint\":\"ホストの旧設定は移行成功後にのみ削除されます。移行元の設定が変わった場合は、再度プレビューしてください。\",\"web.migration.cleanup_pending\":\"移行は保存されましたが、ホストの旧設定項目が残っています。再度プレビューしてから削除を再試行してください。\",\"web.migration.confirm\":\"旧設定の移行を確認\",\"web.migration.confirm_body\":\"プレビューの {count} 件のアカウントを移行します。平文の認証情報は暗号化して保存し、プラグインの旧設定項目を削除します。認証情報の表示や他サービスへの送信は行いません。\",\"web.migration.confirm_title\":\"旧設定を移行しますか？\",\"web.migration.conflict\":\"暗号化ストレージの内容と異なる旧設定が見つかりました。現在のストレージも新たに見つかった旧設定も保持されます。取得元を手動で確認してください。\",\"web.migration.environment\":\"環境変数参照\",\"web.migration.execute\":\"移行を実行\",\"web.migration.lock_warning\":\"旧設定の移行が必要です。一般設定と認証情報の操作は一時的にロックされています。\",\"web.migration.no_pending\":\"移行待ちの旧設定はありません。\",\"web.migration.open\":\"移行画面を開く\",\"web.migration.overview\":\"旧プラグインの一般設定、認証情報、環境変数参照を専用の管理ストレージに移行します。認証情報は暗号化して保存し、このページには表示しません。\",\"web.migration.pending\":\"旧設定が見つかりました。新しい設定を保存する前に移行を完了してください。\",\"web.migration.plaintext\":\"暗号化する認証情報\",\"web.migration.preview\":\"移行をプレビュー\",\"web.migration.retry_cleanup\":\"旧設定項目の削除を再試行\",\"web.migration.scope\":\"今回の移行範囲\",\"web.migration.title\":\"旧設定の移行\",\"web.navigation.accounts\":\"アカウント管理\",\"web.navigation.back_to_accounts\":\"アカウント一覧に戻る\",\"web.navigation.global\":\"全体設定\",\"web.navigation.leave_action\":\"下書きを破棄して移動\",\"web.navigation.leave_body\":\"未保存の設定と入力した認証情報は消去されます。送信済みのリクエストは取り消せません。結果が不明な場合は再読み込みして確認してください。自動再試行は行いません。\",\"web.navigation.leave_title\":\"この設定画面から移動しますか？\",\"web.navigation.maintenance\":\"設定メンテナンス\",\"web.navigation.mobile\":\"モバイルナビゲーション\",\"web.navigation.primary\":\"メインナビゲーション\",\"web.navigation.reload\":\"状態を再読み込み\",\"web.navigation.reload_action\":\"下書きを破棄して再読み込み\",\"web.navigation.reload_body\":\"未保存の設定と入力した認証情報が消去されます。\",\"web.navigation.reload_title\":\"設定を再読み込みしますか？\",\"web.navigation.skip\":\"メインコンテンツに移動\",\"web.notice.alert_loading\":\"アラートの動作状態を取得中…\",\"web.notice.alert_read_failed\":\"アラートの動作状態を確認できませんでした。しばらくしてから再試行してください。\",\"web.notice.authorization_lost\":\"管理権限の有効期限が切れたため、下書きを消去しました。AstrBot のプラグイン管理から開き直してください。\",\"web.notice.authorization_reopen\":\"管理権限の有効期限が切れました。このページを開き直してください。\",\"web.notice.config_changed\":\"設定が変更されました。再読み込みしてください。\",\"web.notice.connecting\":\"ホストの管理セッションに接続中…\",\"web.notice.discarded\":\"未保存の下書きを破棄しました。\",\"web.notice.invalid_context\":\"ホストの管理コンテキストが無効です。AstrBot のプラグイン管理からこのページを開いてください。\",\"web.notice.invalid_environment\":\"有効な環境変数名を入力してください。変数の値は入力しないでください。\",\"web.notice.left_during_write\":\"前の設定画面から移動しました。送信済みのリクエストは取り消せません。再読み込みして結果を確認してください。\",\"web.notice.legacy_cleanup_incomplete\":\"設定を移行しましたが、ホストに旧項目が残っています。設定メンテナンスで再度プレビューし、削除を完了してください。\",\"web.notice.legacy_cleanup_retry\":\"移行は保存されました。元の旧設定項目の削除を再試行できます。\",\"web.notice.legacy_conflict\":\"旧設定と現在のストレージの内容が一致しません。どちらも保持されます。\",\"web.notice.legacy_not_pending\":\"移行待ちの旧設定はありません。\",\"web.notice.legacy_preview_ready\":\"移行のプレビューができました。実行前に以下の範囲を確認してください。\",\"web.notice.loaded\":\"最新の設定を読み込みました。\",\"web.notice.missing_credential\":\"新しい認証情報を入力してください。空欄にすると既存の認証情報が保持されます。\",\"web.notice.open_in_host\":\"AstrBot のプラグイン管理からこのページを開いてください。\",\"web.notice.read_failed\":\"設定状態を確認できませんでした。再読み込みするか、ホストから開き直してください。\",\"web.notice.reading\":\"最新の状態を読み込み中…\",\"web.notice.revision_conflict\":\"別のページで設定が変更されました。再読み込みして内容を確認してから再送信してください。自動再試行は行いません。\",\"web.notice.saved\":\"設定を保存し、最新の状態を確認しました。\",\"web.notice.saving\":\"送信中です。結果が出るまでお待ちください…\",\"web.notice.session_unavailable\":\"ホストの管理セッションを利用できません。このページを開き直してください。\",\"web.notice.unit_candidate_changed\":\"候補が変わったか、有効期限が切れました。再照会してから確定してください。\",\"web.notice.unit_candidates\":\"最新の候補を取得しました。内容を確認してから選択を確定してください。\",\"web.notice.unit_confirm_uncertain\":\"確定結果が不明です。単位の状態を更新してから操作してください。\",\"web.notice.unit_confirmed\":\"単位を確定しました。\",\"web.notice.unit_current\":\"最新の単位の状態を取得しました。確認済みの単位は引き続き有効です。\",\"web.notice.unit_no_candidates\":\"確認できる候補がありません。再照会の前に認証情報、API の設定、または再試行までの待機状態を確認してください。\",\"web.notice.unit_querying\":\"最新の単位を取得するために残高を照会中…\",\"web.notice.unit_read_failed\":\"単位を取得できませんでした。更新してください。\",\"web.notice.unit_unverified_candidates\":\"信頼できる新しい候補を取得できませんでした。認証情報、API、照会状態を確認してから再照会してください。\",\"web.notice.validation_failed\":\"送信内容の検証に失敗しました。項目と認証情報の種類を確認してください。機密入力は消去済みです。\",\"web.notice.write_uncertain\":\"送信結果を確認できませんでした。機密入力は消去済みです。そのまま再送信せず、再読み込みして状態を確認してください。\",\"web.option.auth.bearer\":\"Bearer トークン\",\"web.option.auth.header\":\"リクエストヘッダー\",\"web.option.auth.query\":\"クエリパラメーター\",\"web.option.profile.generic\":\"OpenAI 互換サービス／サードパーティーサービス\",\"web.option.region.cn\":\"中国（直接接続）\",\"web.option.region.overseas\":\"海外ノード\",\"web.option.scope.account\":\"アカウントのクレジット（プリセット対応）\",\"web.option.scope.api_key\":\"API キーのクレジット（現在は照会不可）\",\"web.option.scope.none\":\"クレジットの範囲を選択\",\"web.provider.alibaba_help\":\"Alibaba Cloud BSS の現金残高、利用可能枠、与信枠を照会します。\",\"web.provider.compatible_help\":\"プロバイダーのドキュメントに沿って、読み取り専用の残高 API を設定してください。\",\"web.provider.compatible_name\":\"その他の互換サービス\",\"web.provider.deepseek_help\":\"DeepSeek 公式の残高です。照会先と解析ルールは組み込み済みです。\",\"web.provider.grsai_help\":\"Grsai のアカウントのクレジットにはリクエストトークンを使います。POST /client/openapi/getCredits に固定され、モデルの API キーは使いません。\",\"web.provider.legacy_name\":\"旧形式の汎用アカウント\",\"web.provider.meinianda_help\":\"Meinianda アカウントのサイト内クォータを照会します。キャッシュは 60 秒以上を推奨します。\",\"web.runtime.last_checked\":\"前回のチェック：\",\"web.runtime.last_sent\":\"前回の送信試行：\",\"web.runtime.loading\":\"読み込み中…\",\"web.runtime.no_account_record\":\"このアカウントの動作履歴はまだありません。\",\"web.runtime.refresh\":\"アラート状態を更新\",\"web.runtime.running\":\"チェックタスクが動作中です。設定が完了し、個別にアラートを有効にしたアカウントが対象です。\",\"web.runtime.stopped\":\"チェックタスクは停止中です。\",\"web.runtime.storage_unavailable\":\"アラートの状態を保存できないため、アラートは動作していません。\",\"web.runtime.title\":\"動作状態\",\"web.runtime.unknown_status\":\"状態が更新されました。詳細はアラートコマンドで確認してください。\",\"web.settings.access_eyebrow\":\"照会権限\",\"web.settings.access_title\":\"アクセス権限\",\"web.settings.account_alerts\":\"アラートはアカウントごとに有効にできます。\",\"web.settings.admin_access\":\"このページを設定できるのは AstrBot 管理者のみです。照会権限では管理画面にアクセスできません。\",\"web.settings.admin_allowlist\":\"管理者はプライベートチャットの許可リストに登録する必要はありません。\",\"web.settings.appearance\":\"言語設定\",\"web.settings.applies_after_save\":\"保存後に適用されます。\",\"web.settings.command_access\":\"管理者のみの設定は /yql の残高照会に適用されます。アラートコマンドには別の権限ルールがあります。\",\"web.settings.discard\":\"変更を破棄\",\"web.settings.group_access\":\"グループで照会するには、グループ照会を有効にし、ユーザー許可リストの条件を満たす必要があります。\",\"web.settings.language\":\"プラグインの言語\",\"web.settings.language_hint\":\"保存後に適用されます。自動設定では AstrBot が提供する言語を使います。定期アラートなどで利用できる言語情報がない場合は、簡体字中国語を使います。\",\"web.settings.private_format\":\"プライベートチャットの許可リストには「プラットフォーム名:ユーザー ID」の形式を使います。\",\"web.settings.query_access\":\"照会権限\",\"web.settings.query_and_cache\":\"照会とキャッシュ\",\"web.settings.save\":\"設定を保存\",\"web.settings.save_first\":\"先に設定を保存してください。\",\"web.settings.separate_credentials\":\"一般設定と認証情報は別々に保存されます\",\"web.settings.unsaved\":\"未保存の変更があります\",\"web.shell.auth_required\":\"ホストの管理権限が必要です\",\"web.shell.brand_author\":\"如月怜の\",\"web.shell.brand_name\":\"クォータリンク\",\"web.shell.eyebrow\":\"YOMIHIME QUOTA LINK / 管理\",\"web.shell.loading_config\":\"設定を読み込み中\",\"web.shell.open_from_host\":\"AstrBot にログインし、プラグインの詳細ページから「クォータ照会」を開いてください。\",\"web.shell.page_title\":\"クォータ照会\",\"web.shell.project_name\":\"如月怜のクォータリンク\",\"web.shell.revision\":\"設定リビジョン {revision}\",\"web.shell.scope\":\"照会を一元化 · 認証情報は個別管理\",\"web.shell.waiting\":\"管理セッションを待機中\",\"web.status.accepted\":\"送信リクエストが受理されました。到達は未確認です。\",\"web.status.auth_paused\":\"認証情報が拒否されたため、チェックを一時停止しました。\",\"web.status.blocked\":\"アラートの送信は停止中です。下記の理由を確認してください。\",\"web.status.disabled\":\"アラートは無効です\",\"web.status.error\":\"チェックに失敗しました。前回のアラート状態を保持します。\",\"web.status.failed\":\"送信に失敗しました\",\"web.status.incomplete\":\"設定が不完全なため、監視は開始されていません。\",\"web.status.low\":\"残高がしきい値以下のため、アラートが継続しています。\",\"web.status.monitoring\":\"残高を監視中\",\"web.status.normal\":\"残高はしきい値を上回っています\",\"web.status.paused\":\"認証または権限の確認に失敗しました。設定を修正するか、手動で再試行するとチェックが再開されます。\",\"web.status.pending\":\"チェック待ち\",\"web.status.pending_send\":\"通知の集約待ち\",\"web.status.recovered\":\"残高は回復しました\",\"web.status.recovering\":\"残高は上昇しましたが、復旧しきい値には達していません\",\"web.status.stale\":\"結果の期限切れ、または指標や単位が一致しないため、アラート判定には使用しません。\",\"web.status.storage_unavailable\":\"アラートの状態を保存できないため、アラートは動作していません。\",\"web.status.submitted\":\"プラットフォームに送信しました。最終到達は未確認です。\",\"web.status.unit_changed\":\"監視項目または単位が変わりました。確認してください。\",\"web.status.unit_unidentified\":\"単位の検出待ち\",\"web.status.units_ambiguous\":\"複数の候補単位があります\",\"web.status.unknown\":\"送信結果が不明です。再試行前に確認してください。\",\"web.status.waiting\":\"次回のチェック待ち\",\"web.status.waiting_budget\":\"同じ送信先への送信間隔（300 秒／5 分以上）を待機中です。次回以降の有効なチェック時に再試行します。\",\"web.storage.eyebrow\":\"ローカル暗号化\",\"web.storage.key_handling\":\"マスターキーは実行環境が管理します。このページから入力、エクスポート、復元はできません。\",\"web.storage.ready\":\"暗号化ストレージは使用可能です\",\"web.storage.title\":\"ストレージのセキュリティ\",\"web.storage.troubleshooting\":\"ストレージに問題が発生した場合は、ホストログのセキュリティエラーコードを確認してください。公開ログやスクリーンショットにキーを含めないでください。\",\"web.storage.unavailable\":\"暗号化ストレージを利用できません\",\"web.storage.unavailable_warning\":\"暗号化ストレージを利用できません。新しい認証情報を保存する前に実行環境を確認してください。平文での保存は行いません。\",\"web.unit.ambiguous\":\"複数の単位が検出されました。選択してください。\",\"web.unit.awaiting\":\"取得待ち\",\"web.unit.candidates_stale\":\"照会候補の有効期限が切れました。再照会してください。確認済みの単位は保持されます。\",\"web.unit.changed\":\"照会結果の単位が変わりました。再確認してください。\",\"web.unit.choices_expired\":\"候補の有効期限が切れました。再照会してから選択してください。\",\"web.unit.choose\":\"単位を選択\",\"web.unit.confirm\":\"単位を確認\",\"web.unit.confirm_no_threshold\":\"単位を {unit} に変更しますか？しきい値はまだ設定されていません。\",\"web.unit.confirm_observed\":\"照会結果の単位を確認してください。\",\"web.unit.confirm_threshold\":\"単位を {unit} に変更し、しきい値 {threshold} と比較しますか？\",\"web.unit.confirm_title\":\"単位を {unit} に確定しますか？\",\"web.unit.current\":\"単位：{unit}\",\"web.unit.detect_on_account_save\":\"アカウントを保存すると単位が自動で検出されます。\",\"web.unit.detect_on_query\":\"残高を照会すると単位が自動で検出されます。\",\"web.unit.detect_on_save\":\"設定を保存すると単位が再検出されます。\",\"web.unit.finish_credential_before_query\":\"認証情報の入力を完了またはキャンセルしてから再照会してください。\",\"web.unit.loading\":\"処理中…\",\"web.unit.metric_changed\":\"監視項目が「{previous}」から「{current}」に変わりました。単位としきい値を再確認してください。\",\"web.unit.metric_edited\":\"監視項目を「{metric}」に変更しました。保存して再照会し、単位を確認してください。\",\"web.unit.metric_or_unit_changed\":\"監視項目または単位が変わりました。再確認してください。\",\"web.unit.no_choices\":\"確認できる候補がありません。再照会してから選択してください。\",\"web.unit.query\":\"単位を再照会\",\"web.unit.query_changed\":\"照会先のアカウントまたは API が変わりました。単位としきい値を再確認してください。\",\"web.unit.query_edited\":\"照会設定が変わりました。保存すると単位が再検出されます。\",\"web.unit.query_hint\":\"アカウントの残高 API に問い合わせて候補を取得します。アラートは送信されません。\",\"web.unit.read\":\"単位の状態を取得\",\"web.unit.recorded\":\"単位の記録日時：\",\"web.unit.save_before_query\":\"設定を保存すると単位を再照会できます。\",\"web.unit.title\":\"アラートの単位\",\"web.unit.verified\":\"単位を確認済みです。\",\"web.unit.verified_expired\":\"単位は確認済みです。照会候補の有効期限は切れていますが、確認済みの単位は有効です。\",\"web.validation.account_alert\":\"{account}：{message}\",\"web.validation.account_bounds\":\"アカウントのタイムアウトは最大 120 秒、キャッシュは最大 86400 秒です。\",\"web.validation.account_id\":\"アカウント ID は必須で、重複できません。\",\"web.validation.account_name\":\"アカウントの表示名を入力してください。\",\"web.validation.account_positive\":\"アカウントのタイムアウトとキャッシュ時間は正の数で指定してください。\",\"web.validation.alert_fields\":\"アラート設定の項目が無効です。\",\"web.validation.alert_prerequisites\":\"アラートを有効にする前に、アカウントを有効にし、しきい値を入力して、全体設定に送信先を 1 件以上追加してください。\",\"web.validation.decimal_length\":\"整数部は最大 30 桁、小数部は最大 18 桁です。指数表記は使えません。\",\"web.validation.duplicate_umo\":\"UMO が重複しています。1 行にまとめてください。\",\"web.validation.finite_decimal\":\"指数表記を使わず、有限の十進数を入力してください。\",\"web.validation.global_bounds\":\"全体設定が許容範囲を超えています。\",\"web.validation.group_mentions\":\"数値 ID の QQ グループセッションだけが @QQ 番号に対応しています。個別チャットやその他のセッションからは末尾の @ 指定を削除してください。\",\"web.validation.id_limit\":\"QQ 番号は最大 {limit} 件です。\",\"web.validation.interval_input\":\"1～4320 の整数を入力してください。入力値は自動補正されません。\",\"web.validation.interval_range\":\"チェック間隔は 1～4320 分の整数で指定してください。\",\"web.validation.invalid_input\":\"入力内容を確認してください。\",\"web.validation.invisible_chars\":\"制御文字と不可視文字は使用できません。\",\"web.validation.json_object\":\"認証情報を含まない有効な JSON オブジェクトを入力してください。\",\"web.validation.language\":\"対応するプラグインの言語を選択してください。\",\"web.validation.llm_fields\":\"AI メッセージの設定が無効です。\",\"web.validation.llm_ids\":\"モデルとペルソナの ID は 128 文字以内のテキストで指定してください。\",\"web.validation.llm_switch\":\"AI メッセージの有効・無効の設定が無効です。\",\"web.validation.mentions_suffix\":\"UMO の後の @QQ 番号はスペースで区切ってください。\",\"web.validation.metric\":\"このプロバイダーが対応する指標を選択してください。\",\"web.validation.private_allowlist\":\"プライベートチャットの許可リストには「プラットフォーム名:ユーザー ID」を使用してください。\",\"web.validation.qq_id\":\"QQ 番号は 1～20 桁の ASCII 数字で、正の整数を入力してください。@all、ニックネーム、CQ コードは使えません。\",\"web.validation.query_parameters\":\"有効な照会パラメーターを入力してください。\",\"web.validation.recovery_order\":\"復旧しきい値は通知しきい値より大きい値を指定してください。\",\"web.validation.repeat_input\":\"0～4320 の整数（分）を入力してください。\",\"web.validation.repeat_range\":\"繰り返し間隔は 0～4320 分の整数で指定してください。0 で繰り返しなしになります。\",\"web.validation.target_fields\":\"各送信先に UMO とメンションのリストが必要です。\",\"web.validation.target_limit\":\"アラートの送信先は最大 20 件です。\",\"web.validation.target_line\":\"{line} 行目：{message}\",\"web.validation.targets_text\":\"アラートの送信先を入力してください。\",\"web.validation.umo_format\":\"完全な UMO を「プラットフォームインスタンス:メッセージ種別:セッション ID」の形式で入力してください。\",\"web.validation.umo_invisible\":\"UMO に制御文字や不可視文字は使用できません。\",\"web.validation.umo_type\":\"メッセージ種別には FriendMessage、GroupMessage、OtherMessage のいずれかを指定してください。\",\"web.validation.unit\":\"単位を 32 文字以内で指定してください。\"}"),
+	metadata: {
+		display_name: "如月怜のクォータリンク",
+		short_desc: "複数の AI API の残高と使用量を監視",
+		desc: "AI API の残高、使用量、クォータを照会できます。アカウントの管理とアラートの設定はプラグインのページから行えます。"
+	},
+	config: { enable_admin_page: {
+		description: "プラグインの管理ページを有効にする",
+		hint: "アカウント、認証情報、照会権限、タイムアウトはプラグインのページで設定します。旧設定は移行の確認用に保持され、自動では削除されません。"
+	} }
+}, r = {
+	views: { "00-quota-link": { title: "Quota Query" } },
+	pages: { "00-quota-link": { title: "Quota Query" } },
+	strings: /* @__PURE__ */ JSON.parse("{\"alert.account_missing\":\"The alert account was not found.\",\"alert.account_unqueryable\":\"The account cannot be queried yet. Check that it is enabled and verify its query settings.\",\"alert.admins.count\":\"QQ users: {count} · Private chats only\",\"alert.admins.host_admin_note\":\"AstrBot administrators can also manage alerts.\",\"alert.admins.permissions\":\"Administrative permissions\",\"alert.admins.qq_list\":\"QQ allowlist\",\"alert.admins.separate_permissions\":\"Query and alert delivery permissions are configured separately.\",\"alert.admins.title\":\"QQ alert administrator allowlist\",\"alert.command.account_candidate_required\":\"Specify an account and a candidate ID.\",\"alert.command.account_not_unique\":\"The account is missing or the name is ambiguous. Use the account ID shown on the management page.\",\"alert.command.account_required\":\"Specify an account.\",\"alert.command.admin_required\":\"To manage quota alerts, you must be on the QQ allowlist or be an AstrBot administrator.\",\"alert.command.extra_arguments\":\"This alert command takes no additional arguments.\",\"alert.command.help_syntax\":\"Usage: /yql alert help [account|units|targets].\",\"alert.command.interval_range\":\"The interval must be a whole number of minutes within the allowed range.\",\"alert.command.invalid_arguments\":\"Invalid alert command arguments. Use /yql alert help in a private chat.\",\"alert.command.invalid_target_arguments\":\"Invalid target command arguments.\",\"alert.command.latest_candidate_required\":\"Select a current unit candidate ID.\",\"alert.command.mention_syntax\":\"Use @QQnumber for mentions. Nicknames, @all, and CQ codes are unsupported.\",\"alert.command.parameters_required\":\"Specify an account and the required arguments.\",\"alert.command.private_help\":\"For detailed alert configuration, use /yql alert help in a private chat with the bot.\",\"alert.command.private_status\":\"Detailed alert status and delivery targets are visible only in a private chat. Run this command in a private chat with the bot.\",\"alert.command.qq_not_allowlisted\":\"That QQ number is not on the alert management allowlist.\",\"alert.command.resumed\":\"Checks resumed.\",\"alert.command.save_failed\":\"Alert settings could not be saved. Check usage in a private chat or correct the settings on the management page.\",\"alert.command.saved\":\"Alert settings saved.\",\"alert.command.saved_private\":\"Alert settings saved. View details in a private chat.\",\"alert.command.target_missing\":\"Target ID not found. Use targets list in a private chat.\",\"alert.command.targets_syntax\":\"Use targets list/add/addhere/remove.\",\"alert.command.threshold_syntax\":\"Usage: threshold \\\"account name\\\" amount [metric_ID].\",\"alert.command.too_long\":\"The alert command is too long.\",\"alert.command.unclosed_quote\":\"Unmatched quotation mark. Use double quotes around account names that contain spaces.\",\"alert.command.unit_confirmed\":\"Unit confirmed.\",\"alert.command.unknown\":\"Unknown alert command. Use /yql alert help for usage.\",\"alert.command.untrusted_session\":\"The host did not supply a trusted current session. The target could not be saved.\",\"alert.command.value_required\":\"Specify an account and a value.\",\"alert.delivery.budget\":\"Settings changed or the delivery budget is temporarily unavailable\",\"alert.delivery.cancelled\":\"Settings changed or alerts were stopped\",\"alert.delivery.failed\":\"The platform did not accept the send. Retry after the cooldown\",\"alert.delivery.fixed_hint\":\"The session AI was unavailable or its output did not pass validation. Used the fixed notice and exact figures\",\"alert.delivery.llm_changed\":\"The session model or persona changed. Used the fixed notice\",\"alert.delivery.llm_config_unavailable\":\"Session AI settings were unavailable. Used the fixed notice\",\"alert.delivery.llm_failed\":\"The AI introduction was unavailable. Used the fixed notice\",\"alert.delivery.llm_language\":\"Write the introduction in English.\",\"alert.delivery.llm_locale_changed\":\"The language changed while generating the introduction, so the standard message was used\",\"alert.delivery.llm_model_unavailable\":\"The session model was unavailable. Used the fixed notice\",\"alert.delivery.llm_nonlocal\":\"The session does not use a local agent. Used the fixed notice\",\"alert.delivery.llm_not_called\":\"The target session is disabled or unavailable. Skipped the AI call\",\"alert.delivery.llm_off\":\"Session AI is disabled. Used the fixed notice\",\"alert.delivery.llm_persona_unavailable\":\"The session persona was unavailable. Used the fixed notice\",\"alert.delivery.llm_session_unavailable\":\"The target session is disabled or unavailable. Omitted the AI introduction\",\"alert.delivery.llm_unavailable\":\"Session AI is disabled or unavailable. Used the fixed notice\",\"alert.delivery.llm_webchat_persona\":\"The session uses a dedicated WebChat persona. Used the fixed notice\",\"alert.delivery.mention_invalid\":\"Invalid group target or QQ mention format. Check the group identifier and numeric QQ numbers\",\"alert.delivery.mention_unsupported\":\"The adapter or session type does not support QQ mentions. Remove @ mentions or use an aiocqhttp group\",\"alert.delivery.message_components_unavailable\":\"Could not build message components. Check the AstrBot message component API\",\"alert.delivery.note_suffix\":\". {note}\",\"alert.delivery.platform_not_found\":\"Target platform instance not found. Check the platform instance ID in the UMO\",\"alert.delivery.platform_unavailable\":\"The target platform instance is unavailable. Check whether the adapter is running\",\"alert.delivery.platform_unsupported\":\"The target platform does not support this proactive messaging API. Choose a supported platform\",\"alert.delivery.session_check_failed\":\"Could not verify the target session status. Check the AstrBot session status API\",\"alert.delivery.session_disabled\":\"The target session is disabled. Enable it in AstrBot and wait for the next check\",\"alert.delivery.submitted\":\"Submitted to the platform. Check the platform for final delivery\",\"alert.delivery.target_invalid\":\"Invalid target UMO format. Select the session again or enter its full identifier\",\"alert.delivery.transport_unavailable\":\"The host messaging API is unavailable. Check the AstrBot version and platform adapter\",\"alert.delivery.unknown\":\"Delivery result unknown. Automatic retries are disabled to prevent duplicates\",\"alert.fact.line\":\"{name} · {metric}: {amount} {unit} ≤ {threshold} {unit} (alert threshold)\",\"alert.fact.source\":\"These figures come from the latest successful check. Refer to the provider console for authoritative values.\",\"alert.fact.title\":\"[Quota alert]\",\"alert.help.account_heading\":\"Account alerts\",\"alert.help.account_rules\":\"Account rules\",\"alert.help.account_title\":\"Account alert rules\",\"alert.help.admin_note\":\"Users on the QQ alert allowlist and AstrBot administrators can manage alerts. View detailed status and lists in a private chat.\",\"alert.help.admins\":\"QQ alert allowlist\",\"alert.help.admins_command\":\"/yql alert admins list|add QQ_number|remove QQ_number\",\"alert.help.admins_short\":\"Manage allowlist\",\"alert.help.bind\":\"Confirm unit\",\"alert.help.bind_command\":\"/yql alert bind \\\"account name\\\" candidate_ID\",\"alert.help.common_actions\":\"Common actions\",\"alert.help.confirm_note\":\"Check the unit before confirming. Confirmation keeps the threshold value as entered.\",\"alert.help.delivery_permissions\":\"Delivery and permissions\",\"alert.help.interval\":\"Check interval (minutes)\",\"alert.help.interval_command\":\"/yql alert interval \\\"account name\\\" 15\",\"alert.help.interval_note\":\"Intervals use minutes. Set the repeat interval to 0 to disable repeat alerts.\",\"alert.help.interval_short\":\"Check interval\",\"alert.help.llm\":\"AI introductions\",\"alert.help.manage_note\":\"Users on the QQ alert allowlist and AstrBot administrators can manage alerts.\",\"alert.help.more_settings\":\"More settings\",\"alert.help.persona_note\":\"AI introductions use the target session's persona.\",\"alert.help.prefix\":\"Command prefix: /yql alert\",\"alert.help.private_notice\":\"Admins only · View details in a private chat\",\"alert.help.recipients_note\":\"Verify recipients and group members first. Saving does not immediately send an alert.\",\"alert.help.recovery\":\"Recovery threshold\",\"alert.help.recovery_command\":\"/yql alert recovery \\\"account name\\\" 12|auto\",\"alert.help.refresh_note\":\"Viewing candidates is read-only. Use refresh to query the balance again.\",\"alert.help.repeat\":\"Repeat interval (0 disables repeats)\",\"alert.help.repeat_command\":\"/yql alert repeat \\\"account name\\\" 0\",\"alert.help.repeat_short\":\"Repeat interval\",\"alert.help.retry\":\"Resume checks after an authentication pause\",\"alert.help.retry_command\":\"/yql alert retry \\\"account name\\\"\",\"alert.help.retry_short\":\"Resume checks\",\"alert.help.return\":\"Back to overview: /yql alert help\",\"alert.help.set_threshold\":\"Set threshold\",\"alert.help.status\":\"Alert status\",\"alert.help.targets_add\":\"Add a specific session\",\"alert.help.targets_add_short\":\"Specific session\",\"alert.help.targets_heading\":\"Targets and permissions\",\"alert.help.targets_here\":\"Add current session\",\"alert.help.targets_here_short\":\"Current session\",\"alert.help.targets_list\":\"View targets\",\"alert.help.targets_remove\":\"Remove a target\",\"alert.help.targets_remove_command\":\"/yql alert targets remove target_ID\",\"alert.help.targets_title\":\"Delivery and administration\",\"alert.help.threshold_command\":\"/yql alert threshold \\\"account name\\\" 10 [metric_ID]\",\"alert.help.threshold_note\":\"An alert triggers when the balance is at or below the trigger threshold. See help units to confirm the unit.\",\"alert.help.threshold_quick_command\":\"threshold \\\"account name\\\" 10\",\"alert.help.title\":\"Quota alert management\",\"alert.help.toggle\":\"Enable or disable\",\"alert.help.toggle_command\":\"/yql alert on|off \\\"account name\\\"\",\"alert.help.toggle_quick_command\":\"on|off \\\"account name\\\"\",\"alert.help.toggle_short\":\"On / Off\",\"alert.help.trigger\":\"Trigger threshold\",\"alert.help.unit_confirmation\":\"Unit confirmation\",\"alert.help.unit_note\":\"Units are detected automatically. Thresholds use the current unit, and AI introductions use the target session's persona.\",\"alert.help.units_read\":\"Unit candidates (read only)\",\"alert.help.units_read_command\":\"/yql alert units \\\"account name\\\"\",\"alert.help.units_read_short\":\"View candidates\",\"alert.help.units_refresh\":\"Refresh unit candidates\",\"alert.help.units_refresh_command\":\"/yql alert units \\\"account name\\\" refresh\",\"alert.help.units_refresh_short\":\"Refresh candidates\",\"alert.help.units_title\":\"Detect and confirm units\",\"alert.help.view_status\":\"View status\",\"alert.invalid_unit\":\"The unit choice is invalid or the alert runtime state changed. Refresh and try again.\",\"alert.metric.available\":\"Available quota\",\"alert.metric.available_cash\":\"Cash balance\",\"alert.metric.credit\":\"Credit balance\",\"alert.metric.credit_amount\":\"Credit limit\",\"alert.metric.granted\":\"Granted balance\",\"alert.metric.mapped\":\"Mapped balance\",\"alert.metric.site_credit\":\"Site quota\",\"alert.metric.topped_up\":\"Top-up balance\",\"alert.metric.total\":\"Total balance\",\"alert.metric_changed\":\"The monitored metric changed. Confirm the threshold and unit\",\"alert.no_metric_unit\":\"No valid unit was found for the current metric. Check the query result and metric, then try again.\",\"alert.no_unit\":\"No valid unit was found. Check the query status and try again later.\",\"alert.query_identity_changed\":\"The account query settings changed. Confirm the threshold and unit again\",\"alert.receipt.result\":\"Result\",\"alert.receipt.title\":\"Action completed\",\"alert.runtime_changed\":\"The alert runtime state changed. Refresh and try again.\",\"alert.state.blocked\":\"Alert configuration is incomplete or the destination is unavailable\",\"alert.state.disabled\":\"Alerts are off\",\"alert.state.error\":\"The query failed. The alert state was kept and the balance was not treated as zero\",\"alert.state.failed\":\"The platform did not accept the send request. Try again after the cooldown.\",\"alert.state.low\":\"Balance is at or below the threshold. Waiting until the next send is allowed or the destination is available again.\",\"alert.state.monitoring\":\"Monitoring. No alert has been triggered\",\"alert.state.paused\":\"Authentication or permission check failed. Fix the configuration or retry manually to resume checks\",\"alert.state.recovered\":\"Balance reached the recovery threshold. Waiting for the next low-balance event.\",\"alert.state.recovering\":\"Balance has risen but remains below the recovery threshold.\",\"alert.state.stale\":\"No fresh balance data matched the metric and unit. The previous state was kept.\",\"alert.state.storage_unavailable\":\"Alert state storage is unavailable. Alert checks and delivery have stopped.\",\"alert.state.submitted\":\"Submitted to the platform. Delivery is unconfirmed\",\"alert.state.unit_changed\":\"The monitored metric, unit, or account query settings changed. Confirm before continuing.\",\"alert.state.unit_unidentified\":\"Waiting for a valid query to identify the balance unit\",\"alert.state.units_ambiguous\":\"Multiple or duplicate units were found. Confirm which unit to use.\",\"alert.state.unknown\":\"The delivery result is unknown. The system will not retry automatically to avoid duplicate messages.\",\"alert.state.waiting\":\"Waiting for the next check\",\"alert.state.waiting_budget\":\"Messages to the same destination must be at least 300 seconds apart. Waiting for the next valid check.\",\"alert.status.account_count\":\"Accounts: {count} · Local activity records\",\"alert.status.account_id\":\"Account ID\",\"alert.status.blocked\":\"Check configuration\",\"alert.status.delivery_note\":\"Local records · Check the platform records for final delivery.\",\"alert.status.empty\":\"There are no alert check records to display.\",\"alert.status.empty_heading\":\"No account status\",\"alert.status.failed\":\"Send not accepted\",\"alert.status.last_checked\":\"Last checked\",\"alert.status.last_sent\":\"Last submitted to platform\",\"alert.status.low\":\"Low quota\",\"alert.status.monitoring\":\"Monitoring\",\"alert.status.no_record\":\"No record\",\"alert.status.paused\":\"Checks paused\",\"alert.status.recovered\":\"Recovered\",\"alert.status.recovering\":\"Quota recovering\",\"alert.status.running\":\"Checks are running\",\"alert.status.scheduler\":\"{task} · Status storage: {storage}\",\"alert.status.stale\":\"Waiting for a valid balance\",\"alert.status.stopped\":\"Checks are stopped\",\"alert.status.storage_unavailable\":\"Storage unavailable\",\"alert.status.submitted\":\"Submitted to platform\",\"alert.status.title\":\"Quota alert status\",\"alert.status.unit_changed\":\"Confirmation required again\",\"alert.status.unit_unidentified\":\"Waiting for unit detection\",\"alert.status.units_ambiguous\":\"Unit confirmation pending\",\"alert.status.unknown\":\"Delivery result unknown\",\"alert.status.waiting\":\"Waiting for a check\",\"alert.status.waiting_budget\":\"Waiting for delivery interval\",\"alert.targets.add_note\":\"Use targets add or targets addhere to add verified targets.\",\"alert.targets.count\":\"Destinations: {count} · Private chats only\",\"alert.targets.empty\":\"No alert targets configured\",\"alert.targets.item\":\"Destination {index} · {key}\",\"alert.targets.mentions\":\"Group mentions\",\"alert.targets.remove_command\":\"Remove command\",\"alert.targets.save_note\":\"Admins should verify recipients and group members before configuring targets. Saving updates the local targets only.\",\"alert.targets.title\":\"Quota alert destinations\",\"alert.targets.umo\":\"Session UMO\",\"alert.unit_changed\":\"The query unit changed. Confirm the threshold and unit again\",\"alert.unit_expired\":\"The unit choice expired or no longer matches. Query the balance, then refresh the unit choices.\",\"alert.units.ambiguous\":\"Multiple units to confirm\",\"alert.units.auto_detect_note\":\"Units are detected automatically after a balance query.\",\"alert.units.bind_command\":\"Confirm with /yql alert bind \\\"account name\\\" candidate_ID\",\"alert.units.binding_valid_note\":\"An existing valid binding remains active after its candidates expire.\",\"alert.units.bound_metric\":\"Bound metric\",\"alert.units.candidate\":\"Candidate {index} · {unit}\",\"alert.units.candidate_id\":\"Candidate ID\",\"alert.units.candidate_updated\":\"Candidates updated\",\"alert.units.candidates_empty\":\"No candidates to confirm\",\"alert.units.candidates_expired\":\"Candidates expired\",\"alert.units.change_reason\":\"Reason for change\",\"alert.units.current_and_bound\":\"Current / bound metric\",\"alert.units.current_metric\":\"Current metric\",\"alert.units.current_unit\":\"Current unit\",\"alert.units.identity_changed\":\"The query identity has changed. Confirm again\",\"alert.units.last_verified\":\"Last verified\",\"alert.units.metric\":\"Metric\",\"alert.units.metric_changed\":\"The metric has changed. Confirm again\",\"alert.units.metric_unknown\":\"Pending detection\",\"alert.units.not_bound\":\"Unbound\",\"alert.units.pending_query\":\"Pending retrieval\",\"alert.units.readonly\":\"Existing query results · Read-only status\",\"alert.units.readonly_note\":\"This list uses existing query results. Expired candidates can be refreshed manually.\",\"alert.units.refresh_command\":\"Use /yql alert units \\\"account name\\\" refresh to refresh candidates explicitly.\",\"alert.units.refreshed\":\"Refresh requested · Latest local status\",\"alert.units.refreshed_note\":\"The account balance was refreshed on request.\",\"alert.units.stale\":\"Unit verification expired\",\"alert.units.threshold_note\":\"Check what the threshold means before confirming. Confirmation keeps its existing numeric value.\",\"alert.units.title\":\"Alert units and candidates\",\"alert.units.unit_changed\":\"The unit has changed. Confirm again\",\"alert.units.verified\":\"Unit verified\",\"balance.expiry\":\"Expiry\",\"balance.expiry_date\":\"Expires {time}\",\"balance.item_expiry\":\"{label} expiry\",\"balance.item_note\":\"{label} notes\",\"balance.kind.cash\":\"Cash balance\",\"balance.kind.credits\":\"Credits\",\"balance.kind.custom\":\"Custom item\",\"balance.kind.free_quota\":\"Free quota\",\"balance.kind.quota\":\"Quota\",\"balance.kind.subscription\":\"Plan\",\"balance.kind.usage\":\"Usage\",\"balance.remaining\":\"Remaining\",\"balance.remaining_amount\":\"Remaining {amount}\",\"balance.semantics\":\"Meaning: {meaning}\",\"balance.site_credit_meaning\":\"The account's site quota is measured in site_credit.\",\"balance.total\":\"Total\",\"balance.total_amount\":\"Total {amount}\",\"balance.unknown_amount\":\"Amount unknown (unit: {unit})\",\"balance.unknown_unit\":\"Unknown unit\",\"balance.unreported\":\"Not reported (unit: {unit})\",\"balance.used\":\"Used\",\"balance.used_amount\":\"Used {amount}\",\"balance.value_separator\":\"; \",\"capability.alibaba\":\"Alibaba Cloud Bailian\",\"capability.alibaba_balance\":\"Alibaba Cloud account balance (BSS: cash balance, available credit, and credit limit)\",\"capability.cash\":\"Cash balance\",\"capability.compatible\":\"OpenAI-compatible service\",\"capability.credential_missing\":\"No usable credentials are configured\",\"capability.credits\":\"Credits\",\"capability.custom\":\"User-configured balance type\",\"capability.deepseek_balance\":\"Multicurrency account balance\",\"capability.endpoint_invalid\":\"The balance endpoint configuration is invalid\",\"capability.free_quota\":\"Free quota\",\"capability.grsai_region\":\"The Grsai endpoint selection is invalid\",\"capability.grsai_token_missing\":\"The Grsai account request token is missing\",\"capability.host_invalid\":\"The Host configuration is invalid\",\"capability.host_missing\":\"The HTTPS service base URL is missing\",\"capability.kind_invalid\":\"The Grsai balance type must map to credits\",\"capability.mapping_invalid\":\"The balance field mapping is missing or invalid\",\"capability.meinianda_balance\":\"Account site credit (site_credit)\",\"capability.path_invalid\":\"The API Path configuration is invalid\",\"capability.path_missing\":\"A relative API Path starting with / is missing\",\"capability.profile_invalid\":\"The service type is invalid\",\"capability.quota\":\"Quota\",\"capability.scope_invalid\":\"The balance scope is invalid\",\"capability.subscription\":\"Subscription quota\",\"capability.unqueryable\":\"The current configuration does not allow queries\",\"capability.usage\":\"Usage\",\"common.empty\":\"Empty\",\"common.field_separator\":\": \",\"common.label_value\":\"{label}: {value}\",\"common.list_separator\":\", \",\"common.none\":\"None\",\"common.unknown\":\"Unknown\",\"config.account_id\":\"An account id must be a nonempty string\",\"config.account_mapping\":\"An account configuration must be an object\",\"config.admin_boolean\":\"command_admin_only must be a boolean. The default was used\",\"config.aliases\":\"aliases must be a list of nonempty strings\",\"config.auth_mapping\":\"auth must be an object\",\"config.balance_scope\":\"The balance scope must be generic, account, or api_key\",\"config.bss_auth\":\"Alibaba Cloud BSS queries require a dedicated AccessKey ID and AccessKey Secret\",\"config.compatible_auth\":\"The compatible API requires an API key\",\"config.conflict\":\"The configuration changed. Refresh and confirm again.\",\"config.conflicting_account\":\"The account name conflicts with another account\",\"config.credential_in_field\":\"General configuration fields cannot contain credentials.\",\"config.credential_operation\":\"Save credentials through the dedicated credential action.\",\"config.display_name\":\"display_name must be a nonempty string\",\"config.duplicate_credential\":\"Credentials cannot duplicate a value in a general configuration field.\",\"config.duplicate_id\":\"Duplicate account id\",\"config.enabled_boolean\":\"enabled must be a boolean. The account was disabled\",\"config.endpoint_mapping\":\"endpoint must be an object\",\"config.group_boolean\":\"allow_group_queries must be a boolean. The default was used\",\"config.group_list\":\"group_allowed_user_ids must be a list of nonempty strings. An empty list was used\",\"config.grsai_account_only\":\"Grsai currently supports account credits only. The API Key credits preset is unavailable.\",\"config.grsai_account_path\":\"Use /client/openapi/getCredits for Grsai account credits.\",\"config.grsai_api_key_scope\":\"The Grsai API Key credits preset is not implemented. Select account credits\",\"config.grsai_credits\":\"Grsai credit queries must map kind to credits\",\"config.grsai_path_scope\":\"Use account for Grsai getCredits and api_key for getAPIKeyCredits\",\"config.grsai_post\":\"This Grsai credits endpoint requires POST\",\"config.grsai_region\":\"Select a direct connection to mainland China or an international endpoint for Grsai.\",\"config.grsai_required\":\"Account or API Key balance scopes require the Grsai service\",\"config.grsai_scope\":\"Grsai currently supports only the account credits preset.\",\"config.grsai_token\":\"Grsai account credits require the request token (token) from your user information.\",\"config.invalid\":\"The configuration is invalid. Check the fields and data types.\",\"config.invalid_amount_mapping\":\"The compatible API requires a valid amount_path mapping\",\"config.invalid_endpoint\":\"The balance endpoint must use a safe HTTPS GET or POST configuration\",\"config.invalid_host\":\"Host must be an HTTPS base URL without a path, query, or fragment\",\"config.invalid_path\":\"API Path must start with a single / and cannot include a full URL, query, or fragment\",\"config.invalid_root\":\"The configuration root must be an object\",\"config.legacy_credential_in_field\":\"A general field in the legacy configuration contains credentials. The original configuration was kept.\",\"config.legacy_credential_shape\":\"The legacy credential structure cannot be migrated safely. The original configuration was kept.\",\"config.migrate_first\":\"Review and migrate the legacy configuration before changing settings.\",\"config.missing_auth\":\"No usable credentials are configured\",\"config.missing_endpoint\":\"The balance query endpoint is missing\",\"config.missing_env\":\"The referenced credential environment variable is unset\",\"config.missing_host\":\"Enter the HTTPS service base URL in Host\",\"config.missing_path\":\"Enter a relative API Path starting with /\",\"config.positive_integer\":\"{path} must be a positive integer. The default was used\",\"config.positive_number\":\"{path} must be positive. The default was used\",\"config.private_list\":\"private_allowed_user_ids must be a list of platform:userID strings. An empty list was used\",\"config.provider_immutable\":\"You cannot change the provider type of an existing account. Create a new account.\",\"config.provider_type\":\"Unknown provider type\",\"config.providers_list\":\"providers must be a list\",\"config.response_mapping\":\"response_mapping must be an object. An empty object was used\",\"config.secret_in_name\":\"An account name cannot contain credentials\",\"config.service_profile\":\"The compatible service type must be generic or grsai\",\"config.storage_unavailable\":\"Secure storage is unavailable. Plaintext storage was not used. Check the key and storage status.\",\"config.template_mismatch\":\"The account template does not match the provider type\",\"credential.encrypted\":\"Encrypted credentials saved\",\"credential.environment\":\"Environment variable references saved\",\"credential.missing\":\"No credentials saved\",\"credential.mixed\":\"Encrypted credentials and environment variable references saved\",\"credential.unknown\":\"Storage status unconfirmed\",\"error.alert_config.account_disabled\":\"Enable the account before turning on alerts.\",\"error.alert_config.decimal_format\":\"{label} must be entered in plain decimal notation. Scientific notation is unsupported.\",\"error.alert_config.duplicate_target\":\"The alert destination UMO is duplicated. Combine the entries into one row.\",\"error.alert_config.group_mention_only\":\"QQ number mentions are available only in QQ group chats with numeric IDs. Remove mentions from private chats.\",\"error.alert_config.integer_range\":\"{label} must be an integer from {low} to {high}.\",\"error.alert_config.invalid_enabled\":\"The alert toggle must be a Boolean value.\",\"error.alert_config.invalid_model_enabled\":\"The alert model toggle must be a Boolean value.\",\"error.alert_config.invalid_model_object\":\"The alert model configuration has an invalid structure.\",\"error.alert_config.invalid_object\":\"The account alert configuration must be an object.\",\"error.alert_config.invalid_qq_id\":\"{label} accepts only QQ numbers written as positive ASCII integers. Mentioning everyone is unavailable.\",\"error.alert_config.invalid_target_fields\":\"Each alert destination must contain only umo and mentions.\",\"error.alert_config.invalid_text\":\"{label} must be text without control characters.\",\"error.alert_config.invalid_text_format\":\"{label} has an invalid length or format.\",\"error.alert_config.invalid_umo\":\"UMO must use the format platform instance:message type:session ID.\",\"error.alert_config.label.admin_qq\":\"Alert management QQ allowlist\",\"error.alert_config.label.check_interval\":\"Check interval (minutes)\",\"error.alert_config.label.mentions\":\"Group mentions\",\"error.alert_config.label.metric\":\"Alert metric\",\"error.alert_config.label.model\":\"Model ID\",\"error.alert_config.label.persona\":\"Persona ID\",\"error.alert_config.label.recovery_threshold\":\"Recovery threshold\",\"error.alert_config.label.repeat_interval\":\"Repeat interval while the balance stays low (minutes, 0 disables repeats)\",\"error.alert_config.label.threshold\":\"Trigger threshold\",\"error.alert_config.label.unit\":\"Alert unit\",\"error.alert_config.list_limit\":\"{label} must be a list with at most {limit} entries.\",\"error.alert_config.missing_targets\":\"Add at least one destination before turning on alerts.\",\"error.alert_config.missing_threshold_or_metric\":\"Set the threshold and metric.\",\"error.alert_config.recovery_threshold_order\":\"The recovery threshold must be higher than the trigger threshold.\",\"error.alert_config.target_limit\":\"Alert destinations must be a list with at most {limit} entries.\",\"error.alert_config.unknown_fields\":\"The account alert configuration contains unknown fields.\",\"error.alert_config.unsupported_metric\":\"This provider does not support the selected alert metric.\",\"error.query.empty_target\":\"Enter a target name\",\"error.query.invalid_arguments\":\"This command does not accept a target argument\",\"error.query.multiple_targets\":\"Multiple accounts or providers matched. Specify one target\",\"error.query.unknown_target\":\"No matching account or provider found\",\"help.account_command\":\"/yql account <name>\",\"help.alerts\":\"Quota alerts\",\"help.aliyun_note\":\"Alibaba Cloud BSS queries cash balance, available quota, and credit limit. The RAM identity requires at least AliyunBSSReadOnlyAccess.\",\"help.all_accounts\":\"All accounts\",\"help.all_command\":\"/yql or /yql all\",\"help.card_subtitle\":\"Query quotas · View local settings\",\"help.card_title\":\"YQL help\",\"help.card_tool_note\":\"Enable function tools to query quotas in natural language.\",\"help.command_body\":\"Yomihime Quota Link\\nUsage:\\n  /yql                 Query all accounts\\n  /yql help            Show help\\n  /yql status          Show local settings status\\n  /yql all             Query all accounts\\n  /yql <name>          Query an account or provider\\n  /yql account <name>  Query an account\\n  /yql provider <name> Query a provider\\n\",\"help.compatible_note\":\"OpenAI-compatible services use provider-specific balance APIs. Follow the provider's balance API documentation to configure the service URL, endpoint path, advanced authentication, and response mapping.\",\"help.configured_accounts\":\"Configured accounts: {names}\",\"help.enabled_accounts\":\"Enabled accounts · {count}\",\"help.local_config\":\"Local settings\",\"help.local_note\":\"The help and status commands read local information.\",\"help.management_note\":\"Configure provider endpoints and credentials on the management page.\",\"help.name_note\":\"You can also use /yql <name> with a display name, alias, or provider name.\",\"help.no_accounts\":\"No accounts are configured.\",\"help.no_enabled_accounts\":\"No accounts are enabled. Add an account on the management page first.\",\"help.provider_command\":\"/yql provider <name>\",\"help.query\":\"Query quotas\",\"help.select_account\":\"Specific account\",\"help.select_provider\":\"Specific provider\",\"help.status_heading\":\"Help and status\",\"help.tool_note\":\"In AI chats with function tools enabled, ask the model to call yql_query_balance in natural language.\",\"help.usage\":\"Help\",\"provider.alibaba_bailian.authentication\":\"Alibaba Cloud access key authentication failed\",\"provider.alibaba_bailian.available_credit\":\"Available credit\",\"provider.alibaba_bailian.cash_balance\":\"Cash balance\",\"provider.alibaba_bailian.connection\":\"Could not connect to the Alibaba Cloud balance service\",\"provider.alibaba_bailian.credit_limit\":\"Credit limit\",\"provider.alibaba_bailian.fallback_account\":\"Alibaba Cloud account\",\"provider.alibaba_bailian.invalid_credentials\":\"Alibaba Cloud balance query credentials are configured incorrectly\",\"provider.alibaba_bailian.invalid_request\":\"The Alibaba Cloud balance query request is configured incorrectly\",\"provider.alibaba_bailian.invalid_response\":\"The Alibaba Cloud balance response has an unrecognized format\",\"provider.alibaba_bailian.permission\":\"Alibaba Cloud denied access to the account’s cash balance. Grant at least AliyunBSSReadOnlyAccess to the RAM identity that queries the current BSS cash balance. A DashScope model API Key cannot replace this RAM permission. BSS FullAccess is unnecessary.\",\"provider.alibaba_bailian.query_failed\":\"The Alibaba Cloud account cash balance query failed\",\"provider.alibaba_bailian.rate_limited\":\"The Alibaba Cloud balance query was rate-limited. Try again later\",\"provider.alibaba_bailian.request_denied\":\"Alibaba Cloud denied the account cash balance query\",\"provider.alibaba_bailian.source\":\"Alibaba Cloud account balance and credit\",\"provider.alibaba_bailian.timeout\":\"The Alibaba Cloud cash balance query timed out\",\"provider.alibaba_bailian.too_many_requests\":\"Too many Alibaba Cloud balance queries. Try again later\",\"provider.alibaba_bailian.unavailable\":\"The Alibaba Cloud balance service is temporarily unavailable\",\"provider.deepseek.authentication\":\"DeepSeek API key authentication failed\",\"provider.deepseek.connection\":\"Could not connect to the DeepSeek balance service\",\"provider.deepseek.granted_balance\":\"Unexpired promotional balance\",\"provider.deepseek.insufficient_balance\":\"The DeepSeek account balance is too low to call the API\",\"provider.deepseek.invalid_request\":\"The DeepSeek balance query request is configured incorrectly\",\"provider.deepseek.invalid_response\":\"The DeepSeek balance response has an unrecognized format\",\"provider.deepseek.missing_key\":\"The DeepSeek account is missing a valid API key\",\"provider.deepseek.permission\":\"DeepSeek denied the balance query\",\"provider.deepseek.rate_limited\":\"Too many DeepSeek requests. Try again later\",\"provider.deepseek.request_denied\":\"DeepSeek rejected the balance query request\",\"provider.deepseek.source\":\"DeepSeek API\",\"provider.deepseek.timeout\":\"The DeepSeek balance query timed out\",\"provider.deepseek.topped_up_balance\":\"Top-up balance\",\"provider.deepseek.total_balance\":\"Total available balance\",\"provider.deepseek.unavailable\":\"The DeepSeek balance query failed temporarily\",\"provider.meinianda.authentication\":\"Meinianda API Key authentication failed\",\"provider.meinianda.connection\":\"Could not connect to the Meinianda balance service\",\"provider.meinianda.invalid_request\":\"The Meinianda balance query request is configured incorrectly\",\"provider.meinianda.invalid_response\":\"The Meinianda balance response has an unrecognized format\",\"provider.meinianda.missing_key\":\"The Meinianda account is missing a valid API Key\",\"provider.meinianda.permission\":\"Meinianda denied the balance query\",\"provider.meinianda.query_failed\":\"Meinianda could not complete the balance query\",\"provider.meinianda.rate_limited\":\"Too many Meinianda requests. Try again later\",\"provider.meinianda.site_credit\":\"Account site credit\",\"provider.meinianda.site_credit_note\":\"Site credit applies to the account and is separate from API Key limits. It is not converted to currency\",\"provider.meinianda.source\":\"Meinianda balance API\",\"provider.meinianda.timeout\":\"The Meinianda balance query timed out\",\"provider.meinianda.unavailable\":\"The Meinianda balance query failed temporarily\",\"provider.openai_compatible.authentication\":\"Balance API authentication failed\",\"provider.openai_compatible.business_failure\":\"The balance service reported a query failure\",\"provider.openai_compatible.connection\":\"Could not connect to the balance API\",\"provider.openai_compatible.grsai_authentication\":\"The account credits API returned HTTP 401. Check the authentication settings\",\"provider.openai_compatible.grsai_permission\":\"The account credits API returned HTTP 403. Check the access settings\",\"provider.openai_compatible.grsai_query_failed\":\"The account credits API request failed\",\"provider.openai_compatible.grsai_rate_limited\":\"The account credits API returned HTTP 429. Try again later\",\"provider.openai_compatible.grsai_source\":\"Grsai account credits API\",\"provider.openai_compatible.https_required\":\"The balance API must use HTTPS\",\"provider.openai_compatible.invalid_configuration\":\"The compatible provider’s balance query is configured incorrectly\",\"provider.openai_compatible.invalid_request\":\"The balance API request is configured incorrectly\",\"provider.openai_compatible.invalid_response\":\"The balance API response has an unrecognized format\",\"provider.openai_compatible.not_found\":\"The balance API path or version does not exist\",\"provider.openai_compatible.permission\":\"The balance API denied access\",\"provider.openai_compatible.rate_limited\":\"Too many requests to the balance API. Try again later\",\"provider.openai_compatible.source\":\"OpenAI-compatible balance API\",\"provider.openai_compatible.timeout\":\"The balance API query timed out\",\"provider.openai_compatible.unavailable\":\"The balance API request failed temporarily\",\"provider.retry.explicit_throttling\":\"The balance service reported a rate limit. Try again later\",\"query.account_card_title\":\"Account quota and usage\",\"query.account_incomplete\":\"The account settings are incomplete. A balance query is unavailable.\",\"query.account_outcome_count\":\"{label}: {count}\",\"query.account_timeout\":\"The account query timed out\",\"query.account_title\":\"Account query: {target}\",\"query.accounts_count\":\"Accounts: {count}\",\"query.all_card_title\":\"Quota and usage\",\"query.all_title\":\"Quota and usage query\",\"query.authentication_paused\":\"Paused after an authentication or permission failure. Update the settings or retry manually to resume.\",\"query.available\":\"Available\",\"query.cached\":\" (cached)\",\"query.cached_card\":\" · Cached data\",\"query.client_unconfigured\":\"The query client is not configured\",\"query.cooldown_account\":\"Account query is cooling down. Try again in {seconds} seconds\",\"query.cooldown_provider\":\"Provider query is cooling down. Try again in {seconds} seconds\",\"query.empty_title\":\"No results\",\"query.error_detail\":\"  Query failed: {message}\",\"query.failed\":\"Query failed\",\"query.failed_short\":\"Failed\",\"query.invalid_operation\":\"The operation must be query or list.\",\"query.invalid_provider_result\":\"The provider returned an invalid result for this account.\",\"query.invalid_request\":\"The query request was not recognized.\",\"query.invalid_target\":\"Specify an account, a provider name, or all.\",\"query.matches\":\"{message}\\nMatches: {candidates}\",\"query.no_accounts\":\"No accounts are configured for queries.\",\"query.no_items\":\"No balance or usage items to display\",\"query.no_results\":\"No query results to display.\",\"query.outcome_count\":\"{label}: {count}\",\"query.partial\":\"Partially available\",\"query.partial_data\":\"Partial data retrieved\",\"query.partial_success\":\"Partially succeeded\",\"query.permission_denied\":\"This conversation is not allowed to query balances.\",\"query.provider_card_title\":\"Provider quota and usage\",\"query.provider_title\":\"Provider query: {target}\",\"query.provider_unsupported\":\"Balance queries are not supported for this provider yet\",\"query.queue_timeout\":\"The account’s time limit expired while the query was waiting to start.\",\"query.service_closed\":\"The query service is closed\",\"query.source_time\":\"  Fetched: {time} · Source: {source}\",\"query.source_time_card\":\"Source: {source} · Fetched: {time}\",\"query.status_unavailable\":\"Unavailable\",\"query.success\":\"Query succeeded\",\"query.success_short\":\"Succeeded\",\"query.summary\":\"Query summary: {summary}.\",\"query.summary_separator\":\", \",\"query.target_card\":\"Target: {target}\\n\",\"query.time\":\"Query time: {time}\",\"query.time_card\":\"Queried: {time}\",\"query.total_timeout\":\"The query exceeded its overall time limit\",\"query.unavailable\":\"Queries are temporarily unavailable\",\"query.unknown_status\":\"Status unknown\",\"status.account_list\":\"Accounts:\",\"status.accounts_count\":\"Accounts: {total} total, {enabled} enabled, {ready} queryable\",\"status.add_account\":\"Add an account and credentials on the management page\",\"status.admin_only\":\"Admins only\",\"status.after_save\":\"After saving, use /yql status to view local settings and /yql to query quotas.\",\"status.api_path\":\"Enter a relative API path starting with /\",\"status.card_access\":\"Access and credentials\",\"status.card_counts\":\"Accounts: {total} · Enabled: {enabled} · Configured: {ready}\",\"status.card_incomplete\":\"Missing settings: {reason}\",\"status.card_issues\":\"Configuration issues · {count}\",\"status.card_needs_check\":\"Needs review: {reason}\",\"status.card_needs_setup\":\"Setup needed: {reason}\",\"status.card_no_accounts\":\"No accounts configured\",\"status.card_online_check\":\"Use /yql to check connectivity and balances.\",\"status.card_source\":\"Based on the local account directory and credential records\",\"status.card_title\":\"Local settings status\",\"status.credential_storage\":\"Credential storage\",\"status.credential_storage_state\":\"Credential storage: {state}\",\"status.disabled\":\"Disabled\",\"status.enabled\":\"Enabled\",\"status.group_queries\":\"Group queries\",\"status.group_queries_state\":\"Group queries: {state}\",\"status.incomplete\":\"Incomplete setup: {reason}\",\"status.issue_count\":\"Configuration issues: {count}\",\"status.next_step\":\"Next step\",\"status.no_accounts\":\"No accounts are configured.\",\"status.not_queryable\":\"Cannot query: {reason}\",\"status.off\":\"Off\",\"status.permissions\":\"Command permissions\",\"status.permissions_state\":\"Command permissions: {state}\",\"status.provider\":\"Provider: {provider}\",\"status.queryable\":\"Configured and queryable\",\"status.reason.grsai_account_path_mismatch\":\"Use the Grsai account credit endpoint\",\"status.reason.grsai_balance_scope_mismatch\":\"Select the balance scope for the Grsai endpoint\",\"status.reason.grsai_method_must_post\":\"The Grsai credit API uses POST\",\"status.reason.invalid_api_path\":\"Invalid endpoint path. Enter a relative path starting with / without parameters\",\"status.reason.invalid_balance_kind\":\"Set the Grsai balance kind to credits\",\"status.reason.invalid_balance_scope\":\"Check the balance query scope\",\"status.reason.invalid_base_url\":\"Invalid service URL. Enter an HTTPS base URL without a path, parameters, or credentials\",\"status.reason.invalid_endpoint\":\"Invalid service URL or endpoint path. Use an HTTPS base URL and a path starting with /\",\"status.reason.invalid_grsai_region\":\"Select a valid Grsai region\",\"status.reason.invalid_response_mapping\":\"configure the balance mapping in advanced settings using the provider's response documentation\",\"status.reason.invalid_service_profile\":\"Check the service type\",\"status.reason.missing_api_path\":\"enter an endpoint path starting with /\",\"status.reason.missing_base_url\":\"enter the HTTPS base URL\",\"status.reason.missing_credentials\":\"Missing usable credentials\",\"status.reason.missing_endpoint\":\"enter the service URL and endpoint path from the provider's documentation\",\"status.reason.missing_environment_variable\":\"Credential environment variable is unset\",\"status.reason.missing_grsai_token\":\"Configure the Grsai account request token\",\"status.saved_credentials\":\"Saved credentials\",\"status.session_permissions\":\"Authorized per session\",\"status.source\":\"Source: local settings and credential records. Use /yql to check connectivity and balances.\",\"status.title\":\"Yomihime Quota Link status\",\"status.unknown_reason\":\"Configuration incomplete or query temporarily unavailable\",\"storage.migration_pending\":\"Legacy settings awaiting migration\",\"storage.ready\":\"Secure storage is ready\",\"storage.unavailable\":\"Secure storage needs review\",\"storage.unknown\":\"Credential storage status unconfirmed\",\"web.account.add\":\"Add account\",\"web.account.add_query\":\"Add a query account\",\"web.account.advanced\":\"Advanced endpoint and response mapping\",\"web.account.aliases_hint\":\"Commands and natural language queries use these aliases. Enter one per line and keep them unique across accounts.\",\"web.account.count\":\"Accounts: {count}\",\"web.account.credentials_configured\":\"Credentials configured\",\"web.account.credentials_pending\":\"Credentials needed\",\"web.account.disabled\":\"Disabled\",\"web.account.editor_subtitle\":\"Manage query settings and credentials.\",\"web.account.empty\":\"No query accounts yet\",\"web.account.empty_hint\":\"Choose a provider to add an account, then configure its encrypted credentials separately.\",\"web.account.enabled\":\"Enabled\",\"web.account.id_hint\":\"Choose a stable, unique ID. It cannot be changed after saving.\",\"web.account.id_locked\":\"Existing account IDs are fixed to keep credentials bound to the right account.\",\"web.account.list\":\"Query accounts\",\"web.account.list_subtitle\":\"Manage accounts for AI service balance, usage, and quota queries.\",\"web.account.mapping\":\"Balance response mapping\",\"web.account.mapping_hint\":\"Use JSON Pointer, for example /data/remaining. Keep credentials out of the static body and mappings.\",\"web.account.new\":\"New account\",\"web.account.profile_action\":\"Change and clear thresholds\",\"web.account.profile_body\":\"This clears the thresholds and turns off alerts. Query the balance again to detect the unit.\",\"web.account.profile_title\":\"Change service type and reset alerts?\",\"web.account.protocol\":\"Request protocol\",\"web.account.provider\":\"Provider\",\"web.account.provider_scope\":\"Each provider uses its own balance protocol and query credentials, separate from model chat settings.\",\"web.account.provider_settings\":\"Provider settings\",\"web.account.remove\":\"Remove account\",\"web.account.remove_action\":\"Remove from draft\",\"web.account.remove_body\":\"This removes the account from the draft. Saving applies the removal and deletes its stored credentials. Other accounts are unaffected.\",\"web.account.remove_hint\":\"Removal takes effect after saving.\",\"web.account.remove_title\":\"Remove account “{account}”?\",\"web.account.settings\":\"Account settings\",\"web.alert.admin_list\":\"QQ allowlist for alert administration\",\"web.alert.admin_list_hint\":\"Enter one QQ number per line. Listed users and AstrBot administrators can manage alerts.\",\"web.alert.admin_list_placeholder\":\"One QQ number per line\",\"web.alert.enable_account\":\"Enable alerts for this account\",\"web.alert.hints_title\":\"Alert messages\",\"web.alert.interval\":\"Check interval (minutes)\",\"web.alert.interval_days\":\"{count} d\",\"web.alert.interval_hint\":\"1–4320 minutes. Default: 15.\",\"web.alert.interval_minutes\":\"{count} min\",\"web.alert.interval_set\":\"Set to {count} minutes\",\"web.alert.interval_slider\":\"Check interval slider (minutes)\",\"web.alert.metric\":\"Alert metric\",\"web.alert.metric_hint\":\"Select the balance to monitor.\",\"web.alert.minutes\":\"min\",\"web.alert.permissions\":\"Alert administration permissions\",\"web.alert.quick_group\":\"Check interval presets\",\"web.alert.quick_label\":\"Presets:\",\"web.alert.recovery\":\"Recovery threshold (optional)\",\"web.alert.recovery_hint\":\"Leave blank to set automatically. Must be above the trigger threshold.\",\"web.alert.recovery_placeholder\":\"Leave blank to set automatically\",\"web.alert.repeat\":\"Repeat low-balance reminder (minutes)\",\"web.alert.repeat_hint\":\"Use 0 to disable repeats. Maximum: 4320 minutes.\",\"web.alert.smart_hint\":\"AI-generated messages\",\"web.alert.smart_hint_help\":\"Uses the destination session’s model and persona.\",\"web.alert.targets\":\"Destination UMO (one per line)\",\"web.alert.targets_hint\":\"Enter one UMO per line. For group chats, append @ followed by a QQ number.\",\"web.alert.targets_title\":\"Quota alert destinations\",\"web.alert.threshold\":\"Trigger threshold\",\"web.alert.threshold_hint\":\"An alert triggers when the balance is at or below this value.\",\"web.alert.threshold_placeholder\":\"Enter the trigger threshold\",\"web.alert.title\":\"Quota alerts\",\"web.common.cancel\":\"Cancel\",\"web.common.choose\":\"Select an option\",\"web.common.off\":\"Off\",\"web.common.on\":\"On\",\"web.common.one_per_line\":\"One entry per line\",\"web.common.time_unavailable\":\"Time unavailable\",\"web.credential.balance_key\":\"Balance query API key\",\"web.credential.cancel_entry\":\"Cancel entry\",\"web.credential.clear\":\"Clear credential\",\"web.credential.clear_body\":\"This removes the credential or reference for “{account}”. Account settings are kept. Configure the credential again before querying.\",\"web.credential.clear_title\":\"Clear {credential}?\",\"web.credential.confirm_clear\":\"Confirm clearing\",\"web.credential.encrypted_status\":\"Configured · Encrypted storage\",\"web.credential.enter_new\":\"Enter new credential\",\"web.credential.environment_hint\":\"Enter only the variable name, such as QUOTA_API_KEY. The runtime supplies its value.\",\"web.credential.environment_name\":\"Environment variable name\",\"web.credential.environment_status\":\"Configured · Environment variable\",\"web.credential.eyebrow\":\"QUERY CREDENTIALS\",\"web.credential.finish_settings\":\"Save or discard settings changes before editing credentials.\",\"web.credential.grsai_token\":\"Grsai request token\",\"web.credential.legacy_field\":\"Legacy credential ({field})\",\"web.credential.missing\":\"Not configured\",\"web.credential.new_source\":\"New credential source\",\"web.credential.new_value\":\"New credential\",\"web.credential.new_value_hint\":\"Leaving this blank keeps the existing credential. The input is cleared immediately after submission.\",\"web.credential.optional_sts\":\"STS Security Token (optional)\",\"web.credential.replace\":\"Replace credential\",\"web.credential.save_account\":\"Save the new account before adding credentials.\",\"web.credential.save_new\":\"Save new credential\",\"web.credential.saved_hint\":\"Credentials are saved and will be verified when querying the balance.\",\"web.credential.separate\":\"Credentials are saved separately.\",\"web.credential.status_unread\":\"Status not loaded\",\"web.credential.title\":\"Query credentials\",\"web.credential.use_environment\":\"Use environment variable\",\"web.detail.fixed_hint\":\"Used the standard alert message.\",\"web.detail.mention_invalid\":\"Invalid QQ mention format. Check the group session and @QQ number.\",\"web.detail.mention_unsupported\":\"The destination does not support QQ mentions. Remove the @ suffix or use a supported QQ group.\",\"web.detail.message_components_unavailable\":\"Could not construct the message components. Check the host components and logs.\",\"web.detail.platform_not_found\":\"Destination platform instance was not found. Check the platform instance ID in the UMO.\",\"web.detail.platform_unavailable\":\"The destination platform instance is unavailable. Check the connection and host logs.\",\"web.detail.platform_unsupported\":\"The destination platform does not support this outbound delivery method. Use a supported destination.\",\"web.detail.session_check_failed\":\"Could not verify the destination session. Check AstrBot session settings and logs.\",\"web.detail.session_disabled\":\"The destination session is disabled. Enable it in AstrBot.\",\"web.detail.target_invalid\":\"Invalid alert destination format. Check the UMO in Global settings.\",\"web.detail.transport_unavailable\":\"The host outbound delivery API is unavailable. Check the AstrBot version and logs.\",\"web.detail.unknown\":\"No specific reason is available. Check global alert destinations, platform connections, and host alert logs.\",\"web.field.advanced_options\":\"Show advanced settings\",\"web.field.aliases\":\"Query aliases\",\"web.field.amount_path\":\"Primary balance path\",\"web.field.auth_mode\":\"Authentication method\",\"web.field.auth_name\":\"Authentication parameter name\",\"web.field.balance_scope\":\"Credit scope\",\"web.field.base_url\":\"Service address\",\"web.field.cache_ttl_seconds\":\"Successful result cache (seconds)\",\"web.field.display_name\":\"Display name\",\"web.field.enabled\":\"Enable account\",\"web.field.expires_at_path\":\"Expiration time path\",\"web.field.expiry_path\":\"Legacy expiration path\",\"web.field.failure_path\":\"Business failure path\",\"web.field.failure_value\":\"Business failure value\",\"web.field.id\":\"Account ID\",\"web.field.json_body\":\"Static JSON request body\",\"web.field.kind\":\"Balance category\",\"web.field.kind_path\":\"Category path\",\"web.field.method\":\"Request method\",\"web.field.path\":\"API path\",\"web.field.region\":\"Connection region\",\"web.field.remaining_path\":\"Remaining amount path\",\"web.field.service_profile\":\"Service type\",\"web.field.status_path\":\"Status path\",\"web.field.status_values\":\"Status mapping\",\"web.field.success_path\":\"Business success path\",\"web.field.success_value\":\"Business success value\",\"web.field.timeout_seconds\":\"Account timeout (seconds)\",\"web.field.total_path\":\"Total amount path\",\"web.field.unit\":\"Fixed unit\",\"web.field.unit_path\":\"Unit path\",\"web.field.url\":\"Legacy full URL\",\"web.field.used_path\":\"Used amount path\",\"web.global.allow_group_queries\":\"Allow group queries\",\"web.global.command_admin_only\":\"Restrict balance queries to administrators\",\"web.global.group_allowed_user_ids\":\"Group query user allowlist\",\"web.global.max_concurrency\":\"Maximum concurrent queries\",\"web.global.private_allowed_user_ids\":\"Private chat allowlist\",\"web.global.timeout_seconds\":\"Per-account timeout (seconds)\",\"web.global.total_timeout_seconds\":\"Total query timeout (seconds)\",\"web.hint.advanced_options\":\"Configure authentication, method, and response mapping for generic services. Grsai account credits use a fixed protocol and ignore old mappings.\",\"web.hint.amount_path\":\"Required JSON Pointer, for example /data/remaining.\",\"web.hint.auth_mode\":\"Follow the balance API documentation. Grsai account credits ignore this field and always put the token in the JSON body.\",\"web.hint.auth_name\":\"Used only with request header or query parameter authentication.\",\"web.hint.balance_scope\":\"Account credits are supported. API key credit queries are currently unavailable.\",\"web.hint.base_url\":\"HTTPS base URL without the API path. https://api.example.invalid is an example and cannot be reached.\",\"web.hint.expiry_path\":\"Legacy compatibility for expires_at_path.\",\"web.hint.json_body\":\"For generic services only. Templates and credentials are unsupported. Leave blank for Grsai account credits and clear any old body when switching an entry.\",\"web.hint.kind_path\":\"Optional JSON Pointer. Allowed: cash/quota/free_quota/subscription/credits/usage/custom.\",\"web.hint.legacy_base_url\":\"HTTPS base URL, optionally combined with an API path.\",\"web.hint.legacy_json_body\":\"Use only for a documented read-only POST. Templates and credentials are unsupported.\",\"web.hint.legacy_method\":\"Use GET or a POST confirmed to have no side effects.\",\"web.hint.meinianda_cache\":\"The site recommends querying once per minute. The default cache is 60 seconds.\",\"web.hint.method\":\"Follow the documentation for generic services. Grsai account credits always use POST. Clear the previous GET method when switching an existing entry.\",\"web.hint.path\":\"Follow the documentation for generic services. For Grsai account credits, leave blank or enter /client/openapi/getCredits. Clear the previous path when switching an existing entry. /account/balance is an example only.\",\"web.hint.private_allowlist\":\"Enter the full platform:userID, for example aiocqhttp:123456. Administrators can query without being listed. The administrator-only switch above also applies to /yql balance queries.\",\"web.hint.region\":\"Both regions use built-in official endpoints. No server address is needed.\",\"web.hint.service_profile\":\"Balance queries use provider-specific endpoints. Use the Grsai template for new Grsai accounts. Existing entries here can switch to the account credit preset.\",\"web.hint.status_values\":\"Map provider status values to available/unavailable/partial/unknown.\",\"web.hint.unit\":\"Allowed: CNY/USD/JPY/credit/credits/tokens/requests/custom. Required when unit_path is set.\",\"web.hint.unit_path\":\"Optional JSON Pointer. The runtime value must match the fixed unit.\",\"web.hint.url\":\"Full HTTPS URL without a query, credentials, or fragment.\",\"web.language.auto\":\"Follow AstrBot\",\"web.language.en-US\":\"English\",\"web.language.ja-JP\":\"日本語\",\"web.language.zh-CN\":\"简体中文\",\"web.language.zh-TW\":\"繁體中文\",\"web.metric.AvailableAmount\":\"Available quota\",\"web.metric.AvailableCashAmount\":\"Cash balance\",\"web.metric.CreditAmount\":\"Credit limit\",\"web.metric.credit\":\"Credits\",\"web.metric.granted_balance\":\"Granted balance\",\"web.metric.mapped_balance\":\"Mapped balance\",\"web.metric.monitored\":\"Monitored balance\",\"web.metric.site_credit\":\"Site credits\",\"web.metric.topped_up_balance\":\"Top-up balance\",\"web.metric.total_balance\":\"Total balance\",\"web.migration.accounts\":\"Accounts\",\"web.migration.cleanup_hint\":\"Legacy host configuration is removed only after migration succeeds. If the source changes, preview again before migrating.\",\"web.migration.cleanup_pending\":\"Migration was saved, but the host’s legacy fields still need cleanup. Preview again before retrying.\",\"web.migration.confirm\":\"Confirm legacy migration\",\"web.migration.confirm_body\":\"Migrate the {count} accounts in the preview. Plaintext credentials will be encrypted before storage, and legacy plugin fields will be cleaned up. Credentials stay hidden and are never sent to other services.\",\"web.migration.confirm_title\":\"Migrate legacy configuration?\",\"web.migration.conflict\":\"Legacy configuration differs from the current encrypted store. Verify the source manually. The existing store and newly detected configuration are kept intact.\",\"web.migration.environment\":\"Environment variable references\",\"web.migration.execute\":\"Run migration\",\"web.migration.lock_warning\":\"Legacy configuration is waiting for migration. Settings and credential changes are temporarily locked.\",\"web.migration.no_pending\":\"No legacy configuration to migrate.\",\"web.migration.open\":\"Open migration\",\"web.migration.overview\":\"Move settings, credentials, and environment variable references from the legacy plugin configuration to managed storage. Credentials are stored encrypted and hidden on this page.\",\"web.migration.pending\":\"Legacy configuration detected. Finish migration before saving new settings.\",\"web.migration.plaintext\":\"Credentials to encrypt\",\"web.migration.preview\":\"Preview migration\",\"web.migration.retry_cleanup\":\"Retry legacy field cleanup\",\"web.migration.scope\":\"Migration scope\",\"web.migration.title\":\"Legacy configuration migration\",\"web.navigation.accounts\":\"Account management\",\"web.navigation.back_to_accounts\":\"Back to accounts\",\"web.navigation.global\":\"Global settings\",\"web.navigation.leave_action\":\"Discard draft and leave\",\"web.navigation.leave_body\":\"Unsaved settings and credential input will be cleared. Requests already sent cannot be withdrawn. Reload to verify an uncertain outcome before trying again.\",\"web.navigation.leave_title\":\"Leave these settings?\",\"web.navigation.maintenance\":\"Configuration maintenance\",\"web.navigation.mobile\":\"Mobile navigation\",\"web.navigation.primary\":\"Main navigation\",\"web.navigation.reload\":\"Reload status\",\"web.navigation.reload_action\":\"Discard draft and reload\",\"web.navigation.reload_body\":\"This clears unsaved settings and credential input.\",\"web.navigation.reload_title\":\"Reload configuration?\",\"web.navigation.skip\":\"Skip to main content\",\"web.notice.alert_loading\":\"Reading alert runtime status…\",\"web.notice.alert_read_failed\":\"Could not verify the alert runtime status. Try again later.\",\"web.notice.authorization_lost\":\"Admin authorization expired. Drafts were cleared. Reopen the page from AstrBot plugin management.\",\"web.notice.authorization_reopen\":\"Admin authorization expired. Reopen this page.\",\"web.notice.config_changed\":\"The configuration changed. Reload to see the current settings.\",\"web.notice.connecting\":\"Connecting to the host admin session…\",\"web.notice.discarded\":\"Unsaved draft discarded.\",\"web.notice.invalid_context\":\"Invalid host admin context. Open this page from AstrBot plugin management.\",\"web.notice.invalid_environment\":\"Enter a valid environment variable name without its value.\",\"web.notice.left_during_write\":\"You left the previous settings. A request already sent cannot be withdrawn. Reload to verify its outcome.\",\"web.notice.legacy_cleanup_incomplete\":\"Configuration migrated, but legacy fields remain. Preview again under Configuration maintenance to finish cleanup.\",\"web.notice.legacy_cleanup_retry\":\"Migration was saved. You can retry cleanup of the original legacy fields.\",\"web.notice.legacy_conflict\":\"Legacy configuration differs from the current store. Both are kept intact.\",\"web.notice.legacy_not_pending\":\"No legacy configuration to migrate.\",\"web.notice.legacy_preview_ready\":\"Migration preview is ready. Review the scope below before proceeding.\",\"web.notice.loaded\":\"Loaded the latest configuration.\",\"web.notice.missing_credential\":\"Enter a new credential. Leaving it blank keeps the existing one.\",\"web.notice.open_in_host\":\"Open this page from AstrBot plugin management.\",\"web.notice.read_failed\":\"Could not verify the configuration state. Reload or reopen from the host.\",\"web.notice.reading\":\"Reading the latest state…\",\"web.notice.revision_conflict\":\"Another page changed the configuration. Reload and review it before submitting again. No automatic retry will occur.\",\"web.notice.saved\":\"Saved and verified the current state.\",\"web.notice.saving\":\"Submitting. Wait for the result before trying again…\",\"web.notice.session_unavailable\":\"The host admin session is unavailable. Reopen this page.\",\"web.notice.unit_candidate_changed\":\"The unit option changed or expired. Query again before confirming.\",\"web.notice.unit_candidates\":\"New unit options are available. Review them and confirm one.\",\"web.notice.unit_confirm_uncertain\":\"Confirmation outcome is unknown. Refresh the unit status before taking further action.\",\"web.notice.unit_confirmed\":\"Unit confirmed.\",\"web.notice.unit_current\":\"Loaded the latest unit status. The confirmed unit remains valid.\",\"web.notice.unit_no_candidates\":\"No unit options are available. Check the credentials, endpoint, and query status before trying again.\",\"web.notice.unit_querying\":\"Querying the balance for the latest unit…\",\"web.notice.unit_read_failed\":\"Could not read the unit. Refresh and try again.\",\"web.notice.unit_unverified_candidates\":\"Could not verify any new unit options. Check the credentials, endpoint, and query status before trying again.\",\"web.notice.validation_failed\":\"Submission failed validation. Check fields and credential types. Sensitive input was cleared.\",\"web.notice.write_uncertain\":\"Submission outcome is unconfirmed. Sensitive input was cleared. Reload to verify the state before resubmitting.\",\"web.option.auth.bearer\":\"Bearer token\",\"web.option.auth.header\":\"Request header\",\"web.option.auth.query\":\"Query parameter\",\"web.option.profile.generic\":\"OpenAI-compatible / third-party service\",\"web.option.region.cn\":\"China endpoint\",\"web.option.region.overseas\":\"Overseas endpoint\",\"web.option.scope.account\":\"Account credits (preset supported)\",\"web.option.scope.api_key\":\"API key credits (queries unavailable)\",\"web.option.scope.none\":\"Select the credit scope\",\"web.provider.alibaba_help\":\"Alibaba Cloud BSS: cash balance, available quota, and credit limit.\",\"web.provider.compatible_help\":\"Configure the provider’s read-only balance endpoint using its documentation.\",\"web.provider.compatible_name\":\"Other compatible service\",\"web.provider.deepseek_help\":\"DeepSeek official balance. The query endpoint and response parsing are built in.\",\"web.provider.grsai_help\":\"Grsai account credits use the request token and the fixed POST /client/openapi/getCredits endpoint. The model API key is unused.\",\"web.provider.legacy_name\":\"Legacy generic account\",\"web.provider.meinianda_help\":\"Queries the Meinianda account’s site credits. A cache of at least 60 seconds is recommended.\",\"web.runtime.last_checked\":\"Last checked: \",\"web.runtime.last_sent\":\"Last send attempt: \",\"web.runtime.loading\":\"Loading…\",\"web.runtime.no_account_record\":\"This account has no runtime history yet.\",\"web.runtime.refresh\":\"Refresh alert status\",\"web.runtime.running\":\"Checks are running for accounts with alerts enabled and all required settings in place.\",\"web.runtime.stopped\":\"The check task is inactive.\",\"web.runtime.storage_unavailable\":\"Alert state storage is unavailable. Alerts are inactive.\",\"web.runtime.title\":\"Runtime status\",\"web.runtime.unknown_status\":\"Status updated. Use the alert command for details.\",\"web.settings.access_eyebrow\":\"QUERY ACCESS\",\"web.settings.access_title\":\"Access permissions\",\"web.settings.account_alerts\":\"Alerts can be enabled per account.\",\"web.settings.admin_access\":\"Only AstrBot administrators can open and configure this page.\",\"web.settings.admin_allowlist\":\"Administrators do not need to be on the private chat allowlist.\",\"web.settings.appearance\":\"Language settings\",\"web.settings.applies_after_save\":\"Takes effect after saving.\",\"web.settings.command_access\":\"The administrator-only setting applies to /yql balance queries. Alert commands have separate access rules.\",\"web.settings.discard\":\"Discard changes\",\"web.settings.group_access\":\"Group queries require the group query switch and must meet the user allowlist rules.\",\"web.settings.language\":\"Plugin language\",\"web.settings.language_hint\":\"Applies after saving. Automatic mode uses the language provided by AstrBot. When no supported language is available, such as for scheduled alerts, Quota Link uses Simplified Chinese.\",\"web.settings.private_format\":\"Use the full platform:userID in the private chat allowlist.\",\"web.settings.query_access\":\"Query permissions\",\"web.settings.query_and_cache\":\"Queries and cache\",\"web.settings.save\":\"Save settings\",\"web.settings.save_first\":\"Save settings first.\",\"web.settings.separate_credentials\":\"Settings and credentials are saved separately\",\"web.settings.unsaved\":\"Unsaved changes\",\"web.shell.auth_required\":\"Host admin authorization required\",\"web.shell.brand_author\":\"Yomihime’s\",\"web.shell.brand_name\":\"Quota Link\",\"web.shell.eyebrow\":\"YOMIHIME QUOTA LINK / ADMIN\",\"web.shell.loading_config\":\"Loading configuration\",\"web.shell.open_from_host\":\"Sign in to AstrBot, then open Quota Query from the plugin details page.\",\"web.shell.page_title\":\"Quota Query\",\"web.shell.project_name\":\"Yomihime’s Quota Link\",\"web.shell.revision\":\"Configuration revision {revision}\",\"web.shell.scope\":\"Unified queries · Separate credentials\",\"web.shell.waiting\":\"Waiting for an admin session\",\"web.status.accepted\":\"Send request accepted. Delivery is unconfirmed.\",\"web.status.auth_paused\":\"Credentials were rejected. Checks are paused.\",\"web.status.blocked\":\"Alert delivery is paused. Check the reason below.\",\"web.status.disabled\":\"Alerts are off\",\"web.status.error\":\"Check failed. The previous alert state is retained.\",\"web.status.failed\":\"Delivery failed\",\"web.status.incomplete\":\"Configuration is incomplete. Monitoring has not started.\",\"web.status.low\":\"Balance is at or below the threshold. The alert remains active.\",\"web.status.monitoring\":\"Monitoring balance\",\"web.status.normal\":\"Balance is above the threshold\",\"web.status.paused\":\"Authentication or permission check failed. Correct the settings or retry manually to resume checks.\",\"web.status.pending\":\"Waiting to check\",\"web.status.pending_send\":\"Waiting to combine notifications\",\"web.status.recovered\":\"Balance has recovered\",\"web.status.recovering\":\"Balance has risen and remains below the recovery threshold\",\"web.status.stale\":\"The result expired or its metric or unit differs. It will be skipped for alert evaluation.\",\"web.status.storage_unavailable\":\"Alert state storage is unavailable. Alerts are inactive.\",\"web.status.submitted\":\"Submitted to the platform. Final delivery is unconfirmed.\",\"web.status.unit_changed\":\"Monitored metric or unit changed. Confirm the new unit.\",\"web.status.unit_unidentified\":\"Waiting to identify the unit\",\"web.status.units_ambiguous\":\"Multiple units to confirm\",\"web.status.unknown\":\"Delivery outcome is unknown. Verify before retrying.\",\"web.status.waiting\":\"Waiting for the next check\",\"web.status.waiting_budget\":\"Waiting at least five minutes between sends to the same destination. Delivery will be retried after a later valid check.\",\"web.storage.eyebrow\":\"LOCAL ENCRYPTION\",\"web.storage.key_handling\":\"The runtime manages the master key. It cannot be entered, exported, or restored on this page.\",\"web.storage.ready\":\"Encrypted storage ready\",\"web.storage.title\":\"Storage security\",\"web.storage.troubleshooting\":\"For storage failures, check the host logs for security error codes. Keep keys out of public logs and screenshots.\",\"web.storage.unavailable\":\"Encrypted storage unavailable\",\"web.storage.unavailable_warning\":\"Encrypted storage is unavailable. Check the runtime before saving new credentials. Plaintext storage is disabled.\",\"web.unit.ambiguous\":\"Multiple units were found. Select one.\",\"web.unit.awaiting\":\"Pending\",\"web.unit.candidates_stale\":\"The query candidates expired. Query again. Confirmed unit records are kept.\",\"web.unit.changed\":\"The query unit changed. Confirm it again.\",\"web.unit.choices_expired\":\"The candidates expired. Query again before choosing a unit.\",\"web.unit.choose\":\"Select unit\",\"web.unit.confirm\":\"Confirm unit\",\"web.unit.confirm_no_threshold\":\"Switch to {unit}? No threshold is set yet.\",\"web.unit.confirm_observed\":\"Confirm the unit returned by the query.\",\"web.unit.confirm_threshold\":\"Switch to {unit} and compare against the threshold {threshold}?\",\"web.unit.confirm_title\":\"Confirm {unit} as the unit?\",\"web.unit.current\":\"Unit: {unit}\",\"web.unit.detect_on_account_save\":\"Save the account to detect the unit.\",\"web.unit.detect_on_query\":\"The unit is detected after a balance query.\",\"web.unit.detect_on_save\":\"Save settings to redetect the unit.\",\"web.unit.finish_credential_before_query\":\"Finish or cancel credential entry before querying again.\",\"web.unit.loading\":\"Working…\",\"web.unit.metric_changed\":\"Monitored metric changed from {previous} to {current}. Confirm the unit and thresholds again.\",\"web.unit.metric_edited\":\"The monitored metric changed to “{metric}”. Save, query again, and confirm the unit.\",\"web.unit.metric_or_unit_changed\":\"The monitored metric or unit changed. Confirm again.\",\"web.unit.no_choices\":\"No candidates are available. Query again before choosing a unit.\",\"web.unit.query\":\"Query for units again\",\"web.unit.query_changed\":\"Query settings changed. Confirm the unit and thresholds again.\",\"web.unit.query_edited\":\"Query settings changed. Save them to redetect the unit.\",\"web.unit.query_hint\":\"Queries this account’s balance endpoint for new candidates without sending an alert.\",\"web.unit.read\":\"Read unit status\",\"web.unit.recorded\":\"Unit recorded: \",\"web.unit.save_before_query\":\"Save settings to query the unit again.\",\"web.unit.title\":\"Alert unit\",\"web.unit.verified\":\"Unit verified.\",\"web.unit.verified_expired\":\"Unit verified. Query candidates expired, but the confirmed unit remains valid.\",\"web.validation.account_alert\":\"{account}: {message}\",\"web.validation.account_bounds\":\"The account timeout is capped at 120 seconds and the cache at 86400 seconds.\",\"web.validation.account_id\":\"Account IDs must be present and unique.\",\"web.validation.account_name\":\"Enter an account display name.\",\"web.validation.account_positive\":\"Account timeout and cache values must be positive.\",\"web.validation.alert_fields\":\"Invalid alert settings fields.\",\"web.validation.alert_prerequisites\":\"Before enabling alerts, enable the account, enter a threshold, and add at least one global alert destination.\",\"web.validation.decimal_length\":\"Use up to 30 integer digits and 18 decimal places, without exponent notation.\",\"web.validation.duplicate_umo\":\"Duplicate UMO. Combine the entries into one line.\",\"web.validation.finite_decimal\":\"Enter a finite decimal string without an exponent.\",\"web.validation.global_bounds\":\"Check the limits shown for global settings.\",\"web.validation.group_mentions\":\"Only numeric QQ group sessions support @QQ numbers. Remove the @ suffix from private and other sessions.\",\"web.validation.id_limit\":\"Up to {limit} QQ numbers are allowed.\",\"web.validation.interval_input\":\"Enter a whole number from 1 to 4320. The value is never adjusted automatically.\",\"web.validation.interval_range\":\"Check interval must be a whole number of minutes from 1 to 4320.\",\"web.validation.invalid_input\":\"Check the input.\",\"web.validation.invisible_chars\":\"Remove control and invisible characters.\",\"web.validation.json_object\":\"Enter a valid JSON object without credentials.\",\"web.validation.language\":\"Select a supported plugin language.\",\"web.validation.llm_fields\":\"Invalid AI message configuration.\",\"web.validation.llm_ids\":\"Model and persona IDs must be text up to 128 characters long.\",\"web.validation.llm_switch\":\"Invalid AI message toggle.\",\"web.validation.mentions_suffix\":\"After the UMO, separate @QQ numbers with spaces.\",\"web.validation.metric\":\"Choose a metric supported by this provider.\",\"web.validation.private_allowlist\":\"Use platform:userID for the private chat allowlist.\",\"web.validation.qq_id\":\"Use a positive QQ number of 1 to 20 ASCII digits. @all, nicknames, and CQ codes are unsupported.\",\"web.validation.query_parameters\":\"Enter valid query settings.\",\"web.validation.recovery_order\":\"Recovery threshold must be higher than the trigger threshold.\",\"web.validation.repeat_input\":\"Enter a whole number of minutes from 0 to 4320.\",\"web.validation.repeat_range\":\"Repeat interval must be a whole number of minutes from 0 to 4320. Use 0 to disable repeats.\",\"web.validation.target_fields\":\"Each destination needs a UMO and a mention list.\",\"web.validation.target_limit\":\"Up to 20 alert destinations are allowed.\",\"web.validation.target_line\":\"Line {line}: {message}\",\"web.validation.targets_text\":\"Enter alert destinations.\",\"web.validation.umo_format\":\"Enter the full UMO as platform-instance:message-type:session-ID.\",\"web.validation.umo_invisible\":\"UMO cannot contain control or invisible characters.\",\"web.validation.umo_type\":\"Message type must be FriendMessage, GroupMessage, or OtherMessage.\",\"web.validation.unit\":\"Enter a unit of up to 32 characters.\"}"),
+	metadata: {
+		display_name: "Yomihime’s Quota Link",
+		short_desc: "Monitor AI API balances and usage",
+		desc: "Query AI API balances, usage, and quotas. Manage accounts and configure quota alerts in one place."
+	},
+	config: { enable_admin_page: {
+		description: "Enable the plugin management page",
+		hint: "Manage accounts, credentials, query permissions, and timeouts from the plugin page. Legacy settings are kept until you confirm migration."
+	} }
+}, i = "zh-CN", a = [
+	"zh-CN",
+	"zh-TW",
+	"ja-JP",
+	"en-US"
+], o = {
+	"zh-CN": e.strings,
+	"zh-TW": t.strings,
+	"ja-JP": n.strings,
+	"en-US": r.strings
+};
+function s(e) {
+	return e === "auto" || a.some((t) => t === e);
+}
+function c(e, t) {
+	let n = a.find((t) => t === e);
+	if (n) return n;
+	if (typeof t != "string" || t.length > 32) return i;
+	let r;
+	try {
+		r = new Intl.Locale(t.trim().replaceAll("_", "-"));
+	} catch {
+		return i;
+	}
+	return r.language === "ja" ? "ja-JP" : r.language === "en" ? "en-US" : r.language === "zh" && (r.script === "Hant" || r.script !== "Hans" && [
+		"TW",
+		"HK",
+		"MO"
+	].includes(r.region)) ? "zh-TW" : i;
+}
+function l(t, n = i, r = {}) {
+	let a = Object.hasOwn(o, n) ? o[n] : o[c("auto", n)], s = Object.hasOwn(a, t) ? a[t] : void 0;
+	return (typeof s == "string" && s.trim() ? s : Object.hasOwn(e.strings, t) ? e.strings[t] : t).replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (e, t) => {
+		if (!Object.hasOwn(r, t)) return e;
+		let i = r[t];
+		return i instanceof u ? d(i, n) : String(i);
+	});
+}
+var u = class extends Error {
+	constructor(e, t) {
+		super(l(e, i, t)), this.id = e, this.args = t;
+	}
+};
+function d(e, t) {
+	return e instanceof u ? l(e.id, t, e.args) : l("web.validation.invalid_input", t);
+}
+//#endregion
 //#region node_modules/@vue/shared/dist/shared.esm-bundler.js
 // @__NO_SIDE_EFFECTS__
-function e(e) {
+function f(e) {
 	let t = /* @__PURE__ */ Object.create(null);
 	for (let n of e.split(",")) t[n] = 1;
 	return (e) => e in t;
 }
-var t = {}, n = [], r = () => {}, i = () => !1, a = (e) => e.charCodeAt(0) === 111 && e.charCodeAt(1) === 110 && (e.charCodeAt(2) > 122 || e.charCodeAt(2) < 97), o = (e) => e.startsWith("onUpdate:"), s = Object.assign, c = (e, t) => {
+var p = {}, m = [], h = () => {}, g = () => !1, _ = (e) => e.charCodeAt(0) === 111 && e.charCodeAt(1) === 110 && (e.charCodeAt(2) > 122 || e.charCodeAt(2) < 97), v = (e) => e.startsWith("onUpdate:"), y = Object.assign, b = (e, t) => {
 	let n = e.indexOf(t);
 	n > -1 && e.splice(n, 1);
-}, l = Object.prototype.hasOwnProperty, u = (e, t) => l.call(e, t), d = Array.isArray, f = (e) => x(e) === "[object Map]", p = (e) => x(e) === "[object Set]", m = (e) => x(e) === "[object Date]", h = (e) => typeof e == "function", g = (e) => typeof e == "string", _ = (e) => typeof e == "symbol", v = (e) => typeof e == "object" && !!e, y = (e) => (v(e) || h(e)) && h(e.then) && h(e.catch), b = Object.prototype.toString, x = (e) => b.call(e), S = (e) => x(e).slice(8, -1), C = (e) => x(e) === "[object Object]", w = (e) => g(e) && e !== "NaN" && e[0] !== "-" && "" + parseInt(e, 10) === e, T = /* @__PURE__ */ e(",key,ref,ref_for,ref_key,onVnodeBeforeMount,onVnodeMounted,onVnodeBeforeUpdate,onVnodeUpdated,onVnodeBeforeUnmount,onVnodeUnmounted"), E = (e) => {
+}, x = Object.prototype.hasOwnProperty, S = (e, t) => x.call(e, t), C = Array.isArray, w = (e) => te(e) === "[object Map]", T = (e) => te(e) === "[object Set]", E = (e) => te(e) === "[object Date]", D = (e) => typeof e == "function", O = (e) => typeof e == "string", k = (e) => typeof e == "symbol", A = (e) => typeof e == "object" && !!e, ee = (e) => (A(e) || D(e)) && D(e.then) && D(e.catch), j = Object.prototype.toString, te = (e) => j.call(e), ne = (e) => te(e).slice(8, -1), re = (e) => te(e) === "[object Object]", ie = (e) => O(e) && e !== "NaN" && e[0] !== "-" && "" + parseInt(e, 10) === e, ae = /* @__PURE__ */ f(",key,ref,ref_for,ref_key,onVnodeBeforeMount,onVnodeMounted,onVnodeBeforeUpdate,onVnodeUpdated,onVnodeBeforeUnmount,onVnodeUnmounted"), oe = (e) => {
 	let t = /* @__PURE__ */ Object.create(null);
 	return ((n) => t[n] || (t[n] = e(n)));
-}, D = /-\w/g, O = E((e) => e.replace(D, (e) => e.slice(1).toUpperCase())), ee = /\B([A-Z])/g, te = E((e) => e.replace(ee, "-$1").toLowerCase()), ne = E((e) => e.charAt(0).toUpperCase() + e.slice(1)), re = E((e) => e ? `on${ne(e)}` : ""), ie = (e, t) => !Object.is(e, t), ae = (e, ...t) => {
+}, se = /-\w/g, ce = oe((e) => e.replace(se, (e) => e.slice(1).toUpperCase())), le = /\B([A-Z])/g, ue = oe((e) => e.replace(le, "-$1").toLowerCase()), de = oe((e) => e.charAt(0).toUpperCase() + e.slice(1)), fe = oe((e) => e ? `on${de(e)}` : ""), pe = (e, t) => !Object.is(e, t), me = (e, ...t) => {
 	for (let n = 0; n < e.length; n++) e[n](...t);
-}, oe = (e, t, n, r = !1) => {
+}, he = (e, t, n, r = !1) => {
 	Object.defineProperty(e, t, {
 		configurable: !0,
 		enumerable: !1,
 		writable: r,
 		value: n
 	});
-}, se = (e) => {
+}, ge = (e) => {
 	let t = parseFloat(e);
 	return isNaN(t) ? e : t;
-}, ce = (e) => {
-	let t = g(e) ? Number(e) : NaN;
+}, _e = (e) => {
+	let t = O(e) ? Number(e) : NaN;
 	return isNaN(t) ? e : t;
-}, le, ue = () => le ||= typeof globalThis < "u" ? globalThis : typeof self < "u" ? self : typeof window < "u" ? window : typeof global < "u" ? global : {};
-function k(e) {
-	if (d(e)) {
+}, ve, ye = () => ve ||= typeof globalThis < "u" ? globalThis : typeof self < "u" ? self : typeof window < "u" ? window : typeof global < "u" ? global : {};
+function M(e) {
+	if (C(e)) {
 		let t = {};
 		for (let n = 0; n < e.length; n++) {
-			let r = e[n], i = g(r) ? me(r) : k(r);
+			let r = e[n], i = O(r) ? Ce(r) : M(r);
 			if (i) for (let e in i) t[e] = i[e];
 		}
 		return t;
 	}
-	if (g(e) || v(e)) return e;
+	if (O(e) || A(e)) return e;
 }
-var de = /;(?![^(]*\))/g, fe = /:([^]+)/, pe = /"(?:[^"\\]|\\[^])*"|'(?:[^'\\]|\\[^])*'|\\[^]|\/\*[^]*?\*\//g;
-function me(e) {
+var be = /;(?![^(]*\))/g, xe = /:([^]+)/, Se = /"(?:[^"\\]|\\[^])*"|'(?:[^'\\]|\\[^])*'|\\[^]|\/\*[^]*?\*\//g;
+function Ce(e) {
 	let t = {};
-	return e.replace(pe, (e) => e.startsWith("/*") ? "" : e).split(de).forEach((e) => {
+	return e.replace(Se, (e) => e.startsWith("/*") ? "" : e).split(be).forEach((e) => {
 		if (e) {
-			let n = e.split(fe);
+			let n = e.split(xe);
 			n.length > 1 && (t[n[0].trim()] = n[1].trim());
 		}
 	}), t;
 }
-function he(e) {
+function we(e) {
 	let t = "";
-	if (g(e)) t = e;
-	else if (d(e)) for (let n = 0; n < e.length; n++) {
-		let r = he(e[n]);
+	if (O(e)) t = e;
+	else if (C(e)) for (let n = 0; n < e.length; n++) {
+		let r = we(e[n]);
 		r && (t += r + " ");
 	}
-	else if (v(e)) for (let n in e) e[n] && (t += n + " ");
+	else if (A(e)) for (let n in e) e[n] && (t += n + " ");
 	return t.trim();
 }
-var ge = "itemscope,allowfullscreen,formnovalidate,ismap,nomodule,novalidate,readonly", _e = /* @__PURE__ */ e(ge);
-ge + "";
-function ve(e) {
+var Te = "itemscope,allowfullscreen,formnovalidate,ismap,nomodule,novalidate,readonly", Ee = /* @__PURE__ */ f(Te);
+Te + "";
+function De(e) {
 	return !!e || e === "";
 }
-function ye(e, t, n) {
+function Oe(e, t, n) {
 	if (e.length !== t.length) return !1;
 	let r = !0;
-	for (let i = 0; r && i < e.length; i++) r = Ce(e[i], t[i], n);
+	for (let i = 0; r && i < e.length; i++) r = Me(e[i], t[i], n);
 	return r;
 }
-function be(e, t, n) {
+function ke(e, t, n) {
 	if (e.size !== t.size) return !1;
 	let r = Array.from(t), i = new Uint8Array(r.length);
 	for (let t of e) {
 		let e = -1;
-		for (let a = 0; a < r.length; a++) if (!i[a] && Ce(t, r[a], n)) {
+		for (let a = 0; a < r.length; a++) if (!i[a] && Me(t, r[a], n)) {
 			e = a;
 			break;
 		}
@@ -83,17 +182,17 @@ function be(e, t, n) {
 	}
 	return !0;
 }
-function xe(e, t, n) {
-	let r = f(e), i = f(t);
-	if (r || i || (r = p(e), i = p(t), r || i)) return r && i ? be(e, t, n) : !1;
+function Ae(e, t, n) {
+	let r = w(e), i = w(t);
+	if (r || i || (r = T(e), i = T(t), r || i)) return r && i ? ke(e, t, n) : !1;
 	if (Object.keys(e).length !== Object.keys(t).length) return !1;
 	for (let r in e) {
 		let i = e.hasOwnProperty(r), a = t.hasOwnProperty(r);
-		if (i && !a || !i && a || !Ce(e[r], t[r], n)) return !1;
+		if (i && !a || !i && a || !Me(e[r], t[r], n)) return !1;
 	}
 	return String(e) === String(t);
 }
-function Se(e, t, n, r) {
+function je(e, t, n, r) {
 	n ||= [/* @__PURE__ */ new Map(), /* @__PURE__ */ new Map()];
 	let [i, a] = n;
 	if (i.has(e) || a.has(t)) return i.get(e) === t && a.get(t) === e;
@@ -101,16 +200,16 @@ function Se(e, t, n, r) {
 	let o = r(e, t, n);
 	return i.delete(e), a.delete(t), o;
 }
-function Ce(e, t, n) {
+function Me(e, t, n) {
 	if (e === t) return !0;
-	let r = m(e), i = m(t);
-	return r || i ? r && i ? e.getTime() === t.getTime() : !1 : (r = _(e), i = _(t), r || i ? e === t : (r = d(e), i = d(t), r || i ? r && i ? Se(e, t, n, ye) : !1 : (r = v(e), i = v(t), r || i ? !r || !i ? !1 : Se(e, t, n, xe) : String(e) === String(t))));
+	let r = E(e), i = E(t);
+	return r || i ? r && i ? e.getTime() === t.getTime() : !1 : (r = k(e), i = k(t), r || i ? e === t : (r = C(e), i = C(t), r || i ? r && i ? je(e, t, n, Oe) : !1 : (r = A(e), i = A(t), r || i ? !r || !i ? !1 : je(e, t, n, Ae) : String(e) === String(t))));
 }
 //#endregion
 //#region node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js
-var A, we = class {
+var Ne, Pe = class {
 	constructor(e = !1) {
-		this.detached = e, this._active = !0, this._on = 0, this.effects = [], this.cleanups = [], this._isPaused = !1, this._warnOnRun = !0, this.__v_skip = !0, !e && A && (A.active ? (this.parent = A, this.index = (A.scopes || (A.scopes = [])).push(this) - 1) : (this._active = !1, this._warnOnRun = !1));
+		this.detached = e, this._active = !0, this._on = 0, this.effects = [], this.cleanups = [], this._isPaused = !1, this._warnOnRun = !0, this.__v_skip = !0, !e && Ne && (Ne.active ? (this.parent = Ne, this.index = (Ne.scopes || (Ne.scopes = [])).push(this) - 1) : (this._active = !1, this._warnOnRun = !1));
 	}
 	get active() {
 		return this._active;
@@ -140,22 +239,22 @@ var A, we = class {
 	}
 	run(e) {
 		if (this._active) {
-			let t = A;
+			let t = Ne;
 			try {
-				return A = this, e();
+				return Ne = this, e();
 			} finally {
-				A = t;
+				Ne = t;
 			}
 		}
 	}
 	on() {
-		++this._on === 1 && (this.prevScope = A, A = this);
+		++this._on === 1 && (this.prevScope = Ne, Ne = this);
 	}
 	off() {
 		if (this._on > 0 && --this._on === 0) {
-			if (A === this) A = this.prevScope;
+			if (Ne === this) Ne = this.prevScope;
 			else {
-				let e = A;
+				let e = Ne;
 				for (; e;) {
 					if (e.prevScope === this) {
 						e.prevScope = this.prevScope;
@@ -186,72 +285,72 @@ var A, we = class {
 		}
 	}
 };
-function Te() {
-	return A;
+function Fe() {
+	return Ne;
 }
-var j, Ee = /* @__PURE__ */ new WeakSet(), De = class {
+var N, Ie = /* @__PURE__ */ new WeakSet(), Le = class {
 	constructor(e) {
-		this.fn = e, this.deps = void 0, this.depsTail = void 0, this.flags = 5, this.next = void 0, this.cleanup = void 0, this.scheduler = void 0, A && (A.active ? A.effects.push(this) : this.flags &= -2);
+		this.fn = e, this.deps = void 0, this.depsTail = void 0, this.flags = 5, this.next = void 0, this.cleanup = void 0, this.scheduler = void 0, Ne && (Ne.active ? Ne.effects.push(this) : this.flags &= -2);
 	}
 	pause() {
 		this.flags |= 64;
 	}
 	resume() {
-		this.flags & 64 && (this.flags &= -65, Ee.has(this) && (Ee.delete(this), this.trigger()));
+		this.flags & 64 && (this.flags &= -65, Ie.has(this) && (Ie.delete(this), this.trigger()));
 	}
 	notify() {
-		this.flags & 2 && !(this.flags & 32) || this.flags & 8 || je(this);
+		this.flags & 2 && !(this.flags & 32) || this.flags & 8 || Ve(this);
 	}
 	run() {
 		if (!(this.flags & 1)) return this.fn();
-		this.flags |= 2, We(this), Pe(this);
-		let e = j, t = Be;
-		j = this, Be = !0;
+		this.flags |= 2, et(this), We(this);
+		let e = N, t = Xe;
+		N = this, Xe = !0;
 		try {
 			return this.fn();
 		} finally {
-			Fe(this), j = e, Be = t, this.flags &= -3;
+			Ge(this), N = e, Xe = t, this.flags &= -3;
 		}
 	}
 	stop() {
 		if (this.flags & 1) {
-			for (let e = this.deps; e; e = e.nextDep) Re(e);
-			this.deps = this.depsTail = void 0, We(this), this.onStop && this.onStop(), this.flags &= -2;
+			for (let e = this.deps; e; e = e.nextDep) Je(e);
+			this.deps = this.depsTail = void 0, et(this), this.onStop && this.onStop(), this.flags &= -2;
 		}
 	}
 	trigger() {
-		this.flags & 64 ? Ee.add(this) : this.scheduler ? this.scheduler() : this.runIfDirty();
+		this.flags & 64 ? Ie.add(this) : this.scheduler ? this.scheduler() : this.runIfDirty();
 	}
 	runIfDirty() {
-		Ie(this) && this.run();
+		Ke(this) && this.run();
 	}
 	get dirty() {
-		return Ie(this);
+		return Ke(this);
 	}
-}, Oe = 0, ke, Ae;
-function je(e, t = !1) {
+}, Re = 0, ze, Be;
+function Ve(e, t = !1) {
 	if (e.flags |= 8, t) {
-		e.next = Ae, Ae = e;
+		e.next = Be, Be = e;
 		return;
 	}
-	e.next = ke, ke = e;
+	e.next = ze, ze = e;
 }
-function Me() {
-	Oe++;
+function He() {
+	Re++;
 }
-function Ne() {
-	if (--Oe > 0) return;
-	if (Ae) {
-		let e = Ae;
-		for (Ae = void 0; e;) {
+function Ue() {
+	if (--Re > 0) return;
+	if (Be) {
+		let e = Be;
+		for (Be = void 0; e;) {
 			let t = e.next;
 			e.next = void 0, e.flags &= -9, e = t;
 		}
 	}
 	let e;
-	for (; ke;) {
-		let t = ke;
-		for (ke = void 0; t;) {
+	for (; ze;) {
+		let t = ze;
+		for (ze = void 0; t;) {
 			let n = t.next;
 			if (t.next = void 0, t.flags &= -9, t.flags & 1) try {
 				t.trigger();
@@ -263,296 +362,296 @@ function Ne() {
 	}
 	if (e) throw e;
 }
-function Pe(e) {
+function We(e) {
 	for (let t = e.deps; t; t = t.nextDep) t.version = -1, t.prevActiveLink = t.dep.activeLink, t.dep.activeLink = t;
 }
-function Fe(e) {
+function Ge(e) {
 	let t, n = e.depsTail, r = n;
 	for (; r;) {
 		let e = r.prevDep;
-		r.version === -1 ? (r === n && (n = e), Re(r), ze(r)) : t = r, r.dep.activeLink = r.prevActiveLink, r.prevActiveLink = void 0, r = e;
+		r.version === -1 ? (r === n && (n = e), Je(r), Ye(r)) : t = r, r.dep.activeLink = r.prevActiveLink, r.prevActiveLink = void 0, r = e;
 	}
 	e.deps = t, e.depsTail = n;
 }
-function Ie(e) {
-	for (let t = e.deps; t; t = t.nextDep) if (t.dep.version !== t.version || t.dep.computed && (Le(t.dep.computed) || t.dep.version !== t.version)) return !0;
+function Ke(e) {
+	for (let t = e.deps; t; t = t.nextDep) if (t.dep.version !== t.version || t.dep.computed && (qe(t.dep.computed) || t.dep.version !== t.version)) return !0;
 	return !!e._dirty;
 }
-function Le(e) {
-	if (e.flags & 4 && !(e.flags & 16) || (e.flags &= -17, e.globalVersion === Ge) || (e.globalVersion = Ge, !e.isSSR && e.flags & 128 && (!e.deps && !e._dirty || !Ie(e)))) return;
+function qe(e) {
+	if (e.flags & 4 && !(e.flags & 16) || (e.flags &= -17, e.globalVersion === tt) || (e.globalVersion = tt, !e.isSSR && e.flags & 128 && (!e.deps && !e._dirty || !Ke(e)))) return;
 	e.flags |= 2;
-	let t = e.dep, n = j, r = Be;
-	j = e, Be = !0;
+	let t = e.dep, n = N, r = Xe;
+	N = e, Xe = !0;
 	try {
-		Pe(e);
+		We(e);
 		let n = e.fn(e._value);
-		(t.version === 0 || ie(n, e._value)) && (e.flags |= 128, e._value = n, t.version++);
+		(t.version === 0 || pe(n, e._value)) && (e.flags |= 128, e._value = n, t.version++);
 	} catch (e) {
 		throw t.version++, e;
 	} finally {
-		j = n, Be = r, Fe(e), e.flags &= -3;
+		N = n, Xe = r, Ge(e), e.flags &= -3;
 	}
 }
-function Re(e, t = !1) {
+function Je(e, t = !1) {
 	let { dep: n, prevSub: r, nextSub: i } = e;
 	if (r && (r.nextSub = i, e.prevSub = void 0), i && (i.prevSub = r, e.nextSub = void 0), n.subs === e && (n.subs = r, !r && n.computed)) {
 		n.computed.flags &= -5;
-		for (let e = n.computed.deps; e; e = e.nextDep) Re(e, !0);
+		for (let e = n.computed.deps; e; e = e.nextDep) Je(e, !0);
 	}
 	!t && !--n.sc && n.map && n.map.delete(n.key);
 }
-function ze(e) {
+function Ye(e) {
 	let { prevDep: t, nextDep: n } = e;
 	t && (t.nextDep = n, e.prevDep = void 0), n && (n.prevDep = t, e.nextDep = void 0);
 }
-var Be = !0, Ve = [];
-function He() {
-	Ve.push(Be), Be = !1;
+var Xe = !0, Ze = [];
+function Qe() {
+	Ze.push(Xe), Xe = !1;
 }
-function Ue() {
-	let e = Ve.pop();
-	Be = e === void 0 || e;
+function $e() {
+	let e = Ze.pop();
+	Xe = e === void 0 || e;
 }
-function We(e) {
+function et(e) {
 	let { cleanup: t } = e;
 	if (e.cleanup = void 0, t) {
-		let e = j;
-		j = void 0;
+		let e = N;
+		N = void 0;
 		try {
 			t();
 		} finally {
-			j = e;
+			N = e;
 		}
 	}
 }
-var Ge = 0, Ke = class {
+var tt = 0, nt = class {
 	constructor(e, t) {
 		this.sub = e, this.dep = t, this.version = t.version, this.nextDep = this.prevDep = this.nextSub = this.prevSub = this.prevActiveLink = void 0;
 	}
-}, qe = class {
+}, rt = class {
 	constructor(e) {
 		this.computed = e, this.version = 0, this.activeLink = void 0, this.subs = void 0, this.map = void 0, this.key = void 0, this.sc = 0, this.__v_skip = !0;
 	}
 	track(e) {
-		if (!j || !Be || j === this.computed) return;
+		if (!N || !Xe || N === this.computed) return;
 		let t = this.activeLink;
-		if (t === void 0 || t.sub !== j) t = this.activeLink = new Ke(j, this), j.deps ? (t.prevDep = j.depsTail, j.depsTail.nextDep = t, j.depsTail = t) : j.deps = j.depsTail = t, Je(t);
+		if (t === void 0 || t.sub !== N) t = this.activeLink = new nt(N, this), N.deps ? (t.prevDep = N.depsTail, N.depsTail.nextDep = t, N.depsTail = t) : N.deps = N.depsTail = t, it(t);
 		else if (t.version === -1 && (t.version = this.version, t.nextDep)) {
 			let e = t.nextDep;
-			e.prevDep = t.prevDep, t.prevDep && (t.prevDep.nextDep = e), t.prevDep = j.depsTail, t.nextDep = void 0, j.depsTail.nextDep = t, j.depsTail = t, j.deps === t && (j.deps = e);
+			e.prevDep = t.prevDep, t.prevDep && (t.prevDep.nextDep = e), t.prevDep = N.depsTail, t.nextDep = void 0, N.depsTail.nextDep = t, N.depsTail = t, N.deps === t && (N.deps = e);
 		}
 		return t;
 	}
 	trigger(e) {
-		this.version++, Ge++, this.notify(e);
+		this.version++, tt++, this.notify(e);
 	}
 	notify(e) {
-		Me();
+		He();
 		try {
 			for (let e = this.subs; e; e = e.prevSub) e.sub.notify() && e.sub.dep.notify();
 		} finally {
-			Ne();
+			Ue();
 		}
 	}
 };
-function Je(e) {
+function it(e) {
 	if (e.dep.sc++, e.sub.flags & 4) {
 		let t = e.dep.computed;
 		if (t && !e.dep.subs) {
 			t.flags |= 20;
-			for (let e = t.deps; e; e = e.nextDep) Je(e);
+			for (let e = t.deps; e; e = e.nextDep) it(e);
 		}
 		let n = e.dep.subs;
 		n !== e && (e.prevSub = n, n && (n.nextSub = e)), e.dep.subs = e;
 	}
 }
-var Ye = /* @__PURE__ */ new WeakMap(), Xe = /* @__PURE__ */ Symbol(""), Ze = /* @__PURE__ */ Symbol(""), Qe = /* @__PURE__ */ Symbol("");
-function $e(e, t, n) {
-	if (Be && j) {
-		let t = Ye.get(e);
-		t || Ye.set(e, t = /* @__PURE__ */ new Map());
+var at = /* @__PURE__ */ new WeakMap(), ot = /* @__PURE__ */ Symbol(""), st = /* @__PURE__ */ Symbol(""), ct = /* @__PURE__ */ Symbol("");
+function lt(e, t, n) {
+	if (Xe && N) {
+		let t = at.get(e);
+		t || at.set(e, t = /* @__PURE__ */ new Map());
 		let r = t.get(n);
-		r || (t.set(n, r = new qe()), r.map = t, r.key = n), r.track();
+		r || (t.set(n, r = new rt()), r.map = t, r.key = n), r.track();
 	}
 }
-function et(e, t, n, r, i, a) {
-	let o = Ye.get(e);
+function ut(e, t, n, r, i, a) {
+	let o = at.get(e);
 	if (!o) {
-		Ge++;
+		tt++;
 		return;
 	}
 	let s = (e) => {
 		e && e.trigger();
 	};
-	if (Me(), t === "clear") o.forEach(s);
+	if (He(), t === "clear") o.forEach(s);
 	else {
-		let i = d(e), a = i && w(n);
+		let i = C(e), a = i && ie(n);
 		if (i && n === "length") {
 			let e = Number(r);
 			o.forEach((t, n) => {
-				(n === "length" || n === Qe || !_(n) && n >= e) && s(t);
+				(n === "length" || n === ct || !k(n) && n >= e) && s(t);
 			});
-		} else switch ((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(Qe)), t) {
+		} else switch ((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(ct)), t) {
 			case "add":
-				i ? a && s(o.get("length")) : (s(o.get(Xe)), f(e) && s(o.get(Ze)));
+				i ? a && s(o.get("length")) : (s(o.get(ot)), w(e) && s(o.get(st)));
 				break;
 			case "delete":
-				i || (s(o.get(Xe)), f(e) && s(o.get(Ze)));
+				i || (s(o.get(ot)), w(e) && s(o.get(st)));
 				break;
-			case "set": f(e) && s(o.get(Xe));
+			case "set": w(e) && s(o.get(ot));
 		}
 	}
-	Ne();
+	Ue();
 }
-function tt(e, t) {
-	let n = Ye.get(e);
+function dt(e, t) {
+	let n = at.get(e);
 	return n && n.get(t);
 }
-function nt(e) {
-	let t = /* @__PURE__ */ M(e);
-	return t === e || ($e(t, "iterate", Qe), /* @__PURE__ */ Vt(e)) ? t : /* @__PURE__ */ Bt(e) ? /* @__PURE__ */ zt(e) ? t.map((e) => Gt(Wt(e))) : t.map(Gt) : t.map(Wt);
+function ft(e) {
+	let t = /* @__PURE__ */ P(e);
+	return t === e || (lt(t, "iterate", ct), /* @__PURE__ */ Zt(e)) ? t : /* @__PURE__ */ Xt(e) ? /* @__PURE__ */ Yt(e) ? t.map((e) => tn(en(e))) : t.map(tn) : t.map(en);
 }
-function rt(e) {
-	return $e(e = /* @__PURE__ */ M(e), "iterate", Qe), e;
+function pt(e) {
+	return lt(e = /* @__PURE__ */ P(e), "iterate", ct), e;
 }
-function it(e, t) {
-	return /* @__PURE__ */ Bt(e) ? Gt(/* @__PURE__ */ zt(e) ? Wt(t) : t) : Wt(t);
+function mt(e, t) {
+	return /* @__PURE__ */ Xt(e) ? tn(/* @__PURE__ */ Yt(e) ? en(t) : t) : en(t);
 }
-var at = {
+var ht = {
 	__proto__: null,
 	[Symbol.iterator]() {
-		return ot(this, Symbol.iterator, (e) => it(this, e));
+		return gt(this, Symbol.iterator, (e) => mt(this, e));
 	},
 	concat(...e) {
-		return nt(this).concat(...e.map((e) => d(e) ? nt(e) : e));
+		return ft(this).concat(...e.map((e) => C(e) ? ft(e) : e));
 	},
 	entries() {
-		return ot(this, "entries", (e) => (e[1] = it(this, e[1]), e));
+		return gt(this, "entries", (e) => (e[1] = mt(this, e[1]), e));
 	},
 	every(e, t) {
-		return ct(this, "every", e, t, void 0, arguments);
+		return vt(this, "every", e, t, void 0, arguments);
 	},
 	filter(e, t) {
-		return ct(this, "filter", e, t, (e) => e.map((e) => it(this, e)), arguments);
+		return vt(this, "filter", e, t, (e) => e.map((e) => mt(this, e)), arguments);
 	},
 	find(e, t) {
-		return ct(this, "find", e, t, (e) => it(this, e), arguments);
+		return vt(this, "find", e, t, (e) => mt(this, e), arguments);
 	},
 	findIndex(e, t) {
-		return ct(this, "findIndex", e, t, void 0, arguments);
+		return vt(this, "findIndex", e, t, void 0, arguments);
 	},
 	findLast(e, t) {
-		return ct(this, "findLast", e, t, (e) => it(this, e), arguments);
+		return vt(this, "findLast", e, t, (e) => mt(this, e), arguments);
 	},
 	findLastIndex(e, t) {
-		return ct(this, "findLastIndex", e, t, void 0, arguments);
+		return vt(this, "findLastIndex", e, t, void 0, arguments);
 	},
 	forEach(e, t) {
-		return ct(this, "forEach", e, t, void 0, arguments);
+		return vt(this, "forEach", e, t, void 0, arguments);
 	},
 	includes(...e) {
-		return ut(this, "includes", e);
+		return bt(this, "includes", e);
 	},
 	indexOf(...e) {
-		return ut(this, "indexOf", e);
+		return bt(this, "indexOf", e);
 	},
 	join(e) {
-		return nt(this).join(e);
+		return ft(this).join(e);
 	},
 	lastIndexOf(...e) {
-		return ut(this, "lastIndexOf", e);
+		return bt(this, "lastIndexOf", e);
 	},
 	map(e, t) {
-		return ct(this, "map", e, t, void 0, arguments);
+		return vt(this, "map", e, t, void 0, arguments);
 	},
 	pop() {
-		return dt(this, "pop");
+		return xt(this, "pop");
 	},
 	push(...e) {
-		return dt(this, "push", e);
+		return xt(this, "push", e);
 	},
 	reduce(e, ...t) {
-		return lt(this, "reduce", e, t);
+		return yt(this, "reduce", e, t);
 	},
 	reduceRight(e, ...t) {
-		return lt(this, "reduceRight", e, t);
+		return yt(this, "reduceRight", e, t);
 	},
 	shift() {
-		return dt(this, "shift");
+		return xt(this, "shift");
 	},
 	some(e, t) {
-		return ct(this, "some", e, t, void 0, arguments);
+		return vt(this, "some", e, t, void 0, arguments);
 	},
 	splice(...e) {
-		return dt(this, "splice", e);
+		return xt(this, "splice", e);
 	},
 	toReversed() {
-		return nt(this).toReversed();
+		return ft(this).toReversed();
 	},
 	toSorted(e) {
-		return nt(this).toSorted(e);
+		return ft(this).toSorted(e);
 	},
 	toSpliced(...e) {
-		return nt(this).toSpliced(...e);
+		return ft(this).toSpliced(...e);
 	},
 	unshift(...e) {
-		return dt(this, "unshift", e);
+		return xt(this, "unshift", e);
 	},
 	values() {
-		return ot(this, "values", (e) => it(this, e));
+		return gt(this, "values", (e) => mt(this, e));
 	}
 };
-function ot(e, t, n) {
-	let r = rt(e), i = r[t]();
-	return r !== e && !/* @__PURE__ */ Vt(e) && (i._next = i.next, i.next = () => {
+function gt(e, t, n) {
+	let r = pt(e), i = r[t]();
+	return r !== e && !/* @__PURE__ */ Zt(e) && (i._next = i.next, i.next = () => {
 		let e = i._next();
 		return e.done || (e.value = n(e.value)), e;
 	}), i;
 }
-var st = Array.prototype;
-function ct(e, t, n, r, i, a) {
-	let o = rt(e), s = o !== e && !/* @__PURE__ */ Vt(e), c = o[t];
-	if (c !== st[t]) {
+var _t = Array.prototype;
+function vt(e, t, n, r, i, a) {
+	let o = pt(e), s = o !== e && !/* @__PURE__ */ Zt(e), c = o[t];
+	if (c !== _t[t]) {
 		let t = c.apply(e, a);
-		return s ? Wt(t) : t;
+		return s ? en(t) : t;
 	}
 	let l = n;
 	o !== e && (s ? l = function(t, r) {
-		return n.call(this, it(e, t), r, e);
+		return n.call(this, mt(e, t), r, e);
 	} : n.length > 2 && (l = function(t, r) {
 		return n.call(this, t, r, e);
 	}));
 	let u = c.call(o, l, r);
 	return s && i ? i(u) : u;
 }
-function lt(e, t, n, r) {
-	let i = rt(e), a = i !== e && !/* @__PURE__ */ Vt(e), o = n, s = !1;
+function yt(e, t, n, r) {
+	let i = pt(e), a = i !== e && !/* @__PURE__ */ Zt(e), o = n, s = !1;
 	i !== e && (a ? (s = r.length === 0, o = function(t, r, i) {
-		return s && (s = !1, t = it(e, t)), n.call(this, t, it(e, r), i, e);
+		return s && (s = !1, t = mt(e, t)), n.call(this, t, mt(e, r), i, e);
 	}) : n.length > 3 && (o = function(t, r, i) {
 		return n.call(this, t, r, i, e);
 	}));
 	let c = i[t](o, ...r);
-	return s ? it(e, c) : c;
+	return s ? mt(e, c) : c;
 }
-function ut(e, t, n) {
-	let r = /* @__PURE__ */ M(e);
-	$e(r, "iterate", Qe);
+function bt(e, t, n) {
+	let r = /* @__PURE__ */ P(e);
+	lt(r, "iterate", ct);
 	let i = r[t](...n);
-	return (i === -1 || i === !1) && /* @__PURE__ */ Ht(n[0]) ? (n[0] = /* @__PURE__ */ M(n[0]), r[t](...n)) : i;
+	return (i === -1 || i === !1) && /* @__PURE__ */ Qt(n[0]) ? (n[0] = /* @__PURE__ */ P(n[0]), r[t](...n)) : i;
 }
-function dt(e, t, n = []) {
-	He(), Me();
-	let r = (/* @__PURE__ */ M(e))[t].apply(e, n);
-	return Ne(), Ue(), r;
+function xt(e, t, n = []) {
+	Qe(), He();
+	let r = (/* @__PURE__ */ P(e))[t].apply(e, n);
+	return Ue(), $e(), r;
 }
-var ft = /* @__PURE__ */ e("__proto__,__v_isRef,__isVue"), pt = new Set(/* @__PURE__ */ Object.getOwnPropertyNames(Symbol).filter((e) => e !== "arguments" && e !== "caller").map((e) => Symbol[e]).filter(_));
-function mt(e) {
-	_(e) || (e = String(e));
-	let t = /* @__PURE__ */ M(this);
-	return $e(t, "has", e), t.hasOwnProperty(e);
+var St = /* @__PURE__ */ f("__proto__,__v_isRef,__isVue"), Ct = new Set(/* @__PURE__ */ Object.getOwnPropertyNames(Symbol).filter((e) => e !== "arguments" && e !== "caller").map((e) => Symbol[e]).filter(k));
+function wt(e) {
+	k(e) || (e = String(e));
+	let t = /* @__PURE__ */ P(this);
+	return lt(t, "has", e), t.hasOwnProperty(e);
 }
-var ht = class {
+var Tt = class {
 	constructor(e = !1, t = !1) {
 		this._isReadonly = e, this._isShallow = t;
 	}
@@ -562,46 +661,46 @@ var ht = class {
 		if (t === "__v_isReactive") return !r;
 		if (t === "__v_isReadonly") return r;
 		if (t === "__v_isShallow") return i;
-		if (t === "__v_raw") return n === (r ? i ? Nt : Mt : i ? jt : At).get(e) || Object.getPrototypeOf(e) === Object.getPrototypeOf(n) ? e : void 0;
-		let a = d(e);
+		if (t === "__v_raw") return n === (r ? i ? Ut : Ht : i ? Vt : Bt).get(e) || Object.getPrototypeOf(e) === Object.getPrototypeOf(n) ? e : void 0;
+		let a = C(e);
 		if (!r) {
 			let e;
-			if (a && (e = at[t])) return e;
-			if (t === "hasOwnProperty") return mt;
+			if (a && (e = ht[t])) return e;
+			if (t === "hasOwnProperty") return wt;
 		}
-		let o = Reflect.get(e, t, /* @__PURE__ */ Kt(e) ? e : n);
-		if ((_(t) ? pt.has(t) : ft(t)) || (r || $e(e, "get", t), i)) return o;
-		if (/* @__PURE__ */ Kt(o)) {
-			let e = a && w(t) ? o : o.value;
-			return r && v(e) ? /* @__PURE__ */ Lt(e) : e;
+		let o = Reflect.get(e, t, /* @__PURE__ */ nn(e) ? e : n);
+		if ((k(t) ? Ct.has(t) : St(t)) || (r || lt(e, "get", t), i)) return o;
+		if (/* @__PURE__ */ nn(o)) {
+			let e = a && ie(t) ? o : o.value;
+			return r && A(e) ? /* @__PURE__ */ qt(e) : e;
 		}
-		return v(o) ? r ? /* @__PURE__ */ Lt(o) : /* @__PURE__ */ Ft(o) : o;
+		return A(o) ? r ? /* @__PURE__ */ qt(o) : /* @__PURE__ */ Gt(o) : o;
 	}
-}, gt = class extends ht {
+}, Et = class extends Tt {
 	constructor(e = !1) {
 		super(!1, e);
 	}
 	set(e, t, n, r) {
-		let i = e[t], a = d(e) && w(t);
+		let i = e[t], a = C(e) && ie(t);
 		if (!this._isShallow) {
-			let e = /* @__PURE__ */ Bt(i);
-			if (!/* @__PURE__ */ Vt(n) && !/* @__PURE__ */ Bt(n) && (i = /* @__PURE__ */ M(i), n = /* @__PURE__ */ M(n)), !a && /* @__PURE__ */ Kt(i) && !/* @__PURE__ */ Kt(n)) return e || (i.value = n), !0;
+			let e = /* @__PURE__ */ Xt(i);
+			if (!/* @__PURE__ */ Zt(n) && !/* @__PURE__ */ Xt(n) && (i = /* @__PURE__ */ P(i), n = /* @__PURE__ */ P(n)), !a && /* @__PURE__ */ nn(i) && !/* @__PURE__ */ nn(n)) return e || (i.value = n), !0;
 		}
-		let o = a ? Number(t) < e.length : u(e, t), s = Reflect.set(e, t, n, /* @__PURE__ */ Kt(e) ? e : r);
-		return e === /* @__PURE__ */ M(r) && s && (o ? ie(n, i) && et(e, "set", t, n, i) : et(e, "add", t, n)), s;
+		let o = a ? Number(t) < e.length : S(e, t), s = Reflect.set(e, t, n, /* @__PURE__ */ nn(e) ? e : r);
+		return e === /* @__PURE__ */ P(r) && s && (o ? pe(n, i) && ut(e, "set", t, n, i) : ut(e, "add", t, n)), s;
 	}
 	deleteProperty(e, t) {
-		let n = u(e, t), r = e[t], i = Reflect.deleteProperty(e, t);
-		return i && n && et(e, "delete", t, void 0, r), i;
+		let n = S(e, t), r = e[t], i = Reflect.deleteProperty(e, t);
+		return i && n && ut(e, "delete", t, void 0, r), i;
 	}
 	has(e, t) {
 		let n = Reflect.has(e, t);
-		return (!_(t) || !pt.has(t)) && $e(e, "has", t), n;
+		return (!k(t) || !Ct.has(t)) && lt(e, "has", t), n;
 	}
 	ownKeys(e) {
-		return $e(e, "iterate", d(e) ? "length" : Xe), Reflect.ownKeys(e);
+		return lt(e, "iterate", C(e) ? "length" : ot), Reflect.ownKeys(e);
 	}
-}, _t = class extends ht {
+}, Dt = class extends Tt {
 	constructor(e = !1) {
 		super(!0, e);
 	}
@@ -611,76 +710,76 @@ var ht = class {
 	deleteProperty(e, t) {
 		return !0;
 	}
-}, vt = /* @__PURE__ */ new gt(), yt = /* @__PURE__ */ new _t(), bt = /* @__PURE__ */ new gt(!0), xt = (e) => e, St = (e) => Reflect.getPrototypeOf(e);
-function Ct(e, t, n) {
+}, Ot = /* @__PURE__ */ new Et(), kt = /* @__PURE__ */ new Dt(), At = /* @__PURE__ */ new Et(!0), jt = (e) => e, Mt = (e) => Reflect.getPrototypeOf(e);
+function Nt(e, t, n) {
 	return function(...r) {
-		let i = this.__v_raw, a = /* @__PURE__ */ M(i), o = f(a), c = e === "entries" || e === Symbol.iterator && o, l = e === "keys" && o, u = i[e](...r), d = n ? xt : t ? Gt : Wt;
-		return !t && $e(a, "iterate", l ? Ze : Xe), s(Object.create(u), { next() {
-			let { value: e, done: t } = u.next();
+		let i = this.__v_raw, a = /* @__PURE__ */ P(i), o = w(a), s = e === "entries" || e === Symbol.iterator && o, c = e === "keys" && o, l = i[e](...r), u = n ? jt : t ? tn : en;
+		return !t && lt(a, "iterate", c ? st : ot), y(Object.create(l), { next() {
+			let { value: e, done: t } = l.next();
 			return t ? {
 				value: e,
 				done: t
 			} : {
-				value: c ? [d(e[0]), d(e[1])] : d(e),
+				value: s ? [u(e[0]), u(e[1])] : u(e),
 				done: t
 			};
 		} });
 	};
 }
-function wt(e) {
+function Pt(e) {
 	return function(...t) {
 		return e === "delete" ? !1 : e === "clear" ? void 0 : this;
 	};
 }
-function Tt(e, t) {
+function Ft(e, t) {
 	let n = {
 		get(n) {
-			let r = this.__v_raw, i = /* @__PURE__ */ M(r), a = /* @__PURE__ */ M(n);
-			e || (ie(n, a) && $e(i, "get", n), $e(i, "get", a));
-			let { has: o } = St(i), s = t ? xt : e ? Gt : Wt;
+			let r = this.__v_raw, i = /* @__PURE__ */ P(r), a = /* @__PURE__ */ P(n);
+			e || (pe(n, a) && lt(i, "get", n), lt(i, "get", a));
+			let { has: o } = Mt(i), s = t ? jt : e ? tn : en;
 			if (o.call(i, n)) return s(r.get(n));
 			if (o.call(i, a)) return s(r.get(a));
 			r !== i && r.get(n);
 		},
 		get size() {
 			let t = this.__v_raw;
-			return !e && $e(/* @__PURE__ */ M(t), "iterate", Xe), t.size;
+			return !e && lt(/* @__PURE__ */ P(t), "iterate", ot), t.size;
 		},
 		has(t) {
-			let n = this.__v_raw, r = /* @__PURE__ */ M(n), i = /* @__PURE__ */ M(t);
-			return e || (ie(t, i) && $e(r, "has", t), $e(r, "has", i)), t === i ? n.has(t) : n.has(t) || n.has(i);
+			let n = this.__v_raw, r = /* @__PURE__ */ P(n), i = /* @__PURE__ */ P(t);
+			return e || (pe(t, i) && lt(r, "has", t), lt(r, "has", i)), t === i ? n.has(t) : n.has(t) || n.has(i);
 		},
 		forEach(n, r) {
-			let i = this, a = i.__v_raw, o = /* @__PURE__ */ M(a), s = t ? xt : e ? Gt : Wt;
-			return !e && $e(o, "iterate", Xe), a.forEach((e, t) => n.call(r, s(e), s(t), i));
+			let i = this, a = i.__v_raw, o = /* @__PURE__ */ P(a), s = t ? jt : e ? tn : en;
+			return !e && lt(o, "iterate", ot), a.forEach((e, t) => n.call(r, s(e), s(t), i));
 		}
 	};
-	return s(n, e ? {
-		add: wt("add"),
-		set: wt("set"),
-		delete: wt("delete"),
-		clear: wt("clear")
+	return y(n, e ? {
+		add: Pt("add"),
+		set: Pt("set"),
+		delete: Pt("delete"),
+		clear: Pt("clear")
 	} : {
 		add(e) {
-			let n = /* @__PURE__ */ M(this), r = St(n), i = /* @__PURE__ */ M(e), a = !t && !/* @__PURE__ */ Vt(e) && !/* @__PURE__ */ Bt(e) ? i : e;
-			return r.has.call(n, a) || ie(e, a) && r.has.call(n, e) || ie(i, a) && r.has.call(n, i) || (n.add(a), et(n, "add", a, a)), this;
+			let n = /* @__PURE__ */ P(this), r = Mt(n), i = /* @__PURE__ */ P(e), a = !t && !/* @__PURE__ */ Zt(e) && !/* @__PURE__ */ Xt(e) ? i : e;
+			return r.has.call(n, a) || pe(e, a) && r.has.call(n, e) || pe(i, a) && r.has.call(n, i) || (n.add(a), ut(n, "add", a, a)), this;
 		},
 		set(e, n) {
-			!t && !/* @__PURE__ */ Vt(n) && !/* @__PURE__ */ Bt(n) && (n = /* @__PURE__ */ M(n));
-			let r = /* @__PURE__ */ M(this), { has: i, get: a } = St(r), o = i.call(r, e);
-			o ||= (e = /* @__PURE__ */ M(e), i.call(r, e));
+			!t && !/* @__PURE__ */ Zt(n) && !/* @__PURE__ */ Xt(n) && (n = /* @__PURE__ */ P(n));
+			let r = /* @__PURE__ */ P(this), { has: i, get: a } = Mt(r), o = i.call(r, e);
+			o ||= (e = /* @__PURE__ */ P(e), i.call(r, e));
 			let s = a.call(r, e);
-			return r.set(e, n), o ? ie(n, s) && et(r, "set", e, n, s) : et(r, "add", e, n), this;
+			return r.set(e, n), o ? pe(n, s) && ut(r, "set", e, n, s) : ut(r, "add", e, n), this;
 		},
 		delete(e) {
-			let t = /* @__PURE__ */ M(this), { has: n, get: r } = St(t), i = n.call(t, e);
-			i ||= (e = /* @__PURE__ */ M(e), n.call(t, e));
+			let t = /* @__PURE__ */ P(this), { has: n, get: r } = Mt(t), i = n.call(t, e);
+			i ||= (e = /* @__PURE__ */ P(e), n.call(t, e));
 			let a = r ? r.call(t, e) : void 0, o = t.delete(e);
-			return i && et(t, "delete", e, void 0, a), o;
+			return i && ut(t, "delete", e, void 0, a), o;
 		},
 		clear() {
-			let e = /* @__PURE__ */ M(this), t = e.size !== 0, n = e.clear();
-			return t && et(e, "clear", void 0, void 0, void 0), n;
+			let e = /* @__PURE__ */ P(this), t = e.size !== 0, n = e.clear();
+			return t && ut(e, "clear", void 0, void 0, void 0), n;
 		}
 	}), [
 		"keys",
@@ -688,15 +787,15 @@ function Tt(e, t) {
 		"entries",
 		Symbol.iterator
 	].forEach((r) => {
-		n[r] = Ct(r, e, t);
+		n[r] = Nt(r, e, t);
 	}), n;
 }
-function Et(e, t) {
-	let n = Tt(e, t);
-	return (t, r, i) => r === "__v_isReactive" ? !e : r === "__v_isReadonly" ? e : r === "__v_raw" ? t : Reflect.get(u(n, r) && r in t ? n : t, r, i);
+function It(e, t) {
+	let n = Ft(e, t);
+	return (t, r, i) => r === "__v_isReactive" ? !e : r === "__v_isReadonly" ? e : r === "__v_raw" ? t : Reflect.get(S(n, r) && r in t ? n : t, r, i);
 }
-var Dt = { get: /* @__PURE__ */ Et(!1, !1) }, Ot = { get: /* @__PURE__ */ Et(!1, !0) }, kt = { get: /* @__PURE__ */ Et(!0, !1) }, At = /* @__PURE__ */ new WeakMap(), jt = /* @__PURE__ */ new WeakMap(), Mt = /* @__PURE__ */ new WeakMap(), Nt = /* @__PURE__ */ new WeakMap();
-function Pt(e) {
+var Lt = { get: /* @__PURE__ */ It(!1, !1) }, Rt = { get: /* @__PURE__ */ It(!1, !0) }, zt = { get: /* @__PURE__ */ It(!0, !1) }, Bt = /* @__PURE__ */ new WeakMap(), Vt = /* @__PURE__ */ new WeakMap(), Ht = /* @__PURE__ */ new WeakMap(), Ut = /* @__PURE__ */ new WeakMap();
+function Wt(e) {
 	switch (e) {
 		case "Object":
 		case "Array": return 1;
@@ -708,108 +807,108 @@ function Pt(e) {
 	}
 }
 // @__NO_SIDE_EFFECTS__
-function Ft(e) {
-	return /* @__PURE__ */ Bt(e) ? e : Rt(e, !1, vt, Dt, At);
+function Gt(e) {
+	return /* @__PURE__ */ Xt(e) ? e : Jt(e, !1, Ot, Lt, Bt);
 }
 // @__NO_SIDE_EFFECTS__
-function It(e) {
-	return Rt(e, !1, bt, Ot, jt);
+function Kt(e) {
+	return Jt(e, !1, At, Rt, Vt);
 }
 // @__NO_SIDE_EFFECTS__
-function Lt(e) {
-	return Rt(e, !0, yt, kt, Mt);
+function qt(e) {
+	return Jt(e, !0, kt, zt, Ht);
 }
-function Rt(e, t, n, r, i) {
-	if (!v(e) || e.__v_raw && !(t && e.__v_isReactive) || e.__v_skip || !Object.isExtensible(e)) return e;
+function Jt(e, t, n, r, i) {
+	if (!A(e) || e.__v_raw && !(t && e.__v_isReactive) || e.__v_skip || !Object.isExtensible(e)) return e;
 	let a = i.get(e);
 	if (a) return a;
-	let o = Pt(S(e));
+	let o = Wt(ne(e));
 	if (o === 0) return e;
 	let s = new Proxy(e, o === 2 ? r : n);
 	return i.set(e, s), s;
 }
 // @__NO_SIDE_EFFECTS__
-function zt(e) {
-	return /* @__PURE__ */ Bt(e) ? /* @__PURE__ */ zt(e.__v_raw) : !!(e && e.__v_isReactive);
+function Yt(e) {
+	return /* @__PURE__ */ Xt(e) ? /* @__PURE__ */ Yt(e.__v_raw) : !!(e && e.__v_isReactive);
 }
 // @__NO_SIDE_EFFECTS__
-function Bt(e) {
+function Xt(e) {
 	return !!(e && e.__v_isReadonly);
 }
 // @__NO_SIDE_EFFECTS__
-function Vt(e) {
+function Zt(e) {
 	return !!(e && e.__v_isShallow);
 }
 // @__NO_SIDE_EFFECTS__
-function Ht(e) {
+function Qt(e) {
 	return e ? !!e.__v_raw : !1;
 }
 // @__NO_SIDE_EFFECTS__
-function M(e) {
+function P(e) {
 	let t = e && e.__v_raw;
-	return t ? /* @__PURE__ */ M(t) : e;
+	return t ? /* @__PURE__ */ P(t) : e;
 }
-function Ut(e) {
-	return !u(e, "__v_skip") && Object.isExtensible(e) && oe(e, "__v_skip", !0), e;
+function $t(e) {
+	return !S(e, "__v_skip") && Object.isExtensible(e) && he(e, "__v_skip", !0), e;
 }
-var Wt = (e) => v(e) ? /* @__PURE__ */ Ft(e) : e, Gt = (e) => v(e) ? /* @__PURE__ */ Lt(e) : e;
+var en = (e) => A(e) ? /* @__PURE__ */ Gt(e) : e, tn = (e) => A(e) ? /* @__PURE__ */ qt(e) : e;
 // @__NO_SIDE_EFFECTS__
-function Kt(e) {
+function nn(e) {
 	return e ? e.__v_isRef === !0 : !1;
 }
 // @__NO_SIDE_EFFECTS__
-function N(e) {
-	return Jt(e, !1);
+function F(e) {
+	return an(e, !1);
 }
 // @__NO_SIDE_EFFECTS__
-function qt(e) {
-	return Jt(e, !0);
+function rn(e) {
+	return an(e, !0);
 }
-function Jt(e, t) {
-	return /* @__PURE__ */ Kt(e) ? e : new Yt(e, t);
+function an(e, t) {
+	return /* @__PURE__ */ nn(e) ? e : new on(e, t);
 }
-var Yt = class {
+var on = class {
 	constructor(e, t) {
-		this.dep = new qe(), this.__v_isRef = !0, this.__v_isShallow = !1, this._rawValue = t ? e : /* @__PURE__ */ M(e), this._value = t ? e : Wt(e), this.__v_isShallow = t;
+		this.dep = new rt(), this.__v_isRef = !0, this.__v_isShallow = !1, this._rawValue = t ? e : /* @__PURE__ */ P(e), this._value = t ? e : en(e), this.__v_isShallow = t;
 	}
 	get value() {
 		return this.dep.track(), this._value;
 	}
 	set value(e) {
-		let t = this._rawValue, n = this.__v_isShallow || /* @__PURE__ */ Vt(e) || /* @__PURE__ */ Bt(e);
-		e = n ? e : /* @__PURE__ */ M(e), ie(e, t) && (this._rawValue = e, this._value = n ? e : Wt(e), this.dep.trigger());
+		let t = this._rawValue, n = this.__v_isShallow || /* @__PURE__ */ Zt(e) || /* @__PURE__ */ Xt(e);
+		e = n ? e : /* @__PURE__ */ P(e), pe(e, t) && (this._rawValue = e, this._value = n ? e : en(e), this.dep.trigger());
 	}
 };
-function Xt(e) {
-	return /* @__PURE__ */ Kt(e) ? e.value : e;
+function sn(e) {
+	return /* @__PURE__ */ nn(e) ? e.value : e;
 }
-var Zt = {
-	get: (e, t, n) => t === "__v_raw" ? e : Xt(Reflect.get(e, t, n)),
+var cn = {
+	get: (e, t, n) => t === "__v_raw" ? e : sn(Reflect.get(e, t, n)),
 	set: (e, t, n, r) => {
 		let i = e[t];
-		return /* @__PURE__ */ Kt(i) && !/* @__PURE__ */ Kt(n) ? (i.value = n, !0) : Reflect.set(e, t, n, r);
+		return /* @__PURE__ */ nn(i) && !/* @__PURE__ */ nn(n) ? (i.value = n, !0) : Reflect.set(e, t, n, r);
 	}
 };
-function Qt(e) {
-	return /* @__PURE__ */ zt(e) ? e : new Proxy(e, Zt);
+function ln(e) {
+	return /* @__PURE__ */ Yt(e) ? e : new Proxy(e, cn);
 }
-var $t = class {
+var un = class {
 	constructor(e, t, n) {
-		this._object = e, this._defaultValue = n, this.__v_isRef = !0, this._value = void 0, this._key = _(t) ? t : String(t), this._raw = /* @__PURE__ */ M(e);
+		this._object = e, this._defaultValue = n, this.__v_isRef = !0, this._value = void 0, this._key = k(t) ? t : String(t), this._raw = /* @__PURE__ */ P(e);
 		let r = !0, i = e;
-		if (!d(e) || _(this._key) || !w(this._key)) do
-			r = !/* @__PURE__ */ Ht(i) || /* @__PURE__ */ Vt(i);
+		if (!C(e) || k(this._key) || !ie(this._key)) do
+			r = !/* @__PURE__ */ Qt(i) || /* @__PURE__ */ Zt(i);
 		while (r && (i = i.__v_raw));
 		this._shallow = r;
 	}
 	get value() {
 		let e = this._object[this._key];
-		return this._shallow && (e = Xt(e)), this._value = e === void 0 ? this._defaultValue : e;
+		return this._shallow && (e = sn(e)), this._value = e === void 0 ? this._defaultValue : e;
 	}
 	set value(e) {
-		if (this._shallow && /* @__PURE__ */ Kt(this._raw[this._key])) {
+		if (this._shallow && /* @__PURE__ */ nn(this._raw[this._key])) {
 			let t = this._object[this._key];
-			if (/* @__PURE__ */ Kt(t)) {
+			if (/* @__PURE__ */ nn(t)) {
 				t.value = e;
 				return;
 			}
@@ -817,9 +916,9 @@ var $t = class {
 		this._object[this._key] = e;
 	}
 	get dep() {
-		return tt(this._raw, this._key);
+		return dt(this._raw, this._key);
 	}
-}, en = class {
+}, dn = class {
 	constructor(e) {
 		this._getter = e, this.__v_isRef = !0, this.__v_isReadonly = !0, this._value = void 0;
 	}
@@ -828,368 +927,368 @@ var $t = class {
 	}
 };
 // @__NO_SIDE_EFFECTS__
-function tn(e, t, n) {
-	return /* @__PURE__ */ Kt(e) ? e : h(e) ? new en(e) : v(e) && arguments.length > 1 ? nn(e, t, n) : /* @__PURE__ */ N(e);
+function fn(e, t, n) {
+	return /* @__PURE__ */ nn(e) ? e : D(e) ? new dn(e) : A(e) && arguments.length > 1 ? pn(e, t, n) : /* @__PURE__ */ F(e);
 }
-function nn(e, t, n) {
-	return new $t(e, t, n);
+function pn(e, t, n) {
+	return new un(e, t, n);
 }
-var rn = class {
+var mn = class {
 	constructor(e, t, n) {
-		this.fn = e, this.setter = t, this._value = void 0, this.dep = new qe(this), this.__v_isRef = !0, this.deps = void 0, this.depsTail = void 0, this.flags = 16, this.globalVersion = Ge - 1, this.next = void 0, this.effect = this, this.__v_isReadonly = !t, this.isSSR = n;
+		this.fn = e, this.setter = t, this._value = void 0, this.dep = new rt(this), this.__v_isRef = !0, this.deps = void 0, this.depsTail = void 0, this.flags = 16, this.globalVersion = tt - 1, this.next = void 0, this.effect = this, this.__v_isReadonly = !t, this.isSSR = n;
 	}
 	notify() {
-		if (this.flags |= 16, !(this.flags & 8) && j !== this) return je(this, !0), !0;
+		if (this.flags |= 16, !(this.flags & 8) && N !== this) return Ve(this, !0), !0;
 	}
 	get value() {
 		let e = this.dep.track();
-		return Le(this), e && (e.version = this.dep.version), this._value;
+		return qe(this), e && (e.version = this.dep.version), this._value;
 	}
 	set value(e) {
 		this.setter && this.setter(e);
 	}
 };
 // @__NO_SIDE_EFFECTS__
-function an(e, t, n = !1) {
+function hn(e, t, n = !1) {
 	let r, i;
-	return h(e) ? r = e : (r = e.get, i = e.set), new rn(r, i, n);
+	return D(e) ? r = e : (r = e.get, i = e.set), new mn(r, i, n);
 }
-var on = {}, sn = /* @__PURE__ */ new WeakMap(), cn = void 0;
-function ln(e, t = !1, n = cn) {
+var gn = {}, _n = /* @__PURE__ */ new WeakMap(), vn = void 0;
+function yn(e, t = !1, n = vn) {
 	if (n) {
-		let t = sn.get(n);
-		t || sn.set(n, t = []), t.push(e);
+		let t = _n.get(n);
+		t || _n.set(n, t = []), t.push(e);
 	}
 }
-function un(e, n, i = t) {
-	let { immediate: a, deep: o, once: s, scheduler: l, augmentJob: u, call: f } = i, p = (e) => o ? e : /* @__PURE__ */ Vt(e) || o === !1 || o === 0 ? dn(e, 1) : dn(e), m, g, _, v, y = !1, b = !1;
-	if (/* @__PURE__ */ Kt(e) ? (g = () => e.value, y = /* @__PURE__ */ Vt(e)) : /* @__PURE__ */ zt(e) ? (g = () => p(e), y = !0) : d(e) ? (b = !0, y = e.some((e) => /* @__PURE__ */ zt(e) || /* @__PURE__ */ Vt(e)), g = () => e.map((e) => {
-		if (/* @__PURE__ */ Kt(e)) return e.value;
-		if (/* @__PURE__ */ zt(e)) return p(e);
-		if (h(e)) return f ? f(e, 2) : e();
-	})) : g = h(e) ? n ? f ? () => f(e, 2) : e : () => {
-		if (_) {
-			He();
+function bn(e, t, n = p) {
+	let { immediate: r, deep: i, once: a, scheduler: o, augmentJob: s, call: c } = n, l = (e) => i ? e : /* @__PURE__ */ Zt(e) || i === !1 || i === 0 ? xn(e, 1) : xn(e), u, d, f, m, g = !1, _ = !1;
+	if (/* @__PURE__ */ nn(e) ? (d = () => e.value, g = /* @__PURE__ */ Zt(e)) : /* @__PURE__ */ Yt(e) ? (d = () => l(e), g = !0) : C(e) ? (_ = !0, g = e.some((e) => /* @__PURE__ */ Yt(e) || /* @__PURE__ */ Zt(e)), d = () => e.map((e) => {
+		if (/* @__PURE__ */ nn(e)) return e.value;
+		if (/* @__PURE__ */ Yt(e)) return l(e);
+		if (D(e)) return c ? c(e, 2) : e();
+	})) : d = D(e) ? t ? c ? () => c(e, 2) : e : () => {
+		if (f) {
+			Qe();
 			try {
-				_();
+				f();
 			} finally {
-				Ue();
+				$e();
 			}
 		}
-		let t = cn;
-		cn = m;
+		let t = vn;
+		vn = u;
 		try {
-			return f ? f(e, 3, [v]) : e(v);
+			return c ? c(e, 3, [m]) : e(m);
 		} finally {
-			cn = t;
+			vn = t;
 		}
-	} : r, n && o) {
-		let e = g, t = o === !0 ? Infinity : o;
-		g = () => dn(e(), t);
+	} : h, t && i) {
+		let e = d, t = i === !0 ? Infinity : i;
+		d = () => xn(e(), t);
 	}
-	let x = Te(), S = () => {
-		m.stop(), x && x.active && c(x.effects, m);
+	let v = Fe(), y = () => {
+		u.stop(), v && v.active && b(v.effects, u);
 	};
-	if (s && n) {
-		let e = n;
-		n = (...t) => {
+	if (a && t) {
+		let e = t;
+		t = (...t) => {
 			let n = e(...t);
-			return S(), n;
+			return y(), n;
 		};
 	}
-	let C = b ? Array(e.length).fill(on) : on, w = (e) => {
-		if (m.flags & 1 && (m.dirty || e)) {
-			if (n) {
-				let t = m.run();
-				if (e || o || y || (b ? t.some((e, t) => ie(e, C[t])) : ie(t, C))) {
-					_ && _();
-					let e = cn;
-					cn = m;
+	let x = _ ? Array(e.length).fill(gn) : gn, S = (e) => {
+		if (u.flags & 1 && (u.dirty || e)) {
+			if (t) {
+				let n = u.run();
+				if (e || i || g || (_ ? n.some((e, t) => pe(e, x[t])) : pe(n, x))) {
+					f && f();
+					let e = vn;
+					vn = u;
 					try {
 						let e = [
-							t,
-							C === on ? void 0 : b && C[0] === on ? [] : C,
-							v
+							n,
+							x === gn ? void 0 : _ && x[0] === gn ? [] : x,
+							m
 						];
-						C = t, f ? f(n, 3, e) : n(...e);
+						x = n, c ? c(t, 3, e) : t(...e);
 					} finally {
-						cn = e;
+						vn = e;
 					}
 				}
-			} else m.run();
+			} else u.run();
 		}
 	};
-	return u && u(w), m = new De(g), m.scheduler = l ? () => l(w, !1) : w, v = (e) => ln(e, !1, m), _ = m.onStop = () => {
-		let e = sn.get(m);
+	return s && s(S), u = new Le(d), u.scheduler = o ? () => o(S, !1) : S, m = (e) => yn(e, !1, u), f = u.onStop = () => {
+		let e = _n.get(u);
 		if (e) {
-			if (f) f(e, 4);
+			if (c) c(e, 4);
 			else for (let t of e) t();
-			sn.delete(m);
+			_n.delete(u);
 		}
-	}, n ? a ? w(!0) : C = m.run() : l ? l(w.bind(null, !0), !0) : m.run(), S.pause = m.pause.bind(m), S.resume = m.resume.bind(m), S.stop = S, S;
+	}, t ? r ? S(!0) : x = u.run() : o ? o(S.bind(null, !0), !0) : u.run(), y.pause = u.pause.bind(u), y.resume = u.resume.bind(u), y.stop = y, y;
 }
-function dn(e, t = Infinity, n) {
-	if (t <= 0 || !v(e) || e.__v_skip || (n ||= /* @__PURE__ */ new Map(), (n.get(e) || 0) >= t)) return e;
-	if (n.set(e, t), t--, /* @__PURE__ */ Kt(e)) dn(e.value, t, n);
-	else if (d(e)) for (let r = 0; r < e.length; r++) dn(e[r], t, n);
-	else if (p(e) || f(e)) e.forEach((e) => {
-		dn(e, t, n);
+function xn(e, t = Infinity, n) {
+	if (t <= 0 || !A(e) || e.__v_skip || (n ||= /* @__PURE__ */ new Map(), (n.get(e) || 0) >= t)) return e;
+	if (n.set(e, t), t--, /* @__PURE__ */ nn(e)) xn(e.value, t, n);
+	else if (C(e)) for (let r = 0; r < e.length; r++) xn(e[r], t, n);
+	else if (T(e) || w(e)) e.forEach((e) => {
+		xn(e, t, n);
 	});
-	else if (C(e)) {
-		for (let r in e) dn(e[r], t, n);
-		for (let r of Object.getOwnPropertySymbols(e)) Object.prototype.propertyIsEnumerable.call(e, r) && dn(e[r], t, n);
+	else if (re(e)) {
+		for (let r in e) xn(e[r], t, n);
+		for (let r of Object.getOwnPropertySymbols(e)) Object.prototype.propertyIsEnumerable.call(e, r) && xn(e[r], t, n);
 	}
 	return e;
 }
 //#endregion
 //#region node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js
-function fn(e, t, n, r) {
+function Sn(e, t, n, r) {
 	try {
 		return r ? e(...r) : e();
 	} catch (e) {
-		mn(e, t, n);
+		wn(e, t, n);
 	}
 }
-function pn(e, t, n, r) {
-	if (h(e)) {
-		let i = fn(e, t, n, r);
-		return i && y(i) && i.catch((e) => {
-			mn(e, t, n);
+function Cn(e, t, n, r) {
+	if (D(e)) {
+		let i = Sn(e, t, n, r);
+		return i && ee(i) && i.catch((e) => {
+			wn(e, t, n);
 		}), i;
 	}
-	if (d(e)) {
+	if (C(e)) {
 		let i = [];
-		for (let a = 0; a < e.length; a++) i.push(pn(e[a], t, n, r));
+		for (let a = 0; a < e.length; a++) i.push(Cn(e[a], t, n, r));
 		return i;
 	}
 }
-function mn(e, n, r, i = !0) {
-	let a = n ? n.vnode : null, { errorHandler: o, throwUnhandledErrorInProduction: s } = n && n.appContext.config || t;
-	if (n) {
-		let t = n.parent, i = n.proxy, a = `https://vuejs.org/error-reference/#runtime-${r}`;
-		for (; t;) {
-			let n = t.ec;
-			if (n) {
-				for (let t = 0; t < n.length; t++) if (n[t](e, i, a) === !1) return;
+function wn(e, t, n, r = !0) {
+	let i = t ? t.vnode : null, { errorHandler: a, throwUnhandledErrorInProduction: o } = t && t.appContext.config || p;
+	if (t) {
+		let r = t.parent, i = t.proxy, o = `https://vuejs.org/error-reference/#runtime-${n}`;
+		for (; r;) {
+			let t = r.ec;
+			if (t) {
+				for (let n = 0; n < t.length; n++) if (t[n](e, i, o) === !1) return;
 			}
-			t = t.parent;
+			r = r.parent;
 		}
-		if (o) {
-			He(), fn(o, null, 10, [
+		if (a) {
+			Qe(), Sn(a, null, 10, [
 				e,
 				i,
-				a
-			]), Ue();
+				o
+			]), $e();
 			return;
 		}
 	}
-	hn(e, r, a, i, s);
+	Tn(e, n, i, r, o);
 }
-function hn(e, t, n, r = !0, i = !1) {
+function Tn(e, t, n, r = !0, i = !1) {
 	if (i) throw e;
 	console.error(e);
 }
-var gn = [], _n = -1, vn = [], yn = null, bn = 0, xn = /* @__PURE__ */ Promise.resolve(), Sn = null;
-function Cn(e) {
-	let t = Sn || xn;
+var En = [], Dn = -1, On = [], kn = null, An = 0, jn = /* @__PURE__ */ Promise.resolve(), Mn = null;
+function Nn(e) {
+	let t = Mn || jn;
 	return e ? t.then(this ? e.bind(this) : e) : t;
 }
-function wn(e) {
-	let t = _n + 1, n = gn.length;
+function Pn(e) {
+	let t = Dn + 1, n = En.length;
 	for (; t < n;) {
-		let r = t + n >>> 1, i = gn[r], a = An(i);
+		let r = t + n >>> 1, i = En[r], a = Bn(i);
 		a < e || a === e && i.flags & 2 ? t = r + 1 : n = r;
 	}
 	return t;
 }
-function Tn(e) {
+function Fn(e) {
 	if (!(e.flags & 1)) {
-		let t = An(e), n = gn[gn.length - 1];
-		!n || !(e.flags & 2) && t >= An(n) ? gn.push(e) : gn.splice(wn(t), 0, e), e.flags |= 1, En();
+		let t = Bn(e), n = En[En.length - 1];
+		!n || !(e.flags & 2) && t >= Bn(n) ? En.push(e) : En.splice(Pn(t), 0, e), e.flags |= 1, In();
 	}
 }
-function En() {
-	Sn ||= xn.then(jn);
+function In() {
+	Mn ||= jn.then(Vn);
 }
-function Dn(e) {
-	if (!d(e)) yn && e.id === -1 ? yn.splice(bn + 1, 0, e) : e.flags & 1 || (vn.push(e), e.flags |= 1);
-	else for (let t = 0; t < e.length; t++) vn.push(e[t]);
-	En();
+function Ln(e) {
+	if (!C(e)) kn && e.id === -1 ? kn.splice(An + 1, 0, e) : e.flags & 1 || (On.push(e), e.flags |= 1);
+	else for (let t = 0; t < e.length; t++) On.push(e[t]);
+	In();
 }
-function On(e, t, n = _n + 1) {
-	for (; n < gn.length; n++) {
-		let t = gn[n];
+function Rn(e, t, n = Dn + 1) {
+	for (; n < En.length; n++) {
+		let t = En[n];
 		if (t && t.flags & 2) {
 			if (e && t.id !== e.uid) continue;
-			gn.splice(n, 1), n--, t.flags & 4 && (t.flags &= -2), t(), t.flags & 4 || (t.flags &= -2);
+			En.splice(n, 1), n--, t.flags & 4 && (t.flags &= -2), t(), t.flags & 4 || (t.flags &= -2);
 		}
 	}
 }
-function kn(e) {
-	if (vn.length) {
-		let e = [...new Set(vn)].sort((e, t) => An(e) - An(t));
-		if (vn.length = 0, yn) {
-			for (let t = 0; t < e.length; t++) yn.push(e[t]);
+function zn(e) {
+	if (On.length) {
+		let e = [...new Set(On)].sort((e, t) => Bn(e) - Bn(t));
+		if (On.length = 0, kn) {
+			for (let t = 0; t < e.length; t++) kn.push(e[t]);
 			return;
 		}
-		for (yn = e, bn = 0; bn < yn.length; bn++) {
-			let e = yn[bn];
+		for (kn = e, An = 0; An < kn.length; An++) {
+			let e = kn[An];
 			e.flags & 4 && (e.flags &= -2), e.flags & 8 || e(), e.flags &= -2;
 		}
-		yn = null, bn = 0;
+		kn = null, An = 0;
 	}
 }
-var An = (e) => e.id == null ? e.flags & 2 ? -1 : Infinity : e.id;
-function jn(e) {
+var Bn = (e) => e.id == null ? e.flags & 2 ? -1 : Infinity : e.id;
+function Vn(e) {
 	try {
-		for (_n = 0; _n < gn.length; _n++) {
-			let e = gn[_n];
-			e && !(e.flags & 8) && (e.flags & 4 && (e.flags &= -2), fn(e, e.i, e.i ? 15 : 14), e.flags & 4 || (e.flags &= -2));
+		for (Dn = 0; Dn < En.length; Dn++) {
+			let e = En[Dn];
+			e && !(e.flags & 8) && (e.flags & 4 && (e.flags &= -2), Sn(e, e.i, e.i ? 15 : 14), e.flags & 4 || (e.flags &= -2));
 		}
 	} finally {
-		for (; _n < gn.length; _n++) {
-			let e = gn[_n];
+		for (; Dn < En.length; Dn++) {
+			let e = En[Dn];
 			e && (e.flags &= -2);
 		}
-		_n = -1, gn.length = 0, kn(e), Sn = null, (gn.length || vn.length) && jn(e);
+		Dn = -1, En.length = 0, zn(e), Mn = null, (En.length || On.length) && Vn(e);
 	}
 }
-var Mn = null, Nn = null;
-function Pn(e) {
-	let t = Mn;
-	return Mn = e, Nn = e && e.type.__scopeId || null, t;
+var Hn = null, Un = null;
+function Wn(e) {
+	let t = Hn;
+	return Hn = e, Un = e && e.type.__scopeId || null, t;
 }
-function Fn(e, t = Mn, n) {
+function Gn(e, t = Hn, n) {
 	if (!t || e._n) return e;
 	let r = (...n) => {
-		r._d && ji(-1);
-		let i = Pn(t), a = Di.length, o;
+		r._d && Hi(-1);
+		let i = Wn(t), a = Ri.length, o;
 		try {
 			o = e(...n);
 		} finally {
-			for (let e = Di.length; e > a; e--) ki();
-			Pn(i), r._d && ji(1);
+			for (let e = Ri.length; e > a; e--) Bi();
+			Wn(i), r._d && Hi(1);
 		}
 		return o;
 	};
 	return r._n = !0, r._c = !0, r._d = !0, r;
 }
-function In(e, t, n, r) {
+function Kn(e, t, n, r) {
 	let i = e.dirs, a = t && t.dirs;
 	for (let o = 0; o < i.length; o++) {
 		let s = i[o];
 		a && (s.oldValue = a[o].value);
 		let c = s.dir[r];
-		c && (He(), pn(c, n, 8, [
+		c && (Qe(), Cn(c, n, 8, [
 			e.el,
 			s,
 			e,
 			t
-		]), Ue());
+		]), $e());
 	}
 }
-function Ln(e, t) {
-	if ($i) {
-		let n = $i.provides, r = $i.parent && $i.parent.provides;
-		r === n && (n = $i.provides = Object.create(r)), n[e] = t;
+function qn(e, t) {
+	if (ua) {
+		let n = ua.provides, r = ua.parent && ua.parent.provides;
+		r === n && (n = ua.provides = Object.create(r)), n[e] = t;
 	}
 }
-function Rn(e, t, n = !1) {
-	let r = ea();
-	if (r || Fr) {
-		let i = Fr ? Fr._context.provides : r ? r.parent == null || r.ce ? r.vnode.appContext && r.vnode.appContext.provides : r.parent.provides : void 0;
+function Jn(e, t, n = !1) {
+	let r = da();
+	if (r || Kr) {
+		let i = Kr ? Kr._context.provides : r ? r.parent == null || r.ce ? r.vnode.appContext && r.vnode.appContext.provides : r.parent.provides : void 0;
 		if (i && e in i) return i[e];
-		if (arguments.length > 1) return n && h(t) ? t.call(r && r.proxy) : t;
+		if (arguments.length > 1) return n && D(t) ? t.call(r && r.proxy) : t;
 	}
 }
-var zn = /* @__PURE__ */ Symbol.for("v-scx"), Bn = () => Rn(zn);
-function Vn(e, t) {
-	return Un(e, null, t);
+var Yn = /* @__PURE__ */ Symbol.for("v-scx"), Xn = () => Jn(Yn);
+function Zn(e, t) {
+	return $n(e, null, t);
 }
-function Hn(e, t, n) {
-	return Un(e, t, n);
+function Qn(e, t, n) {
+	return $n(e, t, n);
 }
-function Un(e, n, i = t) {
-	let { immediate: a, deep: o, flush: c, once: l } = i, u = s({}, i), d = n && a || !n && c !== "post", f;
-	if (oa) {
-		if (c === "sync") {
-			let e = Bn();
-			f = e.__watcherHandles ||= [];
-		} else if (!d) {
+function $n(e, t, n = p) {
+	let { immediate: r, deep: i, flush: a, once: o } = n, s = y({}, n), c = t && r || !t && a !== "post", l;
+	if (_a) {
+		if (a === "sync") {
+			let e = Xn();
+			l = e.__watcherHandles ||= [];
+		} else if (!c) {
 			let e = () => {};
-			return e.stop = r, e.resume = r, e.pause = r, e;
+			return e.stop = h, e.resume = h, e.pause = h, e;
 		}
 	}
-	let p = $i;
-	u.call = (e, t, n) => pn(e, p, t, n);
-	let m = !1;
-	c === "post" ? u.scheduler = (e) => {
-		ui(e, p && p.suspense);
-	} : c !== "sync" && (m = !0, u.scheduler = (e, t) => {
-		t ? e() : Tn(e);
-	}), u.augmentJob = (e) => {
-		n && (e.flags |= 4), m && (e.flags |= 2, p && (e.id = p.uid, e.i = p));
+	let u = ua;
+	s.call = (e, t, n) => Cn(e, u, t, n);
+	let d = !1;
+	a === "post" ? s.scheduler = (e) => {
+		xi(e, u && u.suspense);
+	} : a !== "sync" && (d = !0, s.scheduler = (e, t) => {
+		t ? e() : Fn(e);
+	}), s.augmentJob = (e) => {
+		t && (e.flags |= 4), d && (e.flags |= 2, u && (e.id = u.uid, e.i = u));
 	};
-	let h = un(e, n, u);
-	return oa && (f ? f.push(h) : d && h()), h;
+	let f = bn(e, t, s);
+	return _a && (l ? l.push(f) : c && f()), f;
 }
-var Wn = /* @__PURE__ */ Symbol("_vte"), Gn = (e) => e.__isTeleport, Kn = /* @__PURE__ */ Symbol("_leaveCb"), qn = /* @__PURE__ */ Symbol("_enterCb");
-function Jn() {
+var er = /* @__PURE__ */ Symbol("_vte"), tr = (e) => e.__isTeleport, nr = /* @__PURE__ */ Symbol("_leaveCb"), rr = /* @__PURE__ */ Symbol("_enterCb");
+function ir() {
 	let e = {
 		isMounted: !1,
 		isLeaving: !1,
 		isUnmounting: !1,
 		leavingVNodes: /* @__PURE__ */ new Map()
 	};
-	return xr(() => {
+	return Mr(() => {
 		e.isMounted = !0;
-	}), Cr(() => {
+	}), Pr(() => {
 		e.isUnmounting = !0;
 	}), e;
 }
-var Yn = [Function, Array], Xn = {
+var ar = [Function, Array], or = {
 	mode: String,
 	appear: Boolean,
 	persisted: Boolean,
-	onBeforeEnter: Yn,
-	onEnter: Yn,
-	onAfterEnter: Yn,
-	onEnterCancelled: Yn,
-	onBeforeLeave: Yn,
-	onLeave: Yn,
-	onAfterLeave: Yn,
-	onLeaveCancelled: Yn,
-	onBeforeAppear: Yn,
-	onAppear: Yn,
-	onAfterAppear: Yn,
-	onAppearCancelled: Yn
-}, Zn = (e) => {
+	onBeforeEnter: ar,
+	onEnter: ar,
+	onAfterEnter: ar,
+	onEnterCancelled: ar,
+	onBeforeLeave: ar,
+	onLeave: ar,
+	onAfterLeave: ar,
+	onLeaveCancelled: ar,
+	onBeforeAppear: ar,
+	onAppear: ar,
+	onAfterAppear: ar,
+	onAppearCancelled: ar
+}, sr = (e) => {
 	let t = e.subTree;
-	return t.component ? Zn(t.component) : t;
-}, Qn = {
+	return t.component ? sr(t.component) : t;
+}, cr = {
 	name: "BaseTransition",
-	props: Xn,
+	props: or,
 	setup(e, { slots: t }) {
-		let n = ea(), r = Jn();
+		let n = da(), r = ir();
 		return () => {
-			let i = t.default && or(t.default(), !0), a = i && i.length ? $n(i) : n.subTree ? Wi() : void 0;
+			let i = t.default && gr(t.default(), !0), a = i && i.length ? lr(i) : n.subTree ? ta() : void 0;
 			if (!a) return;
-			let o = /* @__PURE__ */ M(e), { mode: s } = o;
-			if (r.isLeaving) return rr(a);
-			let c = ir(a);
-			if (!c) return rr(a);
-			let l = nr(c, o, r, n, (e) => l = e);
-			c.type !== Ti && ar(c, l);
-			let u = n.subTree && ir(n.subTree);
-			if (u && u.type !== Ti && !Fi(u, c) && Zn(n).type !== Ti) {
-				let e = nr(u, o, r, n);
-				if (ar(u, e), s === "out-in" && c.type !== Ti) return r.isLeaving = !0, e.afterLeave = () => {
+			let o = /* @__PURE__ */ P(e), { mode: s } = o;
+			if (r.isLeaving) return pr(a);
+			let c = mr(a);
+			if (!c) return pr(a);
+			let l = fr(c, o, r, n, (e) => l = e);
+			c.type !== Ii && hr(c, l);
+			let u = n.subTree && mr(n.subTree);
+			if (u && u.type !== Ii && !Ki(u, c) && sr(n).type !== Ii) {
+				let e = fr(u, o, r, n);
+				if (hr(u, e), s === "out-in" && c.type !== Ii) return r.isLeaving = !0, e.afterLeave = () => {
 					r.isLeaving = !1, n.job.flags & 8 || n.update(), delete e.afterLeave, u = void 0;
-				}, rr(a);
-				s === "in-out" && c.type !== Ti ? e.delayLeave = (e, t, n) => {
-					let i = tr(r, u);
-					i[String(u.key)] = u, e[Kn] = () => {
-						t(), e[Kn] = void 0, delete l.delayedLeave, u = void 0;
+				}, pr(a);
+				s === "in-out" && c.type !== Ii ? e.delayLeave = (e, t, n) => {
+					let i = dr(r, u);
+					i[String(u.key)] = u, e[nr] = () => {
+						t(), e[nr] = void 0, delete l.delayedLeave, u = void 0;
 					}, l.delayedLeave = () => {
 						n(), delete l.delayedLeave, u = void 0;
 					};
@@ -1199,171 +1298,171 @@ var Yn = [Function, Array], Xn = {
 		};
 	}
 };
-function $n(e) {
+function lr(e) {
 	let t = e[0];
 	if (e.length > 1) {
-		for (let n of e) if (n.type !== Ti) {
+		for (let n of e) if (n.type !== Ii) {
 			t = n;
 			break;
 		}
 	}
 	return t;
 }
-var er = Qn;
-function tr(e, t) {
+var ur = cr;
+function dr(e, t) {
 	let { leavingVNodes: n } = e, r = n.get(t.type);
 	return r || (r = /* @__PURE__ */ Object.create(null), n.set(t.type, r)), r;
 }
-function nr(e, t, n, r, i) {
-	let { appear: a, mode: o, persisted: s = !1, onBeforeEnter: c, onEnter: l, onAfterEnter: u, onEnterCancelled: f, onBeforeLeave: p, onLeave: m, onAfterLeave: h, onLeaveCancelled: g, onBeforeAppear: _, onAppear: v, onAfterAppear: y, onAppearCancelled: b } = t, x = String(e.key), S = tr(n, e), C = (e, t) => {
-		e && pn(e, r, 9, t);
+function fr(e, t, n, r, i) {
+	let { appear: a, mode: o, persisted: s = !1, onBeforeEnter: c, onEnter: l, onAfterEnter: u, onEnterCancelled: d, onBeforeLeave: f, onLeave: p, onAfterLeave: m, onLeaveCancelled: h, onBeforeAppear: g, onAppear: _, onAfterAppear: v, onAppearCancelled: y } = t, b = String(e.key), x = dr(n, e), S = (e, t) => {
+		e && Cn(e, r, 9, t);
 	}, w = (e, t) => {
 		let n = t[1];
-		C(e, t), d(e) ? e.every((e) => e.length <= 1) && n() : e.length <= 1 && n();
+		S(e, t), C(e) ? e.every((e) => e.length <= 1) && n() : e.length <= 1 && n();
 	}, T = {
 		mode: o,
 		persisted: s,
 		beforeEnter(t) {
 			let r = c;
 			if (!n.isMounted) {
-				if (a) r = _ || c;
+				if (a) r = g || c;
 				else return;
 			}
-			t[Kn] && t[Kn](!0);
-			let i = S[x];
-			i && Fi(e, i) && i.el[Kn] && i.el[Kn](), C(r, [t]);
+			t[nr] && t[nr](!0);
+			let i = x[b];
+			i && Ki(e, i) && i.el[nr] && i.el[nr](), S(r, [t]);
 		},
 		enter(t) {
-			if (S[x] === e) return;
-			let r = l, i = u, o = f;
+			if (x[b] === e) return;
+			let r = l, i = u, o = d;
 			if (!n.isMounted) {
-				if (a) r = v || l, i = y || u, o = b || f;
+				if (a) r = _ || l, i = v || u, o = y || d;
 				else return;
 			}
 			let s = !1;
-			t[qn] = (e) => {
-				s || (s = !0, C(e ? o : i, [t]), T.delayedLeave && T.delayedLeave(), t[qn] = void 0);
+			t[rr] = (e) => {
+				s || (s = !0, S(e ? o : i, [t]), T.delayedLeave && T.delayedLeave(), t[rr] = void 0);
 			};
-			let c = t[qn].bind(null, !1);
+			let c = t[rr].bind(null, !1);
 			r ? w(r, [t, c]) : c();
 		},
 		leave(t, r) {
 			let i = String(e.key);
-			if (t[qn] && t[qn](!0), n.isUnmounting) return r();
-			C(p, [t]);
+			if (t[rr] && t[rr](!0), n.isUnmounting) return r();
+			S(f, [t]);
 			let a = !1;
-			t[Kn] = (n) => {
-				a || (a = !0, r(), C(n ? g : h, [t]), t[Kn] = void 0, S[i] === e && delete S[i]);
+			t[nr] = (n) => {
+				a || (a = !0, r(), S(n ? h : m, [t]), t[nr] = void 0, x[i] === e && delete x[i]);
 			};
-			let o = t[Kn].bind(null, !1);
-			S[i] = e, m ? w(m, [t, o]) : o();
+			let o = t[nr].bind(null, !1);
+			x[i] = e, p ? w(p, [t, o]) : o();
 		},
 		clone(e) {
-			let a = nr(e, t, n, r, i);
+			let a = fr(e, t, n, r, i);
 			return i && i(a), a;
 		}
 	};
 	return T;
 }
-function rr(e) {
-	if (pr(e)) return e = Hi(e), e.children = null, e;
+function pr(e) {
+	if (wr(e)) return e = $i(e), e.children = null, e;
 }
-function ir(e) {
-	if (!pr(e)) return Gn(e.type) && e.children ? $n(e.children) : e;
+function mr(e) {
+	if (!wr(e)) return tr(e.type) && e.children ? lr(e.children) : e;
 	if (e.component) return e.component.subTree;
 	let { shapeFlag: t, children: n } = e;
 	if (n) {
 		if (t & 16) return n[0];
-		if (t & 32 && h(n.default)) return n.default();
+		if (t & 32 && D(n.default)) return n.default();
 	}
 }
-function ar(e, t) {
+function hr(e, t) {
 	if (e.shapeFlag & 6 && e.component) {
 		e.transition = t;
 		let n = e.component.subTree;
-		ar(Gn(n.type) && ir(n) || n, t);
+		hr(tr(n.type) && mr(n) || n, t);
 	} else e.shapeFlag & 128 ? (e.ssContent.transition = t.clone(e.ssContent), e.ssFallback.transition = t.clone(e.ssFallback)) : e.transition = t;
 }
-function or(e, t = !1, n) {
+function gr(e, t = !1, n) {
 	let r = [], i = 0;
 	for (let a = 0; a < e.length; a++) {
 		let o = e[a], s = n == null ? o.key : String(n) + String(o.key == null ? a : o.key);
-		o.type === Ci ? (o.patchFlag & 128 && i++, r = r.concat(or(o.children, t, s))) : (t || o.type !== Ti) && r.push(s == null ? o : Hi(o, { key: s }));
+		o.type === Pi ? (o.patchFlag & 128 && i++, r = r.concat(gr(o.children, t, s))) : (t || o.type !== Ii) && r.push(s == null ? o : $i(o, { key: s }));
 	}
 	if (i > 1) for (let e = 0; e < r.length; e++) r[e].patchFlag = -2;
 	return r;
 }
 // @__NO_SIDE_EFFECTS__
-function P(e, t) {
-	return h(e) ? /* @__PURE__ */ s({ name: e.name }, t, { setup: e }) : e;
+function _r(e, t) {
+	return D(e) ? /* @__PURE__ */ y({ name: e.name }, t, { setup: e }) : e;
 }
-function sr(e) {
+function vr(e) {
 	e.ids = [
 		e.ids[0] + e.ids[2]++ + "-",
 		0,
 		0
 	];
 }
-function cr(e, t) {
+function yr(e, t) {
 	let n;
 	return !!((n = Object.getOwnPropertyDescriptor(e, t)) && !n.configurable);
 }
-var lr = /* @__PURE__ */ new WeakMap();
-function ur(e, n, r, a, o = !1) {
-	if (d(e)) {
-		e.forEach((e, t) => ur(e, n && (d(n) ? n[t] : n), r, a, o));
+var br = /* @__PURE__ */ new WeakMap();
+function xr(e, t, n, r, i = !1) {
+	if (C(e)) {
+		e.forEach((e, a) => xr(e, t && (C(t) ? t[a] : t), n, r, i));
 		return;
 	}
-	if (fr(a) && !o) {
-		a.shapeFlag & 512 && a.type.__asyncResolved && a.component.subTree.component && ur(e, n, r, a.component.subTree);
+	if (Cr(r) && !i) {
+		r.shapeFlag & 512 && r.type.__asyncResolved && r.component.subTree.component && xr(e, t, n, r.component.subTree);
 		return;
 	}
-	let s = a.shapeFlag & 4 ? pa(a.component) : a.el, l = o ? null : s, { i: f, r: p } = e, m = n && n.r, _ = f.refs === t ? f.refs = {} : f.refs, v = f.setupState, y = /* @__PURE__ */ M(v), b = v === t ? i : (e) => !cr(_, e) && u(y, e), x = (e, t) => !(t && cr(_, t));
-	if (m != null && m !== p) {
-		if (dr(n), g(m)) _[m] = null, b(m) && (v[m] = null);
-		else if (/* @__PURE__ */ Kt(m)) {
-			let e = n;
-			x(m, e.k) && (m.value = null), e.k && (_[e.k] = null);
+	let a = r.shapeFlag & 4 ? wa(r.component) : r.el, o = i ? null : a, { i: s, r: c } = e, l = t && t.r, u = s.refs === p ? s.refs = {} : s.refs, d = s.setupState, f = /* @__PURE__ */ P(d), m = d === p ? g : (e) => !yr(u, e) && S(f, e), h = (e, t) => !(t && yr(u, t));
+	if (l != null && l !== c) {
+		if (Sr(t), O(l)) u[l] = null, m(l) && (d[l] = null);
+		else if (/* @__PURE__ */ nn(l)) {
+			let e = t;
+			h(l, e.k) && (l.value = null), e.k && (u[e.k] = null);
 		}
 	}
-	if (h(p)) fn(p, f, 12, [l, _]);
+	if (D(c)) Sn(c, s, 12, [o, u]);
 	else {
-		let t = g(p), n = /* @__PURE__ */ Kt(p);
-		if (t || n) {
-			let i = () => {
+		let t = O(c), r = /* @__PURE__ */ nn(c);
+		if (t || r) {
+			let s = () => {
 				if (e.f) {
-					let n = t ? b(p) ? v[p] : _[p] : x(p) || !e.k ? p.value : _[e.k];
-					if (o) d(n) && c(n, s);
-					else if (d(n)) n.includes(s) || n.push(s);
-					else if (t) _[p] = [s], b(p) && (v[p] = _[p]);
+					let n = t ? m(c) ? d[c] : u[c] : h(c) || !e.k ? c.value : u[e.k];
+					if (i) C(n) && b(n, a);
+					else if (C(n)) n.includes(a) || n.push(a);
+					else if (t) u[c] = [a], m(c) && (d[c] = u[c]);
 					else {
-						let t = [s];
-						x(p, e.k) && (p.value = t), e.k && (_[e.k] = t);
+						let t = [a];
+						h(c, e.k) && (c.value = t), e.k && (u[e.k] = t);
 					}
-				} else t ? (_[p] = l, b(p) && (v[p] = l)) : n && (x(p, e.k) && (p.value = l), e.k && (_[e.k] = l));
+				} else t ? (u[c] = o, m(c) && (d[c] = o)) : r && (h(c, e.k) && (c.value = o), e.k && (u[e.k] = o));
 			};
-			if (l) {
+			if (o) {
 				let t = () => {
-					i(), lr.delete(e);
+					s(), br.delete(e);
 				};
-				t.id = -1, lr.set(e, t), ui(t, r);
-			} else dr(e), i();
+				t.id = -1, br.set(e, t), xi(t, n);
+			} else Sr(e), s();
 		}
 	}
 }
-function dr(e) {
-	let t = lr.get(e);
-	t && (t.flags |= 8, lr.delete(e));
+function Sr(e) {
+	let t = br.get(e);
+	t && (t.flags |= 8, br.delete(e));
 }
-ue().requestIdleCallback, ue().cancelIdleCallback;
-var fr = (e) => !!e.type.__asyncLoader, pr = (e) => e.type.__isKeepAlive;
-function mr(e, t) {
-	gr(e, "a", t);
+ye().requestIdleCallback, ye().cancelIdleCallback;
+var Cr = (e) => !!e.type.__asyncLoader, wr = (e) => e.type.__isKeepAlive;
+function Tr(e, t) {
+	Dr(e, "a", t);
 }
-function hr(e, t) {
-	gr(e, "da", t);
+function Er(e, t) {
+	Dr(e, "da", t);
 }
-function gr(e, t, n = $i) {
+function Dr(e, t, n = ua) {
 	let r = e.__wdc ||= () => {
 		let t = n;
 		for (; t;) {
@@ -1372,55 +1471,55 @@ function gr(e, t, n = $i) {
 		}
 		return e();
 	};
-	if (vr(t, r, n), n) {
+	if (kr(t, r, n), n) {
 		let e = n.parent;
-		for (; e && e.parent;) pr(e.parent.vnode) && _r(r, t, n, e), e = e.parent;
+		for (; e && e.parent;) wr(e.parent.vnode) && Or(r, t, n, e), e = e.parent;
 	}
 }
-function _r(e, t, n, r) {
-	let i = vr(t, e, r, !0);
-	wr(() => {
-		c(r[t], i);
+function Or(e, t, n, r) {
+	let i = kr(t, e, r, !0);
+	Fr(() => {
+		b(r[t], i);
 	}, n);
 }
-function vr(e, t, n = $i, r = !1) {
+function kr(e, t, n = ua, r = !1) {
 	if (n) {
 		let i = n[e] || (n[e] = []), a = t.__weh ||= (...r) => {
-			He();
-			let i = ra(n), a = pn(t, n, e, r);
-			return i(), Ue(), a;
+			Qe();
+			let i = ma(n), a = Cn(t, n, e, r);
+			return i(), $e(), a;
 		};
 		return r ? i.unshift(a) : i.push(a), a;
 	}
 }
-var yr = (e) => (t, n = $i) => {
-	(!oa || e === "sp") && vr(e, (...e) => t(...e), n);
-}, br = yr("bm"), xr = yr("m"), Sr = yr("u"), Cr = yr("bum"), wr = yr("um"), Tr = /* @__PURE__ */ Symbol.for("v-ndc");
-function Er(e, t, n, r, i, a) {
-	if (n ??= {}, Mn.ce || Mn.parent && fr(Mn.parent) && Mn.parent.ce) {
-		let e = a != null && n.key == null ? s({}, n, { key: a }) : n, i = Object.keys(e).length > 0;
-		return t !== "default" && (e.name = t), F(), Ni(Ci, null, [zi("slot", e, r && r())], i ? -2 : 64);
+var Ar = (e) => (t, n = ua) => {
+	(!_a || e === "sp") && kr(e, (...e) => t(...e), n);
+}, jr = Ar("bm"), Mr = Ar("m"), Nr = Ar("u"), Pr = Ar("bum"), Fr = Ar("um"), Ir = /* @__PURE__ */ Symbol.for("v-ndc");
+function Lr(e, t, n, r, i, a) {
+	if (n ??= {}, Hn.ce || Hn.parent && Cr(Hn.parent) && Hn.parent.ce) {
+		let e = a != null && n.key == null ? y({}, n, { key: a }) : n, i = Object.keys(e).length > 0;
+		return t !== "default" && (e.name = t), I(), Wi(Pi, null, [Xi("slot", e, r && r())], i ? -2 : 64);
 	}
 	let o = e[t];
 	o && o._c && (o._d = !1);
-	let c = Di.length;
-	F();
-	let l;
+	let s = Ri.length;
+	I();
+	let c;
 	try {
-		let i = o && Dr(o(n)), s = n.key || a || i && i.key;
-		l = Ni(Ci, { key: (s && !_(s) ? s : `_${t}`) + (!i && r ? "_fb" : "") }, i || (r ? r() : []), i && e._ === 1 ? 64 : -2);
+		let i = o && Rr(o(n)), s = n.key || a || i && i.key;
+		c = Wi(Pi, { key: (s && !k(s) ? s : `_${t}`) + (!i && r ? "_fb" : "") }, i || (r ? r() : []), i && e._ === 1 ? 64 : -2);
 	} catch (e) {
-		for (let e = Di.length; e > c; e--) ki();
+		for (let e = Ri.length; e > s; e--) Bi();
 		throw e;
 	} finally {
 		o && o._c && (o._d = !0);
 	}
-	return !i && l.scopeId && (l.slotScopeIds = [l.scopeId + "-s"]), l;
+	return !i && c.scopeId && (c.slotScopeIds = [c.scopeId + "-s"]), c;
 }
-function Dr(e) {
-	return e.some((e) => !Pi(e) || !(e.type === Ti || e.type === Ci && !Dr(e.children))) ? e : null;
+function Rr(e) {
+	return e.some((e) => !Gi(e) || !(e.type === Ii || e.type === Pi && !Rr(e.children))) ? e : null;
 }
-var Or = (e) => e ? aa(e) ? pa(e) : Or(e.parent) : null, kr = /* @__PURE__ */ s(/* @__PURE__ */ Object.create(null), {
+var zr = (e) => e ? ga(e) ? wa(e) : zr(e.parent) : null, Br = /* @__PURE__ */ y(/* @__PURE__ */ Object.create(null), {
 	$: (e) => e,
 	$el: (e) => e.vnode.el,
 	$data: (e) => e.data,
@@ -1428,56 +1527,56 @@ var Or = (e) => e ? aa(e) ? pa(e) : Or(e.parent) : null, kr = /* @__PURE__ */ s(
 	$attrs: (e) => e.attrs,
 	$slots: (e) => e.slots,
 	$refs: (e) => e.refs,
-	$parent: (e) => Or(e.parent),
-	$root: (e) => Or(e.root),
+	$parent: (e) => zr(e.parent),
+	$root: (e) => zr(e.root),
 	$host: (e) => e.ce,
 	$emit: (e) => e.emit,
 	$options: (e) => e.type,
 	$forceUpdate: (e) => e.f ||= () => {
-		Tn(e.update);
+		Fn(e.update);
 	},
-	$nextTick: (e) => e.n ||= Cn.bind(e.proxy),
-	$watch: (e) => r
-}), Ar = (e, n) => e !== t && !e.__isScriptSetup && u(e, n), jr = {
-	get({ _: e }, n) {
-		if (n === "__v_skip") return !0;
-		let { ctx: r, setupState: i, data: a, props: o, accessCache: s, type: c, appContext: l } = e;
-		if (n[0] !== "$") {
-			let e = s[n];
+	$nextTick: (e) => e.n ||= Nn.bind(e.proxy),
+	$watch: (e) => h
+}), Vr = (e, t) => e !== p && !e.__isScriptSetup && S(e, t), Hr = {
+	get({ _: e }, t) {
+		if (t === "__v_skip") return !0;
+		let { ctx: n, setupState: r, data: i, props: a, accessCache: o, type: s, appContext: c } = e;
+		if (t[0] !== "$") {
+			let e = o[t];
 			if (e !== void 0) switch (e) {
-				case 1: return i[n];
-				case 2: return a[n];
-				case 4: return r[n];
-				case 3: return o[n];
+				case 1: return r[t];
+				case 2: return i[t];
+				case 4: return n[t];
+				case 3: return a[t];
 			}
-			else if (Ar(i, n)) return s[n] = 1, i[n];
-			else if (u(o, n)) return s[n] = 3, o[n];
-			else if (r !== t && u(r, n)) return s[n] = 4, r[n];
-			else s[n] = 0;
+			else if (Vr(r, t)) return o[t] = 1, r[t];
+			else if (S(a, t)) return o[t] = 3, a[t];
+			else if (n !== p && S(n, t)) return o[t] = 4, n[t];
+			else o[t] = 0;
 		}
-		let d = kr[n], f, p;
-		if (d) return n === "$attrs" && $e(e.attrs, "get", ""), d(e);
-		if ((f = c.__cssModules) && (f = f[n])) return f;
-		if (r !== t && u(r, n)) return s[n] = 4, r[n];
-		if (p = l.config.globalProperties, u(p, n)) return p[n];
+		let l = Br[t], u, d;
+		if (l) return t === "$attrs" && lt(e.attrs, "get", ""), l(e);
+		if ((u = s.__cssModules) && (u = u[t])) return u;
+		if (n !== p && S(n, t)) return o[t] = 4, n[t];
+		if (d = c.config.globalProperties, S(d, t)) return d[t];
 	},
 	set({ _: e }, t, n) {
 		let { data: r, setupState: i, ctx: a } = e;
-		return Ar(i, t) ? (i[t] = n, !0) : u(e.props, t) || t[0] === "$" && t.slice(1) in e ? !1 : (a[t] = n, !0);
+		return Vr(i, t) ? (i[t] = n, !0) : S(e.props, t) || t[0] === "$" && t.slice(1) in e ? !1 : (a[t] = n, !0);
 	},
 	has({ _: { data: e, setupState: t, accessCache: n, ctx: r, appContext: i, props: a, type: o } }, s) {
 		let c;
-		return !!(n[s] || Ar(t, s) || u(a, s) || u(r, s) || u(kr, s) || u(i.config.globalProperties, s) || (c = o.__cssModules) && c[s]);
+		return !!(n[s] || Vr(t, s) || S(a, s) || S(r, s) || S(Br, s) || S(i.config.globalProperties, s) || (c = o.__cssModules) && c[s]);
 	},
 	defineProperty(e, t, n) {
-		return n.get == null ? u(n, "value") && this.set(e, t, n.value, null) : e._.accessCache[t] = 0, Reflect.defineProperty(e, t, n);
+		return n.get == null ? S(n, "value") && this.set(e, t, n.value, null) : e._.accessCache[t] = 0, Reflect.defineProperty(e, t, n);
 	}
 };
-function Mr() {
+function Ur() {
 	return {
 		app: null,
 		config: {
-			isNativeTag: i,
+			isNativeTag: g,
 			performance: !1,
 			globalProperties: {},
 			optionMergeStrategies: {},
@@ -1494,148 +1593,148 @@ function Mr() {
 		emitsCache: /* @__PURE__ */ new WeakMap()
 	};
 }
-var Nr = 0;
-function Pr(e, t) {
+var Wr = 0;
+function Gr(e, t) {
 	return function(n, r = null) {
-		h(n) || (n = s({}, n)), r != null && !v(r) && (r = null);
-		let i = Mr(), a = /* @__PURE__ */ new WeakSet(), o = [], c = !1, l = i.app = {
-			_uid: Nr++,
+		D(n) || (n = y({}, n)), r != null && !A(r) && (r = null);
+		let i = Ur(), a = /* @__PURE__ */ new WeakSet(), o = [], s = !1, c = i.app = {
+			_uid: Wr++,
 			_component: n,
 			_props: r,
 			_container: null,
 			_context: i,
 			_instance: null,
-			version: ha,
+			version: Ea,
 			get config() {
 				return i.config;
 			},
 			set config(e) {},
 			use(e, ...t) {
-				return a.has(e) || (e && h(e.install) ? (a.add(e), e.install(l, ...t)) : h(e) && (a.add(e), e(l, ...t))), l;
+				return a.has(e) || (e && D(e.install) ? (a.add(e), e.install(c, ...t)) : D(e) && (a.add(e), e(c, ...t))), c;
 			},
 			mixin(e) {
-				return l;
+				return c;
 			},
 			component(e, t) {
-				return t ? (i.components[e] = t, l) : i.components[e];
+				return t ? (i.components[e] = t, c) : i.components[e];
 			},
 			directive(e, t) {
-				return t ? (i.directives[e] = t, l) : i.directives[e];
+				return t ? (i.directives[e] = t, c) : i.directives[e];
 			},
-			mount(a, o, s) {
-				if (!c) {
-					let u = l._ceVNode || zi(n, r);
-					return u.appContext = i, s === !0 ? s = "svg" : s === !1 && (s = void 0), o && t ? t(u, a) : e(u, a, s), c = !0, l._container = a, a.__vue_app__ = l, pa(u.component);
+			mount(a, o, l) {
+				if (!s) {
+					let u = c._ceVNode || Xi(n, r);
+					return u.appContext = i, l === !0 ? l = "svg" : l === !1 && (l = void 0), o && t ? t(u, a) : e(u, a, l), s = !0, c._container = a, a.__vue_app__ = c, wa(u.component);
 				}
 			},
 			onUnmount(e) {
 				o.push(e);
 			},
 			unmount() {
-				c && (pn(o, l._instance, 16), e(null, l._container), delete l._container.__vue_app__);
+				s && (Cn(o, c._instance, 16), e(null, c._container), delete c._container.__vue_app__);
 			},
 			provide(e, t) {
-				return i.provides[e] = t, l;
+				return i.provides[e] = t, c;
 			},
 			runWithContext(e) {
-				let t = Fr;
-				Fr = l;
+				let t = Kr;
+				Kr = c;
 				try {
 					return e();
 				} finally {
-					Fr = t;
+					Kr = t;
 				}
 			}
 		};
-		return l;
+		return c;
 	};
 }
-var Fr = null, Ir = (e, t) => t === "modelValue" || t === "model-value" ? e.modelModifiers : e[`${t}Modifiers`] || e[`${O(t)}Modifiers`] || e[`${te(t)}Modifiers`];
-function Lr(e, n, ...r) {
+var Kr = null, qr = (e, t) => t === "modelValue" || t === "model-value" ? e.modelModifiers : e[`${t}Modifiers`] || e[`${ce(t)}Modifiers`] || e[`${ue(t)}Modifiers`];
+function Jr(e, t, ...n) {
 	if (e.isUnmounted) return;
-	let i = e.vnode.props || t, a = r, o = n.startsWith("update:"), s = o && Ir(i, n.slice(7));
-	s && (s.trim && (a = r.map((e) => g(e) ? e.trim() : e)), s.number && (a = a.map(se)));
-	let c, l = i[c = re(n)] || i[c = re(O(n))];
-	!l && o && (l = i[c = re(te(n))]), l && pn(l, e, 6, a);
-	let u = i[c + "Once"];
-	if (u) {
+	let r = e.vnode.props || p, i = n, a = t.startsWith("update:"), o = a && qr(r, t.slice(7));
+	o && (o.trim && (i = n.map((e) => O(e) ? e.trim() : e)), o.number && (i = i.map(ge)));
+	let s, c = r[s = fe(t)] || r[s = fe(ce(t))];
+	!c && a && (c = r[s = fe(ue(t))]), c && Cn(c, e, 6, i);
+	let l = r[s + "Once"];
+	if (l) {
 		if (!e.emitted) e.emitted = {};
-		else if (e.emitted[c]) return;
-		e.emitted[c] = !0, pn(u, e, 6, a);
+		else if (e.emitted[s]) return;
+		e.emitted[s] = !0, Cn(l, e, 6, i);
 	}
 }
-function Rr(e, t, n = !1) {
+function Yr(e, t, n = !1) {
 	let r = t.emitsCache, i = r.get(e);
 	if (i !== void 0) return i;
 	let a = e.emits, o = {};
-	return a ? (d(a) ? a.forEach((e) => o[e] = null) : s(o, a), v(e) && r.set(e, o), o) : (v(e) && r.set(e, null), null);
+	return a ? (C(a) ? a.forEach((e) => o[e] = null) : y(o, a), A(e) && r.set(e, o), o) : (A(e) && r.set(e, null), null);
 }
-function zr(e, t) {
-	return !e || !a(t) ? !1 : (t = t.slice(2), t = t === "Once" ? t : t.replace(/Once$/, ""), u(e, t[0].toLowerCase() + t.slice(1)) || u(e, te(t)) || u(e, t));
+function Xr(e, t) {
+	return !e || !_(t) ? !1 : (t = t.slice(2), t = t === "Once" ? t : t.replace(/Once$/, ""), S(e, t[0].toLowerCase() + t.slice(1)) || S(e, ue(t)) || S(e, t));
 }
-function Br(e) {
-	let { type: t, vnode: n, proxy: r, withProxy: i, propsOptions: [a], slots: s, attrs: c, emit: l, render: u, renderCache: d, props: f, data: p, setupState: m, ctx: h, inheritAttrs: g } = e, _ = Pn(e), v, y;
+function Zr(e) {
+	let { type: t, vnode: n, proxy: r, withProxy: i, propsOptions: [a], slots: o, attrs: s, emit: c, render: l, renderCache: u, props: d, data: f, setupState: p, ctx: m, inheritAttrs: h } = e, g = Wn(e), _, y;
 	try {
 		if (n.shapeFlag & 4) {
 			let e = i || r, t = e;
-			v = Gi(u.call(t, e, d, f, m, p, h)), y = c;
+			_ = na(l.call(t, e, u, d, p, f, m)), y = s;
 		} else {
 			let e = t;
-			v = Gi(e.length > 1 ? e(f, {
-				attrs: c,
-				slots: s,
-				emit: l
-			}) : e(f, null)), y = t.props ? c : Vr(c);
+			_ = na(e.length > 1 ? e(d, {
+				attrs: s,
+				slots: o,
+				emit: c
+			}) : e(d, null)), y = t.props ? s : Qr(s);
 		}
 	} catch (t) {
-		Di.length = 0, mn(t, e, 1), v = zi(Ti);
+		Ri.length = 0, wn(t, e, 1), _ = Xi(Ii);
 	}
-	let b = v;
-	if (y && g !== !1) {
+	let b = _;
+	if (y && h !== !1) {
 		let e = Object.keys(y), { shapeFlag: t } = b;
-		e.length && t & 7 && (a && e.some(o) && (y = Hr(y, a)), b = Hi(b, y, !1, !0));
+		e.length && t & 7 && (a && e.some(v) && (y = $r(y, a)), b = $i(b, y, !1, !0));
 	}
-	return n.dirs && (b = Hi(b, null, !1, !0), b.dirs = b.dirs ? b.dirs.concat(n.dirs) : n.dirs), n.transition && ar(Gn(b.type) && ir(b) || b, n.transition), v = b, Pn(_), v;
+	return n.dirs && (b = $i(b, null, !1, !0), b.dirs = b.dirs ? b.dirs.concat(n.dirs) : n.dirs), n.transition && hr(tr(b.type) && mr(b) || b, n.transition), _ = b, Wn(g), _;
 }
-var Vr = (e) => {
+var Qr = (e) => {
 	let t;
-	for (let n in e) (n === "class" || n === "style" || a(n)) && ((t ||= {})[n] = e[n]);
+	for (let n in e) (n === "class" || n === "style" || _(n)) && ((t ||= {})[n] = e[n]);
 	return t;
-}, Hr = (e, t) => {
+}, $r = (e, t) => {
 	let n = {};
-	for (let r in e) (!o(r) || !(r.slice(9) in t)) && (n[r] = e[r]);
+	for (let r in e) (!v(r) || !(r.slice(9) in t)) && (n[r] = e[r]);
 	return n;
 };
-function Ur(e, t, n) {
+function ei(e, t, n) {
 	let { props: r, children: i, component: a } = e, { props: o, children: s, patchFlag: c } = t, l = a.emitsOptions;
 	if (t.dirs || t.transition) return !0;
 	if (n && c >= 0) {
 		if (c & 1024) return !0;
-		if (c & 16) return r ? Wr(r, o, l) : !!o;
+		if (c & 16) return r ? ti(r, o, l) : !!o;
 		if (c & 8) {
 			let e = t.dynamicProps;
 			for (let t = 0; t < e.length; t++) {
 				let n = e[t];
-				if (Gr(o, r, n) && !zr(l, n)) return !0;
+				if (ni(o, r, n) && !Xr(l, n)) return !0;
 			}
 		}
-	} else return (i || s) && (!s || !s.$stable) ? !0 : r === o ? !1 : r ? !o || Wr(r, o, l) : !!o;
+	} else return (i || s) && (!s || !s.$stable) ? !0 : r === o ? !1 : r ? !o || ti(r, o, l) : !!o;
 	return !1;
 }
-function Wr(e, t, n) {
+function ti(e, t, n) {
 	let r = Object.keys(t);
 	if (r.length !== Object.keys(e).length) return !0;
 	for (let i = 0; i < r.length; i++) {
 		let a = r[i];
-		if (Gr(t, e, a) && !zr(n, a)) return !0;
+		if (ni(t, e, a) && !Xr(n, a)) return !0;
 	}
 	return !1;
 }
-function Gr(e, t, n) {
+function ni(e, t, n) {
 	let r = e[n], i = t[n];
-	return n === "style" && v(r) && v(i) ? !Ce(r, i) : r !== i;
+	return n === "style" && A(r) && A(i) ? !Me(r, i) : r !== i;
 }
-function Kr({ vnode: e, parent: t, suspense: n }, r) {
+function ri({ vnode: e, parent: t, suspense: n }, r) {
 	for (; t;) {
 		let n = t.subTree;
 		if (n.suspense && n.suspense.activeBranch === e && (n.suspense.vnode.el = n.el = r, e = n), n === e) (e = t.vnode).el = r, t = t.parent;
@@ -1643,520 +1742,520 @@ function Kr({ vnode: e, parent: t, suspense: n }, r) {
 	}
 	n && n.activeBranch === e && (n.vnode.el = r);
 }
-var qr = {}, Jr = () => Object.create(qr), Yr = (e) => Object.getPrototypeOf(e) === qr;
-function Xr(e, t, n, r = !1) {
-	let i = {}, a = Jr();
-	e.propsDefaults = /* @__PURE__ */ Object.create(null), Qr(e, t, i, a);
+var ii = {}, ai = () => Object.create(ii), oi = (e) => Object.getPrototypeOf(e) === ii;
+function si(e, t, n, r = !1) {
+	let i = {}, a = ai();
+	e.propsDefaults = /* @__PURE__ */ Object.create(null), li(e, t, i, a);
 	for (let t in e.propsOptions[0]) t in i || (i[t] = void 0);
-	e.props = n ? r ? i : /* @__PURE__ */ It(i) : e.type.props ? i : a, e.attrs = a;
+	e.props = n ? r ? i : /* @__PURE__ */ Kt(i) : e.type.props ? i : a, e.attrs = a;
 }
-function Zr(e, t, n, r) {
-	let { props: i, attrs: a, vnode: { patchFlag: o } } = e, s = /* @__PURE__ */ M(i), [c] = e.propsOptions, l = !1;
+function ci(e, t, n, r) {
+	let { props: i, attrs: a, vnode: { patchFlag: o } } = e, s = /* @__PURE__ */ P(i), [c] = e.propsOptions, l = !1;
 	if ((r || o > 0) && !(o & 16)) {
 		if (o & 8) {
 			let n = e.vnode.dynamicProps;
 			for (let r = 0; r < n.length; r++) {
 				let o = n[r];
-				if (zr(e.emitsOptions, o)) continue;
-				let d = t[o];
+				if (Xr(e.emitsOptions, o)) continue;
+				let u = t[o];
 				if (c) {
-					if (u(a, o)) d !== a[o] && (a[o] = d, l = !0);
+					if (S(a, o)) u !== a[o] && (a[o] = u, l = !0);
 					else {
-						let t = O(o);
-						i[t] = $r(c, s, t, d, e, !1);
+						let t = ce(o);
+						i[t] = ui(c, s, t, u, e, !1);
 					}
-				} else d !== a[o] && (a[o] = d, l = !0);
+				} else u !== a[o] && (a[o] = u, l = !0);
 			}
 		}
 	} else {
-		Qr(e, t, i, a) && (l = !0);
+		li(e, t, i, a) && (l = !0);
 		let r;
-		for (let a in s) (!t || !u(t, a) && ((r = te(a)) === a || !u(t, r))) && (c ? n && (n[a] !== void 0 || n[r] !== void 0) && (i[a] = $r(c, s, a, void 0, e, !0)) : delete i[a]);
-		if (a !== s) for (let e in a) (!t || !u(t, e)) && (delete a[e], l = !0);
+		for (let a in s) (!t || !S(t, a) && ((r = ue(a)) === a || !S(t, r))) && (c ? n && (n[a] !== void 0 || n[r] !== void 0) && (i[a] = ui(c, s, a, void 0, e, !0)) : delete i[a]);
+		if (a !== s) for (let e in a) (!t || !S(t, e)) && (delete a[e], l = !0);
 	}
-	l && et(e.attrs, "set", "");
+	l && ut(e.attrs, "set", "");
 }
-function Qr(e, n, r, i) {
-	let [a, o] = e.propsOptions, s = !1, c;
-	if (n) for (let t in n) {
-		if (T(t)) continue;
-		let l = n[t], d;
-		a && u(a, d = O(t)) ? !o || !o.includes(d) ? r[d] = l : (c ||= {})[d] = l : zr(e.emitsOptions, t) || (!(t in i) || l !== i[t]) && (i[t] = l, s = !0);
+function li(e, t, n, r) {
+	let [i, a] = e.propsOptions, o = !1, s;
+	if (t) for (let c in t) {
+		if (ae(c)) continue;
+		let l = t[c], u;
+		i && S(i, u = ce(c)) ? !a || !a.includes(u) ? n[u] = l : (s ||= {})[u] = l : Xr(e.emitsOptions, c) || (!(c in r) || l !== r[c]) && (r[c] = l, o = !0);
 	}
-	if (o) {
-		let n = /* @__PURE__ */ M(r), i = c || t;
-		for (let t = 0; t < o.length; t++) {
-			let s = o[t];
-			r[s] = $r(a, n, s, i[s], e, !u(i, s));
+	if (a) {
+		let t = /* @__PURE__ */ P(n), r = s || p;
+		for (let o = 0; o < a.length; o++) {
+			let s = a[o];
+			n[s] = ui(i, t, s, r[s], e, !S(r, s));
 		}
 	}
-	return s;
+	return o;
 }
-function $r(e, t, n, r, i, a) {
+function ui(e, t, n, r, i, a) {
 	let o = e[n];
 	if (o != null) {
-		let e = u(o, "default");
+		let e = S(o, "default");
 		if (e && r === void 0) {
 			let e = o.default;
-			if (o.type !== Function && !o.skipFactory && h(e)) {
+			if (o.type !== Function && !o.skipFactory && D(e)) {
 				let { propsDefaults: a } = i;
 				if (n in a) r = a[n];
 				else {
-					let o = ra(i);
+					let o = ma(i);
 					r = a[n] = e.call(null, t), o();
 				}
 			} else r = e;
 			i.ce && i.ce._setProp(n, r);
 		}
-		o[0] && (a && !e ? r = !1 : o[1] && (r === "" || r === te(n)) && (r = !0));
+		o[0] && (a && !e ? r = !1 : o[1] && (r === "" || r === ue(n)) && (r = !0));
 	}
 	return r;
 }
-function ei(e, r, i = !1) {
-	let a = r.propsCache, o = a.get(e);
-	if (o) return o;
-	let c = e.props, l = {}, f = [];
-	if (!c) return v(e) && a.set(e, n), n;
-	if (d(c)) for (let e = 0; e < c.length; e++) {
-		let n = O(c[e]);
-		ti(n) && (l[n] = t);
+function di(e, t, n = !1) {
+	let r = t.propsCache, i = r.get(e);
+	if (i) return i;
+	let a = e.props, o = {}, s = [];
+	if (!a) return A(e) && r.set(e, m), m;
+	if (C(a)) for (let e = 0; e < a.length; e++) {
+		let t = ce(a[e]);
+		fi(t) && (o[t] = p);
 	}
-	else if (c) for (let e in c) {
-		let t = O(e);
-		if (ti(t)) {
-			let n = c[e], r = l[t] = d(n) || h(n) ? { type: n } : s({}, n), i = r.type, a = !1, o = !0;
-			if (d(i)) for (let e = 0; e < i.length; ++e) {
-				let t = i[e], n = h(t) && t.name;
+	else if (a) for (let e in a) {
+		let t = ce(e);
+		if (fi(t)) {
+			let n = a[e], r = o[t] = C(n) || D(n) ? { type: n } : y({}, n), i = r.type, c = !1, l = !0;
+			if (C(i)) for (let e = 0; e < i.length; ++e) {
+				let t = i[e], n = D(t) && t.name;
 				if (n === "Boolean") {
-					a = !0;
+					c = !0;
 					break;
 				}
-				n === "String" && (o = !1);
+				n === "String" && (l = !1);
 			}
-			else a = h(i) && i.name === "Boolean";
-			r[0] = a, r[1] = o, (a || u(r, "default")) && f.push(t);
+			else c = D(i) && i.name === "Boolean";
+			r[0] = c, r[1] = l, (c || S(r, "default")) && s.push(t);
 		}
 	}
-	let p = [l, f];
-	return v(e) && a.set(e, p), p;
+	let c = [o, s];
+	return A(e) && r.set(e, c), c;
 }
-function ti(e) {
-	return e[0] !== "$" && !T(e);
+function fi(e) {
+	return e[0] !== "$" && !ae(e);
 }
-var ni = (e) => e === "_" || e === "_ctx" || e === "$stable", ri = (e) => d(e) ? e.map(Gi) : [Gi(e)], ii = (e, t, n) => {
+var pi = (e) => e === "_" || e === "_ctx" || e === "$stable", mi = (e) => C(e) ? e.map(na) : [na(e)], hi = (e, t, n) => {
 	if (t._n) return t;
-	let r = Fn((...e) => ri(t(...e)), n);
+	let r = Gn((...e) => mi(t(...e)), n);
 	return r._c = !1, r;
-}, ai = (e, t, n) => {
+}, gi = (e, t, n) => {
 	let r = e._ctx;
 	for (let n in e) {
-		if (ni(n)) continue;
+		if (pi(n)) continue;
 		let i = e[n];
-		if (h(i)) t[n] = ii(n, i, r);
+		if (D(i)) t[n] = hi(n, i, r);
 		else if (i != null) {
-			let e = ri(i);
+			let e = mi(i);
 			t[n] = () => e;
 		}
 	}
-}, oi = (e, t) => {
-	let n = ri(t);
+}, _i = (e, t) => {
+	let n = mi(t);
 	e.slots.default = () => n;
-}, si = (e, t, n) => {
-	for (let r in t) (n || !ni(r)) && (e[r] = t[r]);
-}, ci = (e, t, n) => {
-	let r = e.slots = Jr();
+}, vi = (e, t, n) => {
+	for (let r in t) (n || !pi(r)) && (e[r] = t[r]);
+}, yi = (e, t, n) => {
+	let r = e.slots = ai();
 	if (e.vnode.shapeFlag & 32) {
 		let e = t._;
-		e ? (si(r, t, n), n && oe(r, "_", e, !0)) : ai(t, r);
-	} else t && oi(e, t);
-}, li = (e, n, r) => {
-	let { vnode: i, slots: a } = e, o = !0, s = t;
-	if (i.shapeFlag & 32) {
-		let e = n._;
-		e ? r && e === 1 ? o = !1 : si(a, n, r) : (o = !n.$stable, ai(n, a)), s = n;
-	} else n && (oi(e, n), s = { default: 1 });
-	if (o) for (let e in a) !ni(e) && s[e] == null && delete a[e];
-}, ui = Si;
-function di(e) {
-	return fi(e);
+		e ? (vi(r, t, n), n && he(r, "_", e, !0)) : gi(t, r);
+	} else t && _i(e, t);
+}, bi = (e, t, n) => {
+	let { vnode: r, slots: i } = e, a = !0, o = p;
+	if (r.shapeFlag & 32) {
+		let e = t._;
+		e ? n && e === 1 ? a = !1 : vi(i, t, n) : (a = !t.$stable, gi(t, i)), o = t;
+	} else t && (_i(e, t), o = { default: 1 });
+	if (a) for (let e in i) !pi(e) && o[e] == null && delete i[e];
+}, xi = Ni;
+function Si(e) {
+	return Ci(e);
 }
-function fi(e, i) {
-	let a = ue();
-	a.__VUE__ = !0;
-	let { insert: o, remove: s, patchProp: c, createElement: l, createText: u, createComment: d, setText: f, setElementText: p, parentNode: m, nextSibling: h, setScopeId: g = r, insertStaticContent: _ } = e, v = (e, t, r, i = null, a = null, o = null, s = void 0, c = null, l = !!t.dynamicChildren) => {
+function Ci(e, t) {
+	let n = ye();
+	n.__VUE__ = !0;
+	let { insert: r, remove: i, patchProp: a, createElement: o, createText: s, createComment: c, setText: l, setElementText: u, parentNode: d, nextSibling: f, setScopeId: g = h, insertStaticContent: _ } = e, v = (e, t, n, r = null, i = null, a = null, o = void 0, s = null, c = !!t.dynamicChildren) => {
 		if (e === t) return;
-		e && !Fi(e, t) && (i = ye(e), me(e, a, o, !0), e = null), t.patchFlag === -2 && (l = !1, t.dynamicChildren = null), t.dynamicChildren && e && e.dynamicChildren && e.dynamicChildren.hasOnce && (t.dynamicChildren === n && (t.dynamicChildren = []), t.dynamicChildren.hasOnce = !0);
-		let { type: u, ref: d, shapeFlag: f } = t;
-		switch (u) {
-			case wi:
-				y(e, t, r, i);
+		e && !Ki(e, t) && (r = ge(e), ue(e, i, a, !0), e = null), t.patchFlag === -2 && (c = !1, t.dynamicChildren = null), t.dynamicChildren && e && e.dynamicChildren && e.dynamicChildren.hasOnce && (t.dynamicChildren === m && (t.dynamicChildren = []), t.dynamicChildren.hasOnce = !0);
+		let { type: l, ref: u, shapeFlag: d } = t;
+		switch (l) {
+			case Fi:
+				y(e, t, n, r);
 				break;
-			case Ti:
-				b(e, t, r, i);
+			case Ii:
+				b(e, t, n, r);
 				break;
-			case Ei:
-				e ?? x(t, r, i, s);
+			case Li:
+				e ?? x(t, n, r, o);
 				break;
-			case Ci:
-				re(e, t, r, i, a, o, s, c, l);
+			case Pi:
+				ee(e, t, n, r, i, a, o, s, c);
 				break;
-			default: f & 1 ? w(e, t, r, i, a, o, s, c, l) : f & 6 ? ie(e, t, r, i, a, o, s, c, l) : (f & 64 || f & 128) && u.process(e, t, r, i, a, o, s, c, l, Se);
+			default: d & 1 ? w(e, t, n, r, i, a, o, s, c) : d & 6 ? j(e, t, n, r, i, a, o, s, c) : (d & 64 || d & 128) && l.process(e, t, n, r, i, a, o, s, c, M);
 		}
-		d != null && a ? ur(d, e && e.ref, o, t || e, !t) : d == null && e && e.ref != null && ur(e.ref, null, o, e, !0);
-	}, y = (e, t, n, r) => {
-		if (e == null) o(t.el = u(t.children), n, r);
+		u != null && i ? xr(u, e && e.ref, a, t || e, !t) : u == null && e && e.ref != null && xr(e.ref, null, a, e, !0);
+	}, y = (e, t, n, i) => {
+		if (e == null) r(t.el = s(t.children), n, i);
 		else {
 			let n = t.el = e.el;
-			t.children !== e.children && f(n, t.children);
+			t.children !== e.children && l(n, t.children);
 		}
-	}, b = (e, t, n, r) => {
-		e == null ? o(t.el = d(t.children || ""), n, r) : t.el = e.el;
+	}, b = (e, t, n, i) => {
+		e == null ? r(t.el = c(t.children || ""), n, i) : t.el = e.el;
 	}, x = (e, t, n, r) => {
 		[e.el, e.anchor] = _(e.children, t, n, r, e.el, e.anchor);
-	}, S = ({ el: e, anchor: t }, n, r) => {
-		let i;
-		for (; e && e !== t;) i = h(e), o(e, n, r), e = i;
-		o(t, n, r);
+	}, S = ({ el: e, anchor: t }, n, i) => {
+		let a;
+		for (; e && e !== t;) a = f(e), r(e, n, i), e = a;
+		r(t, n, i);
 	}, C = ({ el: e, anchor: t }) => {
 		let n;
-		for (; e && e !== t;) n = h(e), s(e), e = n;
-		s(t);
+		for (; e && e !== t;) n = f(e), i(e), e = n;
+		i(t);
 	}, w = (e, t, n, r, i, a, o, s, c) => {
-		if (t.type === "svg" ? o = "svg" : t.type === "math" && (o = "mathml"), e == null) E(t, n, r, i, a, o, s, c);
+		if (t.type === "svg" ? o = "svg" : t.type === "math" && (o = "mathml"), e == null) T(t, n, r, i, a, o, s, c);
 		else {
 			let n = e.el && e.el._isVueCE ? e.el : null;
 			try {
-				n && n._beginPatch(), ee(e, t, i, a, o, s, c);
+				n && n._beginPatch(), O(e, t, i, a, o, s, c);
 			} finally {
 				n && n._endPatch();
 			}
 		}
-	}, E = (e, t, n, r, i, a, s, u) => {
-		let d, f, { props: m, shapeFlag: h, transition: g, dirs: _ } = e;
-		if (d = e.el = l(e.type, a, m && m.is, m), h & 8 ? p(d, e.children) : h & 16 && O(e.children, d, null, r, i, pi(e, a), s, u), _ && In(e, null, r, "created"), D(d, e, e.scopeId, s, r), m) {
-			for (let e in m) e !== "value" && !T(e) && c(d, e, null, m[e], a, r);
-			"value" in m && c(d, "value", null, m.value, a), (f = m.onVnodeBeforeMount) && Yi(f, r, e);
+	}, T = (e, t, n, i, s, c, l, d) => {
+		let f, p, { props: m, shapeFlag: h, transition: g, dirs: _ } = e;
+		if (f = e.el = o(e.type, c, m && m.is, m), h & 8 ? u(f, e.children) : h & 16 && D(e.children, f, null, i, s, wi(e, c), l, d), _ && Kn(e, null, i, "created"), E(f, e, e.scopeId, l, i), m) {
+			for (let e in m) e !== "value" && !ae(e) && a(f, e, null, m[e], c, i);
+			"value" in m && a(f, "value", null, m.value, c), (p = m.onVnodeBeforeMount) && oa(p, i, e);
 		}
-		_ && In(e, null, r, "beforeMount");
-		let v = hi(i, g);
-		v && g.beforeEnter(d), o(d, t, n), ((f = m && m.onVnodeMounted) || v || _) && ui(() => {
+		_ && Kn(e, null, i, "beforeMount");
+		let v = Ei(s, g);
+		v && g.beforeEnter(f), r(f, t, n), ((p = m && m.onVnodeMounted) || v || _) && xi(() => {
 			try {
-				f && Yi(f, r, e), v && g.enter(d), _ && In(e, null, r, "mounted");
+				p && oa(p, i, e), v && g.enter(f), _ && Kn(e, null, i, "mounted");
 			} finally {}
-		}, i);
-	}, D = (e, t, n, r, i) => {
+		}, s);
+	}, E = (e, t, n, r, i) => {
 		if (n && g(e, n), r) for (let t = 0; t < r.length; t++) g(e, r[t]);
 		if (i) {
 			let n = i.subTree;
-			if (t === n || xi(n.type) && (n.ssContent === t || n.ssFallback === t)) {
+			if (t === n || Mi(n.type) && (n.ssContent === t || n.ssFallback === t)) {
 				let t = i.vnode;
-				D(e, t, t.scopeId, t.slotScopeIds, i.parent);
+				E(e, t, t.scopeId, t.slotScopeIds, i.parent);
 			}
 		}
-	}, O = (e, t, n, r, i, a, o, s, c = 0) => {
+	}, D = (e, t, n, r, i, a, o, s, c = 0) => {
 		for (let l = c; l < e.length; l++) {
-			let c = e[l] = s ? Ki(e[l]) : Gi(e[l]);
+			let c = e[l] = s ? ra(e[l]) : na(e[l]);
 			v(null, c, t, n, r, i, a, o, s);
 		}
-	}, ee = (e, n, r, i, a, o, s) => {
-		let l = n.el = e.el, { patchFlag: u, dynamicChildren: d, dirs: f } = n;
-		u |= e.patchFlag & 16;
-		let m = e.props || t, h = n.props || t, g;
-		if (r && mi(r, !1), (g = h.onVnodeBeforeUpdate) && Yi(g, r, n, e), f && In(n, e, r, "beforeUpdate"), r && mi(r, !0), d && (!e.dynamicChildren || e.dynamicChildren.length !== d.length) && (u = 0, s = !1, d = null), (m.innerHTML && h.innerHTML == null || m.textContent && h.textContent == null) && p(l, ""), d ? te(e.dynamicChildren, d, l, r, i, pi(n, a), o) : s || k(e, n, l, null, r, i, pi(n, a), o, !1), u > 0) {
-			if (u & 16) ne(l, m, h, r, a);
-			else if (u & 2 && m.class !== h.class && c(l, "class", null, h.class, a), u & 4 && c(l, "style", m.style, h.style, a), u & 8) {
-				let e = n.dynamicProps;
+	}, O = (e, t, n, r, i, o, s) => {
+		let c = t.el = e.el, { patchFlag: l, dynamicChildren: d, dirs: f } = t;
+		l |= e.patchFlag & 16;
+		let m = e.props || p, h = t.props || p, g;
+		if (n && Ti(n, !1), (g = h.onVnodeBeforeUpdate) && oa(g, n, t, e), f && Kn(t, e, n, "beforeUpdate"), n && Ti(n, !0), d && (!e.dynamicChildren || e.dynamicChildren.length !== d.length) && (l = 0, s = !1, d = null), (m.innerHTML && h.innerHTML == null || m.textContent && h.textContent == null) && u(c, ""), d ? k(e.dynamicChildren, d, c, n, r, wi(t, i), o) : s || oe(e, t, c, null, n, r, wi(t, i), o, !1), l > 0) {
+			if (l & 16) A(c, m, h, n, i);
+			else if (l & 2 && m.class !== h.class && a(c, "class", null, h.class, i), l & 4 && a(c, "style", m.style, h.style, i), l & 8) {
+				let e = t.dynamicProps;
 				for (let t = 0; t < e.length; t++) {
-					let n = e[t], i = m[n], o = h[n];
-					(o !== i || n === "value") && c(l, n, i, o, a, r);
+					let r = e[t], o = m[r], s = h[r];
+					(s !== o || r === "value") && a(c, r, o, s, i, n);
 				}
 			}
-			u & 1 && e.children !== n.children && p(l, n.children);
-		} else !s && d == null && ne(l, m, h, r, a);
-		((g = h.onVnodeUpdated) || f) && ui(() => {
-			g && Yi(g, r, n, e), f && In(n, e, r, "updated");
-		}, i);
-	}, te = (e, t, n, r, i, a, o) => {
+			l & 1 && e.children !== t.children && u(c, t.children);
+		} else !s && d == null && A(c, m, h, n, i);
+		((g = h.onVnodeUpdated) || f) && xi(() => {
+			g && oa(g, n, t, e), f && Kn(t, e, n, "updated");
+		}, r);
+	}, k = (e, t, n, r, i, a, o) => {
 		for (let s = 0; s < t.length; s++) {
-			let c = e[s], l = t[s], u = c.el && (c.type === Ci || !Fi(c, l) || c.shapeFlag & 198) ? m(c.el) : n;
+			let c = e[s], l = t[s], u = c.el && (c.type === Pi || !Ki(c, l) || c.shapeFlag & 198) ? d(c.el) : n;
 			v(c, l, u, null, r, i, a, o, !0);
 		}
-	}, ne = (e, n, r, i, a) => {
-		if (n !== r) {
-			if (n !== t) for (let t in n) !T(t) && !(t in r) && c(e, t, n[t], null, a, i);
-			for (let t in r) {
-				if (T(t)) continue;
-				let o = r[t], s = n[t];
-				o !== s && t !== "value" && c(e, t, s, o, a, i);
+	}, A = (e, t, n, r, i) => {
+		if (t !== n) {
+			if (t !== p) for (let o in t) !ae(o) && !(o in n) && a(e, o, t[o], null, i, r);
+			for (let o in n) {
+				if (ae(o)) continue;
+				let s = n[o], c = t[o];
+				s !== c && o !== "value" && a(e, o, c, s, i, r);
 			}
-			"value" in r && c(e, "value", n.value, r.value, a);
+			"value" in n && a(e, "value", t.value, n.value, i);
 		}
-	}, re = (e, t, n, r, i, a, s, c, l) => {
-		let d = t.el = e ? e.el : u(""), f = t.anchor = e ? e.anchor : u(""), { patchFlag: p, dynamicChildren: m, slotScopeIds: h } = t;
-		h && (c = c ? c.concat(h) : h), e == null ? (o(d, n, r), o(f, n, r), O(t.children || [], n, f, i, a, s, c, l)) : p > 0 && p & 64 && m && e.dynamicChildren && e.dynamicChildren.length === m.length ? (te(e.dynamicChildren, m, n, i, a, s, c), (t.key != null || i && t === i.subTree) && gi(e, t, !0)) : k(e, t, n, f, i, a, s, c, l);
-	}, ie = (e, t, n, r, i, a, o, s, c) => {
-		t.slotScopeIds = s, e == null ? t.shapeFlag & 512 ? i.ctx.activate(t, n, r, o, c) : oe(t, n, r, i, a, o, c) : se(e, t, c);
-	}, oe = (e, t, n, r, i, a, o) => {
-		let s = e.component = Qi(e, r, i);
-		if (pr(e) && (s.ctx.renderer = Se), sa(s, !1, o), s.asyncDep) {
-			if (i && i.registerDep(s, ce, o), !e.el) {
-				let r = s.subTree = zi(Ti);
+	}, ee = (e, t, n, i, a, o, c, l, u) => {
+		let d = t.el = e ? e.el : s(""), f = t.anchor = e ? e.anchor : s(""), { patchFlag: p, dynamicChildren: m, slotScopeIds: h } = t;
+		h && (l = l ? l.concat(h) : h), e == null ? (r(d, n, i), r(f, n, i), D(t.children || [], n, f, a, o, c, l, u)) : p > 0 && p & 64 && m && e.dynamicChildren && e.dynamicChildren.length === m.length ? (k(e.dynamicChildren, m, n, a, o, c, l), (t.key != null || a && t === a.subTree) && Di(e, t, !0)) : oe(e, t, n, f, a, o, c, l, u);
+	}, j = (e, t, n, r, i, a, o, s, c) => {
+		t.slotScopeIds = s, e == null ? t.shapeFlag & 512 ? i.ctx.activate(t, n, r, o, c) : te(t, n, r, i, a, o, c) : ne(e, t, c);
+	}, te = (e, t, n, r, i, a, o) => {
+		let s = e.component = la(e, r, i);
+		if (wr(e) && (s.ctx.renderer = M), va(s, !1, o), s.asyncDep) {
+			if (i && i.registerDep(s, re, o), !e.el) {
+				let r = s.subTree = Xi(Ii);
 				b(null, r, t, n), e.placeholder = r.el;
 			}
-		} else ce(s, e, t, n, i, a, o);
-	}, se = (e, t, n) => {
+		} else re(s, e, t, n, i, a, o);
+	}, ne = (e, t, n) => {
 		let r = t.component = e.component;
-		if (Ur(e, t, n)) {
+		if (ei(e, t, n)) {
 			if (r.asyncDep && !r.asyncResolved) {
-				t.el = e.el, le(r, t, n);
+				t.el = e.el, ie(r, t, n);
 				return;
 			}
 			r.next = t, r.update();
 		} else t.el = e.el, r.vnode = t;
-	}, ce = (e, t, n, r, i, a, o) => {
+	}, re = (e, t, n, r, i, a, o) => {
 		let s = () => {
 			if (e.isMounted) {
 				let { next: t, bu: n, u: r, parent: s, vnode: c } = e;
 				{
-					let n = vi(e);
+					let n = ki(e);
 					if (n) {
-						t && (t.el = c.el, le(e, t, o)), n.asyncDep.then(() => {
-							ui(() => {
+						t && (t.el = c.el, ie(e, t, o)), n.asyncDep.then(() => {
+							xi(() => {
 								e.isUnmounted || l();
 							}, i);
 						});
 						return;
 					}
 				}
-				let u = t, d;
-				mi(e, !1), t ? (t.el = c.el, le(e, t, o)) : t = c, n && ae(n), (d = t.props && t.props.onVnodeBeforeUpdate) && Yi(d, s, t, c), mi(e, !0);
-				let f = Br(e), p = e.subTree;
-				e.subTree = f, v(p, f, m(p.el), ye(p), e, i, a), t.el = f.el, u === null && Kr(e, f.el), r && ui(r, i), (d = t.props && t.props.onVnodeUpdated) && ui(() => Yi(d, s, t, c), i);
+				let u = t, f;
+				Ti(e, !1), t ? (t.el = c.el, ie(e, t, o)) : t = c, n && me(n), (f = t.props && t.props.onVnodeBeforeUpdate) && oa(f, s, t, c), Ti(e, !0);
+				let p = Zr(e), m = e.subTree;
+				e.subTree = p, v(m, p, d(m.el), ge(m), e, i, a), t.el = p.el, u === null && ri(e, p.el), r && xi(r, i), (f = t.props && t.props.onVnodeUpdated) && xi(() => oa(f, s, t, c), i);
 			} else {
-				let o, { el: s, props: c } = t, { bm: l, m: u, parent: d, root: f, type: p } = e, m = fr(t);
-				if (mi(e, !1), l && ae(l), !m && (o = c && c.onVnodeBeforeMount) && Yi(o, d, t), mi(e, !0), s && A) {
+				let o, { el: s, props: c } = t, { bm: l, m: u, parent: d, root: f, type: p } = e, m = Cr(t);
+				if (Ti(e, !1), l && me(l), !m && (o = c && c.onVnodeBeforeMount) && oa(o, d, t), Ti(e, !0), s && xe) {
 					let t = () => {
-						e.subTree = Br(e), A(s, e.subTree, e, i, null);
+						e.subTree = Zr(e), xe(s, e.subTree, e, i, null);
 					};
 					m && p.__asyncHydrate ? p.__asyncHydrate(s, e, t) : t();
 				} else {
 					f.ce && f.ce._hasShadowRoot() && f.ce._injectChildStyle(p, e.parent ? e.parent.type : void 0);
-					let o = e.subTree = Br(e);
+					let o = e.subTree = Zr(e);
 					v(null, o, n, r, e, i, a), t.el = o.el;
 				}
-				if (u && ui(u, i), !m && (o = c && c.onVnodeMounted)) {
+				if (u && xi(u, i), !m && (o = c && c.onVnodeMounted)) {
 					let e = t;
-					ui(() => Yi(o, d, e), i);
+					xi(() => oa(o, d, e), i);
 				}
-				(t.shapeFlag & 256 || d && fr(d.vnode) && d.vnode.shapeFlag & 256) && e.a && ui(e.a, i), e.isMounted = !0, t = n = r = null;
+				(t.shapeFlag & 256 || d && Cr(d.vnode) && d.vnode.shapeFlag & 256) && e.a && xi(e.a, i), e.isMounted = !0, t = n = r = null;
 			}
 		};
 		e.scope.on();
-		let c = e.effect = new De(s);
+		let c = e.effect = new Le(s);
 		e.scope.off();
 		let l = e.update = c.run.bind(c), u = e.job = c.runIfDirty.bind(c);
-		u.i = e, u.id = e.uid, c.scheduler = () => Tn(u), mi(e, !0), l();
-	}, le = (e, t, n) => {
+		u.i = e, u.id = e.uid, c.scheduler = () => Fn(u), Ti(e, !0), l();
+	}, ie = (e, t, n) => {
 		t.component = e;
 		let r = e.vnode.props;
-		e.vnode = t, e.next = null, Zr(e, t.props, r, n), li(e, t.children, n), He(), On(e), Ue();
-	}, k = (e, t, n, r, i, a, o, s, c = !1) => {
-		let l = e && e.children, u = e ? e.shapeFlag : 0, d = t.children, { patchFlag: f, shapeFlag: m } = t;
-		if (f > 0) {
-			if (f & 128) {
-				fe(l, d, n, r, i, a, o, s, c);
+		e.vnode = t, e.next = null, ci(e, t.props, r, n), bi(e, t.children, n), Qe(), Rn(e), $e();
+	}, oe = (e, t, n, r, i, a, o, s, c = !1) => {
+		let l = e && e.children, d = e ? e.shapeFlag : 0, f = t.children, { patchFlag: p, shapeFlag: m } = t;
+		if (p > 0) {
+			if (p & 128) {
+				ce(l, f, n, r, i, a, o, s, c);
 				return;
 			}
-			if (f & 256) {
-				de(l, d, n, r, i, a, o, s, c);
+			if (p & 256) {
+				se(l, f, n, r, i, a, o, s, c);
 				return;
 			}
 		}
-		m & 8 ? (u & 16 && ve(l, i, a), d !== l && p(n, d)) : u & 16 ? m & 16 ? fe(l, d, n, r, i, a, o, s, c) : ve(l, i, a, !0) : (u & 8 && p(n, ""), m & 16 && O(d, n, r, i, a, o, s, c));
-	}, de = (e, t, r, i, a, o, s, c, l) => {
-		e ||= n, t ||= n;
-		let u = e.length, d = t.length, f = Math.min(u, d), p = 0;
-		for (; p < f; p++) {
-			let n = t[p] = l ? Ki(t[p]) : Gi(t[p]);
-			v(e[p], n, r, null, a, o, s, c, l);
+		m & 8 ? (d & 16 && he(l, i, a), f !== l && u(n, f)) : d & 16 ? m & 16 ? ce(l, f, n, r, i, a, o, s, c) : he(l, i, a, !0) : (d & 8 && u(n, ""), m & 16 && D(f, n, r, i, a, o, s, c));
+	}, se = (e, t, n, r, i, a, o, s, c) => {
+		e ||= m, t ||= m;
+		let l = e.length, u = t.length, d = Math.min(l, u), f = 0;
+		for (; f < d; f++) {
+			let r = t[f] = c ? ra(t[f]) : na(t[f]);
+			v(e[f], r, n, null, i, a, o, s, c);
 		}
-		u > d ? ve(e, a, o, !0, !1, f) : O(t, r, i, a, o, s, c, l, f);
-	}, fe = (e, t, r, i, a, o, s, c, l) => {
-		let u = 0, d = t.length, f = e.length - 1, p = d - 1;
-		for (; u <= f && u <= p;) {
-			let n = e[u], i = t[u] = l ? Ki(t[u]) : Gi(t[u]);
-			if (Fi(n, i)) v(n, i, r, null, a, o, s, c, l);
+		l > u ? he(e, i, a, !0, !1, d) : D(t, n, r, i, a, o, s, c, d);
+	}, ce = (e, t, n, r, i, a, o, s, c) => {
+		let l = 0, u = t.length, d = e.length - 1, f = u - 1;
+		for (; l <= d && l <= f;) {
+			let r = e[l], u = t[l] = c ? ra(t[l]) : na(t[l]);
+			if (Ki(r, u)) v(r, u, n, null, i, a, o, s, c);
 			else break;
-			u++;
+			l++;
 		}
-		for (; u <= f && u <= p;) {
-			let n = e[f], i = t[p] = l ? Ki(t[p]) : Gi(t[p]);
-			if (Fi(n, i)) v(n, i, r, null, a, o, s, c, l);
+		for (; l <= d && l <= f;) {
+			let r = e[d], l = t[f] = c ? ra(t[f]) : na(t[f]);
+			if (Ki(r, l)) v(r, l, n, null, i, a, o, s, c);
 			else break;
-			f--, p--;
+			d--, f--;
 		}
-		if (u > f) {
-			if (u <= p) {
-				let e = p + 1, n = e < d ? t[e].el : i;
-				for (; u <= p;) v(null, t[u] = l ? Ki(t[u]) : Gi(t[u]), r, n, a, o, s, c, l), u++;
+		if (l > d) {
+			if (l <= f) {
+				let e = f + 1, d = e < u ? t[e].el : r;
+				for (; l <= f;) v(null, t[l] = c ? ra(t[l]) : na(t[l]), n, d, i, a, o, s, c), l++;
 			}
-		} else if (u > p) for (; u <= f;) me(e[u], a, o, !0), u++;
+		} else if (l > f) for (; l <= d;) ue(e[l], i, a, !0), l++;
 		else {
-			let m = u, h = u, g = /* @__PURE__ */ new Map();
-			for (u = h; u <= p; u++) {
-				let e = t[u] = l ? Ki(t[u]) : Gi(t[u]);
-				e.key != null && g.set(e.key, u);
+			let p = l, h = l, g = /* @__PURE__ */ new Map();
+			for (l = h; l <= f; l++) {
+				let e = t[l] = c ? ra(t[l]) : na(t[l]);
+				e.key != null && g.set(e.key, l);
 			}
-			let _, y = 0, b = p - h + 1, x = !1, S = 0, C = Array(b);
-			for (u = 0; u < b; u++) C[u] = 0;
-			for (u = m; u <= f; u++) {
-				let n = e[u];
+			let _, y = 0, b = f - h + 1, x = !1, S = 0, C = Array(b);
+			for (l = 0; l < b; l++) C[l] = 0;
+			for (l = p; l <= d; l++) {
+				let r = e[l];
 				if (y >= b) {
-					me(n, a, o, !0);
+					ue(r, i, a, !0);
 					continue;
 				}
-				let i;
-				if (n.key != null) i = g.get(n.key);
-				else for (_ = h; _ <= p; _++) if (C[_ - h] === 0 && Fi(n, t[_])) {
-					i = _;
+				let u;
+				if (r.key != null) u = g.get(r.key);
+				else for (_ = h; _ <= f; _++) if (C[_ - h] === 0 && Ki(r, t[_])) {
+					u = _;
 					break;
 				}
-				i === void 0 ? me(n, a, o, !0) : (C[i - h] = u + 1, i >= S ? S = i : x = !0, v(n, t[i], r, null, a, o, s, c, l), y++);
+				u === void 0 ? ue(r, i, a, !0) : (C[u - h] = l + 1, u >= S ? S = u : x = !0, v(r, t[u], n, null, i, a, o, s, c), y++);
 			}
-			let w = x ? _i(C) : n;
-			for (_ = w.length - 1, u = b - 1; u >= 0; u--) {
-				let e = h + u, n = t[e], f = t[e + 1], p = e + 1 < d ? f.el || bi(f) : i;
-				C[u] === 0 ? v(null, n, r, p, a, o, s, c, l) : x && (_ < 0 || u !== w[_] ? pe(n, r, p, 2) : _--);
+			let w = x ? Oi(C) : m;
+			for (_ = w.length - 1, l = b - 1; l >= 0; l--) {
+				let e = h + l, d = t[e], f = t[e + 1], p = e + 1 < u ? f.el || ji(f) : r;
+				C[l] === 0 ? v(null, d, n, p, i, a, o, s, c) : x && (_ < 0 || l !== w[_] ? le(d, n, p, 2) : _--);
 			}
 		}
-	}, pe = (e, t, n, r, i = null) => {
-		let { el: a, type: c, transition: l, children: u, shapeFlag: d } = e;
+	}, le = (e, t, n, a, o = null) => {
+		let { el: s, type: c, transition: l, children: u, shapeFlag: d } = e;
 		if (d & 6) {
-			pe(e.component.subTree, t, n, r);
+			le(e.component.subTree, t, n, a);
 			return;
 		}
 		if (d & 128) {
-			e.suspense.move(t, n, r);
+			e.suspense.move(t, n, a);
 			return;
 		}
 		if (d & 64) {
-			c.move(e, t, n, Se);
+			c.move(e, t, n, M);
 			return;
 		}
-		if (c === Ci) {
-			o(a, t, n);
-			for (let e = 0; e < u.length; e++) pe(u[e], t, n, r);
-			o(e.anchor, t, n);
+		if (c === Pi) {
+			r(s, t, n);
+			for (let e = 0; e < u.length; e++) le(u[e], t, n, a);
+			r(e.anchor, t, n);
 			return;
 		}
-		if (c === Ei) {
+		if (c === Li) {
 			S(e, t, n);
 			return;
 		}
-		if (r !== 2 && d & 1 && l) {
-			if (r === 0) l.persisted && !a[Kn] ? o(a, t, n) : (l.beforeEnter(a), o(a, t, n), ui(() => l.enter(a), i));
+		if (a !== 2 && d & 1 && l) {
+			if (a === 0) l.persisted && !s[nr] ? r(s, t, n) : (l.beforeEnter(s), r(s, t, n), xi(() => l.enter(s), o));
 			else {
-				let { leave: r, delayLeave: i, afterLeave: c } = l, u = () => {
-					e.ctx.isUnmounted ? s(a) : o(a, t, n);
+				let { leave: a, delayLeave: o, afterLeave: c } = l, u = () => {
+					e.ctx.isUnmounted ? i(s) : r(s, t, n);
 				}, d = () => {
-					let e = a._isLeaving || !!a[Kn];
-					a._isLeaving && a[Kn](!0), l.persisted && !e ? u() : r(a, () => {
+					let e = s._isLeaving || !!s[nr];
+					s._isLeaving && s[nr](!0), l.persisted && !e ? u() : a(s, () => {
 						u(), c && c();
 					});
 				};
-				i ? i(a, u, d) : d();
+				o ? o(s, u, d) : d();
 			}
-		} else o(a, t, n);
-	}, me = (e, t, n, r = !1, i = !1) => {
+		} else r(s, t, n);
+	}, ue = (e, t, n, r = !1, i = !1) => {
 		let { type: a, props: o, ref: s, children: c, dynamicChildren: l, shapeFlag: u, patchFlag: d, dirs: f, cacheIndex: p, memo: m } = e;
-		if ((d === -2 || l && l.hasOnce) && (i = !1), s != null && (He(), ur(s, null, n, e, !0), Ue()), p != null && (!e.ctx || e.ctx === t) && (t.renderCache[p] = void 0), u & 256) {
+		if ((d === -2 || l && l.hasOnce) && (i = !1), s != null && (Qe(), xr(s, null, n, e, !0), $e()), p != null && (!e.ctx || e.ctx === t) && (t.renderCache[p] = void 0), u & 256) {
 			t.ctx.deactivate(e);
 			return;
 		}
-		let h = u & 1 && f, g = !fr(e), _;
-		if (g && (_ = o && o.onVnodeBeforeUnmount) && Yi(_, t, e), u & 6) _e(e.component, n, r);
+		let h = u & 1 && f, g = !Cr(e), _;
+		if (g && (_ = o && o.onVnodeBeforeUnmount) && oa(_, t, e), u & 6) pe(e.component, n, r);
 		else {
 			if (u & 128) {
 				e.suspense.unmount(n, r);
 				return;
 			}
-			h && In(e, null, t, "beforeUnmount"), u & 64 ? e.type.remove(e, t, n, Se, r) : l && !l.hasOnce && (a !== Ci || d > 0 && d & 64) ? ve(l, t, n, !1, !0) : (a === Ci && d & 384 || !i && u & 16) && ve(c, t, n), r && he(e);
+			h && Kn(e, null, t, "beforeUnmount"), u & 64 ? e.type.remove(e, t, n, M, r) : l && !l.hasOnce && (a !== Pi || d > 0 && d & 64) ? he(l, t, n, !1, !0) : (a === Pi && d & 384 || !i && u & 16) && he(c, t, n), r && de(e);
 		}
 		let v = m != null && p == null;
-		(g && (_ = o && o.onVnodeUnmounted) || h || v) && ui(() => {
-			_ && Yi(_, t, e), h && In(e, null, t, "unmounted"), v && (e.el = null);
+		(g && (_ = o && o.onVnodeUnmounted) || h || v) && xi(() => {
+			_ && oa(_, t, e), h && Kn(e, null, t, "unmounted"), v && (e.el = null);
 		}, n);
-	}, he = (e) => {
-		let { type: t, el: n, anchor: r, transition: i } = e;
-		if (t === Ci) {
-			ge(n, r);
+	}, de = (e) => {
+		let { type: t, el: n, anchor: r, transition: a } = e;
+		if (t === Pi) {
+			fe(n, r);
 			return;
 		}
-		if (t === Ei) {
-			C(e), i && !i.persisted && i.afterLeave && i.afterLeave();
+		if (t === Li) {
+			C(e), a && !a.persisted && a.afterLeave && a.afterLeave();
 			return;
 		}
-		let a = () => {
-			s(n), i && !i.persisted && i.afterLeave && i.afterLeave();
+		let o = () => {
+			i(n), a && !a.persisted && a.afterLeave && a.afterLeave();
 		};
-		if (e.shapeFlag & 1 && i && !i.persisted) {
-			let { leave: t, delayLeave: r } = i, o = () => t(n, a);
-			r ? r(e.el, a, o) : o();
-		} else a();
-	}, ge = (e, t) => {
+		if (e.shapeFlag & 1 && a && !a.persisted) {
+			let { leave: t, delayLeave: r } = a, i = () => t(n, o);
+			r ? r(e.el, o, i) : i();
+		} else o();
+	}, fe = (e, t) => {
 		let n;
-		for (; e !== t;) n = h(e), s(e), e = n;
-		s(t);
-	}, _e = (e, t, n) => {
+		for (; e !== t;) n = f(e), i(e), e = n;
+		i(t);
+	}, pe = (e, t, n) => {
 		let { bum: r, scope: i, job: a, subTree: o, um: s, m: c, a: l } = e;
-		yi(c), yi(l), r && ae(r), i.stop(), a ? (a.flags |= 8, me(o, e, t, n)) : e.vnode.el && o && (o.transition = e.vnode.transition, me(o, e, t, n)), s && ui(s, t), ui(() => {
+		Ai(c), Ai(l), r && me(r), i.stop(), a ? (a.flags |= 8, ue(o, e, t, n)) : e.vnode.el && o && (o.transition = e.vnode.transition, ue(o, e, t, n)), s && xi(s, t), xi(() => {
 			e.isUnmounted = !0;
 		}, t);
-	}, ve = (e, t, n, r = !1, i = !1, a = 0) => {
-		for (let o = a; o < e.length; o++) me(e[o], t, n, r, i);
-	}, ye = (e) => {
-		if (e.shapeFlag & 6) return ye(e.component.subTree);
+	}, he = (e, t, n, r = !1, i = !1, a = 0) => {
+		for (let o = a; o < e.length; o++) ue(e[o], t, n, r, i);
+	}, ge = (e) => {
+		if (e.shapeFlag & 6) return ge(e.component.subTree);
 		if (e.shapeFlag & 128) return e.suspense.next();
-		let t = h(e.anchor || e.el), n = t && t[Wn];
-		return n ? h(n) : t;
-	}, be = !1, xe = (e, t, n) => {
+		let t = f(e.anchor || e.el), n = t && t[er];
+		return n ? f(n) : t;
+	}, _e = !1, ve = (e, t, n) => {
 		let r;
-		e == null ? t._vnode && (me(t._vnode, null, null, !0), r = t._vnode.component) : v(t._vnode || null, e, t, null, null, null, n), t._vnode = e, be ||= (be = !0, On(r), kn(), !1);
-	}, Se = {
+		e == null ? t._vnode && (ue(t._vnode, null, null, !0), r = t._vnode.component) : v(t._vnode || null, e, t, null, null, null, n), t._vnode = e, _e ||= (_e = !0, Rn(r), zn(), !1);
+	}, M = {
 		p: v,
-		um: me,
-		m: pe,
-		r: he,
-		mt: oe,
-		mc: O,
-		pc: k,
-		pbc: te,
-		n: ye,
+		um: ue,
+		m: le,
+		r: de,
+		mt: te,
+		mc: D,
+		pc: oe,
+		pbc: k,
+		n: ge,
 		o: e
-	}, Ce, A;
-	return i && ([Ce, A] = i(Se)), {
-		render: xe,
-		hydrate: Ce,
-		createApp: Pr(xe, Ce)
+	}, be, xe;
+	return t && ([be, xe] = t(M)), {
+		render: ve,
+		hydrate: be,
+		createApp: Gr(ve, be)
 	};
 }
-function pi({ type: e, props: t }, n) {
+function wi({ type: e, props: t }, n) {
 	return n === "svg" && e === "foreignObject" || n === "mathml" && e === "annotation-xml" && t && t.encoding && t.encoding.includes("html") ? void 0 : n;
 }
-function mi({ effect: e, job: t }, n) {
+function Ti({ effect: e, job: t }, n) {
 	n ? (e.flags |= 32, t.flags |= 4) : (e.flags &= -33, t.flags &= -5);
 }
-function hi(e, t) {
+function Ei(e, t) {
 	return (!e || e && !e.pendingBranch) && t && !t.persisted;
 }
-function gi(e, t, n = !1) {
+function Di(e, t, n = !1) {
 	let r = e.children, i = t.children;
-	if (d(r) && d(i)) for (let e = 0; e < r.length; e++) {
+	if (C(r) && C(i)) for (let e = 0; e < r.length; e++) {
 		let t = r[e], a = i[e];
-		a.shapeFlag & 1 && !a.dynamicChildren && ((a.patchFlag <= 0 || a.patchFlag === 32) && (a = i[e] = Ki(i[e]), a.el = t.el), !n && a.patchFlag !== -2 && gi(t, a)), a.type === wi && (a.patchFlag === -1 && (a = i[e] = Ki(a)), a.el = t.el), a.type === Ti && !a.el && (a.el = t.el);
+		a.shapeFlag & 1 && !a.dynamicChildren && ((a.patchFlag <= 0 || a.patchFlag === 32) && (a = i[e] = ra(i[e]), a.el = t.el), !n && a.patchFlag !== -2 && Di(t, a)), a.type === Fi && (a.patchFlag === -1 && (a = i[e] = ra(a)), a.el = t.el), a.type === Ii && !a.el && (a.el = t.el);
 	}
 }
-function _i(e) {
+function Oi(e) {
 	let t = e.slice(), n = [0], r, i, a, o, s, c = e.length;
 	for (r = 0; r < c; r++) {
 		let c = e[r];
@@ -2172,63 +2271,63 @@ function _i(e) {
 	for (a = n.length, o = n[a - 1]; a-- > 0;) n[a] = o, o = t[o];
 	return n;
 }
-function vi(e) {
+function ki(e) {
 	let t = e.subTree.component;
-	if (t) return t.asyncDep && !t.asyncResolved ? t : vi(t);
+	if (t) return t.asyncDep && !t.asyncResolved ? t : ki(t);
 }
-function yi(e) {
+function Ai(e) {
 	if (e) for (let t = 0; t < e.length; t++) e[t].flags |= 8;
 }
-function bi(e) {
+function ji(e) {
 	if (e.placeholder) return e.placeholder;
 	let t = e.component;
-	return t ? bi(t.subTree) : null;
+	return t ? ji(t.subTree) : null;
 }
-var xi = (e) => e.__isSuspense;
-function Si(e, t) {
-	t && t.pendingBranch ? d(e) ? t.effects.push(...e) : t.effects.push(e) : Dn(e);
+var Mi = (e) => e.__isSuspense;
+function Ni(e, t) {
+	t && t.pendingBranch ? C(e) ? t.effects.push(...e) : t.effects.push(e) : Ln(e);
 }
-var Ci = /* @__PURE__ */ Symbol.for("v-fgt"), wi = /* @__PURE__ */ Symbol.for("v-txt"), Ti = /* @__PURE__ */ Symbol.for("v-cmt"), Ei = /* @__PURE__ */ Symbol.for("v-stc"), Di = [], Oi = null;
-function F(e = !1) {
-	Di.push(Oi = e ? null : []);
+var Pi = /* @__PURE__ */ Symbol.for("v-fgt"), Fi = /* @__PURE__ */ Symbol.for("v-txt"), Ii = /* @__PURE__ */ Symbol.for("v-cmt"), Li = /* @__PURE__ */ Symbol.for("v-stc"), Ri = [], zi = null;
+function I(e = !1) {
+	Ri.push(zi = e ? null : []);
 }
-function ki() {
-	Di.pop(), Oi = Di[Di.length - 1] || null;
+function Bi() {
+	Ri.pop(), zi = Ri[Ri.length - 1] || null;
 }
-var Ai = 1;
-function ji(e, t = !1) {
-	Ai += e, e < 0 && Oi && t && (Oi.hasOnce = !0);
+var Vi = 1;
+function Hi(e, t = !1) {
+	Vi += e, e < 0 && zi && t && (zi.hasOnce = !0);
 }
-function Mi(e) {
-	return e.dynamicChildren = Ai > 0 ? Oi || n : null, ki(), Ai > 0 && Oi && Oi.push(e), e;
+function Ui(e) {
+	return e.dynamicChildren = Vi > 0 ? zi || m : null, Bi(), Vi > 0 && zi && zi.push(e), e;
 }
-function I(e, t, n, r, i, a) {
-	return Mi(Ri(e, t, n, r, i, a, !0));
+function L(e, t, n, r, i, a) {
+	return Ui(Yi(e, t, n, r, i, a, !0));
 }
-function Ni(e, t, n, r, i) {
-	return Mi(zi(e, t, n, r, i, !0));
+function Wi(e, t, n, r, i) {
+	return Ui(Xi(e, t, n, r, i, !0));
 }
-function Pi(e) {
+function Gi(e) {
 	return e ? e.__v_isVNode === !0 : !1;
 }
-function Fi(e, t) {
+function Ki(e, t) {
 	return e.type === t.type && e.key === t.key;
 }
-var Ii = ({ key: e }) => e ?? null, Li = ({ ref: e, ref_key: t, ref_for: n }) => (typeof e == "number" && (e = "" + e), e == null ? null : g(e) || /* @__PURE__ */ Kt(e) || h(e) ? {
-	i: Mn,
+var qi = ({ key: e }) => e ?? null, Ji = ({ ref: e, ref_key: t, ref_for: n }) => (typeof e == "number" && (e = "" + e), e == null ? null : O(e) || /* @__PURE__ */ nn(e) || D(e) ? {
+	i: Hn,
 	r: e,
 	k: t,
 	f: !!n
 } : e);
-function Ri(e, t = null, n = null, r = 0, i = null, a = e === Ci ? 0 : 1, o = !1, s = !1) {
+function Yi(e, t = null, n = null, r = 0, i = null, a = e === Pi ? 0 : 1, o = !1, s = !1) {
 	let c = {
 		__v_isVNode: !0,
 		__v_skip: !0,
 		type: e,
 		props: t,
-		key: t && Ii(t),
-		ref: t && Li(t),
-		scopeId: Nn,
+		key: t && qi(t),
+		ref: t && Ji(t),
+		scopeId: Un,
 		slotScopeIds: null,
 		children: n,
 		component: null,
@@ -2248,35 +2347,35 @@ function Ri(e, t = null, n = null, r = 0, i = null, a = e === Ci ? 0 : 1, o = !1
 		dynamicProps: i,
 		dynamicChildren: null,
 		appContext: null,
-		ctx: Mn
+		ctx: Hn
 	};
-	return s ? (qi(c, n), a & 128 && e.normalize(c)) : n && (c.shapeFlag |= g(n) ? 8 : 16), Ai > 0 && !o && Oi && (c.patchFlag > 0 || a & 6) && c.patchFlag !== 32 && Oi.push(c), c;
+	return s ? (ia(c, n), a & 128 && e.normalize(c)) : n && (c.shapeFlag |= O(n) ? 8 : 16), Vi > 0 && !o && zi && (c.patchFlag > 0 || a & 6) && c.patchFlag !== 32 && zi.push(c), c;
 }
-var zi = Bi;
-function Bi(e, t = null, n = null, r = 0, i = null, a = !1) {
-	if ((!e || e === Tr) && (e = Ti), Pi(e)) {
-		let r = Hi(e, t, !0);
-		return n && qi(r, n), Ai > 0 && !a && Oi && (r.shapeFlag & 6 ? Oi[Oi.indexOf(e)] = r : Oi.push(r)), r.patchFlag = -2, r;
+var Xi = Zi;
+function Zi(e, t = null, n = null, r = 0, i = null, a = !1) {
+	if ((!e || e === Ir) && (e = Ii), Gi(e)) {
+		let r = $i(e, t, !0);
+		return n && ia(r, n), Vi > 0 && !a && zi && (r.shapeFlag & 6 ? zi[zi.indexOf(e)] = r : zi.push(r)), r.patchFlag = -2, r;
 	}
-	if (ma(e) && (e = e.__vccOpts), t) {
-		t = Vi(t);
+	if (Ta(e) && (e = e.__vccOpts), t) {
+		t = Qi(t);
 		let { class: e, style: n } = t;
-		e && !g(e) && (t.class = he(e)), v(n) && (/* @__PURE__ */ Ht(n) && !d(n) && (n = s({}, n)), t.style = k(n));
+		e && !O(e) && (t.class = we(e)), A(n) && (/* @__PURE__ */ Qt(n) && !C(n) && (n = y({}, n)), t.style = M(n));
 	}
-	let o = g(e) ? 1 : xi(e) ? 128 : Gn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0;
-	return Ri(e, t, n, r, i, o, a, !0);
+	let o = O(e) ? 1 : Mi(e) ? 128 : tr(e) ? 64 : A(e) ? 4 : D(e) ? 2 : 0;
+	return Yi(e, t, n, r, i, o, a, !0);
 }
-function Vi(e) {
-	return e ? /* @__PURE__ */ Ht(e) || Yr(e) ? s({}, e) : e : null;
+function Qi(e) {
+	return e ? /* @__PURE__ */ Qt(e) || oi(e) ? y({}, e) : e : null;
 }
-function Hi(e, t, n = !1, r = !1) {
-	let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e, l = t ? Ji(i || {}, t) : i, u = {
+function $i(e, t, n = !1, r = !1) {
+	let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e, l = t ? aa(i || {}, t) : i, u = {
 		__v_isVNode: !0,
 		__v_skip: !0,
 		type: e.type,
 		props: l,
-		key: l && Ii(l),
-		ref: t && t.ref ? n && a ? d(a) ? a.concat(Li(t)) : [a, Li(t)] : Li(t) : a,
+		key: l && qi(l),
+		ref: t && t.ref ? n && a ? C(a) ? a.concat(Ji(t)) : [a, Ji(t)] : Ji(t) : a,
 		scopeId: e.scopeId,
 		slotScopeIds: e.slotScopeIds,
 		children: s,
@@ -2285,7 +2384,7 @@ function Hi(e, t, n = !1, r = !1) {
 		targetAnchor: e.targetAnchor,
 		staticCount: e.staticCount,
 		shapeFlag: e.shapeFlag,
-		patchFlag: t && e.type !== Ci ? o === -1 ? 16 : o | 16 : o,
+		patchFlag: t && e.type !== Pi ? o === -1 ? 16 : o | 16 : o,
 		dynamicProps: e.dynamicProps,
 		dynamicChildren: e.dynamicChildren,
 		appContext: e.appContext,
@@ -2293,8 +2392,8 @@ function Hi(e, t, n = !1, r = !1) {
 		transition: c,
 		component: e.component,
 		suspense: e.suspense,
-		ssContent: e.ssContent && Hi(e.ssContent),
-		ssFallback: e.ssFallback && Hi(e.ssFallback),
+		ssContent: e.ssContent && $i(e.ssContent),
+		ssFallback: e.ssFallback && $i(e.ssFallback),
 		placeholder: e.placeholder,
 		el: e.el,
 		anchor: e.anchor,
@@ -2302,85 +2401,85 @@ function Hi(e, t, n = !1, r = !1) {
 		ce: e.ce,
 		cacheIndex: e.cacheIndex
 	};
-	return c && r && ar(u, c.clone(u)), u;
+	return c && r && hr(u, c.clone(u)), u;
 }
-function Ui(e = " ", t = 0) {
-	return zi(wi, null, e, t);
+function ea(e = " ", t = 0) {
+	return Xi(Fi, null, e, t);
 }
-function Wi(e = "", t = !1) {
-	return t ? (F(), Ni(Ti, null, e)) : zi(Ti, null, e);
+function ta(e = "", t = !1) {
+	return t ? (I(), Wi(Ii, null, e)) : Xi(Ii, null, e);
 }
-function Gi(e) {
-	return e == null || typeof e == "boolean" ? zi(Ti) : d(e) ? zi(Ci, null, e.slice()) : Pi(e) ? Ki(e) : zi(wi, null, String(e));
+function na(e) {
+	return e == null || typeof e == "boolean" ? Xi(Ii) : C(e) ? Xi(Pi, null, e.slice()) : Gi(e) ? ra(e) : Xi(Fi, null, String(e));
 }
-function Ki(e) {
-	return e.el === null && e.patchFlag !== -1 || e.memo ? e : Hi(e);
+function ra(e) {
+	return e.el === null && e.patchFlag !== -1 || e.memo ? e : $i(e);
 }
-function qi(e, t) {
+function ia(e, t) {
 	let n = 0, { shapeFlag: r } = e;
 	if (t == null) t = null;
-	else if (d(t)) n = 16;
+	else if (C(t)) n = 16;
 	else if (typeof t == "object") {
 		if (r & 65) {
 			let n = t.default;
-			n && (n._c && (n._d = !1), qi(e, n()), n._c && (n._d = !0));
+			n && (n._c && (n._d = !1), ia(e, n()), n._c && (n._d = !0));
 			return;
 		}
 		{
 			n = 32;
 			let r = t._;
-			!r && !Yr(t) ? t._ctx = Mn : r === 3 && Mn && (Mn.slots._ === 1 ? t._ = 1 : (t._ = 2, e.patchFlag |= 1024));
+			!r && !oi(t) ? t._ctx = Hn : r === 3 && Hn && (Hn.slots._ === 1 ? t._ = 1 : (t._ = 2, e.patchFlag |= 1024));
 		}
-	} else if (h(t)) {
+	} else if (D(t)) {
 		if (r & 65) {
-			qi(e, { default: t });
+			ia(e, { default: t });
 			return;
 		}
 		t = {
 			default: t,
-			_ctx: Mn
+			_ctx: Hn
 		}, n = 32;
-	} else t = String(t), r & 64 ? (n = 16, t = [Ui(t)]) : n = 8;
+	} else t = String(t), r & 64 ? (n = 16, t = [ea(t)]) : n = 8;
 	e.children = t, e.shapeFlag |= n;
 }
-function Ji(...e) {
+function aa(...e) {
 	let t = {};
 	for (let n = 0; n < e.length; n++) {
 		let r = e[n];
-		for (let e in r) if (e === "class") t.class !== r.class && (t.class = he([t.class, r.class]));
-		else if (e === "style") t.style = k([t.style, r.style]);
-		else if (a(e)) {
+		for (let e in r) if (e === "class") t.class !== r.class && (t.class = we([t.class, r.class]));
+		else if (e === "style") t.style = M([t.style, r.style]);
+		else if (_(e)) {
 			let n = t[e], i = r[e];
-			i && n !== i && !(d(n) && n.includes(i)) ? t[e] = n ? [].concat(n, i) : i : i == null && n == null && !o(e) && (t[e] = i);
+			i && n !== i && !(C(n) && n.includes(i)) ? t[e] = n ? [].concat(n, i) : i : i == null && n == null && !v(e) && (t[e] = i);
 		} else e !== "" && (t[e] = r[e]);
 	}
 	return t;
 }
-function Yi(e, t, n, r = null) {
-	pn(e, t, 7, [n, r]);
+function oa(e, t, n, r = null) {
+	Cn(e, t, 7, [n, r]);
 }
-var Xi = Mr(), Zi = 0;
-function Qi(e, n, r) {
-	let i = e.type, a = (n ? n.appContext : e.appContext) || Xi, o = {
-		uid: Zi++,
+var sa = Ur(), ca = 0;
+function la(e, t, n) {
+	let r = e.type, i = (t ? t.appContext : e.appContext) || sa, a = {
+		uid: ca++,
 		vnode: e,
-		type: i,
-		parent: n,
-		appContext: a,
+		type: r,
+		parent: t,
+		appContext: i,
 		root: null,
 		next: null,
 		subTree: null,
 		effect: null,
 		update: null,
 		job: null,
-		scope: new we(!0),
+		scope: new Pe(!0),
 		render: null,
 		proxy: null,
 		exposed: null,
 		exposeProxy: null,
 		withProxy: null,
-		provides: n ? n.provides : Object.create(a.provides),
-		ids: n ? n.ids : [
+		provides: t ? t.provides : Object.create(i.provides),
+		ids: t ? t.ids : [
 			"",
 			0,
 			0
@@ -2389,22 +2488,22 @@ function Qi(e, n, r) {
 		renderCache: [],
 		components: null,
 		directives: null,
-		propsOptions: ei(i, a),
-		emitsOptions: Rr(i, a),
+		propsOptions: di(r, i),
+		emitsOptions: Yr(r, i),
 		emit: null,
 		emitted: null,
-		propsDefaults: t,
-		inheritAttrs: i.inheritAttrs,
-		ctx: t,
-		data: t,
-		props: t,
-		attrs: t,
-		slots: t,
-		refs: t,
-		setupState: t,
+		propsDefaults: p,
+		inheritAttrs: r.inheritAttrs,
+		ctx: p,
+		data: p,
+		props: p,
+		attrs: p,
+		slots: p,
+		refs: p,
+		setupState: p,
 		setupContext: null,
-		suspense: r,
-		suspenseId: r ? r.pendingId : 0,
+		suspense: n,
+		suspenseId: n ? n.pendingId : 0,
 		asyncDep: null,
 		asyncResolved: !1,
 		isMounted: !1,
@@ -2425,72 +2524,72 @@ function Qi(e, n, r) {
 		ec: null,
 		sp: null
 	};
-	return o.ctx = { _: o }, o.root = n ? n.root : o, o.emit = Lr.bind(null, o), e.ce && e.ce(o), o;
+	return a.ctx = { _: a }, a.root = t ? t.root : a, a.emit = Jr.bind(null, a), e.ce && e.ce(a), a;
 }
-var $i = null, ea = () => $i || Mn, ta, na;
+var ua = null, da = () => ua || Hn, fa, pa;
 {
-	let e = ue(), t = (t, n) => {
+	let e = ye(), t = (t, n) => {
 		let r;
 		return (r = e[t]) || (r = e[t] = []), r.push(n), (e) => {
 			r.length > 1 ? r.forEach((t) => t(e)) : r[0](e);
 		};
 	};
-	ta = t("__VUE_INSTANCE_SETTERS__", (e) => $i = e), na = t("__VUE_SSR_SETTERS__", (e) => oa = e);
+	fa = t("__VUE_INSTANCE_SETTERS__", (e) => ua = e), pa = t("__VUE_SSR_SETTERS__", (e) => _a = e);
 }
-var ra = (e) => {
-	let t = $i;
-	return ta(e), e.scope.on(), () => {
-		e.scope.off(), ta(t);
+var ma = (e) => {
+	let t = ua;
+	return fa(e), e.scope.on(), () => {
+		e.scope.off(), fa(t);
 	};
-}, ia = () => {
-	$i && $i.scope.off(), ta(null);
+}, ha = () => {
+	ua && ua.scope.off(), fa(null);
 };
-function aa(e) {
+function ga(e) {
 	return e.vnode.shapeFlag & 4;
 }
-var oa = !1;
-function sa(e, t = !1, n = !1) {
-	t && na(t);
-	let { props: r, children: i } = e.vnode, a = aa(e);
-	Xr(e, r, a, t), ci(e, i, n || t);
-	let o = a ? ca(e, t) : void 0;
-	return t && na(!1), o;
+var _a = !1;
+function va(e, t = !1, n = !1) {
+	t && pa(t);
+	let { props: r, children: i } = e.vnode, a = ga(e);
+	si(e, r, a, t), yi(e, i, n || t);
+	let o = a ? ya(e, t) : void 0;
+	return t && pa(!1), o;
 }
-function ca(e, t) {
+function ya(e, t) {
 	let n = e.type;
-	e.accessCache = /* @__PURE__ */ Object.create(null), e.proxy = new Proxy(e.ctx, jr);
+	e.accessCache = /* @__PURE__ */ Object.create(null), e.proxy = new Proxy(e.ctx, Hr);
 	let { setup: r } = n;
 	if (r) {
-		He();
-		let n = e.setupContext = r.length > 1 ? fa(e) : null, i = ra(e), a = fn(r, e, 0, [e.props, n]), o = y(a);
-		if (Ue(), i(), (o || e.sp) && !fr(e) && sr(e), o) {
-			if (a.then(ia, ia), t) return a.then((n) => {
-				na(!0);
+		Qe();
+		let n = e.setupContext = r.length > 1 ? Ca(e) : null, i = ma(e), a = Sn(r, e, 0, [e.props, n]), o = ee(a);
+		if ($e(), i(), (o || e.sp) && !Cr(e) && vr(e), o) {
+			if (a.then(ha, ha), t) return a.then((n) => {
+				pa(!0);
 				try {
-					la(e, n, t);
+					ba(e, n, t);
 				} finally {
-					na(!1);
+					pa(!1);
 				}
 			}).catch((t) => {
-				mn(t, e, 0);
+				wn(t, e, 0);
 			});
 			e.asyncDep = a;
-		} else la(e, a, t);
-	} else ua(e, t);
+		} else ba(e, a, t);
+	} else xa(e, t);
 }
-function la(e, t, n) {
-	h(t) ? e.type.__ssrInlineRender ? e.ssrRender = t : e.render = t : v(t) && (e.setupState = Qt(t)), ua(e, n);
+function ba(e, t, n) {
+	D(t) ? e.type.__ssrInlineRender ? e.ssrRender = t : e.render = t : A(t) && (e.setupState = ln(t)), xa(e, n);
 }
-function ua(e, t, n) {
-	let i = e.type;
-	e.render ||= i.render || r;
+function xa(e, t, n) {
+	let r = e.type;
+	e.render ||= r.render || h;
 }
-var da = { get(e, t) {
-	return $e(e, "get", ""), e[t];
+var Sa = { get(e, t) {
+	return lt(e, "get", ""), e[t];
 } };
-function fa(e) {
+function Ca(e) {
 	return {
-		attrs: new Proxy(e.attrs, da),
+		attrs: new Proxy(e.attrs, Sa),
 		slots: e.slots,
 		emit: e.emit,
 		expose: (t) => {
@@ -2498,35 +2597,35 @@ function fa(e) {
 		}
 	};
 }
-function pa(e) {
-	return e.exposed ? e.exposeProxy ||= new Proxy(Qt(Ut(e.exposed)), {
+function wa(e) {
+	return e.exposed ? e.exposeProxy ||= new Proxy(ln($t(e.exposed)), {
 		get(t, n) {
 			if (n in t) return t[n];
-			if (n in kr) return kr[n](e);
+			if (n in Br) return Br[n](e);
 		},
 		has(e, t) {
-			return t in e || t in kr;
+			return t in e || t in Br;
 		}
 	}) : e.proxy;
 }
-function ma(e) {
-	return h(e) && "__vccOpts" in e;
+function Ta(e) {
+	return D(e) && "__vccOpts" in e;
 }
-var L = (e, t) => /* @__PURE__ */ an(e, t, oa);
-function R(e, t, n) {
+var R = (e, t) => /* @__PURE__ */ hn(e, t, _a);
+function z(e, t, n) {
 	try {
-		ji(-1);
+		Hi(-1);
 		let r = arguments.length;
-		return r === 2 ? v(t) && !d(t) ? Pi(t) ? zi(e, null, [t]) : zi(e, t) : zi(e, null, t) : (r > 3 ? n = Array.prototype.slice.call(arguments, 2) : r === 3 && Pi(n) && (n = [n]), zi(e, t, n));
+		return r === 2 ? A(t) && !C(t) ? Gi(t) ? Xi(e, null, [t]) : Xi(e, t) : Xi(e, null, t) : (r > 3 ? n = Array.prototype.slice.call(arguments, 2) : r === 3 && Gi(n) && (n = [n]), Xi(e, t, n));
 	} finally {
-		ji(1);
+		Hi(1);
 	}
 }
-var ha = "3.5.43", ga = void 0, _a = typeof window < "u" && window.trustedTypes;
-if (_a) try {
-	ga = /* @__PURE__ */ _a.createPolicy("vue", { createHTML: (e) => e });
+var Ea = "3.5.43", Da = void 0, Oa = typeof window < "u" && window.trustedTypes;
+if (Oa) try {
+	Da = /* @__PURE__ */ Oa.createPolicy("vue", { createHTML: (e) => e });
 } catch {}
-var va = ga ? (e) => ga.createHTML(e) : (e) => e, ya = "http://www.w3.org/2000/svg", ba = "http://www.w3.org/1998/Math/MathML", xa = typeof document < "u" ? document : null, Sa = xa && /* @__PURE__ */ xa.createElement("template"), Ca = {
+var ka = Da ? (e) => Da.createHTML(e) : (e) => e, Aa = "http://www.w3.org/2000/svg", ja = "http://www.w3.org/1998/Math/MathML", Ma = typeof document < "u" ? document : null, Na = Ma && /* @__PURE__ */ Ma.createElement("template"), Pa = {
 	insert: (e, t, n) => {
 		t.insertBefore(e, n || null);
 	},
@@ -2535,11 +2634,11 @@ var va = ga ? (e) => ga.createHTML(e) : (e) => e, ya = "http://www.w3.org/2000/s
 		t && t.removeChild(e);
 	},
 	createElement: (e, t, n, r) => {
-		let i = t === "svg" ? xa.createElementNS(ya, e) : t === "mathml" ? xa.createElementNS(ba, e) : n ? xa.createElement(e, { is: n }) : xa.createElement(e);
+		let i = t === "svg" ? Ma.createElementNS(Aa, e) : t === "mathml" ? Ma.createElementNS(ja, e) : n ? Ma.createElement(e, { is: n }) : Ma.createElement(e);
 		return e === "select" && r && r.multiple != null && i.setAttribute("multiple", r.multiple), i;
 	},
-	createText: (e) => xa.createTextNode(e),
-	createComment: (e) => xa.createComment(e),
+	createText: (e) => Ma.createTextNode(e),
+	createComment: (e) => Ma.createComment(e),
 	setText: (e, t) => {
 		e.nodeValue = t;
 	},
@@ -2548,7 +2647,7 @@ var va = ga ? (e) => ga.createHTML(e) : (e) => e, ya = "http://www.w3.org/2000/s
 	},
 	parentNode: (e) => e.parentNode,
 	nextSibling: (e) => e.nextSibling,
-	querySelector: (e) => xa.querySelector(e),
+	querySelector: (e) => Ma.querySelector(e),
 	setScopeId(e, t) {
 		e.setAttribute(t, "");
 	},
@@ -2556,8 +2655,8 @@ var va = ga ? (e) => ga.createHTML(e) : (e) => e, ya = "http://www.w3.org/2000/s
 		let o = n ? n.previousSibling : t.lastChild;
 		if (i && (i === a || i.nextSibling)) for (; t.insertBefore(i.cloneNode(!0), n), i !== a && (i = i.nextSibling););
 		else {
-			Sa.innerHTML = va(r === "svg" ? `<svg>${e}</svg>` : r === "mathml" ? `<math>${e}</math>` : e);
-			let i = Sa.content;
+			Na.innerHTML = ka(r === "svg" ? `<svg>${e}</svg>` : r === "mathml" ? `<math>${e}</math>` : e);
+			let i = Na.content;
 			if (r === "svg" || r === "mathml") {
 				let e = i.firstChild;
 				for (; e.firstChild;) i.appendChild(e.firstChild);
@@ -2567,7 +2666,7 @@ var va = ga ? (e) => ga.createHTML(e) : (e) => e, ya = "http://www.w3.org/2000/s
 		}
 		return [o ? o.nextSibling : t.firstChild, n ? n.previousSibling : t.lastChild];
 	}
-}, wa = "transition", Ta = "animation", Ea = /* @__PURE__ */ Symbol("_vtc"), Da = {
+}, Fa = "transition", Ia = "animation", La = /* @__PURE__ */ Symbol("_vtc"), Ra = {
 	name: String,
 	type: String,
 	css: {
@@ -2588,81 +2687,81 @@ var va = ga ? (e) => ga.createHTML(e) : (e) => e, ya = "http://www.w3.org/2000/s
 	leaveFromClass: String,
 	leaveActiveClass: String,
 	leaveToClass: String
-}, Oa = /* @__PURE__ */ s({}, Xn, Da), ka = /* @__PURE__ */ ((e) => (e.displayName = "Transition", e.props = Oa, e))((e, { slots: t }) => R(er, Ma(e), t)), Aa = (e, t = []) => {
-	d(e) ? e.forEach((e) => e(...t)) : e && e(...t);
-}, ja = (e) => e ? d(e) ? e.some((e) => e.length > 1) : e.length > 1 : !1;
-function Ma(e) {
+}, za = /* @__PURE__ */ y({}, or, Ra), Ba = /* @__PURE__ */ ((e) => (e.displayName = "Transition", e.props = za, e))((e, { slots: t }) => z(ur, Ua(e), t)), Va = (e, t = []) => {
+	C(e) ? e.forEach((e) => e(...t)) : e && e(...t);
+}, Ha = (e) => e ? C(e) ? e.some((e) => e.length > 1) : e.length > 1 : !1;
+function Ua(e) {
 	let t = {};
-	for (let n in e) n in Da || (t[n] = e[n]);
+	for (let n in e) n in Ra || (t[n] = e[n]);
 	if (e.css === !1) return t;
-	let { name: n = "v", type: r, duration: i, enterFromClass: a = `${n}-enter-from`, enterActiveClass: o = `${n}-enter-active`, enterToClass: c = `${n}-enter-to`, appearFromClass: l = a, appearActiveClass: u = o, appearToClass: d = c, leaveFromClass: f = `${n}-leave-from`, leaveActiveClass: p = `${n}-leave-active`, leaveToClass: m = `${n}-leave-to` } = e, h = Na(i), g = h && h[0], _ = h && h[1], { onBeforeEnter: v, onEnter: y, onEnterCancelled: b, onLeave: x, onLeaveCancelled: S, onBeforeAppear: C = v, onAppear: w = y, onAppearCancelled: T = b } = t, E = (e, t, n, r) => {
-		e._enterCancelled = r, Ia(e, t ? d : c), Ia(e, t ? u : o), n && n();
+	let { name: n = "v", type: r, duration: i, enterFromClass: a = `${n}-enter-from`, enterActiveClass: o = `${n}-enter-active`, enterToClass: s = `${n}-enter-to`, appearFromClass: c = a, appearActiveClass: l = o, appearToClass: u = s, leaveFromClass: d = `${n}-leave-from`, leaveActiveClass: f = `${n}-leave-active`, leaveToClass: p = `${n}-leave-to` } = e, m = Wa(i), h = m && m[0], g = m && m[1], { onBeforeEnter: _, onEnter: v, onEnterCancelled: b, onLeave: x, onLeaveCancelled: S, onBeforeAppear: C = _, onAppear: w = v, onAppearCancelled: T = b } = t, E = (e, t, n, r) => {
+		e._enterCancelled = r, qa(e, t ? u : s), qa(e, t ? l : o), n && n();
 	}, D = (e, t) => {
-		e._isLeaving = !1, Ia(e, f), Ia(e, m), Ia(e, p), t && t();
+		e._isLeaving = !1, qa(e, d), qa(e, p), qa(e, f), t && t();
 	}, O = (e) => (t, n) => {
-		let i = e ? w : y, o = () => E(t, e, n);
-		Aa(i, [t, o]), La(() => {
-			Ia(t, e ? l : a), Fa(t, e ? d : c), ja(i) || za(t, r, g, o);
+		let i = e ? w : v, o = () => E(t, e, n);
+		Va(i, [t, o]), Ja(() => {
+			qa(t, e ? c : a), Ka(t, e ? u : s), Ha(i) || Xa(t, r, h, o);
 		});
 	};
-	return s(t, {
+	return y(t, {
 		onBeforeEnter(e) {
-			Aa(v, [e]), Fa(e, a), Fa(e, o);
+			Va(_, [e]), Ka(e, a), Ka(e, o);
 		},
 		onBeforeAppear(e) {
-			Aa(C, [e]), Fa(e, l), Fa(e, u);
+			Va(C, [e]), Ka(e, c), Ka(e, l);
 		},
 		onEnter: O(!1),
 		onAppear: O(!0),
 		onLeave(e, t) {
 			e._isLeaving = !0;
 			let n = () => D(e, t);
-			Fa(e, f), e._enterCancelled ? (Fa(e, p), Ua(e)) : (Ua(e), Fa(e, p)), La(() => {
-				e._isLeaving && (Ia(e, f), Fa(e, m), ja(x) || za(e, r, _, n));
-			}), Aa(x, [e, n]);
+			Ka(e, d), e._enterCancelled ? (Ka(e, f), eo(e)) : (eo(e), Ka(e, f)), Ja(() => {
+				e._isLeaving && (qa(e, d), Ka(e, p), Ha(x) || Xa(e, r, g, n));
+			}), Va(x, [e, n]);
 		},
 		onEnterCancelled(e) {
-			E(e, !1, void 0, !0), Aa(b, [e]);
+			E(e, !1, void 0, !0), Va(b, [e]);
 		},
 		onAppearCancelled(e) {
-			E(e, !0, void 0, !0), Aa(T, [e]);
+			E(e, !0, void 0, !0), Va(T, [e]);
 		},
 		onLeaveCancelled(e) {
-			D(e), Aa(S, [e]);
+			D(e), Va(S, [e]);
 		}
 	});
 }
-function Na(e) {
+function Wa(e) {
 	if (e == null) return null;
-	if (v(e)) return [Pa(e.enter), Pa(e.leave)];
+	if (A(e)) return [Ga(e.enter), Ga(e.leave)];
 	{
-		let t = Pa(e);
+		let t = Ga(e);
 		return [t, t];
 	}
 }
-function Pa(e) {
-	return ce(e);
+function Ga(e) {
+	return _e(e);
 }
-function Fa(e, t) {
-	t.split(/\s+/).forEach((t) => t && e.classList.add(t)), (e[Ea] || (e[Ea] = /* @__PURE__ */ new Set())).add(t);
+function Ka(e, t) {
+	t.split(/\s+/).forEach((t) => t && e.classList.add(t)), (e[La] || (e[La] = /* @__PURE__ */ new Set())).add(t);
 }
-function Ia(e, t) {
+function qa(e, t) {
 	t.split(/\s+/).forEach((t) => t && e.classList.remove(t));
-	let n = e[Ea];
-	n && (n.delete(t), n.size || (e[Ea] = void 0));
+	let n = e[La];
+	n && (n.delete(t), n.size || (e[La] = void 0));
 }
-function La(e) {
+function Ja(e) {
 	requestAnimationFrame(() => {
 		requestAnimationFrame(e);
 	});
 }
-var Ra = 0;
-function za(e, t, n, r) {
-	let i = e._endId = ++Ra, a = () => {
+var Ya = 0;
+function Xa(e, t, n, r) {
+	let i = e._endId = ++Ya, a = () => {
 		i === e._endId && r();
 	};
 	if (n != null) return setTimeout(a, n);
-	let { type: o, timeout: s, propCount: c } = Ba(e, t);
+	let { type: o, timeout: s, propCount: c } = Za(e, t);
 	if (!o) return r();
 	let l = o + "end", u = 0, d = () => {
 		e.removeEventListener(l, f), a();
@@ -2673,10 +2772,10 @@ function za(e, t, n, r) {
 		u < c && d();
 	}, s + 1), e.addEventListener(l, f);
 }
-function Ba(e, t) {
-	let n = window.getComputedStyle(e), r = (e) => (n[e] || "").split(", "), i = r(`${wa}Delay`), a = r(`${wa}Duration`), o = Va(i, a), s = r(`${Ta}Delay`), c = r(`${Ta}Duration`), l = Va(s, c), u = null, d = 0, f = 0;
-	t === wa ? o > 0 && (u = wa, d = o, f = a.length) : t === Ta ? l > 0 && (u = Ta, d = l, f = c.length) : (d = Math.max(o, l), u = d > 0 ? o > l ? wa : Ta : null, f = u ? u === wa ? a.length : c.length : 0);
-	let p = u === wa && /\b(?:transform|all)(?:,|$)/.test(r(`${wa}Property`).toString());
+function Za(e, t) {
+	let n = window.getComputedStyle(e), r = (e) => (n[e] || "").split(", "), i = r(`${Fa}Delay`), a = r(`${Fa}Duration`), o = Qa(i, a), s = r(`${Ia}Delay`), c = r(`${Ia}Duration`), l = Qa(s, c), u = null, d = 0, f = 0;
+	t === Fa ? o > 0 && (u = Fa, d = o, f = a.length) : t === Ia ? l > 0 && (u = Ia, d = l, f = c.length) : (d = Math.max(o, l), u = d > 0 ? o > l ? Fa : Ia : null, f = u ? u === Fa ? a.length : c.length : 0);
+	let p = u === Fa && /\b(?:transform|all)(?:,|$)/.test(r(`${Fa}Property`).toString());
 	return {
 		type: u,
 		timeout: d,
@@ -2684,80 +2783,80 @@ function Ba(e, t) {
 		hasTransform: p
 	};
 }
-function Va(e, t) {
+function Qa(e, t) {
 	for (; e.length < t.length;) e = e.concat(e);
-	return Math.max(...t.map((t, n) => Ha(t) + Ha(e[n])));
+	return Math.max(...t.map((t, n) => $a(t) + $a(e[n])));
 }
-function Ha(e) {
+function $a(e) {
 	return e === "auto" ? 0 : Number(e.slice(0, -1).replace(",", ".")) * 1e3;
 }
-function Ua(e) {
+function eo(e) {
 	return (e ? e.ownerDocument : document).body.offsetHeight;
 }
-function Wa(e, t, n) {
-	let r = e[Ea];
+function to(e, t, n) {
+	let r = e[La];
 	r && (t = (t ? [t, ...r] : [...r]).join(" ")), t == null ? e.removeAttribute("class") : n ? e.setAttribute("class", t) : e.className = t;
 }
-var Ga = /* @__PURE__ */ Symbol("_vod"), Ka = /* @__PURE__ */ Symbol("_vsh"), qa = /* @__PURE__ */ Symbol(""), Ja = /(?:^|;)\s*display\s*:/;
-function Ya(e, t, n) {
-	let r = e.style, i = g(n), a = !1;
+var no = /* @__PURE__ */ Symbol("_vod"), ro = /* @__PURE__ */ Symbol("_vsh"), io = /* @__PURE__ */ Symbol(""), ao = /(?:^|;)\s*display\s*:/;
+function oo(e, t, n) {
+	let r = e.style, i = O(n), a = !1;
 	if (n && !i) {
 		if (t) {
-			if (g(t)) for (let e of t.split(";")) {
+			if (O(t)) for (let e of t.split(";")) {
 				let t = e.slice(0, e.indexOf(":")).trim();
-				n[t] ?? Za(r, t, "");
+				n[t] ?? co(r, t, "");
 			}
-			else for (let e in t) n[e] ?? Za(r, e, "");
+			else for (let e in t) n[e] ?? co(r, e, "");
 		}
 		for (let i in n) {
 			i === "display" && (a = !0);
 			let o = n[i];
-			o == null ? Za(r, i, "") : to(e, i, !g(t) && t ? t[i] : void 0, o) || Za(r, i, o);
+			o == null ? co(r, i, "") : po(e, i, !O(t) && t ? t[i] : void 0, o) || co(r, i, o);
 		}
 	} else if (i) {
 		if (t !== n) {
-			let e = r[qa];
-			e && (n += ";" + e), r.cssText = n, a = Ja.test(n);
+			let e = r[io];
+			e && (n += ";" + e), r.cssText = n, a = ao.test(n);
 		}
 	} else t && e.removeAttribute("style");
-	Ga in e && (e[Ga] = a ? r.display : "", e[Ka] && (r.display = "none"));
+	no in e && (e[no] = a ? r.display : "", e[ro] && (r.display = "none"));
 }
-var Xa = /\s*!important$/;
-function Za(e, t, n) {
-	if (d(n)) n.forEach((n) => Za(e, t, n));
-	else if (n ??= "", t.startsWith("--")) Xa.test(n) ? e.setProperty(t, n.replace(Xa, ""), "important") : e.setProperty(t, n);
+var so = /\s*!important$/;
+function co(e, t, n) {
+	if (C(n)) n.forEach((n) => co(e, t, n));
+	else if (n ??= "", t.startsWith("--")) so.test(n) ? e.setProperty(t, n.replace(so, ""), "important") : e.setProperty(t, n);
 	else {
-		let r = eo(e, t);
-		Xa.test(n) ? e.setProperty(te(r), n.replace(Xa, ""), "important") : e[r] = n;
+		let r = fo(e, t);
+		so.test(n) ? e.setProperty(ue(r), n.replace(so, ""), "important") : e[r] = n;
 	}
 }
-var Qa = [
+var lo = [
 	"Webkit",
 	"Moz",
 	"ms"
-], $a = {};
-function eo(e, t) {
-	let n = $a[t];
+], uo = {};
+function fo(e, t) {
+	let n = uo[t];
 	if (n) return n;
-	let r = O(t);
-	if (r !== "filter" && r in e) return $a[t] = r;
-	r = ne(r);
-	for (let n = 0; n < Qa.length; n++) {
-		let i = Qa[n] + r;
-		if (i in e) return $a[t] = i;
+	let r = ce(t);
+	if (r !== "filter" && r in e) return uo[t] = r;
+	r = de(r);
+	for (let n = 0; n < lo.length; n++) {
+		let i = lo[n] + r;
+		if (i in e) return uo[t] = i;
 	}
 	return t;
 }
-function to(e, t, n, r) {
-	return e.tagName === "TEXTAREA" && (t === "width" || t === "height") && g(r) && n === r;
+function po(e, t, n, r) {
+	return e.tagName === "TEXTAREA" && (t === "width" || t === "height") && O(r) && n === r;
 }
-var no = "http://www.w3.org/1999/xlink";
-function ro(e, t, n, r, i, a = _e(t)) {
-	r && t.startsWith("xlink:") ? n == null ? e.removeAttributeNS(no, t.slice(6, t.length)) : e.setAttributeNS(no, t, n) : n == null || a && !ve(n) ? e.removeAttribute(t) : e.setAttribute(t, a ? "" : _(n) ? String(n) : n);
+var mo = "http://www.w3.org/1999/xlink";
+function ho(e, t, n, r, i, a = Ee(t)) {
+	r && t.startsWith("xlink:") ? n == null ? e.removeAttributeNS(mo, t.slice(6, t.length)) : e.setAttributeNS(mo, t, n) : n == null || a && !De(n) ? e.removeAttribute(t) : e.setAttribute(t, a ? "" : k(n) ? String(n) : n);
 }
-function io(e, t, n, r, i) {
+function go(e, t, n, r, i) {
 	if (t === "innerHTML" || t === "textContent") {
-		n != null && (e[t] = t === "innerHTML" ? va(n) : n);
+		n != null && (e[t] = t === "innerHTML" ? ka(n) : n);
 		return;
 	}
 	let a = e.tagName;
@@ -2769,41 +2868,41 @@ function io(e, t, n, r, i) {
 	let o = !1;
 	if (n === "" || n == null) {
 		let r = typeof e[t];
-		r === "boolean" ? n = ve(n) : n == null && r === "string" ? (n = "", o = !0) : r === "number" && (n = 0, o = !0);
+		r === "boolean" ? n = De(n) : n == null && r === "string" ? (n = "", o = !0) : r === "number" && (n = 0, o = !0);
 	}
 	try {
 		e[t] = n;
 	} catch {}
 	o && e.removeAttribute(i || t);
 }
-function ao(e, t, n, r) {
+function _o(e, t, n, r) {
 	e.addEventListener(t, n, r);
 }
-function oo(e, t, n, r) {
+function vo(e, t, n, r) {
 	e.removeEventListener(t, n, r);
 }
-var so = /* @__PURE__ */ Symbol("_vei");
-function co(e, t, n, r, i = null) {
-	let a = e[so] || (e[so] = {}), o = a[t];
+var yo = /* @__PURE__ */ Symbol("_vei");
+function bo(e, t, n, r, i = null) {
+	let a = e[yo] || (e[yo] = {}), o = a[t];
 	if (r && o) o.value = r;
 	else {
-		let [n, s] = fo(t);
-		r ? ao(e, n, a[t] = go(r, i), s) : o && (oo(e, n, o, s), a[t] = void 0);
+		let [n, s] = Co(t);
+		r ? _o(e, n, a[t] = Do(r, i), s) : o && (vo(e, n, o, s), a[t] = void 0);
 	}
 }
-var lo = /(Once|Passive|Capture)$/, uo = /^on:?(?:Once|Passive|Capture)$/;
-function fo(e) {
+var xo = /(Once|Passive|Capture)$/, So = /^on:?(?:Once|Passive|Capture)$/;
+function Co(e) {
 	let t, n;
-	for (; (n = e.match(lo)) && !uo.test(e);) t ||= {}, e = e.slice(0, e.length - n[1].length), t[n[1].toLowerCase()] = !0;
-	return [e[2] === ":" ? e.slice(3) : te(e.slice(2)), t];
+	for (; (n = e.match(xo)) && !So.test(e);) t ||= {}, e = e.slice(0, e.length - n[1].length), t[n[1].toLowerCase()] = !0;
+	return [e[2] === ":" ? e.slice(3) : ue(e.slice(2)), t];
 }
-var po = 0, mo = /* @__PURE__ */ Promise.resolve(), ho = () => po ||= (mo.then(() => po = 0), Date.now());
-function go(e, t) {
+var wo = 0, To = /* @__PURE__ */ Promise.resolve(), Eo = () => wo ||= (To.then(() => wo = 0), Date.now());
+function Do(e, t) {
 	let n = (e) => {
 		if (!e._vts) e._vts = Date.now();
 		else if (e._vts <= n.attached) return;
 		let r = n.value;
-		if (d(r)) {
+		if (C(r)) {
 			let n = e.stopImmediatePropagation;
 			e.stopImmediatePropagation = () => {
 				n.call(e), e._stopped = !0;
@@ -2811,127 +2910,127 @@ function go(e, t) {
 			let i = r.slice(), a = [e];
 			for (let n = 0; n < i.length && !e._stopped; n++) {
 				let e = i[n];
-				e && pn(e, t, 5, a);
+				e && Cn(e, t, 5, a);
 			}
-		} else pn(r, t, 5, [e]);
+		} else Cn(r, t, 5, [e]);
 	};
-	return n.value = e, n.attached = ho(), n;
+	return n.value = e, n.attached = Eo(), n;
 }
-var _o = (e) => e.charCodeAt(0) === 111 && e.charCodeAt(1) === 110 && e.charCodeAt(2) > 96 && e.charCodeAt(2) < 123, vo = (e, t, n, r, i, s) => {
-	let c = i === "svg";
-	t === "class" ? Wa(e, r, c) : t === "style" ? Ya(e, n, r) : a(t) ? o(t) || co(e, t, n, r, s) : (t[0] === "." ? (t = t.slice(1), 1) : t[0] === "^" ? (t = t.slice(1), 0) : yo(e, t, r, c)) ? (io(e, t, r), !e.tagName.includes("-") && (t === "value" || t === "checked" || t === "selected") && ro(e, t, r, c, s, t !== "value")) : e._isVueCE && (bo(e, t) || e._def.__asyncLoader && (/[A-Z]/.test(t) || !g(r))) ? io(e, O(t), r, s, t) : (t === "true-value" ? e._trueValue = r : t === "false-value" && (e._falseValue = r), ro(e, t, r, c));
+var Oo = (e) => e.charCodeAt(0) === 111 && e.charCodeAt(1) === 110 && e.charCodeAt(2) > 96 && e.charCodeAt(2) < 123, ko = (e, t, n, r, i, a) => {
+	let o = i === "svg";
+	t === "class" ? to(e, r, o) : t === "style" ? oo(e, n, r) : _(t) ? v(t) || bo(e, t, n, r, a) : (t[0] === "." ? (t = t.slice(1), 1) : t[0] === "^" ? (t = t.slice(1), 0) : Ao(e, t, r, o)) ? (go(e, t, r), !e.tagName.includes("-") && (t === "value" || t === "checked" || t === "selected") && ho(e, t, r, o, a, t !== "value")) : e._isVueCE && (jo(e, t) || e._def.__asyncLoader && (/[A-Z]/.test(t) || !O(r))) ? go(e, ce(t), r, a, t) : (t === "true-value" ? e._trueValue = r : t === "false-value" && (e._falseValue = r), ho(e, t, r, o));
 };
-function yo(e, t, n, r) {
-	if (r) return !!(t === "innerHTML" || t === "textContent" || t in e && _o(t) && h(n));
+function Ao(e, t, n, r) {
+	if (r) return !!(t === "innerHTML" || t === "textContent" || t in e && Oo(t) && D(n));
 	if (t === "spellcheck" || t === "draggable" || t === "translate" || t === "autocorrect" || t === "sandbox" && e.tagName === "IFRAME" || t === "form" || t === "list" && e.tagName === "INPUT" || t === "type" && e.tagName === "TEXTAREA") return !1;
 	if (t === "width" || t === "height") {
 		let t = e.tagName;
 		if (t === "IMG" || t === "VIDEO" || t === "CANVAS" || t === "SOURCE") return !1;
 	}
-	return _o(t) && g(n) ? !1 : t in e;
+	return Oo(t) && O(n) ? !1 : t in e;
 }
-function bo(e, t) {
+function jo(e, t) {
 	let n = e._def.props;
 	if (!n) return !1;
-	let r = O(t);
-	return Array.isArray(n) ? n.some((e) => O(e) === r) : Object.keys(n).some((e) => O(e) === r);
+	let r = ce(t);
+	return Array.isArray(n) ? n.some((e) => ce(e) === r) : Object.keys(n).some((e) => ce(e) === r);
 }
-var xo = /* @__PURE__ */ new WeakMap(), So = /* @__PURE__ */ new WeakMap(), Co = /* @__PURE__ */ Symbol("_moveCb"), wo = /* @__PURE__ */ Symbol("_enterCb"), To = /* @__PURE__ */ ((e) => (delete e.props.mode, e))({
+var Mo = /* @__PURE__ */ new WeakMap(), No = /* @__PURE__ */ new WeakMap(), Po = /* @__PURE__ */ Symbol("_moveCb"), Fo = /* @__PURE__ */ Symbol("_enterCb"), Io = /* @__PURE__ */ ((e) => (delete e.props.mode, e))({
 	name: "TransitionGroup",
-	props: /* @__PURE__ */ s({}, Oa, {
+	props: /* @__PURE__ */ y({}, za, {
 		tag: String,
 		moveClass: String
 	}),
 	setup(e, { slots: t }) {
-		let n = ea(), r = Jn(), i, a;
-		return Sr(() => {
+		let n = da(), r = ir(), i, a;
+		return Nr(() => {
 			if (!i.length) return;
 			let t = e.moveClass || `${e.name || "v"}-move`;
-			if (!Ao(i[0].el, n.vnode.el, t)) {
+			if (!Vo(i[0].el, n.vnode.el, t)) {
 				i = [];
 				return;
 			}
-			i.forEach(Eo), i.forEach(Do);
-			let r = i.filter(Oo);
-			Ua(n.vnode.el), r.forEach((e) => {
+			i.forEach(Lo), i.forEach(Ro);
+			let r = i.filter(zo);
+			eo(n.vnode.el), r.forEach((e) => {
 				let n = e.el, r = n.style;
-				Fa(n, t), r.transform = r.webkitTransform = r.transitionDuration = "";
-				let i = n[Co] = (e) => {
-					e && e.target !== n || (!e || e.propertyName.endsWith("transform")) && (n.removeEventListener("transitionend", i), n[Co] = null, Ia(n, t));
+				Ka(n, t), r.transform = r.webkitTransform = r.transitionDuration = "";
+				let i = n[Po] = (e) => {
+					e && e.target !== n || (!e || e.propertyName.endsWith("transform")) && (n.removeEventListener("transitionend", i), n[Po] = null, qa(n, t));
 				};
 				n.addEventListener("transitionend", i);
 			}), i = [];
 		}), () => {
-			let o = /* @__PURE__ */ M(e), s = Ma(o), c = o.tag || Ci;
+			let o = /* @__PURE__ */ P(e), s = Ua(o), c = o.tag || Pi;
 			if (i = [], a) for (let e = 0; e < a.length; e++) {
 				let t = a[e];
-				t.el && t.el instanceof Element && !t.el[Ka] && (i.push(t), ar(t, nr(t, s, r, n)), xo.set(t, ko(t.el)));
+				t.el && t.el instanceof Element && !t.el[ro] && (i.push(t), hr(t, fr(t, s, r, n)), Mo.set(t, Bo(t.el)));
 			}
-			a = t.default ? or(t.default()) : [];
+			a = t.default ? gr(t.default()) : [];
 			for (let e = 0; e < a.length; e++) {
 				let t = a[e];
-				t.key != null && ar(t, nr(t, s, r, n));
+				t.key != null && hr(t, fr(t, s, r, n));
 			}
-			return zi(c, null, a);
+			return Xi(c, null, a);
 		};
 	}
 });
-function Eo(e) {
+function Lo(e) {
 	let t = e.el;
-	t[Co] && t[Co](), t[wo] && t[wo]();
+	t[Po] && t[Po](), t[Fo] && t[Fo]();
 }
-function Do(e) {
-	So.set(e, ko(e.el));
+function Ro(e) {
+	No.set(e, Bo(e.el));
 }
-function Oo(e) {
-	let t = xo.get(e), n = So.get(e), r = t.left - n.left, i = t.top - n.top;
+function zo(e) {
+	let t = Mo.get(e), n = No.get(e), r = t.left - n.left, i = t.top - n.top;
 	if (r || i) {
 		let t = e.el, n = t.style, a = t.getBoundingClientRect(), o = 1, s = 1;
 		return t.offsetWidth && (o = a.width / t.offsetWidth), t.offsetHeight && (s = a.height / t.offsetHeight), (!Number.isFinite(o) || o === 0) && (o = 1), (!Number.isFinite(s) || s === 0) && (s = 1), Math.abs(o - 1) < .01 && (o = 1), Math.abs(s - 1) < .01 && (s = 1), n.transform = n.webkitTransform = `translate(${r / o}px,${i / s}px)`, n.transitionDuration = "0s", e;
 	}
 }
-function ko(e) {
+function Bo(e) {
 	let t = e.getBoundingClientRect();
 	return {
 		left: t.left,
 		top: t.top
 	};
 }
-function Ao(e, t, n) {
-	let r = e.cloneNode(), i = e[Ea];
+function Vo(e, t, n) {
+	let r = e.cloneNode(), i = e[La];
 	i && i.forEach((e) => {
 		e.split(/\s+/).forEach((e) => e && r.classList.remove(e));
 	}), n.split(/\s+/).forEach((e) => e && r.classList.add(e)), r.style.display = "none";
 	let a = t.nodeType === 1 ? t : t.parentNode;
 	a.appendChild(r);
-	let { hasTransform: o } = Ba(r);
+	let { hasTransform: o } = Za(r);
 	return a.removeChild(r), o;
 }
-var jo = /* @__PURE__ */ s({ patchProp: vo }, Ca), Mo;
-function No() {
-	return Mo ||= di(jo);
+var Ho = /* @__PURE__ */ y({ patchProp: ko }, Pa), Uo;
+function Wo() {
+	return Uo ||= Si(Ho);
 }
-var Po = ((...e) => {
-	let t = No().createApp(...e), { mount: n } = t;
+var Go = ((...e) => {
+	let t = Wo().createApp(...e), { mount: n } = t;
 	return t.mount = (e) => {
-		let r = Io(e);
+		let r = qo(e);
 		if (!r) return;
 		let i = t._component;
-		!h(i) && !i.render && !i.template && (i.template = r.innerHTML), r.nodeType === 1 && (r.textContent = "");
-		let a = n(r, !1, Fo(r));
+		!D(i) && !i.render && !i.template && (i.template = r.innerHTML), r.nodeType === 1 && (r.textContent = "");
+		let a = n(r, !1, Ko(r));
 		return r instanceof Element && (r.removeAttribute("v-cloak"), r.setAttribute("data-v-app", "")), a;
 	}, t;
 });
-function Fo(e) {
+function Ko(e) {
 	if (e instanceof SVGElement) return "svg";
 	if (typeof MathMLElement == "function" && e instanceof MathMLElement) return "mathml";
 }
-function Io(e) {
-	return g(e) ? document.querySelector(e) : e;
+function qo(e) {
+	return O(e) ? document.querySelector(e) : e;
 }
 //#endregion
 //#region node_modules/@css-render/plugin-bem/esm/index.js
-function Lo(e) {
+function Jo(e) {
 	let t = ".", n = "__", r = "--", i;
 	if (e) {
 		let i = e.blockPrefix;
@@ -3009,16 +3108,16 @@ function Lo(e) {
 }
 //#endregion
 //#region node_modules/css-render/esm/parse.js
-function Ro(e) {
+function Yo(e) {
 	let t = 0;
 	for (let n = 0; n < e.length; ++n) e[n] === "&" && ++t;
 	return t;
 }
-var zo = /\s*,(?![^(]*\))\s*/g, Bo = /\s+/g;
-function Vo(e, t) {
+var Xo = /\s*,(?![^(]*\))\s*/g, Zo = /\s+/g;
+function Qo(e, t) {
 	let n = [];
-	return t.split(zo).forEach((t) => {
-		let r = Ro(t);
+	return t.split(Xo).forEach((t) => {
+		let r = Yo(t);
 		if (!r) {
 			e.forEach((e) => {
 				n.push((e && e + " ") + t);
@@ -3043,57 +3142,57 @@ function Vo(e, t) {
 		i.forEach((e) => n.push(e));
 	}), n;
 }
-function Ho(e, t) {
+function $o(e, t) {
 	let n = [];
-	return t.split(zo).forEach((t) => {
+	return t.split(Xo).forEach((t) => {
 		e.forEach((e) => {
 			n.push((e && e + " ") + t);
 		});
 	}), n;
 }
-function Uo(e) {
+function es(e) {
 	let t = [""];
 	return e.forEach((e) => {
-		e &&= e.trim(), e && (t = e.includes("&") ? Vo(t, e) : Ho(t, e));
-	}), t.join(", ").replace(Bo, " ");
+		e &&= e.trim(), e && (t = e.includes("&") ? Qo(t, e) : $o(t, e));
+	}), t.join(", ").replace(Zo, " ");
 }
 //#endregion
 //#region node_modules/css-render/esm/utils.js
-function Wo(e) {
+function ts(e) {
 	/* istanbul ignore if */
 	if (!e) return;
 	let t = e.parentElement;
 	/* istanbul ignore else */
 	t && t.removeChild(e);
 }
-function Go(e, t) {
+function ns(e, t) {
 	return (t ?? document.head).querySelector(`style[cssr-id="${e}"]`);
 }
-function Ko(e) {
+function rs(e) {
 	let t = document.createElement("style");
 	return t.setAttribute("cssr-id", e), t;
 }
-function qo(e) {
+function is(e) {
 	return e ? /^\s*@(s|m)/.test(e) : !1;
 }
 //#endregion
 //#region node_modules/css-render/esm/render.js
-var Jo = /[A-Z]/g;
-function Yo(e) {
-	return e.replace(Jo, (e) => "-" + e.toLowerCase());
+var as = /[A-Z]/g;
+function os(e) {
+	return e.replace(as, (e) => "-" + e.toLowerCase());
 }
-function Xo(e, t = "  ") {
-	return typeof e == "object" && e ? " {\n" + Object.entries(e).map((e) => t + `  ${Yo(e[0])}: ${e[1]};`).join("\n") + "\n" + t + "}" : `: ${e};`;
+function ss(e, t = "  ") {
+	return typeof e == "object" && e ? " {\n" + Object.entries(e).map((e) => t + `  ${os(e[0])}: ${e[1]};`).join("\n") + "\n" + t + "}" : `: ${e};`;
 }
-function Zo(e, t, n) {
+function cs(e, t, n) {
 	return typeof e == "function" ? e({
 		context: t.context,
 		props: n
 	}) : e;
 }
-function Qo(e, t, n, r) {
+function ls(e, t, n, r) {
 	if (!t) return "";
-	let i = Zo(t, n, r);
+	let i = cs(t, n, r);
 	if (!i) return "";
 	if (typeof i == "string") return `${e} {\n${i}\n}`;
 	let a = Object.keys(i);
@@ -3105,54 +3204,54 @@ function Qo(e, t, n, r) {
 			o.push("\n" + t + "\n");
 			return;
 		}
-		e = Yo(e), t != null && o.push(`  ${e}${Xo(t)}`);
+		e = os(e), t != null && o.push(`  ${e}${ss(t)}`);
 	}), e && o.push("}"), o.join("\n");
 }
-function $o(e, t, n) {
+function us(e, t, n) {
 	/* istanbul ignore if */
 	e && e.forEach((e) => {
-		if (Array.isArray(e)) $o(e, t, n);
+		if (Array.isArray(e)) us(e, t, n);
 		else if (typeof e == "function") {
 			let r = e(t);
-			Array.isArray(r) ? $o(r, t, n) : r && n(r);
+			Array.isArray(r) ? us(r, t, n) : r && n(r);
 		} else e && n(e);
 	});
 }
-function es(e, t, n, r, i) {
+function ds(e, t, n, r, i) {
 	let a = e.$, o = "";
-	if (!a || typeof a == "string") qo(a) ? o = a : t.push(a);
+	if (!a || typeof a == "string") is(a) ? o = a : t.push(a);
 	else if (typeof a == "function") {
 		let e = a({
 			context: r.context,
 			props: i
 		});
-		qo(e) ? o = e : t.push(e);
-	} else if (a.before && a.before(r.context), !a.$ || typeof a.$ == "string") qo(a.$) ? o = a.$ : t.push(a.$);
+		is(e) ? o = e : t.push(e);
+	} else if (a.before && a.before(r.context), !a.$ || typeof a.$ == "string") is(a.$) ? o = a.$ : t.push(a.$);
 	else if (a.$) {
 		let e = a.$({
 			context: r.context,
 			props: i
 		});
-		qo(e) ? o = e : t.push(e);
+		is(e) ? o = e : t.push(e);
 	}
-	let s = Uo(t), c = Qo(s, e.props, r, i);
-	o ? n.push(`${o} {`) : c.length && n.push(c), e.children && $o(e.children, {
+	let s = es(t), c = ls(s, e.props, r, i);
+	o ? n.push(`${o} {`) : c.length && n.push(c), e.children && us(e.children, {
 		context: r.context,
 		props: i
 	}, (e) => {
 		if (typeof e == "string") {
-			let t = Qo(s, { raw: e }, r, i);
+			let t = ls(s, { raw: e }, r, i);
 			n.push(t);
-		} else es(e, t, n, r, i);
+		} else ds(e, t, n, r, i);
 	}), t.pop(), o && n.push("}"), a && a.after && a.after(r.context);
 }
-function ts(e, t, n) {
+function fs(e, t, n) {
 	let r = [];
-	return es(e, [], r, t, n), r.join("\n\n");
+	return ds(e, [], r, t, n), r.join("\n\n");
 }
 //#endregion
 //#region node_modules/@emotion/hash/dist/hash.browser.esm.js
-function ns(e) {
+function ps(e) {
 	for (var t = 0, n, r = 0, i = e.length; i >= 4; ++r, i -= 4) n = e.charCodeAt(r) & 255 | (e.charCodeAt(++r) & 255) << 8 | (e.charCodeAt(++r) & 255) << 16 | (e.charCodeAt(++r) & 255) << 24, n = (n & 65535) * 1540483477 + ((n >>> 16) * 59797 << 16), n ^= n >>> 24, t = (n & 65535) * 1540483477 + ((n >>> 16) * 59797 << 16) ^ (t & 65535) * 1540483477 + ((t >>> 16) * 59797 << 16);
 	switch (i) {
 		case 3: t ^= (e.charCodeAt(r + 2) & 255) << 16;
@@ -3164,69 +3263,69 @@ function ns(e) {
 //#endregion
 //#region node_modules/css-render/esm/mount.js
 typeof window < "u" && (window.__cssrContext = {});
-function rs(e, t, n, r) {
+function ms(e, t, n, r) {
 	let { els: i } = t;
-	if (n === void 0) i.forEach(Wo), t.els = [];
+	if (n === void 0) i.forEach(ts), t.els = [];
 	else {
-		let e = Go(n, r);
-		e && i.includes(e) && (Wo(e), t.els = i.filter((t) => t !== e));
+		let e = ns(n, r);
+		e && i.includes(e) && (ts(e), t.els = i.filter((t) => t !== e));
 	}
 }
-function is(e, t) {
+function hs(e, t) {
 	e.push(t);
 }
-function as(e, t, n, r, i, a, o, s, c) {
+function gs(e, t, n, r, i, a, o, s, c) {
 	let l;
-	if (n === void 0 && (l = t.render(r), n = ns(l)), c) {
+	if (n === void 0 && (l = t.render(r), n = ps(l)), c) {
 		c.adapter(n, l ?? t.render(r));
 		return;
 	}
 	s === void 0 && (s = document.head);
-	let u = Go(n, s);
+	let u = ns(n, s);
 	if (u !== null && !a) return u;
-	let d = u ?? Ko(n);
+	let d = u ?? rs(n);
 	if (l === void 0 && (l = t.render(r)), d.textContent = l, u !== null) return u;
 	if (o) {
 		let e = s.querySelector(`meta[name="${o}"]`);
-		if (e) return s.insertBefore(d, e), is(t.els, d), d;
+		if (e) return s.insertBefore(d, e), hs(t.els, d), d;
 	}
-	return i ? s.insertBefore(d, s.querySelector("style, link")) : s.appendChild(d), is(t.els, d), d;
+	return i ? s.insertBefore(d, s.querySelector("style, link")) : s.appendChild(d), hs(t.els, d), d;
 }
 //#endregion
 //#region node_modules/css-render/esm/c.js
-function os(e) {
-	return ts(this, this.instance, e);
+function _s(e) {
+	return fs(this, this.instance, e);
 }
-function ss(e = {}) {
+function vs(e = {}) {
 	let { id: t, ssr: n, props: r, head: i = !1, force: a = !1, anchorMetaName: o, parent: s } = e;
-	return as(this.instance, this, t, r, i, a, o, s, n);
+	return gs(this.instance, this, t, r, i, a, o, s, n);
 }
-function cs(e = {}) {
+function ys(e = {}) {
 	/* istanbul ignore next */
 	let { id: t, parent: n } = e;
-	rs(this.instance, this, t, n);
+	ms(this.instance, this, t, n);
 }
-var ls = function(e, t, n, r) {
+var bs = function(e, t, n, r) {
 	return {
 		instance: e,
 		$: t,
 		props: n,
 		children: r,
 		els: [],
-		render: os,
-		mount: ss,
-		unmount: cs
+		render: _s,
+		mount: vs,
+		unmount: ys
 	};
-}, us = function(e, t, n, r) {
-	return Array.isArray(t) ? ls(e, { $: null }, null, t) : Array.isArray(n) ? ls(e, t, null, n) : Array.isArray(r) ? ls(e, t, n, r) : ls(e, t, n, null);
+}, xs = function(e, t, n, r) {
+	return Array.isArray(t) ? bs(e, { $: null }, null, t) : Array.isArray(n) ? bs(e, t, null, n) : Array.isArray(r) ? bs(e, t, n, r) : bs(e, t, n, null);
 };
 //#endregion
 //#region node_modules/css-render/esm/CssRender.js
-function ds(e = {}) {
+function Ss(e = {}) {
 	let t = {
-		c: ((...e) => us(t, ...e)),
+		c: ((...e) => xs(t, ...e)),
 		use: (e, ...n) => e.install(t, ...n),
-		find: Go,
+		find: ns,
 		context: {},
 		config: e
 	};
@@ -3234,38 +3333,38 @@ function ds(e = {}) {
 }
 //#endregion
 //#region node_modules/css-render/esm/exists.js
-function fs(e, t) {
+function Cs(e, t) {
 	if (e === void 0) return !1;
 	if (t) {
 		let { context: { ids: n } } = t;
 		return n.has(e);
 	}
-	return Go(e) !== null;
+	return ns(e) !== null;
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/cssr/index.mjs
-var ps = ".n-", ms = "__", hs = "--", gs = ds(), _s = Lo({
-	blockPrefix: ps,
-	elementPrefix: ms,
-	modifierPrefix: hs
+var ws = ".n-", Ts = "__", Es = "--", Ds = Ss(), Os = Jo({
+	blockPrefix: ws,
+	elementPrefix: Ts,
+	modifierPrefix: Es
 });
-gs.use(_s);
-var { c: z, find: vs } = gs, { cB: B, cE: V, cM: H, cNotM: ys } = _s;
-function bs(e) {
-	return z(({ props: { bPrefix: e } }) => `${e || ps}modal, ${e || ps}drawer`, [e]);
+Ds.use(Os);
+var { c: B, find: ks } = Ds, { cB: V, cE: H, cM: U, cNotM: As } = Os;
+function js(e) {
+	return B(({ props: { bPrefix: e } }) => `${e || ws}modal, ${e || ws}drawer`, [e]);
 }
-function xs(e) {
-	return z(({ props: { bPrefix: e } }) => `${e || ps}popover`, [e]);
+function Ms(e) {
+	return B(({ props: { bPrefix: e } }) => `${e || ws}popover`, [e]);
 }
-function Ss(e) {
-	return z(({ props: { bPrefix: e } }) => `&${e || ps}modal`, e);
+function Ns(e) {
+	return B(({ props: { bPrefix: e } }) => `&${e || ws}modal`, e);
 }
-function U(e, t) {
+function W(e, t) {
 	return e + (t === "default" ? "" : t.replace(/^[a-z]/, (e) => e.toUpperCase()));
 }
 //#endregion
 //#region node_modules/naive-ui/es/locales/common/enUS.mjs
-var Cs = {
+var Ps = {
 	name: "en-US",
 	global: {
 		undo: "Undo",
@@ -3379,7 +3478,121 @@ var Cs = {
 		monthFormat: "MMM",
 		weekdayFormat: "eee"
 	}
-}, ws = {
+}, Fs = {
+	name: "ja-JP",
+	global: {
+		undo: "元に戻す",
+		redo: "やり直す",
+		confirm: "OK",
+		clear: "クリア"
+	},
+	Popconfirm: {
+		positiveText: "OK",
+		negativeText: "キャンセル"
+	},
+	Cascader: {
+		placeholder: "選択してください",
+		loading: "ロード中",
+		loadingRequiredMessage: (e) => `すべての ${e} サブノードをロードしてから選択できます。`
+	},
+	Time: {
+		dateFormat: "yyyy-MM-dd",
+		dateTimeFormat: "yyyy-MM-dd HH:mm:ss"
+	},
+	DatePicker: {
+		yearFormat: "yyyy年",
+		monthFormat: "MMM",
+		dayFormat: "eeeeee",
+		yearTypeFormat: "yyyy",
+		monthTypeFormat: "yyyy-MM",
+		dateFormat: "yyyy-MM-dd",
+		dateTimeFormat: "yyyy-MM-dd HH:mm:ss",
+		quarterFormat: "yyyy-qqq",
+		weekFormat: "YYYY-w",
+		clear: "クリア",
+		now: "現在",
+		confirm: "OK",
+		selectTime: "時間を選択",
+		selectDate: "日付を選択",
+		datePlaceholder: "日付を選択",
+		datetimePlaceholder: "選択",
+		monthPlaceholder: "月を選択",
+		yearPlaceholder: "年を選択",
+		quarterPlaceholder: "四半期を選択",
+		weekPlaceholder: "週を選択",
+		startDatePlaceholder: "開始日",
+		endDatePlaceholder: "終了日",
+		startDatetimePlaceholder: "開始時間",
+		endDatetimePlaceholder: "終了時間",
+		startMonthPlaceholder: "開始月",
+		endMonthPlaceholder: "終了月",
+		monthBeforeYear: !1,
+		firstDayOfWeek: 0,
+		today: "今日"
+	},
+	DataTable: {
+		checkTableAll: "全選択",
+		uncheckTableAll: "全選択取消",
+		confirm: "OK",
+		clear: "リセット"
+	},
+	LegacyTransfer: {
+		sourceTitle: "元",
+		targetTitle: "先"
+	},
+	Transfer: {
+		selectAll: "全選択",
+		unselectAll: "全選択取消",
+		clearAll: "リセット",
+		total: (e) => `合計 ${e} 項目`,
+		selected: (e) => `${e} 個の項目を選択`
+	},
+	Empty: { description: "データなし" },
+	Select: { placeholder: "選択してください" },
+	TimePicker: {
+		placeholder: "選択してください",
+		positiveText: "OK",
+		negativeText: "キャンセル",
+		now: "現在",
+		clear: "クリア"
+	},
+	Pagination: {
+		goto: "ページジャンプ",
+		selectionSuffix: "ページ"
+	},
+	DynamicTags: { add: "追加" },
+	Log: { loading: "ロード中" },
+	Input: { placeholder: "入力してください" },
+	InputNumber: { placeholder: "入力してください" },
+	DynamicInput: { create: "追加" },
+	ThemeEditor: {
+		title: "テーマエディタ",
+		clearAllVars: "全件変数クリア",
+		clearSearch: "検索クリア",
+		filterCompName: "コンポネント名をフィルタ",
+		filterVarName: "変数をフィルタ",
+		import: "インポート",
+		export: "エクスポート",
+		restore: "デフォルト"
+	},
+	Image: {
+		tipPrevious: "前の画像 (←)",
+		tipNext: "次の画像 (→)",
+		tipCounterclockwise: "左に回転",
+		tipClockwise: "右に回転",
+		tipZoomOut: "縮小",
+		tipZoomIn: "拡大",
+		tipDownload: "ダウンロード",
+		tipClose: "閉じる (Esc)",
+		tipOriginalSize: "元のサイズに戻す"
+	},
+	Heatmap: {
+		less: "少",
+		more: "多",
+		monthFormat: "MMM",
+		weekdayFormat: "eeeeee"
+	}
+}, Is = {
 	name: "zh-CN",
 	global: {
 		undo: "撤销",
@@ -3493,10 +3706,124 @@ var Cs = {
 		monthFormat: "MMM",
 		weekdayFormat: "eeeeee"
 	}
+}, Ls = {
+	name: "zh-TW",
+	global: {
+		undo: "復原",
+		redo: "重做",
+		confirm: "確定",
+		clear: "清除"
+	},
+	Popconfirm: {
+		positiveText: "確定",
+		negativeText: "取消"
+	},
+	Cascader: {
+		placeholder: "請選擇",
+		loading: "載入中",
+		loadingRequiredMessage: (e) => `載入全部 ${e} 的子節點後才可選擇`
+	},
+	Time: {
+		dateFormat: "yyyy-MM-dd",
+		dateTimeFormat: "yyyy-MM-dd HH:mm:ss"
+	},
+	DatePicker: {
+		yearFormat: "yyyy 年",
+		monthFormat: "MMM",
+		dayFormat: "eeeeee",
+		yearTypeFormat: "yyyy",
+		monthTypeFormat: "yyyy-MM",
+		dateFormat: "yyyy-MM-dd",
+		dateTimeFormat: "yyyy-MM-dd HH:mm:ss",
+		quarterFormat: "yyyy-qqq",
+		weekFormat: "YYYY-w",
+		clear: "清除",
+		now: "現在",
+		confirm: "確定",
+		selectTime: "選擇時間",
+		selectDate: "選擇日期",
+		datePlaceholder: "選擇日期",
+		datetimePlaceholder: "選擇日期時間",
+		monthPlaceholder: "選擇月份",
+		yearPlaceholder: "選擇年份",
+		quarterPlaceholder: "選擇季度",
+		weekPlaceholder: "Select Week",
+		startDatePlaceholder: "開始日期",
+		endDatePlaceholder: "結束日期",
+		startDatetimePlaceholder: "開始日期時間",
+		endDatetimePlaceholder: "結束日期時間",
+		startMonthPlaceholder: "開始月份",
+		endMonthPlaceholder: "結束月份",
+		monthBeforeYear: !1,
+		firstDayOfWeek: 0,
+		today: "今天"
+	},
+	DataTable: {
+		checkTableAll: "選擇全部表格資料",
+		uncheckTableAll: "取消選擇全部表格資料",
+		confirm: "確定",
+		clear: "重設"
+	},
+	LegacyTransfer: {
+		sourceTitle: "來源",
+		targetTitle: "目標"
+	},
+	Transfer: {
+		selectAll: "全選",
+		unselectAll: "取消全選",
+		clearAll: "清除全部",
+		total: (e) => `共 ${e} 項`,
+		selected: (e) => `已選 ${e} 項`
+	},
+	Empty: { description: "無資料" },
+	Select: { placeholder: "請選擇" },
+	TimePicker: {
+		placeholder: "請選擇時間",
+		positiveText: "確定",
+		negativeText: "取消",
+		now: "現在",
+		clear: "清除"
+	},
+	Pagination: {
+		goto: "跳至",
+		selectionSuffix: "頁"
+	},
+	DynamicTags: { add: "新增" },
+	Log: { loading: "載入中" },
+	Input: { placeholder: "請輸入" },
+	InputNumber: { placeholder: "請輸入" },
+	DynamicInput: { create: "新增" },
+	ThemeEditor: {
+		title: "主題編輯器",
+		clearAllVars: "清除全部變數",
+		clearSearch: "清除搜尋",
+		filterCompName: "過濾組件名稱",
+		filterVarName: "過濾變數名稱",
+		import: "匯入",
+		export: "匯出",
+		restore: "恢復預設"
+	},
+	Image: {
+		tipPrevious: "上一張（←）",
+		tipNext: "下一張（→）",
+		tipCounterclockwise: "向左旋轉",
+		tipClockwise: "向右旋轉",
+		tipZoomOut: "縮小",
+		tipZoomIn: "放大",
+		tipDownload: "下載",
+		tipClose: "關閉（Esc）",
+		tipOriginalSize: "縮放到原始尺寸"
+	},
+	Heatmap: {
+		less: "少",
+		more: "多",
+		monthFormat: "MMM",
+		weekdayFormat: "eeeeee"
+	}
 };
 //#endregion
 //#region node_modules/date-fns/locale/_lib/buildFormatLongFn.js
-function Ts(e) {
+function Rs(e) {
 	return (t = {}) => {
 		let n = t.width ? String(t.width) : e.defaultWidth;
 		return e.formats[n] || e.formats[e.defaultWidth];
@@ -3504,7 +3831,7 @@ function Ts(e) {
 }
 //#endregion
 //#region node_modules/date-fns/locale/_lib/buildLocalizeFn.js
-function Es(e) {
+function zs(e) {
 	return (t, n) => {
 		let r = n?.context ? String(n.context) : "standalone", i;
 		if (r === "formatting" && e.formattingValues) {
@@ -3520,11 +3847,11 @@ function Es(e) {
 }
 //#endregion
 //#region node_modules/date-fns/locale/_lib/buildMatchFn.js
-function Ds(e) {
+function Bs(e) {
 	return (t, n = {}) => {
 		let r = n.width, i = r && e.matchPatterns[r] || e.matchPatterns[e.defaultMatchWidth], a = t.match(i);
 		if (!a) return null;
-		let o = a[0], s = r && e.parsePatterns[r] || e.parsePatterns[e.defaultParseWidth], c = Array.isArray(s) ? ks(s, (e) => e.test(o)) : Os(s, (e) => e.test(o)), l;
+		let o = a[0], s = r && e.parsePatterns[r] || e.parsePatterns[e.defaultParseWidth], c = Array.isArray(s) ? Hs(s, (e) => e.test(o)) : Vs(s, (e) => e.test(o)), l;
 		l = e.valueCallback ? e.valueCallback(c) : c, l = n.valueCallback ? n.valueCallback(l) : l;
 		let u = t.slice(o.length);
 		return {
@@ -3533,15 +3860,15 @@ function Ds(e) {
 		};
 	};
 }
-function Os(e, t) {
+function Vs(e, t) {
 	for (let n in e) if (Object.prototype.hasOwnProperty.call(e, n) && t(e[n])) return n;
 }
-function ks(e, t) {
+function Hs(e, t) {
 	for (let n = 0; n < e.length; n++) if (t(e[n])) return n;
 }
 //#endregion
 //#region node_modules/date-fns/locale/_lib/buildMatchPatternFn.js
-function As(e) {
+function Us(e) {
 	return (t, n = {}) => {
 		let r = t.match(e.matchPattern);
 		if (!r) return null;
@@ -3558,46 +3885,46 @@ function As(e) {
 }
 //#endregion
 //#region node_modules/date-fns/constants.js
-var js = 365.2425, Ms = 86400;
-Ms * 7, Ms * js / 12 * 3;
-var Ns = Symbol.for("constructDateFrom");
+var Ws = 365.2425, Gs = 86400;
+Gs * 7, Gs * Ws / 12 * 3;
+var Ks = Symbol.for("constructDateFrom");
 //#endregion
 //#region node_modules/date-fns/constructFrom.js
-function Ps(e, t) {
-	return typeof e == "function" ? e(t) : e && typeof e == "object" && Ns in e ? e[Ns](t) : e instanceof Date ? new e.constructor(t) : new Date(t);
+function qs(e, t) {
+	return typeof e == "function" ? e(t) : e && typeof e == "object" && Ks in e ? e[Ks](t) : e instanceof Date ? new e.constructor(t) : new Date(t);
 }
 //#endregion
 //#region node_modules/date-fns/_lib/normalizeDates.js
-function Fs(e, ...t) {
-	let n = Ps.bind(null, e || t.find((e) => typeof e == "object"));
+function Js(e, ...t) {
+	let n = qs.bind(null, e || t.find((e) => typeof e == "object"));
 	return t.map(n);
 }
 //#endregion
 //#region node_modules/date-fns/_lib/defaultOptions.js
-var Is = {};
-function Ls() {
-	return Is;
+var Ys = {};
+function Xs() {
+	return Ys;
 }
 //#endregion
 //#region node_modules/date-fns/toDate.js
-function Rs(e, t) {
-	return Ps(t || e, e);
+function Zs(e, t) {
+	return qs(t || e, e);
 }
 //#endregion
 //#region node_modules/date-fns/startOfWeek.js
-function zs(e, t) {
-	let n = Ls(), r = t?.weekStartsOn ?? t?.locale?.options?.weekStartsOn ?? n.weekStartsOn ?? n.locale?.options?.weekStartsOn ?? 0, i = Rs(e, t?.in), a = i.getDay(), o = (a < r ? 7 : 0) + a - r;
+function Qs(e, t) {
+	let n = Xs(), r = t?.weekStartsOn ?? t?.locale?.options?.weekStartsOn ?? n.weekStartsOn ?? n.locale?.options?.weekStartsOn ?? 0, i = Zs(e, t?.in), a = i.getDay(), o = (a < r ? 7 : 0) + a - r;
 	return i.setDate(i.getDate() - o), i.setHours(0, 0, 0, 0), i;
 }
 //#endregion
 //#region node_modules/date-fns/isSameWeek.js
-function Bs(e, t, n) {
-	let [r, i] = Fs(n?.in, e, t);
-	return +zs(r, n) == +zs(i, n);
+function $s(e, t, n) {
+	let [r, i] = Js(n?.in, e, t);
+	return +Qs(r, n) == +Qs(i, n);
 }
 //#endregion
 //#region node_modules/date-fns/locale/en-US/_lib/formatDistance.js
-var Vs = {
+var ec = {
 	lessThanXSeconds: {
 		one: "less than a second",
 		other: "less than {{count}} seconds"
@@ -3659,17 +3986,17 @@ var Vs = {
 		one: "almost 1 year",
 		other: "almost {{count}} years"
 	}
-}, Hs = (e, t, n) => {
-	let r, i = Vs[e];
+}, tc = (e, t, n) => {
+	let r, i = ec[e];
 	return r = typeof i == "string" ? i : t === 1 ? i.one : i.other.replace("{{count}}", t.toString()), n?.addSuffix ? n.comparison && n.comparison > 0 ? "in " + r : r + " ago" : r;
-}, Us = {
+}, nc = {
 	lastWeek: "'last' eeee 'at' p",
 	yesterday: "'yesterday at' p",
 	today: "'today at' p",
 	tomorrow: "'tomorrow at' p",
 	nextWeek: "eeee 'at' p",
 	other: "P"
-}, Ws = (e, t, n, r) => Us[e], Gs = {
+}, rc = (e, t, n, r) => nc[e], ic = {
 	ordinalNumber: (e, t) => {
 		let n = Number(e), r = n % 100;
 		if (r > 20 || r < 10) switch (r % 10) {
@@ -3679,7 +4006,7 @@ var Vs = {
 		}
 		return n + "th";
 	},
-	era: Es({
+	era: zs({
 		values: {
 			narrow: ["B", "A"],
 			abbreviated: ["BC", "AD"],
@@ -3687,7 +4014,7 @@ var Vs = {
 		},
 		defaultWidth: "wide"
 	}),
-	quarter: Es({
+	quarter: zs({
 		values: {
 			narrow: [
 				"1",
@@ -3711,7 +4038,7 @@ var Vs = {
 		defaultWidth: "wide",
 		argumentCallback: (e) => e - 1
 	}),
-	month: Es({
+	month: zs({
 		values: {
 			narrow: [
 				"J",
@@ -3758,7 +4085,7 @@ var Vs = {
 		},
 		defaultWidth: "wide"
 	}),
-	day: Es({
+	day: zs({
 		values: {
 			narrow: [
 				"S",
@@ -3799,7 +4126,7 @@ var Vs = {
 		},
 		defaultWidth: "wide"
 	}),
-	dayPeriod: Es({
+	dayPeriod: zs({
 		values: {
 			narrow: {
 				am: "a",
@@ -3867,13 +4194,13 @@ var Vs = {
 		},
 		defaultFormattingWidth: "wide"
 	})
-}, Ks = {
-	ordinalNumber: As({
+}, ac = {
+	ordinalNumber: Us({
 		matchPattern: /^(\d+)(th|st|nd|rd)?/i,
 		parsePattern: /\d+/i,
 		valueCallback: (e) => parseInt(e, 10)
 	}),
-	era: Ds({
+	era: Bs({
 		matchPatterns: {
 			narrow: /^(b|a)/i,
 			abbreviated: /^(b\.?\s?c\.?|b\.?\s?c\.?\s?e\.?|a\.?\s?d\.?|c\.?\s?e\.?)/i,
@@ -3883,7 +4210,7 @@ var Vs = {
 		parsePatterns: { any: [/^b/i, /^(a|c)/i] },
 		defaultParseWidth: "any"
 	}),
-	quarter: Ds({
+	quarter: Bs({
 		matchPatterns: {
 			narrow: /^[1234]/i,
 			abbreviated: /^q[1234]/i,
@@ -3899,7 +4226,7 @@ var Vs = {
 		defaultParseWidth: "any",
 		valueCallback: (e) => e + 1
 	}),
-	month: Ds({
+	month: Bs({
 		matchPatterns: {
 			narrow: /^[jfmasond]/i,
 			abbreviated: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i,
@@ -3938,7 +4265,7 @@ var Vs = {
 		},
 		defaultParseWidth: "any"
 	}),
-	day: Ds({
+	day: Bs({
 		matchPatterns: {
 			narrow: /^[smtwf]/i,
 			short: /^(su|mo|tu|we|th|fr|sa)/i,
@@ -3968,7 +4295,7 @@ var Vs = {
 		},
 		defaultParseWidth: "any"
 	}),
-	dayPeriod: Ds({
+	dayPeriod: Bs({
 		matchPatterns: {
 			narrow: /^(a|p|mi|n|(in the|at) (morning|afternoon|evening|night))/i,
 			any: /^([ap]\.?\s?m\.?|midnight|noon|(in the|at) (morning|afternoon|evening|night))/i
@@ -3986,11 +4313,11 @@ var Vs = {
 		} },
 		defaultParseWidth: "any"
 	})
-}, qs = {
+}, oc = {
 	code: "en-US",
-	formatDistance: Hs,
+	formatDistance: tc,
 	formatLong: {
-		date: Ts({
+		date: Rs({
 			formats: {
 				full: "EEEE, MMMM do, y",
 				long: "MMMM do, y",
@@ -3999,7 +4326,7 @@ var Vs = {
 			},
 			defaultWidth: "full"
 		}),
-		time: Ts({
+		time: Rs({
 			formats: {
 				full: "h:mm:ss a zzzz",
 				long: "h:mm:ss a z",
@@ -4008,7 +4335,7 @@ var Vs = {
 			},
 			defaultWidth: "full"
 		}),
-		dateTime: Ts({
+		dateTime: Rs({
 			formats: {
 				full: "{{date}} 'at' {{time}}",
 				long: "{{date}} 'at' {{time}}",
@@ -4018,14 +4345,427 @@ var Vs = {
 			defaultWidth: "full"
 		})
 	},
-	formatRelative: Ws,
-	localize: Gs,
-	match: Ks,
+	formatRelative: rc,
+	localize: ic,
+	match: ac,
 	options: {
 		weekStartsOn: 0,
 		firstWeekContainsDate: 1
 	}
-}, Js = {
+}, sc = {
+	lessThanXSeconds: {
+		one: "1秒未満",
+		other: "{{count}}秒未満",
+		oneWithSuffix: "約1秒",
+		otherWithSuffix: "約{{count}}秒"
+	},
+	xSeconds: {
+		one: "1秒",
+		other: "{{count}}秒"
+	},
+	halfAMinute: "30秒",
+	lessThanXMinutes: {
+		one: "1分未満",
+		other: "{{count}}分未満",
+		oneWithSuffix: "約1分",
+		otherWithSuffix: "約{{count}}分"
+	},
+	xMinutes: {
+		one: "1分",
+		other: "{{count}}分"
+	},
+	aboutXHours: {
+		one: "約1時間",
+		other: "約{{count}}時間"
+	},
+	xHours: {
+		one: "1時間",
+		other: "{{count}}時間"
+	},
+	xDays: {
+		one: "1日",
+		other: "{{count}}日"
+	},
+	aboutXWeeks: {
+		one: "約1週間",
+		other: "約{{count}}週間"
+	},
+	xWeeks: {
+		one: "1週間",
+		other: "{{count}}週間"
+	},
+	aboutXMonths: {
+		one: "約1か月",
+		other: "約{{count}}か月"
+	},
+	xMonths: {
+		one: "1か月",
+		other: "{{count}}か月"
+	},
+	aboutXYears: {
+		one: "約1年",
+		other: "約{{count}}年"
+	},
+	xYears: {
+		one: "1年",
+		other: "{{count}}年"
+	},
+	overXYears: {
+		one: "1年以上",
+		other: "{{count}}年以上"
+	},
+	almostXYears: {
+		one: "1年近く",
+		other: "{{count}}年近く"
+	}
+}, cc = (e, t, n) => {
+	n ||= {};
+	let r, i = sc[e];
+	return r = typeof i == "string" ? i : t === 1 ? n.addSuffix && i.oneWithSuffix ? i.oneWithSuffix : i.one : n.addSuffix && i.otherWithSuffix ? i.otherWithSuffix.replace("{{count}}", String(t)) : i.other.replace("{{count}}", String(t)), n.addSuffix ? n.comparison && n.comparison > 0 ? r + "後" : r + "前" : r;
+}, lc = {
+	date: Rs({
+		formats: {
+			full: "y年M月d日EEEE",
+			long: "y年M月d日",
+			medium: "y/MM/dd",
+			short: "y/MM/dd"
+		},
+		defaultWidth: "full"
+	}),
+	time: Rs({
+		formats: {
+			full: "H時mm分ss秒 zzzz",
+			long: "H:mm:ss z",
+			medium: "H:mm:ss",
+			short: "H:mm"
+		},
+		defaultWidth: "full"
+	}),
+	dateTime: Rs({
+		formats: {
+			full: "{{date}} {{time}}",
+			long: "{{date}} {{time}}",
+			medium: "{{date}} {{time}}",
+			short: "{{date}} {{time}}"
+		},
+		defaultWidth: "full"
+	})
+}, uc = {
+	lastWeek: "先週のeeeeのp",
+	yesterday: "昨日のp",
+	today: "今日のp",
+	tomorrow: "明日のp",
+	nextWeek: "翌週のeeeeのp",
+	other: "P"
+}, dc = {
+	code: "ja",
+	formatDistance: cc,
+	formatLong: lc,
+	formatRelative: (e, t, n, r) => uc[e],
+	localize: {
+		ordinalNumber: (e, t) => {
+			let n = Number(e);
+			switch (String(t?.unit)) {
+				case "year": return `${n}年`;
+				case "quarter": return `第${n}四半期`;
+				case "month": return `${n}月`;
+				case "week": return `第${n}週`;
+				case "date": return `${n}日`;
+				case "hour": return `${n}時`;
+				case "minute": return `${n}分`;
+				case "second": return `${n}秒`;
+				default: return `${n}`;
+			}
+		},
+		era: zs({
+			values: {
+				narrow: ["BC", "AC"],
+				abbreviated: ["紀元前", "西暦"],
+				wide: ["紀元前", "西暦"]
+			},
+			defaultWidth: "wide"
+		}),
+		quarter: zs({
+			values: {
+				narrow: [
+					"1",
+					"2",
+					"3",
+					"4"
+				],
+				abbreviated: [
+					"Q1",
+					"Q2",
+					"Q3",
+					"Q4"
+				],
+				wide: [
+					"第1四半期",
+					"第2四半期",
+					"第3四半期",
+					"第4四半期"
+				]
+			},
+			defaultWidth: "wide",
+			argumentCallback: (e) => Number(e) - 1
+		}),
+		month: zs({
+			values: {
+				narrow: [
+					"1",
+					"2",
+					"3",
+					"4",
+					"5",
+					"6",
+					"7",
+					"8",
+					"9",
+					"10",
+					"11",
+					"12"
+				],
+				abbreviated: [
+					"1月",
+					"2月",
+					"3月",
+					"4月",
+					"5月",
+					"6月",
+					"7月",
+					"8月",
+					"9月",
+					"10月",
+					"11月",
+					"12月"
+				],
+				wide: [
+					"1月",
+					"2月",
+					"3月",
+					"4月",
+					"5月",
+					"6月",
+					"7月",
+					"8月",
+					"9月",
+					"10月",
+					"11月",
+					"12月"
+				]
+			},
+			defaultWidth: "wide"
+		}),
+		day: zs({
+			values: {
+				narrow: [
+					"日",
+					"月",
+					"火",
+					"水",
+					"木",
+					"金",
+					"土"
+				],
+				short: [
+					"日",
+					"月",
+					"火",
+					"水",
+					"木",
+					"金",
+					"土"
+				],
+				abbreviated: [
+					"日",
+					"月",
+					"火",
+					"水",
+					"木",
+					"金",
+					"土"
+				],
+				wide: [
+					"日曜日",
+					"月曜日",
+					"火曜日",
+					"水曜日",
+					"木曜日",
+					"金曜日",
+					"土曜日"
+				]
+			},
+			defaultWidth: "wide"
+		}),
+		dayPeriod: zs({
+			values: {
+				narrow: {
+					am: "午前",
+					pm: "午後",
+					midnight: "深夜",
+					noon: "正午",
+					morning: "朝",
+					afternoon: "午後",
+					evening: "夜",
+					night: "深夜"
+				},
+				abbreviated: {
+					am: "午前",
+					pm: "午後",
+					midnight: "深夜",
+					noon: "正午",
+					morning: "朝",
+					afternoon: "午後",
+					evening: "夜",
+					night: "深夜"
+				},
+				wide: {
+					am: "午前",
+					pm: "午後",
+					midnight: "深夜",
+					noon: "正午",
+					morning: "朝",
+					afternoon: "午後",
+					evening: "夜",
+					night: "深夜"
+				}
+			},
+			defaultWidth: "wide",
+			formattingValues: {
+				narrow: {
+					am: "午前",
+					pm: "午後",
+					midnight: "深夜",
+					noon: "正午",
+					morning: "朝",
+					afternoon: "午後",
+					evening: "夜",
+					night: "深夜"
+				},
+				abbreviated: {
+					am: "午前",
+					pm: "午後",
+					midnight: "深夜",
+					noon: "正午",
+					morning: "朝",
+					afternoon: "午後",
+					evening: "夜",
+					night: "深夜"
+				},
+				wide: {
+					am: "午前",
+					pm: "午後",
+					midnight: "深夜",
+					noon: "正午",
+					morning: "朝",
+					afternoon: "午後",
+					evening: "夜",
+					night: "深夜"
+				}
+			},
+			defaultFormattingWidth: "wide"
+		})
+	},
+	match: {
+		ordinalNumber: Us({
+			matchPattern: /^第?\d+(年|四半期|月|週|日|時|分|秒)?/i,
+			parsePattern: /\d+/i,
+			valueCallback: function(e) {
+				return parseInt(e, 10);
+			}
+		}),
+		era: Bs({
+			matchPatterns: {
+				narrow: /^(B\.?C\.?|A\.?D\.?)/i,
+				abbreviated: /^(紀元[前後]|西暦)/i,
+				wide: /^(紀元[前後]|西暦)/i
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: {
+				narrow: [/^B/i, /^A/i],
+				any: [/^(紀元前)/i, /^(西暦|紀元後)/i]
+			},
+			defaultParseWidth: "any"
+		}),
+		quarter: Bs({
+			matchPatterns: {
+				narrow: /^[1234]/i,
+				abbreviated: /^Q[1234]/i,
+				wide: /^第[1234一二三四１２３４]四半期/i
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: { any: [
+				/(1|一|１)/i,
+				/(2|二|２)/i,
+				/(3|三|３)/i,
+				/(4|四|４)/i
+			] },
+			defaultParseWidth: "any",
+			valueCallback: (e) => e + 1
+		}),
+		month: Bs({
+			matchPatterns: {
+				narrow: /^([123456789]|1[012])/,
+				abbreviated: /^([123456789]|1[012])月/i,
+				wide: /^([123456789]|1[012])月/i
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: { any: [
+				/^1\D/,
+				/^2/,
+				/^3/,
+				/^4/,
+				/^5/,
+				/^6/,
+				/^7/,
+				/^8/,
+				/^9/,
+				/^10/,
+				/^11/,
+				/^12/
+			] },
+			defaultParseWidth: "any"
+		}),
+		day: Bs({
+			matchPatterns: {
+				narrow: /^[日月火水木金土]/,
+				short: /^[日月火水木金土]/,
+				abbreviated: /^[日月火水木金土]/,
+				wide: /^[日月火水木金土]曜日/
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: { any: [
+				/^日/,
+				/^月/,
+				/^火/,
+				/^水/,
+				/^木/,
+				/^金/,
+				/^土/
+			] },
+			defaultParseWidth: "any"
+		}),
+		dayPeriod: Bs({
+			matchPatterns: { any: /^(AM|PM|午前|午後|正午|深夜|真夜中|夜|朝)/i },
+			defaultMatchWidth: "any",
+			parsePatterns: { any: {
+				am: /^(A|午前)/i,
+				pm: /^(P|午後)/i,
+				midnight: /^深夜|真夜中/i,
+				noon: /^正午/i,
+				morning: /^朝/i,
+				afternoon: /^午後/i,
+				evening: /^夜/i,
+				night: /^深夜/i
+			} },
+			defaultParseWidth: "any"
+		})
+	},
+	options: {
+		weekStartsOn: 0,
+		firstWeekContainsDate: 1
+	}
+}, fc = {
 	lessThanXSeconds: {
 		one: "不到 1 秒",
 		other: "不到 {{count}} 秒"
@@ -4087,11 +4827,11 @@ var Vs = {
 		one: "将近 1 年",
 		other: "将近 {{count}} 年"
 	}
-}, Ys = (e, t, n) => {
-	let r, i = Js[e];
+}, pc = (e, t, n) => {
+	let r, i = fc[e];
 	return r = typeof i == "string" ? i : t === 1 ? i.one : i.other.replace("{{count}}", String(t)), n?.addSuffix ? n.comparison && n.comparison > 0 ? r + "内" : r + "前" : r;
-}, Xs = {
-	date: Ts({
+}, mc = {
+	date: Rs({
 		formats: {
 			full: "y'年'M'月'd'日' EEEE",
 			long: "y'年'M'月'd'日'",
@@ -4100,7 +4840,7 @@ var Vs = {
 		},
 		defaultWidth: "full"
 	}),
-	time: Ts({
+	time: Rs({
 		formats: {
 			full: "zzzz a h:mm:ss",
 			long: "z a h:mm:ss",
@@ -4109,7 +4849,7 @@ var Vs = {
 		},
 		defaultWidth: "full"
 	}),
-	dateTime: Ts({
+	dateTime: Rs({
 		formats: {
 			full: "{{date}} {{time}}",
 			long: "{{date}} {{time}}",
@@ -4121,22 +4861,22 @@ var Vs = {
 };
 //#endregion
 //#region node_modules/date-fns/locale/zh-CN/_lib/formatRelative.js
-function Zs(e, t, n) {
-	return Bs(e, t, n) ? "eeee p" : e.getTime() > t.getTime() ? "'下个'eeee p" : "'上个'eeee p";
+function hc(e, t, n) {
+	return $s(e, t, n) ? "eeee p" : e.getTime() > t.getTime() ? "'下个'eeee p" : "'上个'eeee p";
 }
-var Qs = {
-	lastWeek: Zs,
+var gc = {
+	lastWeek: hc,
 	yesterday: "'昨天' p",
 	today: "'今天' p",
 	tomorrow: "'明天' p",
-	nextWeek: Zs,
+	nextWeek: hc,
 	other: "PP p"
-}, $s = {
+}, _c = {
 	code: "zh-CN",
-	formatDistance: Ys,
-	formatLong: Xs,
+	formatDistance: pc,
+	formatLong: mc,
 	formatRelative: (e, t, n, r) => {
-		let i = Qs[e];
+		let i = gc[e];
 		return typeof i == "function" ? i(t, n, r) : i;
 	},
 	localize: {
@@ -4150,7 +4890,7 @@ var Qs = {
 				default: return "第 " + n.toString();
 			}
 		},
-		era: Es({
+		era: zs({
 			values: {
 				narrow: ["前", "公元"],
 				abbreviated: ["前", "公元"],
@@ -4158,7 +4898,7 @@ var Qs = {
 			},
 			defaultWidth: "wide"
 		}),
-		quarter: Es({
+		quarter: zs({
 			values: {
 				narrow: [
 					"1",
@@ -4182,7 +4922,7 @@ var Qs = {
 			defaultWidth: "wide",
 			argumentCallback: (e) => e - 1
 		}),
-		month: Es({
+		month: zs({
 			values: {
 				narrow: [
 					"一",
@@ -4229,7 +4969,7 @@ var Qs = {
 			},
 			defaultWidth: "wide"
 		}),
-		day: Es({
+		day: zs({
 			values: {
 				narrow: [
 					"日",
@@ -4270,7 +5010,7 @@ var Qs = {
 			},
 			defaultWidth: "wide"
 		}),
-		dayPeriod: Es({
+		dayPeriod: zs({
 			values: {
 				narrow: {
 					am: "上",
@@ -4340,12 +5080,12 @@ var Qs = {
 		})
 	},
 	match: {
-		ordinalNumber: As({
+		ordinalNumber: Us({
 			matchPattern: /^(第\s*)?\d+(日|时|分|秒)?/i,
 			parsePattern: /\d+/i,
 			valueCallback: (e) => parseInt(e, 10)
 		}),
-		era: Ds({
+		era: Bs({
 			matchPatterns: {
 				narrow: /^(前)/i,
 				abbreviated: /^(前)/i,
@@ -4355,7 +5095,7 @@ var Qs = {
 			parsePatterns: { any: [/^(前)/i, /^(公元)/i] },
 			defaultParseWidth: "any"
 		}),
-		quarter: Ds({
+		quarter: Bs({
 			matchPatterns: {
 				narrow: /^[1234]/i,
 				abbreviated: /^第[一二三四]刻/i,
@@ -4371,7 +5111,7 @@ var Qs = {
 			defaultParseWidth: "any",
 			valueCallback: (e) => e + 1
 		}),
-		month: Ds({
+		month: Bs({
 			matchPatterns: {
 				narrow: /^(一|二|三|四|五|六|七|八|九|十[二一]?)/i,
 				abbreviated: /^(一|二|三|四|五|六|七|八|九|十[二一]?|\d|1[0-2])月/i,
@@ -4410,7 +5150,7 @@ var Qs = {
 			},
 			defaultParseWidth: "any"
 		}),
-		day: Ds({
+		day: Bs({
 			matchPatterns: {
 				narrow: /^[一二三四五六日]/i,
 				short: /^[一二三四五六日]/i,
@@ -4429,7 +5169,7 @@ var Qs = {
 			] },
 			defaultParseWidth: "any"
 		}),
-		dayPeriod: Ds({
+		dayPeriod: Bs({
 			matchPatterns: { any: /^(上午?|下午?|午夜|[中正]午|早上?|下午|晚上?|凌晨|)/i },
 			defaultMatchWidth: "any",
 			parsePatterns: { any: {
@@ -4449,96 +5189,517 @@ var Qs = {
 		weekStartsOn: 1,
 		firstWeekContainsDate: 4
 	}
-}, ec = {
+}, vc = {
+	lessThanXSeconds: {
+		one: "少於 1 秒",
+		other: "少於 {{count}} 秒"
+	},
+	xSeconds: {
+		one: "1 秒",
+		other: "{{count}} 秒"
+	},
+	halfAMinute: "半分鐘",
+	lessThanXMinutes: {
+		one: "少於 1 分鐘",
+		other: "少於 {{count}} 分鐘"
+	},
+	xMinutes: {
+		one: "1 分鐘",
+		other: "{{count}} 分鐘"
+	},
+	xHours: {
+		one: "1 小時",
+		other: "{{count}} 小時"
+	},
+	aboutXHours: {
+		one: "大約 1 小時",
+		other: "大約 {{count}} 小時"
+	},
+	xDays: {
+		one: "1 天",
+		other: "{{count}} 天"
+	},
+	aboutXWeeks: {
+		one: "大約 1 個星期",
+		other: "大約 {{count}} 個星期"
+	},
+	xWeeks: {
+		one: "1 個星期",
+		other: "{{count}} 個星期"
+	},
+	aboutXMonths: {
+		one: "大約 1 個月",
+		other: "大約 {{count}} 個月"
+	},
+	xMonths: {
+		one: "1 個月",
+		other: "{{count}} 個月"
+	},
+	aboutXYears: {
+		one: "大約 1 年",
+		other: "大約 {{count}} 年"
+	},
+	xYears: {
+		one: "1 年",
+		other: "{{count}} 年"
+	},
+	overXYears: {
+		one: "超過 1 年",
+		other: "超過 {{count}} 年"
+	},
+	almostXYears: {
+		one: "將近 1 年",
+		other: "將近 {{count}} 年"
+	}
+}, yc = (e, t, n) => {
+	let r, i = vc[e];
+	return r = typeof i == "string" ? i : t === 1 ? i.one : i.other.replace("{{count}}", String(t)), n?.addSuffix ? n.comparison && n.comparison > 0 ? r + "內" : r + "前" : r;
+}, bc = {
+	date: Rs({
+		formats: {
+			full: "y'年'M'月'd'日' EEEE",
+			long: "y'年'M'月'd'日'",
+			medium: "yyyy-MM-dd",
+			short: "yy-MM-dd"
+		},
+		defaultWidth: "full"
+	}),
+	time: Rs({
+		formats: {
+			full: "zzzz a h:mm:ss",
+			long: "z a h:mm:ss",
+			medium: "a h:mm:ss",
+			short: "a h:mm"
+		},
+		defaultWidth: "full"
+	}),
+	dateTime: Rs({
+		formats: {
+			full: "{{date}} {{time}}",
+			long: "{{date}} {{time}}",
+			medium: "{{date}} {{time}}",
+			short: "{{date}} {{time}}"
+		},
+		defaultWidth: "full"
+	})
+}, xc = {
+	lastWeek: "'上個'eeee p",
+	yesterday: "'昨天' p",
+	today: "'今天' p",
+	tomorrow: "'明天' p",
+	nextWeek: "'下個'eeee p",
+	other: "P"
+}, Sc = {
+	code: "zh-TW",
+	formatDistance: yc,
+	formatLong: bc,
+	formatRelative: (e, t, n, r) => xc[e],
+	localize: {
+		ordinalNumber: (e, t) => {
+			let n = Number(e);
+			switch (t?.unit) {
+				case "date": return n + "日";
+				case "hour": return n + "時";
+				case "minute": return n + "分";
+				case "second": return n + "秒";
+				default: return "第 " + n;
+			}
+		},
+		era: zs({
+			values: {
+				narrow: ["前", "公元"],
+				abbreviated: ["前", "公元"],
+				wide: ["公元前", "公元"]
+			},
+			defaultWidth: "wide"
+		}),
+		quarter: zs({
+			values: {
+				narrow: [
+					"1",
+					"2",
+					"3",
+					"4"
+				],
+				abbreviated: [
+					"第一刻",
+					"第二刻",
+					"第三刻",
+					"第四刻"
+				],
+				wide: [
+					"第一刻鐘",
+					"第二刻鐘",
+					"第三刻鐘",
+					"第四刻鐘"
+				]
+			},
+			defaultWidth: "wide",
+			argumentCallback: (e) => e - 1
+		}),
+		month: zs({
+			values: {
+				narrow: [
+					"一",
+					"二",
+					"三",
+					"四",
+					"五",
+					"六",
+					"七",
+					"八",
+					"九",
+					"十",
+					"十一",
+					"十二"
+				],
+				abbreviated: [
+					"1月",
+					"2月",
+					"3月",
+					"4月",
+					"5月",
+					"6月",
+					"7月",
+					"8月",
+					"9月",
+					"10月",
+					"11月",
+					"12月"
+				],
+				wide: [
+					"一月",
+					"二月",
+					"三月",
+					"四月",
+					"五月",
+					"六月",
+					"七月",
+					"八月",
+					"九月",
+					"十月",
+					"十一月",
+					"十二月"
+				]
+			},
+			defaultWidth: "wide"
+		}),
+		day: zs({
+			values: {
+				narrow: [
+					"日",
+					"一",
+					"二",
+					"三",
+					"四",
+					"五",
+					"六"
+				],
+				short: [
+					"日",
+					"一",
+					"二",
+					"三",
+					"四",
+					"五",
+					"六"
+				],
+				abbreviated: [
+					"週日",
+					"週一",
+					"週二",
+					"週三",
+					"週四",
+					"週五",
+					"週六"
+				],
+				wide: [
+					"星期日",
+					"星期一",
+					"星期二",
+					"星期三",
+					"星期四",
+					"星期五",
+					"星期六"
+				]
+			},
+			defaultWidth: "wide"
+		}),
+		dayPeriod: zs({
+			values: {
+				narrow: {
+					am: "上",
+					pm: "下",
+					midnight: "凌晨",
+					noon: "午",
+					morning: "早",
+					afternoon: "下午",
+					evening: "晚",
+					night: "夜"
+				},
+				abbreviated: {
+					am: "上午",
+					pm: "下午",
+					midnight: "凌晨",
+					noon: "中午",
+					morning: "早晨",
+					afternoon: "中午",
+					evening: "晚上",
+					night: "夜間"
+				},
+				wide: {
+					am: "上午",
+					pm: "下午",
+					midnight: "凌晨",
+					noon: "中午",
+					morning: "早晨",
+					afternoon: "中午",
+					evening: "晚上",
+					night: "夜間"
+				}
+			},
+			defaultWidth: "wide",
+			formattingValues: {
+				narrow: {
+					am: "上",
+					pm: "下",
+					midnight: "凌晨",
+					noon: "午",
+					morning: "早",
+					afternoon: "下午",
+					evening: "晚",
+					night: "夜"
+				},
+				abbreviated: {
+					am: "上午",
+					pm: "下午",
+					midnight: "凌晨",
+					noon: "中午",
+					morning: "早晨",
+					afternoon: "中午",
+					evening: "晚上",
+					night: "夜間"
+				},
+				wide: {
+					am: "上午",
+					pm: "下午",
+					midnight: "凌晨",
+					noon: "中午",
+					morning: "早晨",
+					afternoon: "中午",
+					evening: "晚上",
+					night: "夜間"
+				}
+			},
+			defaultFormattingWidth: "wide"
+		})
+	},
+	match: {
+		ordinalNumber: Us({
+			matchPattern: /^(第\s*)?\d+(日|時|分|秒)?/i,
+			parsePattern: /\d+/i,
+			valueCallback: (e) => parseInt(e, 10)
+		}),
+		era: Bs({
+			matchPatterns: {
+				narrow: /^(前)/i,
+				abbreviated: /^(前)/i,
+				wide: /^(公元前|公元)/i
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: { any: [/^(前)/i, /^(公元)/i] },
+			defaultParseWidth: "any"
+		}),
+		quarter: Bs({
+			matchPatterns: {
+				narrow: /^[1234]/i,
+				abbreviated: /^第[一二三四]刻/i,
+				wide: /^第[一二三四]刻鐘/i
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: { any: [
+				/(1|一)/i,
+				/(2|二)/i,
+				/(3|三)/i,
+				/(4|四)/i
+			] },
+			defaultParseWidth: "any",
+			valueCallback: (e) => e + 1
+		}),
+		month: Bs({
+			matchPatterns: {
+				narrow: /^(一|二|三|四|五|六|七|八|九|十[二一]?)/i,
+				abbreviated: /^(一|二|三|四|五|六|七|八|九|十[二一]?|\d|1[0-2])月/i,
+				wide: /^(一|二|三|四|五|六|七|八|九|十[二一]?)月/i
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: {
+				narrow: [
+					/^一/i,
+					/^二/i,
+					/^三/i,
+					/^四/i,
+					/^五/i,
+					/^六/i,
+					/^七/i,
+					/^八/i,
+					/^九/i,
+					/^十(?!(一|二))/i,
+					/^十一/i,
+					/^十二/i
+				],
+				any: [
+					/^(一|1(?!\d))/i,
+					/^(二|2)/i,
+					/^(三|3)/i,
+					/^(四|4)/i,
+					/^(五|5)/i,
+					/^(六|6)/i,
+					/^(七|7)/i,
+					/^(八|8)/i,
+					/^(九|9)/i,
+					/^(十(?!(一|二))|10)/i,
+					/^(十一|11)/i,
+					/^(十二|12)/i
+				]
+			},
+			defaultParseWidth: "any"
+		}),
+		day: Bs({
+			matchPatterns: {
+				narrow: /^[一二三四五六日]/i,
+				short: /^[一二三四五六日]/i,
+				abbreviated: /^週[一二三四五六日]/i,
+				wide: /^星期[一二三四五六日]/i
+			},
+			defaultMatchWidth: "wide",
+			parsePatterns: { any: [
+				/日/i,
+				/一/i,
+				/二/i,
+				/三/i,
+				/四/i,
+				/五/i,
+				/六/i
+			] },
+			defaultParseWidth: "any"
+		}),
+		dayPeriod: Bs({
+			matchPatterns: { any: /^(上午?|下午?|午夜|[中正]午|早上?|下午|晚上?|凌晨)/i },
+			defaultMatchWidth: "any",
+			parsePatterns: { any: {
+				am: /^上午?/i,
+				pm: /^下午?/i,
+				midnight: /^午夜/i,
+				noon: /^[中正]午/i,
+				morning: /^早上/i,
+				afternoon: /^下午/i,
+				evening: /^晚上?/i,
+				night: /^凌晨/i
+			} },
+			defaultParseWidth: "any"
+		})
+	},
+	options: {
+		weekStartsOn: 1,
+		firstWeekContainsDate: 4
+	}
+}, Cc = {
 	name: "en-US",
-	locale: qs
-}, tc = {
+	locale: oc
+}, wc = {
+	name: "ja-JP",
+	locale: dc
+}, Tc = {
 	name: "zh-CN",
-	locale: $s
-}, nc = typeof global == "object" && global && global.Object === Object && global, rc = typeof self == "object" && self && self.Object === Object && self, ic = nc || rc || Function("return this")(), ac = ic.Symbol, oc = Object.prototype, sc = oc.hasOwnProperty, cc = oc.toString, lc = ac ? ac.toStringTag : void 0;
-function uc(e) {
-	var t = sc.call(e, lc), n = e[lc];
+	locale: _c
+}, Ec = {
+	name: "zh-TW",
+	locale: Sc
+}, Dc = typeof global == "object" && global && global.Object === Object && global, Oc = typeof self == "object" && self && self.Object === Object && self, kc = Dc || Oc || Function("return this")(), Ac = kc.Symbol, jc = Object.prototype, Mc = jc.hasOwnProperty, Nc = jc.toString, Pc = Ac ? Ac.toStringTag : void 0;
+function Fc(e) {
+	var t = Mc.call(e, Pc), n = e[Pc];
 	try {
-		e[lc] = void 0;
+		e[Pc] = void 0;
 		var r = !0;
 	} catch {}
-	var i = cc.call(e);
-	return r && (t ? e[lc] = n : delete e[lc]), i;
+	var i = Nc.call(e);
+	return r && (t ? e[Pc] = n : delete e[Pc]), i;
 }
 //#endregion
 //#region node_modules/lodash-es/_objectToString.js
-var dc = Object.prototype.toString;
-function fc(e) {
-	return dc.call(e);
+var Ic = Object.prototype.toString;
+function Lc(e) {
+	return Ic.call(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_baseGetTag.js
-var pc = "[object Null]", mc = "[object Undefined]", hc = ac ? ac.toStringTag : void 0;
-function gc(e) {
-	return e == null ? e === void 0 ? mc : pc : hc && hc in Object(e) ? uc(e) : fc(e);
+var Rc = "[object Null]", zc = "[object Undefined]", Bc = Ac ? Ac.toStringTag : void 0;
+function Vc(e) {
+	return e == null ? e === void 0 ? zc : Rc : Bc && Bc in Object(e) ? Fc(e) : Lc(e);
 }
 //#endregion
 //#region node_modules/lodash-es/isObjectLike.js
-function _c(e) {
+function Hc(e) {
 	return typeof e == "object" && !!e;
 }
 //#endregion
 //#region node_modules/lodash-es/isSymbol.js
-var vc = "[object Symbol]";
-function yc(e) {
-	return typeof e == "symbol" || _c(e) && gc(e) == vc;
+var Uc = "[object Symbol]";
+function Wc(e) {
+	return typeof e == "symbol" || Hc(e) && Vc(e) == Uc;
 }
 //#endregion
 //#region node_modules/lodash-es/_arrayMap.js
-function bc(e, t) {
+function Gc(e, t) {
 	for (var n = -1, r = e == null ? 0 : e.length, i = Array(r); ++n < r;) i[n] = t(e[n], n, e);
 	return i;
 }
 //#endregion
 //#region node_modules/lodash-es/isArray.js
-var xc = Array.isArray, Sc = 1 / 0, Cc = ac ? ac.prototype : void 0, wc = Cc ? Cc.toString : void 0;
-function Tc(e) {
+var Kc = Array.isArray, qc = 1 / 0, Jc = Ac ? Ac.prototype : void 0, Yc = Jc ? Jc.toString : void 0;
+function Xc(e) {
 	if (typeof e == "string") return e;
-	if (xc(e)) return bc(e, Tc) + "";
-	if (yc(e)) return wc ? wc.call(e) : "";
+	if (Kc(e)) return Gc(e, Xc) + "";
+	if (Wc(e)) return Yc ? Yc.call(e) : "";
 	var t = e + "";
-	return t == "0" && 1 / e == -Sc ? "-0" : t;
+	return t == "0" && 1 / e == -qc ? "-0" : t;
 }
 //#endregion
 //#region node_modules/lodash-es/isObject.js
-function Ec(e) {
+function Zc(e) {
 	var t = typeof e;
 	return e != null && (t == "object" || t == "function");
 }
 //#endregion
 //#region node_modules/lodash-es/identity.js
-function Dc(e) {
+function Qc(e) {
 	return e;
 }
 //#endregion
 //#region node_modules/lodash-es/isFunction.js
-var Oc = "[object AsyncFunction]", kc = "[object Function]", Ac = "[object GeneratorFunction]", jc = "[object Proxy]";
-function Mc(e) {
-	if (!Ec(e)) return !1;
-	var t = gc(e);
-	return t == kc || t == Ac || t == Oc || t == jc;
+var $c = "[object AsyncFunction]", el = "[object Function]", tl = "[object GeneratorFunction]", nl = "[object Proxy]";
+function rl(e) {
+	if (!Zc(e)) return !1;
+	var t = Vc(e);
+	return t == el || t == tl || t == $c || t == nl;
 }
 //#endregion
 //#region node_modules/lodash-es/_coreJsData.js
-var Nc = ic["__core-js_shared__"], Pc = function() {
-	var e = /[^.]+$/.exec(Nc && Nc.keys && Nc.keys.IE_PROTO || "");
+var il = kc["__core-js_shared__"], al = function() {
+	var e = /[^.]+$/.exec(il && il.keys && il.keys.IE_PROTO || "");
 	return e ? "Symbol(src)_1." + e : "";
 }();
-function Fc(e) {
-	return !!Pc && Pc in e;
+function ol(e) {
+	return !!al && al in e;
 }
 //#endregion
 //#region node_modules/lodash-es/_toSource.js
-var Ic = Function.prototype.toString;
-function Lc(e) {
+var sl = Function.prototype.toString;
+function cl(e) {
 	if (e != null) {
 		try {
-			return Ic.call(e);
+			return sl.call(e);
 		} catch {}
 		try {
 			return e + "";
@@ -4548,28 +5709,28 @@ function Lc(e) {
 }
 //#endregion
 //#region node_modules/lodash-es/_baseIsNative.js
-var Rc = /[\\^$.*+?()[\]{}|]/g, zc = /^\[object .+?Constructor\]$/, Bc = Function.prototype, Vc = Object.prototype, Hc = Bc.toString, Uc = Vc.hasOwnProperty, Wc = RegExp("^" + Hc.call(Uc).replace(Rc, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$");
-function Gc(e) {
-	return !Ec(e) || Fc(e) ? !1 : (Mc(e) ? Wc : zc).test(Lc(e));
+var ll = /[\\^$.*+?()[\]{}|]/g, ul = /^\[object .+?Constructor\]$/, dl = Function.prototype, fl = Object.prototype, pl = dl.toString, ml = fl.hasOwnProperty, hl = RegExp("^" + pl.call(ml).replace(ll, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$");
+function gl(e) {
+	return !Zc(e) || ol(e) ? !1 : (rl(e) ? hl : ul).test(cl(e));
 }
 //#endregion
 //#region node_modules/lodash-es/_getValue.js
-function Kc(e, t) {
+function _l(e, t) {
 	return e?.[t];
 }
 //#endregion
 //#region node_modules/lodash-es/_getNative.js
-function qc(e, t) {
-	var n = Kc(e, t);
-	return Gc(n) ? n : void 0;
+function vl(e, t) {
+	var n = _l(e, t);
+	return gl(n) ? n : void 0;
 }
 //#endregion
 //#region node_modules/lodash-es/_baseCreate.js
-var Jc = Object.create, Yc = function() {
+var yl = Object.create, bl = function() {
 	function e() {}
 	return function(t) {
-		if (!Ec(t)) return {};
-		if (Jc) return Jc(t);
+		if (!Zc(t)) return {};
+		if (yl) return yl(t);
 		e.prototype = t;
 		var n = new e();
 		return e.prototype = void 0, n;
@@ -4577,7 +5738,7 @@ var Jc = Object.create, Yc = function() {
 }();
 //#endregion
 //#region node_modules/lodash-es/_apply.js
-function Xc(e, t, n) {
+function xl(e, t, n) {
 	switch (n.length) {
 		case 0: return e.call(t);
 		case 1: return e.call(t, n[0]);
@@ -4588,54 +5749,54 @@ function Xc(e, t, n) {
 }
 //#endregion
 //#region node_modules/lodash-es/_copyArray.js
-function Zc(e, t) {
+function Sl(e, t) {
 	var n = -1, r = e.length;
 	for (t ||= Array(r); ++n < r;) t[n] = e[n];
 	return t;
 }
 //#endregion
 //#region node_modules/lodash-es/_shortOut.js
-var Qc = 800, $c = 16, el = Date.now;
-function tl(e) {
+var Cl = 800, wl = 16, Tl = Date.now;
+function El(e) {
 	var t = 0, n = 0;
 	return function() {
-		var r = el(), i = $c - (r - n);
+		var r = Tl(), i = wl - (r - n);
 		if (n = r, i > 0) {
-			if (++t >= Qc) return arguments[0];
+			if (++t >= Cl) return arguments[0];
 		} else t = 0;
 		return e.apply(void 0, arguments);
 	};
 }
 //#endregion
 //#region node_modules/lodash-es/constant.js
-function nl(e) {
+function Dl(e) {
 	return function() {
 		return e;
 	};
 }
 //#endregion
 //#region node_modules/lodash-es/_defineProperty.js
-var rl = function() {
+var Ol = function() {
 	try {
-		var e = qc(Object, "defineProperty");
+		var e = vl(Object, "defineProperty");
 		return e({}, "", {}), e;
 	} catch {}
-}(), il = tl(rl ? function(e, t) {
-	return rl(e, "toString", {
+}(), kl = El(Ol ? function(e, t) {
+	return Ol(e, "toString", {
 		configurable: !0,
 		enumerable: !1,
-		value: nl(t),
+		value: Dl(t),
 		writable: !0
 	});
-} : Dc), al = 9007199254740991, ol = /^(?:0|[1-9]\d*)$/;
-function sl(e, t) {
+} : Qc), Al = 9007199254740991, jl = /^(?:0|[1-9]\d*)$/;
+function Ml(e, t) {
 	var n = typeof e;
-	return t ??= al, !!t && (n == "number" || n != "symbol" && ol.test(e)) && e > -1 && e % 1 == 0 && e < t;
+	return t ??= Al, !!t && (n == "number" || n != "symbol" && jl.test(e)) && e > -1 && e % 1 == 0 && e < t;
 }
 //#endregion
 //#region node_modules/lodash-es/_baseAssignValue.js
-function cl(e, t, n) {
-	t == "__proto__" && rl ? rl(e, t, {
+function Nl(e, t, n) {
+	t == "__proto__" && Ol ? Ol(e, t, {
 		configurable: !0,
 		enumerable: !0,
 		value: n,
@@ -4644,67 +5805,67 @@ function cl(e, t, n) {
 }
 //#endregion
 //#region node_modules/lodash-es/eq.js
-function ll(e, t) {
+function Pl(e, t) {
 	return e === t || e !== e && t !== t;
 }
 //#endregion
 //#region node_modules/lodash-es/_assignValue.js
-var ul = Object.prototype.hasOwnProperty;
-function dl(e, t, n) {
+var Fl = Object.prototype.hasOwnProperty;
+function Il(e, t, n) {
 	var r = e[t];
-	(!(ul.call(e, t) && ll(r, n)) || n === void 0 && !(t in e)) && cl(e, t, n);
+	(!(Fl.call(e, t) && Pl(r, n)) || n === void 0 && !(t in e)) && Nl(e, t, n);
 }
 //#endregion
 //#region node_modules/lodash-es/_copyObject.js
-function fl(e, t, n, r) {
+function Ll(e, t, n, r) {
 	var i = !n;
 	n ||= {};
 	for (var a = -1, o = t.length; ++a < o;) {
 		var s = t[a], c = r ? r(n[s], e[s], s, n, e) : void 0;
-		c === void 0 && (c = e[s]), i ? cl(n, s, c) : dl(n, s, c);
+		c === void 0 && (c = e[s]), i ? Nl(n, s, c) : Il(n, s, c);
 	}
 	return n;
 }
 //#endregion
 //#region node_modules/lodash-es/_overRest.js
-var pl = Math.max;
-function ml(e, t, n) {
-	return t = pl(t === void 0 ? e.length - 1 : t, 0), function() {
-		for (var r = arguments, i = -1, a = pl(r.length - t, 0), o = Array(a); ++i < a;) o[i] = r[t + i];
+var Rl = Math.max;
+function zl(e, t, n) {
+	return t = Rl(t === void 0 ? e.length - 1 : t, 0), function() {
+		for (var r = arguments, i = -1, a = Rl(r.length - t, 0), o = Array(a); ++i < a;) o[i] = r[t + i];
 		i = -1;
 		for (var s = Array(t + 1); ++i < t;) s[i] = r[i];
-		return s[t] = n(o), Xc(e, this, s);
+		return s[t] = n(o), xl(e, this, s);
 	};
 }
 //#endregion
 //#region node_modules/lodash-es/_baseRest.js
-function hl(e, t) {
-	return il(ml(e, t, Dc), e + "");
+function Bl(e, t) {
+	return kl(zl(e, t, Qc), e + "");
 }
 //#endregion
 //#region node_modules/lodash-es/isLength.js
-var gl = 9007199254740991;
-function _l(e) {
-	return typeof e == "number" && e > -1 && e % 1 == 0 && e <= gl;
+var Vl = 9007199254740991;
+function Hl(e) {
+	return typeof e == "number" && e > -1 && e % 1 == 0 && e <= Vl;
 }
 //#endregion
 //#region node_modules/lodash-es/isArrayLike.js
-function vl(e) {
-	return e != null && _l(e.length) && !Mc(e);
+function Ul(e) {
+	return e != null && Hl(e.length) && !rl(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_isIterateeCall.js
-function yl(e, t, n) {
-	if (!Ec(n)) return !1;
+function Wl(e, t, n) {
+	if (!Zc(n)) return !1;
 	var r = typeof t;
-	return (r == "number" ? vl(n) && sl(t, n.length) : r == "string" && t in n) ? ll(n[t], e) : !1;
+	return (r == "number" ? Ul(n) && Ml(t, n.length) : r == "string" && t in n) ? Pl(n[t], e) : !1;
 }
 //#endregion
 //#region node_modules/lodash-es/_createAssigner.js
-function bl(e) {
-	return hl(function(t, n) {
+function Gl(e) {
+	return Bl(function(t, n) {
 		var r = -1, i = n.length, a = i > 1 ? n[i - 1] : void 0, o = i > 2 ? n[2] : void 0;
-		for (a = e.length > 3 && typeof a == "function" ? (i--, a) : void 0, o && yl(n[0], n[1], o) && (a = i < 3 ? void 0 : a, i = 1), t = Object(t); ++r < i;) {
+		for (a = e.length > 3 && typeof a == "function" ? (i--, a) : void 0, o && Wl(n[0], n[1], o) && (a = i < 3 ? void 0 : a, i = 1), t = Object(t); ++r < i;) {
 			var s = n[r];
 			s && e(t, s, r, a);
 		}
@@ -4713,257 +5874,257 @@ function bl(e) {
 }
 //#endregion
 //#region node_modules/lodash-es/_isPrototype.js
-var xl = Object.prototype;
-function Sl(e) {
+var Kl = Object.prototype;
+function ql(e) {
 	var t = e && e.constructor;
-	return e === (typeof t == "function" && t.prototype || xl);
+	return e === (typeof t == "function" && t.prototype || Kl);
 }
 //#endregion
 //#region node_modules/lodash-es/_baseTimes.js
-function Cl(e, t) {
+function Jl(e, t) {
 	for (var n = -1, r = Array(e); ++n < e;) r[n] = t(n);
 	return r;
 }
 //#endregion
 //#region node_modules/lodash-es/_baseIsArguments.js
-var wl = "[object Arguments]";
-function Tl(e) {
-	return _c(e) && gc(e) == wl;
+var Yl = "[object Arguments]";
+function Xl(e) {
+	return Hc(e) && Vc(e) == Yl;
 }
 //#endregion
 //#region node_modules/lodash-es/isArguments.js
-var El = Object.prototype, Dl = El.hasOwnProperty, Ol = El.propertyIsEnumerable, kl = Tl(function() {
+var Zl = Object.prototype, Ql = Zl.hasOwnProperty, $l = Zl.propertyIsEnumerable, eu = Xl(function() {
 	return arguments;
-}()) ? Tl : function(e) {
-	return _c(e) && Dl.call(e, "callee") && !Ol.call(e, "callee");
+}()) ? Xl : function(e) {
+	return Hc(e) && Ql.call(e, "callee") && !$l.call(e, "callee");
 };
 //#endregion
 //#region node_modules/lodash-es/stubFalse.js
-function Al() {
+function tu() {
 	return !1;
 }
 //#endregion
 //#region node_modules/lodash-es/isBuffer.js
-var jl = typeof exports == "object" && exports && !exports.nodeType && exports, Ml = jl && typeof module == "object" && module && !module.nodeType && module, Nl = Ml && Ml.exports === jl ? ic.Buffer : void 0, Pl = (Nl ? Nl.isBuffer : void 0) || Al, Fl = "[object Arguments]", Il = "[object Array]", Ll = "[object Boolean]", Rl = "[object Date]", zl = "[object Error]", Bl = "[object Function]", Vl = "[object Map]", Hl = "[object Number]", Ul = "[object Object]", Wl = "[object RegExp]", Gl = "[object Set]", Kl = "[object String]", ql = "[object WeakMap]", Jl = "[object ArrayBuffer]", Yl = "[object DataView]", Xl = "[object Float32Array]", Zl = "[object Float64Array]", Ql = "[object Int8Array]", $l = "[object Int16Array]", eu = "[object Int32Array]", tu = "[object Uint8Array]", nu = "[object Uint8ClampedArray]", ru = "[object Uint16Array]", iu = "[object Uint32Array]", W = {};
-W[Xl] = W[Zl] = W[Ql] = W[$l] = W[eu] = W[tu] = W[nu] = W[ru] = W[iu] = !0, W[Fl] = W[Il] = W[Jl] = W[Ll] = W[Yl] = W[Rl] = W[zl] = W[Bl] = W[Vl] = W[Hl] = W[Ul] = W[Wl] = W[Gl] = W[Kl] = W[ql] = !1;
-function au(e) {
-	return _c(e) && _l(e.length) && !!W[gc(e)];
+var nu = typeof exports == "object" && exports && !exports.nodeType && exports, ru = nu && typeof module == "object" && module && !module.nodeType && module, iu = ru && ru.exports === nu ? kc.Buffer : void 0, au = (iu ? iu.isBuffer : void 0) || tu, ou = "[object Arguments]", su = "[object Array]", cu = "[object Boolean]", lu = "[object Date]", uu = "[object Error]", du = "[object Function]", fu = "[object Map]", pu = "[object Number]", mu = "[object Object]", hu = "[object RegExp]", gu = "[object Set]", _u = "[object String]", vu = "[object WeakMap]", yu = "[object ArrayBuffer]", bu = "[object DataView]", xu = "[object Float32Array]", Su = "[object Float64Array]", Cu = "[object Int8Array]", wu = "[object Int16Array]", Tu = "[object Int32Array]", Eu = "[object Uint8Array]", Du = "[object Uint8ClampedArray]", Ou = "[object Uint16Array]", ku = "[object Uint32Array]", G = {};
+G[xu] = G[Su] = G[Cu] = G[wu] = G[Tu] = G[Eu] = G[Du] = G[Ou] = G[ku] = !0, G[ou] = G[su] = G[yu] = G[cu] = G[bu] = G[lu] = G[uu] = G[du] = G[fu] = G[pu] = G[mu] = G[hu] = G[gu] = G[_u] = G[vu] = !1;
+function Au(e) {
+	return Hc(e) && Hl(e.length) && !!G[Vc(e)];
 }
 //#endregion
 //#region node_modules/lodash-es/_baseUnary.js
-function ou(e) {
+function ju(e) {
 	return function(t) {
 		return e(t);
 	};
 }
 //#endregion
 //#region node_modules/lodash-es/_nodeUtil.js
-var su = typeof exports == "object" && exports && !exports.nodeType && exports, cu = su && typeof module == "object" && module && !module.nodeType && module, lu = cu && cu.exports === su && nc.process, uu = function() {
+var Mu = typeof exports == "object" && exports && !exports.nodeType && exports, Nu = Mu && typeof module == "object" && module && !module.nodeType && module, Pu = Nu && Nu.exports === Mu && Dc.process, Fu = function() {
 	try {
-		return cu && cu.require && cu.require("util").types || lu && lu.binding && lu.binding("util");
+		return Nu && Nu.require && Nu.require("util").types || Pu && Pu.binding && Pu.binding("util");
 	} catch {}
-}(), du = uu && uu.isTypedArray, fu = du ? ou(du) : au, pu = Object.prototype.hasOwnProperty;
-function mu(e, t) {
-	var n = xc(e), r = !n && kl(e), i = !n && !r && Pl(e), a = !n && !r && !i && fu(e), o = n || r || i || a, s = o ? Cl(e.length, String) : [], c = s.length;
-	for (var l in e) (t || pu.call(e, l)) && !(o && (l == "length" || i && (l == "offset" || l == "parent") || a && (l == "buffer" || l == "byteLength" || l == "byteOffset") || sl(l, c))) && s.push(l);
+}(), Iu = Fu && Fu.isTypedArray, Lu = Iu ? ju(Iu) : Au, Ru = Object.prototype.hasOwnProperty;
+function zu(e, t) {
+	var n = Kc(e), r = !n && eu(e), i = !n && !r && au(e), a = !n && !r && !i && Lu(e), o = n || r || i || a, s = o ? Jl(e.length, String) : [], c = s.length;
+	for (var l in e) (t || Ru.call(e, l)) && !(o && (l == "length" || i && (l == "offset" || l == "parent") || a && (l == "buffer" || l == "byteLength" || l == "byteOffset") || Ml(l, c))) && s.push(l);
 	return s;
 }
 //#endregion
 //#region node_modules/lodash-es/_overArg.js
-function hu(e, t) {
+function Bu(e, t) {
 	return function(n) {
 		return e(t(n));
 	};
 }
 //#endregion
 //#region node_modules/lodash-es/_nativeKeysIn.js
-function gu(e) {
+function Vu(e) {
 	var t = [];
 	if (e != null) for (var n in Object(e)) t.push(n);
 	return t;
 }
 //#endregion
 //#region node_modules/lodash-es/_baseKeysIn.js
-var _u = Object.prototype.hasOwnProperty;
-function vu(e) {
-	if (!Ec(e)) return gu(e);
-	var t = Sl(e), n = [];
-	for (var r in e) (r != "constructor" || !t && _u.call(e, r)) && n.push(r);
+var Hu = Object.prototype.hasOwnProperty;
+function Uu(e) {
+	if (!Zc(e)) return Vu(e);
+	var t = ql(e), n = [];
+	for (var r in e) (r != "constructor" || !t && Hu.call(e, r)) && n.push(r);
 	return n;
 }
 //#endregion
 //#region node_modules/lodash-es/keysIn.js
-function yu(e) {
-	return vl(e) ? mu(e, !0) : vu(e);
+function Wu(e) {
+	return Ul(e) ? zu(e, !0) : Uu(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_nativeCreate.js
-var bu = qc(Object, "create");
+var Gu = vl(Object, "create");
 //#endregion
 //#region node_modules/lodash-es/_hashClear.js
-function xu() {
-	this.__data__ = bu ? bu(null) : {}, this.size = 0;
+function Ku() {
+	this.__data__ = Gu ? Gu(null) : {}, this.size = 0;
 }
 //#endregion
 //#region node_modules/lodash-es/_hashDelete.js
-function Su(e) {
+function qu(e) {
 	var t = this.has(e) && delete this.__data__[e];
 	return this.size -= +!!t, t;
 }
 //#endregion
 //#region node_modules/lodash-es/_hashGet.js
-var Cu = "__lodash_hash_undefined__", wu = Object.prototype.hasOwnProperty;
-function Tu(e) {
+var Ju = "__lodash_hash_undefined__", Yu = Object.prototype.hasOwnProperty;
+function Xu(e) {
 	var t = this.__data__;
-	if (bu) {
+	if (Gu) {
 		var n = t[e];
-		return n === Cu ? void 0 : n;
+		return n === Ju ? void 0 : n;
 	}
-	return wu.call(t, e) ? t[e] : void 0;
+	return Yu.call(t, e) ? t[e] : void 0;
 }
 //#endregion
 //#region node_modules/lodash-es/_hashHas.js
-var Eu = Object.prototype.hasOwnProperty;
-function Du(e) {
+var Zu = Object.prototype.hasOwnProperty;
+function Qu(e) {
 	var t = this.__data__;
-	return bu ? t[e] !== void 0 : Eu.call(t, e);
+	return Gu ? t[e] !== void 0 : Zu.call(t, e);
 }
 //#endregion
 //#region node_modules/lodash-es/_hashSet.js
-var Ou = "__lodash_hash_undefined__";
-function ku(e, t) {
+var $u = "__lodash_hash_undefined__";
+function ed(e, t) {
 	var n = this.__data__;
-	return this.size += +!this.has(e), n[e] = bu && t === void 0 ? Ou : t, this;
+	return this.size += +!this.has(e), n[e] = Gu && t === void 0 ? $u : t, this;
 }
 //#endregion
 //#region node_modules/lodash-es/_Hash.js
-function Au(e) {
+function td(e) {
 	var t = -1, n = e == null ? 0 : e.length;
 	for (this.clear(); ++t < n;) {
 		var r = e[t];
 		this.set(r[0], r[1]);
 	}
 }
-Au.prototype.clear = xu, Au.prototype.delete = Su, Au.prototype.get = Tu, Au.prototype.has = Du, Au.prototype.set = ku;
+td.prototype.clear = Ku, td.prototype.delete = qu, td.prototype.get = Xu, td.prototype.has = Qu, td.prototype.set = ed;
 //#endregion
 //#region node_modules/lodash-es/_listCacheClear.js
-function ju() {
+function nd() {
 	this.__data__ = [], this.size = 0;
 }
 //#endregion
 //#region node_modules/lodash-es/_assocIndexOf.js
-function Mu(e, t) {
-	for (var n = e.length; n--;) if (ll(e[n][0], t)) return n;
+function rd(e, t) {
+	for (var n = e.length; n--;) if (Pl(e[n][0], t)) return n;
 	return -1;
 }
 //#endregion
 //#region node_modules/lodash-es/_listCacheDelete.js
-var Nu = Array.prototype.splice;
-function Pu(e) {
-	var t = this.__data__, n = Mu(t, e);
-	return n < 0 ? !1 : (n == t.length - 1 ? t.pop() : Nu.call(t, n, 1), --this.size, !0);
+var id = Array.prototype.splice;
+function ad(e) {
+	var t = this.__data__, n = rd(t, e);
+	return n < 0 ? !1 : (n == t.length - 1 ? t.pop() : id.call(t, n, 1), --this.size, !0);
 }
 //#endregion
 //#region node_modules/lodash-es/_listCacheGet.js
-function Fu(e) {
-	var t = this.__data__, n = Mu(t, e);
+function od(e) {
+	var t = this.__data__, n = rd(t, e);
 	return n < 0 ? void 0 : t[n][1];
 }
 //#endregion
 //#region node_modules/lodash-es/_listCacheHas.js
-function Iu(e) {
-	return Mu(this.__data__, e) > -1;
+function sd(e) {
+	return rd(this.__data__, e) > -1;
 }
 //#endregion
 //#region node_modules/lodash-es/_listCacheSet.js
-function Lu(e, t) {
-	var n = this.__data__, r = Mu(n, e);
+function cd(e, t) {
+	var n = this.__data__, r = rd(n, e);
 	return r < 0 ? (++this.size, n.push([e, t])) : n[r][1] = t, this;
 }
 //#endregion
 //#region node_modules/lodash-es/_ListCache.js
-function Ru(e) {
+function ld(e) {
 	var t = -1, n = e == null ? 0 : e.length;
 	for (this.clear(); ++t < n;) {
 		var r = e[t];
 		this.set(r[0], r[1]);
 	}
 }
-Ru.prototype.clear = ju, Ru.prototype.delete = Pu, Ru.prototype.get = Fu, Ru.prototype.has = Iu, Ru.prototype.set = Lu;
+ld.prototype.clear = nd, ld.prototype.delete = ad, ld.prototype.get = od, ld.prototype.has = sd, ld.prototype.set = cd;
 //#endregion
 //#region node_modules/lodash-es/_Map.js
-var zu = qc(ic, "Map");
+var ud = vl(kc, "Map");
 //#endregion
 //#region node_modules/lodash-es/_mapCacheClear.js
-function Bu() {
+function dd() {
 	this.size = 0, this.__data__ = {
-		hash: new Au(),
-		map: new (zu || Ru)(),
-		string: new Au()
+		hash: new td(),
+		map: new (ud || ld)(),
+		string: new td()
 	};
 }
 //#endregion
 //#region node_modules/lodash-es/_isKeyable.js
-function Vu(e) {
+function fd(e) {
 	var t = typeof e;
 	return t == "string" || t == "number" || t == "symbol" || t == "boolean" ? e !== "__proto__" : e === null;
 }
 //#endregion
 //#region node_modules/lodash-es/_getMapData.js
-function Hu(e, t) {
+function pd(e, t) {
 	var n = e.__data__;
-	return Vu(t) ? n[typeof t == "string" ? "string" : "hash"] : n.map;
+	return fd(t) ? n[typeof t == "string" ? "string" : "hash"] : n.map;
 }
 //#endregion
 //#region node_modules/lodash-es/_mapCacheDelete.js
-function Uu(e) {
-	var t = Hu(this, e).delete(e);
+function md(e) {
+	var t = pd(this, e).delete(e);
 	return this.size -= +!!t, t;
 }
 //#endregion
 //#region node_modules/lodash-es/_mapCacheGet.js
-function Wu(e) {
-	return Hu(this, e).get(e);
+function hd(e) {
+	return pd(this, e).get(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_mapCacheHas.js
-function Gu(e) {
-	return Hu(this, e).has(e);
+function gd(e) {
+	return pd(this, e).has(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_mapCacheSet.js
-function Ku(e, t) {
-	var n = Hu(this, e), r = n.size;
+function _d(e, t) {
+	var n = pd(this, e), r = n.size;
 	return n.set(e, t), this.size += n.size == r ? 0 : 1, this;
 }
 //#endregion
 //#region node_modules/lodash-es/_MapCache.js
-function qu(e) {
+function vd(e) {
 	var t = -1, n = e == null ? 0 : e.length;
 	for (this.clear(); ++t < n;) {
 		var r = e[t];
 		this.set(r[0], r[1]);
 	}
 }
-qu.prototype.clear = Bu, qu.prototype.delete = Uu, qu.prototype.get = Wu, qu.prototype.has = Gu, qu.prototype.set = Ku;
+vd.prototype.clear = dd, vd.prototype.delete = md, vd.prototype.get = hd, vd.prototype.has = gd, vd.prototype.set = _d;
 //#endregion
 //#region node_modules/lodash-es/toString.js
-function Ju(e) {
-	return e == null ? "" : Tc(e);
+function yd(e) {
+	return e == null ? "" : Xc(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_getPrototype.js
-var Yu = hu(Object.getPrototypeOf, Object), Xu = "[object Object]", Zu = Function.prototype, Qu = Object.prototype, $u = Zu.toString, ed = Qu.hasOwnProperty, td = $u.call(Object);
-function nd(e) {
-	if (!_c(e) || gc(e) != Xu) return !1;
-	var t = Yu(e);
+var bd = Bu(Object.getPrototypeOf, Object), xd = "[object Object]", Sd = Function.prototype, Cd = Object.prototype, wd = Sd.toString, Td = Cd.hasOwnProperty, Ed = wd.call(Object);
+function Dd(e) {
+	if (!Hc(e) || Vc(e) != xd) return !1;
+	var t = bd(e);
 	if (t === null) return !0;
-	var n = ed.call(t, "constructor") && t.constructor;
-	return typeof n == "function" && n instanceof n && $u.call(n) == td;
+	var n = Td.call(t, "constructor") && t.constructor;
+	return typeof n == "function" && n instanceof n && wd.call(n) == Ed;
 }
 //#endregion
 //#region node_modules/lodash-es/_baseSlice.js
-function rd(e, t, n) {
+function Od(e, t, n) {
 	var r = -1, i = e.length;
 	t < 0 && (t = -t > i ? 0 : i + t), n = n > i ? i : n, n < 0 && (n += i), i = t > n ? 0 : n - t >>> 0, t >>>= 0;
 	for (var a = Array(i); ++r < i;) a[r] = e[r + t];
@@ -4971,125 +6132,125 @@ function rd(e, t, n) {
 }
 //#endregion
 //#region node_modules/lodash-es/_castSlice.js
-function id(e, t, n) {
+function kd(e, t, n) {
 	var r = e.length;
-	return n = n === void 0 ? r : n, !t && n >= r ? e : rd(e, t, n);
+	return n = n === void 0 ? r : n, !t && n >= r ? e : Od(e, t, n);
 }
 //#endregion
 //#region node_modules/lodash-es/_hasUnicode.js
-var ad = RegExp("[\\u200d\\ud800-\\udfff\\u0300-\\u036f\\ufe20-\\ufe2f\\u20d0-\\u20ff\\ufe0e\\ufe0f]");
-function od(e) {
-	return ad.test(e);
+var Ad = RegExp("[\\u200d\\ud800-\\udfff\\u0300-\\u036f\\ufe20-\\ufe2f\\u20d0-\\u20ff\\ufe0e\\ufe0f]");
+function jd(e) {
+	return Ad.test(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_asciiToArray.js
-function sd(e) {
+function Md(e) {
 	return e.split("");
 }
 //#endregion
 //#region node_modules/lodash-es/_unicodeToArray.js
-var cd = "\\ud800-\\udfff", ld = "\\u0300-\\u036f\\ufe20-\\ufe2f\\u20d0-\\u20ff", ud = "\\ufe0e\\ufe0f", dd = "[" + cd + "]", fd = "[" + ld + "]", pd = "\\ud83c[\\udffb-\\udfff]", md = "(?:" + fd + "|" + pd + ")", hd = "[^" + cd + "]", gd = "(?:\\ud83c[\\udde6-\\uddff]){2}", _d = "[\\ud800-\\udbff][\\udc00-\\udfff]", vd = "\\u200d", yd = md + "?", bd = "[" + ud + "]?", xd = "(?:" + vd + "(?:" + [
-	hd,
-	gd,
-	_d
-].join("|") + ")" + bd + yd + ")*", Sd = bd + yd + xd, Cd = "(?:" + [
-	hd + fd + "?",
-	fd,
-	gd,
-	_d,
-	dd
-].join("|") + ")", wd = RegExp(pd + "(?=" + pd + ")|" + Cd + Sd, "g");
-function Td(e) {
-	return e.match(wd) || [];
+var Nd = "\\ud800-\\udfff", Pd = "\\u0300-\\u036f\\ufe20-\\ufe2f\\u20d0-\\u20ff", Fd = "\\ufe0e\\ufe0f", Id = "[" + Nd + "]", Ld = "[" + Pd + "]", Rd = "\\ud83c[\\udffb-\\udfff]", zd = "(?:" + Ld + "|" + Rd + ")", Bd = "[^" + Nd + "]", Vd = "(?:\\ud83c[\\udde6-\\uddff]){2}", Hd = "[\\ud800-\\udbff][\\udc00-\\udfff]", Ud = "\\u200d", Wd = zd + "?", Gd = "[" + Fd + "]?", Kd = "(?:" + Ud + "(?:" + [
+	Bd,
+	Vd,
+	Hd
+].join("|") + ")" + Gd + Wd + ")*", qd = Gd + Wd + Kd, Jd = "(?:" + [
+	Bd + Ld + "?",
+	Ld,
+	Vd,
+	Hd,
+	Id
+].join("|") + ")", Yd = RegExp(Rd + "(?=" + Rd + ")|" + Jd + qd, "g");
+function Xd(e) {
+	return e.match(Yd) || [];
 }
 //#endregion
 //#region node_modules/lodash-es/_stringToArray.js
-function Ed(e) {
-	return od(e) ? Td(e) : sd(e);
+function Zd(e) {
+	return jd(e) ? Xd(e) : Md(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_createCaseFirst.js
-function Dd(e) {
+function Qd(e) {
 	return function(t) {
-		t = Ju(t);
-		var n = od(t) ? Ed(t) : void 0, r = n ? n[0] : t.charAt(0), i = n ? id(n, 1).join("") : t.slice(1);
+		t = yd(t);
+		var n = jd(t) ? Zd(t) : void 0, r = n ? n[0] : t.charAt(0), i = n ? kd(n, 1).join("") : t.slice(1);
 		return r[e]() + i;
 	};
 }
 //#endregion
 //#region node_modules/lodash-es/upperFirst.js
-var Od = Dd("toUpperCase");
+var $d = Qd("toUpperCase");
 //#endregion
 //#region node_modules/lodash-es/_stackClear.js
-function kd() {
-	this.__data__ = new Ru(), this.size = 0;
+function ef() {
+	this.__data__ = new ld(), this.size = 0;
 }
 //#endregion
 //#region node_modules/lodash-es/_stackDelete.js
-function Ad(e) {
+function tf(e) {
 	var t = this.__data__, n = t.delete(e);
 	return this.size = t.size, n;
 }
 //#endregion
 //#region node_modules/lodash-es/_stackGet.js
-function jd(e) {
+function nf(e) {
 	return this.__data__.get(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_stackHas.js
-function Md(e) {
+function rf(e) {
 	return this.__data__.has(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_stackSet.js
-var Nd = 200;
-function Pd(e, t) {
+var af = 200;
+function of(e, t) {
 	var n = this.__data__;
-	if (n instanceof Ru) {
+	if (n instanceof ld) {
 		var r = n.__data__;
-		if (!zu || r.length < Nd - 1) return r.push([e, t]), this.size = ++n.size, this;
-		n = this.__data__ = new qu(r);
+		if (!ud || r.length < af - 1) return r.push([e, t]), this.size = ++n.size, this;
+		n = this.__data__ = new vd(r);
 	}
 	return n.set(e, t), this.size = n.size, this;
 }
 //#endregion
 //#region node_modules/lodash-es/_Stack.js
-function Fd(e) {
-	var t = this.__data__ = new Ru(e);
+function sf(e) {
+	var t = this.__data__ = new ld(e);
 	this.size = t.size;
 }
-Fd.prototype.clear = kd, Fd.prototype.delete = Ad, Fd.prototype.get = jd, Fd.prototype.has = Md, Fd.prototype.set = Pd;
+sf.prototype.clear = ef, sf.prototype.delete = tf, sf.prototype.get = nf, sf.prototype.has = rf, sf.prototype.set = of;
 //#endregion
 //#region node_modules/lodash-es/_cloneBuffer.js
-var Id = typeof exports == "object" && exports && !exports.nodeType && exports, Ld = Id && typeof module == "object" && module && !module.nodeType && module, Rd = Ld && Ld.exports === Id ? ic.Buffer : void 0, zd = Rd ? Rd.allocUnsafe : void 0;
-function Bd(e, t) {
+var cf = typeof exports == "object" && exports && !exports.nodeType && exports, lf = cf && typeof module == "object" && module && !module.nodeType && module, uf = lf && lf.exports === cf ? kc.Buffer : void 0, df = uf ? uf.allocUnsafe : void 0;
+function ff(e, t) {
 	if (t) return e.slice();
-	var n = e.length, r = zd ? zd(n) : new e.constructor(n);
+	var n = e.length, r = df ? df(n) : new e.constructor(n);
 	return e.copy(r), r;
 }
 //#endregion
 //#region node_modules/lodash-es/_Uint8Array.js
-var Vd = ic.Uint8Array;
+var pf = kc.Uint8Array;
 //#endregion
 //#region node_modules/lodash-es/_cloneArrayBuffer.js
-function Hd(e) {
+function mf(e) {
 	var t = new e.constructor(e.byteLength);
-	return new Vd(t).set(new Vd(e)), t;
+	return new pf(t).set(new pf(e)), t;
 }
 //#endregion
 //#region node_modules/lodash-es/_cloneTypedArray.js
-function Ud(e, t) {
-	var n = t ? Hd(e.buffer) : e.buffer;
+function hf(e, t) {
+	var n = t ? mf(e.buffer) : e.buffer;
 	return new e.constructor(n, e.byteOffset, e.length);
 }
 //#endregion
 //#region node_modules/lodash-es/_initCloneObject.js
-function Wd(e) {
-	return typeof e.constructor == "function" && !Sl(e) ? Yc(Yu(e)) : {};
+function gf(e) {
+	return typeof e.constructor == "function" && !ql(e) ? bl(bd(e)) : {};
 }
 //#endregion
 //#region node_modules/lodash-es/_createBaseFor.js
-function Gd(e) {
+function _f(e) {
 	return function(t, n, r) {
 		for (var i = -1, a = Object(t), o = r(t), s = o.length; s--;) {
 			var c = o[e ? s : ++i];
@@ -5100,99 +6261,99 @@ function Gd(e) {
 }
 //#endregion
 //#region node_modules/lodash-es/_baseFor.js
-var Kd = Gd();
+var vf = _f();
 //#endregion
 //#region node_modules/lodash-es/_assignMergeValue.js
-function qd(e, t, n) {
-	(n !== void 0 && !ll(e[t], n) || n === void 0 && !(t in e)) && cl(e, t, n);
+function yf(e, t, n) {
+	(n !== void 0 && !Pl(e[t], n) || n === void 0 && !(t in e)) && Nl(e, t, n);
 }
 //#endregion
 //#region node_modules/lodash-es/isArrayLikeObject.js
-function Jd(e) {
-	return _c(e) && vl(e);
+function bf(e) {
+	return Hc(e) && Ul(e);
 }
 //#endregion
 //#region node_modules/lodash-es/_safeGet.js
-function Yd(e, t) {
+function xf(e, t) {
 	if ((t !== "constructor" || typeof e[t] != "function") && t != "__proto__") return e[t];
 }
 //#endregion
 //#region node_modules/lodash-es/toPlainObject.js
-function Xd(e) {
-	return fl(e, yu(e));
+function Sf(e) {
+	return Ll(e, Wu(e));
 }
 //#endregion
 //#region node_modules/lodash-es/_baseMergeDeep.js
-function Zd(e, t, n, r, i, a, o) {
-	var s = Yd(e, n), c = Yd(t, n), l = o.get(c);
+function Cf(e, t, n, r, i, a, o) {
+	var s = xf(e, n), c = xf(t, n), l = o.get(c);
 	if (l) {
-		qd(e, n, l);
+		yf(e, n, l);
 		return;
 	}
 	var u = a ? a(s, c, n + "", e, t, o) : void 0, d = u === void 0;
 	if (d) {
-		var f = xc(c), p = !f && Pl(c), m = !f && !p && fu(c);
-		u = c, f || p || m ? xc(s) ? u = s : Jd(s) ? u = Zc(s) : p ? (d = !1, u = Bd(c, !0)) : m ? (d = !1, u = Ud(c, !0)) : u = [] : nd(c) || kl(c) ? (u = s, kl(s) ? u = Xd(s) : (!Ec(s) || Mc(s)) && (u = Wd(c))) : d = !1;
+		var f = Kc(c), p = !f && au(c), m = !f && !p && Lu(c);
+		u = c, f || p || m ? Kc(s) ? u = s : bf(s) ? u = Sl(s) : p ? (d = !1, u = ff(c, !0)) : m ? (d = !1, u = hf(c, !0)) : u = [] : Dd(c) || eu(c) ? (u = s, eu(s) ? u = Sf(s) : (!Zc(s) || rl(s)) && (u = gf(c))) : d = !1;
 	}
-	d && (o.set(c, u), i(u, c, r, a, o), o.delete(c)), qd(e, n, u);
+	d && (o.set(c, u), i(u, c, r, a, o), o.delete(c)), yf(e, n, u);
 }
 //#endregion
 //#region node_modules/lodash-es/_baseMerge.js
-function Qd(e, t, n, r, i) {
-	e !== t && Kd(t, function(a, o) {
-		if (i ||= new Fd(), Ec(a)) Zd(e, t, o, n, Qd, r, i);
+function wf(e, t, n, r, i) {
+	e !== t && vf(t, function(a, o) {
+		if (i ||= new sf(), Zc(a)) Cf(e, t, o, n, wf, r, i);
 		else {
-			var s = r ? r(Yd(e, o), a, o + "", e, t, i) : void 0;
-			s === void 0 && (s = a), qd(e, o, s);
+			var s = r ? r(xf(e, o), a, o + "", e, t, i) : void 0;
+			s === void 0 && (s = a), yf(e, o, s);
 		}
-	}, yu);
+	}, Wu);
 }
 //#endregion
 //#region node_modules/lodash-es/merge.js
-var $d = bl(function(e, t, n) {
-	Qd(e, t, n);
+var Tf = Gl(function(e, t, n) {
+	wf(e, t, n);
 });
 //#endregion
 //#region node_modules/naive-ui/es/_utils/naive/warn.mjs
-function ef(e, t) {
+function Ef(e, t) {
 	console.error(`[naive/${e}]: ${t}`);
 }
-function tf(e, t) {
+function Df(e, t) {
 	throw Error(`[naive/${e}]: ${t}`);
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/vue/keysOf.mjs
-function nf(e) {
+function Of(e) {
 	return Object.keys(e);
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/vue/create-injection-key.mjs
-function rf(e) {
+function kf(e) {
 	return e;
 }
 //#endregion
 //#region node_modules/naive-ui/es/config-provider/src/context.mjs
-var af = rf("n-config-provider");
+var Af = kf("n-config-provider");
 //#endregion
 //#region node_modules/naive-ui/es/_mixins/use-config.mjs
-function of(e = {}, t = { defaultBordered: !0 }) {
-	let n = Rn(af, null);
+function jf(e = {}, t = { defaultBordered: !0 }) {
+	let n = Jn(Af, null);
 	return {
 		inlineThemeDisabled: n?.inlineThemeDisabled,
 		mergedRtlRef: n?.mergedRtlRef,
 		mergedComponentPropsRef: n?.mergedComponentPropsRef,
 		mergedBreakpointsRef: n?.mergedBreakpointsRef,
-		mergedBorderedRef: L(() => {
+		mergedBorderedRef: R(() => {
 			let { bordered: r } = e;
 			return r === void 0 ? n?.mergedBorderedRef.value ?? t.defaultBordered ?? !0 : r;
 		}),
-		mergedClsPrefixRef: n ? n.mergedClsPrefixRef : /* @__PURE__ */ qt("n"),
-		namespaceRef: L(() => n?.mergedNamespaceRef.value)
+		mergedClsPrefixRef: n ? n.mergedClsPrefixRef : /* @__PURE__ */ rn("n"),
+		namespaceRef: R(() => n?.mergedNamespaceRef.value)
 	};
 }
 //#endregion
 //#region node_modules/naive-ui/es/_mixins/common.mjs
-var sf = "naive-ui-style", cf = {
+var Mf = "naive-ui-style", Nf = {
 	fontFamily: "v-sans, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\"",
 	fontFamilyMono: "v-mono, SFMono-Regular, Menlo, Consolas, Courier, monospace",
 	fontWeight: "400",
@@ -5216,87 +6377,87 @@ var sf = "naive-ui-style", cf = {
 	heightMedium: "34px",
 	heightLarge: "40px",
 	heightHuge: "46px"
-}, { fontSize: lf, fontFamily: uf, lineHeight: df } = cf, ff = z("body", `
+}, { fontSize: Pf, fontFamily: Ff, lineHeight: If } = Nf, Lf = B("body", `
  margin: 0;
- font-size: ${lf};
- font-family: ${uf};
- line-height: ${df};
+ font-size: ${Pf};
+ font-family: ${Ff};
+ line-height: ${If};
  -webkit-text-size-adjust: 100%;
  -webkit-tap-highlight-color: transparent;
-`, [z("input", "\n font-family: inherit;\n font-size: inherit;\n ")]), pf = "@css-render/vue3-ssr";
-function mf(e, t) {
+`, [B("input", "\n font-family: inherit;\n font-size: inherit;\n ")]), Rf = "@css-render/vue3-ssr";
+function zf(e, t) {
 	return `<style cssr-id="${e}">\n${t}\n</style>`;
 }
-function hf(e, t, n) {
+function Bf(e, t, n) {
 	let { styles: r, ids: i } = n;
-	i.has(e) || r !== null && (i.add(e), r.push(mf(e, t)));
+	i.has(e) || r !== null && (i.add(e), r.push(zf(e, t)));
 }
-var gf = typeof document < "u";
-function _f() {
-	if (gf) return;
-	let e = Rn(pf, null);
+var Vf = typeof document < "u";
+function Hf() {
+	if (Vf) return;
+	let e = Jn(Rf, null);
 	if (e !== null) return {
-		adapter: (t, n) => hf(t, n, e),
+		adapter: (t, n) => Bf(t, n, e),
 		context: e
 	};
 }
 //#endregion
 //#region node_modules/naive-ui/es/_mixins/use-style.mjs
-function vf(e, t, n) {
+function Uf(e, t, n) {
 	if (!t) return;
-	let r = _f(), i = Rn(af, null), a = () => {
+	let r = Hf(), i = Jn(Af, null), a = () => {
 		let a = n.value;
 		t.mount({
 			id: a === void 0 ? e : a + e,
 			head: !0,
-			anchorMetaName: sf,
+			anchorMetaName: Mf,
 			props: { bPrefix: a ? `.${a}-` : void 0 },
 			ssr: r,
 			parent: i?.styleMountTarget
-		}), i?.preflightStyleDisabled || ff.mount({
+		}), i?.preflightStyleDisabled || Lf.mount({
 			id: "n-global",
 			head: !0,
-			anchorMetaName: sf,
+			anchorMetaName: Mf,
 			ssr: r,
 			parent: i?.styleMountTarget
 		});
 	};
-	r ? a() : br(a);
+	r ? a() : jr(a);
 }
 //#endregion
 //#region node_modules/naive-ui/es/vue-jsx-vapor/vdom.mjs
-var yf = /* @__PURE__ */ new WeakMap();
-function bf(e) {
-	let t = ea();
+var Wf = /* @__PURE__ */ new WeakMap();
+function Gf(e) {
+	let t = da();
 	if (t) {
-		yf.has(t) || yf.set(t, {});
-		let n = yf.get(t);
+		Wf.has(t) || Wf.set(t, {});
+		let n = Wf.get(t);
 		return n[e] || (n[e] = []);
 	}
 	return [];
 }
-function G(e, t = 1) {
-	let n = zi, r = !1;
-	return typeof e == "function" && (r = !0, F(), n = Ni, e = e()), Pi(e) ? r ? Ni(xf(e)) : xf(e) : Array.isArray(e) ? r ? I(Ci, null, e.map((e) => G(() => e)), -2) : Ri(Ci, null, e.slice()) : e == null || typeof e == "boolean" ? n(Ti) : n(wi, null, String(e), t);
+function K(e, t = 1) {
+	let n = Xi, r = !1;
+	return typeof e == "function" && (r = !0, I(), n = Wi, e = e()), Gi(e) ? r ? Wi(Kf(e)) : Kf(e) : Array.isArray(e) ? r ? L(Pi, null, e.map((e) => K(() => e)), -2) : Yi(Pi, null, e.slice()) : e == null || typeof e == "boolean" ? n(Ii) : n(Fi, null, String(e), t);
 }
-function xf(e) {
-	return e.el === null && e.patchFlag !== -1 || e.memo ? e : Hi(e);
+function Kf(e) {
+	return e.el === null && e.patchFlag !== -1 || e.memo ? e : $i(e);
 }
-var Sf = (e) => typeof e == "function" || Object.prototype.toString.call(e) === "[object Object]" && !Pi(e) ? e : { default: Fn(() => [G(() => e)]) }, K = (e) => he(e) || null;
+var qf = (e) => typeof e == "function" || Object.prototype.toString.call(e) === "[object Object]" && !Gi(e) ? e : { default: Gn(() => [K(() => e)]) }, q = (e) => we(e) || null;
 //#endregion
 //#region node_modules/seemly/es/dom/get-precise-event-target.js
-function Cf(e) {
+function Jf(e) {
 	return e.composedPath()[0] || null;
 }
 //#endregion
 //#region node_modules/seemly/es/css/index.js
-function wf(e) {
+function Yf(e) {
 	return typeof e == "string" ? e.endsWith("px") ? Number(e.slice(0, e.length - 2)) : Number(e) : e;
 }
-function Tf(e) {
+function Xf(e) {
 	if (e != null) return typeof e == "number" ? `${e}px` : e.endsWith("px") ? e : `${e}px`;
 }
-function Ef(e, t) {
+function Zf(e, t) {
 	let n = e.trim().split(/\s+/g), r = { top: n[0] };
 	switch (n.length) {
 		case 1:
@@ -5317,7 +6478,7 @@ function Ef(e, t) {
 }
 //#endregion
 //#region node_modules/seemly/es/color/colors.js
-var Df = {
+var Qf = {
 	aliceblue: "#F0F8FF",
 	antiquewhite: "#FAEBD7",
 	aqua: "#0FF",
@@ -5470,7 +6631,7 @@ var Df = {
 };
 //#endregion
 //#region node_modules/seemly/es/color/convert.js
-function Of(e, t, n) {
+function $f(e, t, n) {
 	t /= 100, n /= 100;
 	let r = (r, i = (r + e / 60) % 6) => n - n * t * Math.max(Math.min(i, 4 - i, 1), 0);
 	return [
@@ -5479,7 +6640,7 @@ function Of(e, t, n) {
 		r(1) * 255
 	];
 }
-function kf(e, t, n) {
+function ep(e, t, n) {
 	t /= 100, n /= 100;
 	let r = t * Math.min(n, 1 - n), i = (t, i = (t + e / 30) % 12) => n - r * Math.max(Math.min(i - 3, 9 - i, 1), -1);
 	return [
@@ -5490,23 +6651,23 @@ function kf(e, t, n) {
 }
 //#endregion
 //#region node_modules/seemly/es/color/index.js
-var Af = "^\\s*", jf = "\\s*$", Mf = "\\s*((\\.\\d+)|(\\d+(\\.\\d*)?))%\\s*", Nf = "\\s*((\\.\\d+)|(\\d+(\\.\\d*)?))\\s*", Pf = "([0-9A-Fa-f])", Ff = "([0-9A-Fa-f]{2})", If = RegExp(`${Af}hsl\\s*\\(${Nf},${Mf},${Mf}\\)${jf}`), Lf = RegExp(`${Af}hsv\\s*\\(${Nf},${Mf},${Mf}\\)${jf}`), Rf = RegExp(`${Af}hsla\\s*\\(${Nf},${Mf},${Mf},${Nf}\\)${jf}`), zf = RegExp(`${Af}hsva\\s*\\(${Nf},${Mf},${Mf},${Nf}\\)${jf}`), Bf = RegExp(`${Af}rgb\\s*\\(${Nf},${Nf},${Nf}\\)${jf}`), Vf = RegExp(`${Af}rgba\\s*\\(${Nf},${Nf},${Nf},${Nf}\\)${jf}`), Hf = RegExp(`${Af}#${Pf}${Pf}${Pf}${jf}`), Uf = RegExp(`${Af}#${Ff}${Ff}${Ff}${jf}`), Wf = RegExp(`${Af}#${Pf}${Pf}${Pf}${Pf}${jf}`), Gf = RegExp(`${Af}#${Ff}${Ff}${Ff}${Ff}${jf}`);
-function Kf(e) {
+var tp = "^\\s*", np = "\\s*$", rp = "\\s*((\\.\\d+)|(\\d+(\\.\\d*)?))%\\s*", ip = "\\s*((\\.\\d+)|(\\d+(\\.\\d*)?))\\s*", ap = "([0-9A-Fa-f])", op = "([0-9A-Fa-f]{2})", sp = RegExp(`${tp}hsl\\s*\\(${ip},${rp},${rp}\\)${np}`), cp = RegExp(`${tp}hsv\\s*\\(${ip},${rp},${rp}\\)${np}`), lp = RegExp(`${tp}hsla\\s*\\(${ip},${rp},${rp},${ip}\\)${np}`), up = RegExp(`${tp}hsva\\s*\\(${ip},${rp},${rp},${ip}\\)${np}`), dp = RegExp(`${tp}rgb\\s*\\(${ip},${ip},${ip}\\)${np}`), fp = RegExp(`${tp}rgba\\s*\\(${ip},${ip},${ip},${ip}\\)${np}`), pp = RegExp(`${tp}#${ap}${ap}${ap}${np}`), mp = RegExp(`${tp}#${op}${op}${op}${np}`), hp = RegExp(`${tp}#${ap}${ap}${ap}${ap}${np}`), gp = RegExp(`${tp}#${op}${op}${op}${op}${np}`);
+function _p(e) {
 	return parseInt(e, 16);
 }
-function qf(e) {
+function vp(e) {
 	try {
 		let t;
-		if (t = Rf.exec(e)) return [
-			ep(t[1]),
-			np(t[5]),
-			np(t[9]),
-			$f(t[13])
+		if (t = lp.exec(e)) return [
+			Ep(t[1]),
+			Op(t[5]),
+			Op(t[9]),
+			Tp(t[13])
 		];
-		if (t = If.exec(e)) return [
-			ep(t[1]),
-			np(t[5]),
-			np(t[9]),
+		if (t = sp.exec(e)) return [
+			Ep(t[1]),
+			Op(t[5]),
+			Op(t[9]),
 			1
 		];
 		throw Error(`[seemly/hsla]: Invalid color value ${e}.`);
@@ -5514,19 +6675,19 @@ function qf(e) {
 		throw e;
 	}
 }
-function Jf(e) {
+function yp(e) {
 	try {
 		let t;
-		if (t = zf.exec(e)) return [
-			ep(t[1]),
-			np(t[5]),
-			np(t[9]),
-			$f(t[13])
+		if (t = up.exec(e)) return [
+			Ep(t[1]),
+			Op(t[5]),
+			Op(t[9]),
+			Tp(t[13])
 		];
-		if (t = Lf.exec(e)) return [
-			ep(t[1]),
-			np(t[5]),
-			np(t[9]),
+		if (t = cp.exec(e)) return [
+			Ep(t[1]),
+			Op(t[5]),
+			Op(t[9]),
 			1
 		];
 		throw Error(`[seemly/hsva]: Invalid color value ${e}.`);
@@ -5534,105 +6695,105 @@ function Jf(e) {
 		throw e;
 	}
 }
-function Yf(e) {
+function bp(e) {
 	try {
 		let t;
-		if (t = Uf.exec(e)) return [
-			Kf(t[1]),
-			Kf(t[2]),
-			Kf(t[3]),
+		if (t = mp.exec(e)) return [
+			_p(t[1]),
+			_p(t[2]),
+			_p(t[3]),
 			1
 		];
-		if (t = Bf.exec(e)) return [
-			tp(t[1]),
-			tp(t[5]),
-			tp(t[9]),
+		if (t = dp.exec(e)) return [
+			Dp(t[1]),
+			Dp(t[5]),
+			Dp(t[9]),
 			1
 		];
-		if (t = Vf.exec(e)) return [
-			tp(t[1]),
-			tp(t[5]),
-			tp(t[9]),
-			$f(t[13])
+		if (t = fp.exec(e)) return [
+			Dp(t[1]),
+			Dp(t[5]),
+			Dp(t[9]),
+			Tp(t[13])
 		];
-		if (t = Hf.exec(e)) return [
-			Kf(t[1] + t[1]),
-			Kf(t[2] + t[2]),
-			Kf(t[3] + t[3]),
+		if (t = pp.exec(e)) return [
+			_p(t[1] + t[1]),
+			_p(t[2] + t[2]),
+			_p(t[3] + t[3]),
 			1
 		];
-		if (t = Gf.exec(e)) return [
-			Kf(t[1]),
-			Kf(t[2]),
-			Kf(t[3]),
-			$f(Kf(t[4]) / 255)
+		if (t = gp.exec(e)) return [
+			_p(t[1]),
+			_p(t[2]),
+			_p(t[3]),
+			Tp(_p(t[4]) / 255)
 		];
-		if (t = Wf.exec(e)) return [
-			Kf(t[1] + t[1]),
-			Kf(t[2] + t[2]),
-			Kf(t[3] + t[3]),
-			$f(Kf(t[4] + t[4]) / 255)
+		if (t = hp.exec(e)) return [
+			_p(t[1] + t[1]),
+			_p(t[2] + t[2]),
+			_p(t[3] + t[3]),
+			Tp(_p(t[4] + t[4]) / 255)
 		];
-		if (e in Df) return Yf(Df[e]);
-		if (If.test(e) || Rf.test(e)) {
-			let [t, n, r, i] = qf(e);
-			return [...kf(t, n, r), i];
+		if (e in Qf) return bp(Qf[e]);
+		if (sp.test(e) || lp.test(e)) {
+			let [t, n, r, i] = vp(e);
+			return [...ep(t, n, r), i];
 		}
-		if (Lf.test(e) || zf.test(e)) {
-			let [t, n, r, i] = Jf(e);
-			return [...Of(t, n, r), i];
+		if (cp.test(e) || up.test(e)) {
+			let [t, n, r, i] = yp(e);
+			return [...$f(t, n, r), i];
 		}
 		throw Error(`[seemly/rgba]: Invalid color value ${e}.`);
 	} catch (e) {
 		throw e;
 	}
 }
-function Xf(e) {
+function xp(e) {
 	return e > 1 ? 1 : e < 0 ? 0 : e;
 }
-function Zf(e, t, n, r) {
-	return `rgba(${tp(e)}, ${tp(t)}, ${tp(n)}, ${Xf(r)})`;
+function Sp(e, t, n, r) {
+	return `rgba(${Dp(e)}, ${Dp(t)}, ${Dp(n)}, ${xp(r)})`;
 }
-function Qf(e, t, n, r, i) {
-	return tp((e * t * (1 - r) + n * r) / i);
-}
-function q(e, t) {
-	Array.isArray(e) || (e = Yf(e)), Array.isArray(t) || (t = Yf(t));
-	let n = e[3], r = t[3], i = $f(n + r - n * r);
-	return Zf(Qf(e[0], n, t[0], r, i), Qf(e[1], n, t[1], r, i), Qf(e[2], n, t[2], r, i), i);
+function Cp(e, t, n, r, i) {
+	return Dp((e * t * (1 - r) + n * r) / i);
 }
 function J(e, t) {
-	let [n, r, i, a = 1] = Array.isArray(e) ? e : Yf(e);
-	return typeof t.alpha == "number" ? Zf(n, r, i, t.alpha) : Zf(n, r, i, a);
+	Array.isArray(e) || (e = bp(e)), Array.isArray(t) || (t = bp(t));
+	let n = e[3], r = t[3], i = Tp(n + r - n * r);
+	return Sp(Cp(e[0], n, t[0], r, i), Cp(e[1], n, t[1], r, i), Cp(e[2], n, t[2], r, i), i);
 }
 function Y(e, t) {
-	let [n, r, i, a = 1] = Array.isArray(e) ? e : Yf(e), { lightness: o = 1, alpha: s = 1 } = t;
-	return rp([
+	let [n, r, i, a = 1] = Array.isArray(e) ? e : bp(e);
+	return typeof t.alpha == "number" ? Sp(n, r, i, t.alpha) : Sp(n, r, i, a);
+}
+function wp(e, t) {
+	let [n, r, i, a = 1] = Array.isArray(e) ? e : bp(e), { lightness: o = 1, alpha: s = 1 } = t;
+	return kp([
 		n * o,
 		r * o,
 		i * o,
 		a * s
 	]);
 }
-function $f(e) {
+function Tp(e) {
 	let t = Math.round(Number(e) * 100) / 100;
 	return t > 1 ? 1 : t < 0 ? 0 : t;
 }
-function ep(e) {
+function Ep(e) {
 	let t = Math.round(Number(e));
 	return t >= 360 || t < 0 ? 0 : t;
 }
-function tp(e) {
+function Dp(e) {
 	let t = Math.round(Number(e));
 	return t > 255 ? 255 : t < 0 ? 0 : t;
 }
-function np(e) {
+function Op(e) {
 	let t = Math.round(Number(e));
 	return t > 100 ? 100 : t < 0 ? 0 : t;
 }
-function rp(e) {
+function kp(e) {
 	let [t, n, r] = e;
-	return 3 in e ? `rgba(${tp(t)}, ${tp(n)}, ${tp(r)}, ${$f(e[3])})` : `rgba(${tp(t)}, ${tp(n)}, ${tp(r)}, 1)`;
+	return 3 in e ? `rgba(${Dp(t)}, ${Dp(n)}, ${Dp(r)}, ${Tp(e[3])})` : `rgba(${Dp(t)}, ${Dp(n)}, ${Dp(r)}, 1)`;
 }
 //#endregion
 //#region node_modules/naive-ui/es/_styles/common/dark.mjs
@@ -5688,17 +6849,17 @@ var X = {
 	successDefault: "#63e2b7",
 	successActive: "#5acea7",
 	successSuppl: "rgb(42, 148, 125)"
-}, ip = Yf(X.neutralBase), ap = Yf(X.neutralInvertBase), op = `rgba(${ap.slice(0, 3).join(", ")}, `;
+}, Ap = bp(X.neutralBase), jp = bp(X.neutralInvertBase), Mp = `rgba(${jp.slice(0, 3).join(", ")}, `;
 function Z(e) {
-	return `${op + String(e)})`;
+	return `${Mp + String(e)})`;
 }
-function sp(e) {
-	let t = Array.from(ap);
-	return t[3] = Number(e), q(ip, t);
+function Np(e) {
+	let t = Array.from(jp);
+	return t[3] = Number(e), J(Ap, t);
 }
 var Q = {
 	name: "common",
-	...cf,
+	...Nf,
 	baseColor: X.neutralBase,
 	primaryColor: X.primaryDefault,
 	primaryColorHover: X.primaryHover,
@@ -5744,8 +6905,8 @@ var Q = {
 	closeColorHover: "rgba(255, 255, 255, .12)",
 	closeColorPressed: "rgba(255, 255, 255, .08)",
 	clearColor: Z(X.alpha4),
-	clearColorHover: Y(Z(X.alpha4), { alpha: 1.25 }),
-	clearColorPressed: Y(Z(X.alpha4), { alpha: .8 }),
+	clearColorHover: wp(Z(X.alpha4), { alpha: 1.25 }),
+	clearColorPressed: wp(Z(X.alpha4), { alpha: .8 }),
 	scrollbarColor: Z(X.alphaScrollbar),
 	scrollbarColorHover: Z(X.alphaScrollbarHover),
 	scrollbarWidth: "5px",
@@ -5758,7 +6919,7 @@ var Q = {
 	cardColor: X.neutralCard,
 	modalColor: X.neutralModal,
 	bodyColor: X.neutralBody,
-	tagColor: sp(X.alphaTag),
+	tagColor: Np(X.alphaTag),
 	avatarColor: Z(X.alphaAvatar),
 	invertedColor: X.neutralBase,
 	inputColor: Z(X.alphaInput),
@@ -5829,17 +6990,17 @@ var Q = {
 	successDefault: "#18a058",
 	successActive: "#0c7a43",
 	successSuppl: "#36ad6a"
-}, cp = Yf($.neutralBase), lp = Yf($.neutralInvertBase), up = `rgba(${lp.slice(0, 3).join(", ")}, `;
-function dp(e) {
-	return `${up + String(e)})`;
+}, Pp = bp($.neutralBase), Fp = bp($.neutralInvertBase), Ip = `rgba(${Fp.slice(0, 3).join(", ")}, `;
+function Lp(e) {
+	return `${Ip + String(e)})`;
 }
-function fp(e) {
-	let t = Array.from(lp);
-	return t[3] = Number(e), q(cp, t);
+function Rp(e) {
+	let t = Array.from(Fp);
+	return t[3] = Number(e), J(Pp, t);
 }
-var pp = {
+var zp = {
 	name: "common",
-	...cf,
+	...Nf,
 	baseColor: $.neutralBase,
 	primaryColor: $.primaryDefault,
 	primaryColorHover: $.primaryHover,
@@ -5865,13 +7026,13 @@ var pp = {
 	textColor1: "rgb(31, 34, 37)",
 	textColor2: "rgb(51, 54, 57)",
 	textColor3: "rgb(118, 124, 130)",
-	textColorDisabled: fp($.alpha4),
-	placeholderColor: fp($.alpha4),
-	placeholderColorDisabled: fp($.alpha5),
-	iconColor: fp($.alpha4),
-	iconColorHover: Y(fp($.alpha4), { lightness: .75 }),
-	iconColorPressed: Y(fp($.alpha4), { lightness: .9 }),
-	iconColorDisabled: fp($.alpha5),
+	textColorDisabled: Rp($.alpha4),
+	placeholderColor: Rp($.alpha4),
+	placeholderColorDisabled: Rp($.alpha5),
+	iconColor: Rp($.alpha4),
+	iconColorHover: wp(Rp($.alpha4), { lightness: .75 }),
+	iconColorPressed: wp(Rp($.alpha4), { lightness: .9 }),
+	iconColorDisabled: Rp($.alpha5),
 	opacity1: $.alpha1,
 	opacity2: $.alpha2,
 	opacity3: $.alpha3,
@@ -5879,20 +7040,20 @@ var pp = {
 	opacity5: $.alpha5,
 	dividerColor: "rgb(239, 239, 245)",
 	borderColor: "rgb(224, 224, 230)",
-	closeIconColor: fp(Number($.alphaClose)),
-	closeIconColorHover: fp(Number($.alphaClose)),
-	closeIconColorPressed: fp(Number($.alphaClose)),
+	closeIconColor: Rp(Number($.alphaClose)),
+	closeIconColorHover: Rp(Number($.alphaClose)),
+	closeIconColorPressed: Rp(Number($.alphaClose)),
 	closeColorHover: "rgba(0, 0, 0, .09)",
 	closeColorPressed: "rgba(0, 0, 0, .13)",
-	clearColor: fp($.alpha4),
-	clearColorHover: Y(fp($.alpha4), { lightness: .75 }),
-	clearColorPressed: Y(fp($.alpha4), { lightness: .9 }),
-	scrollbarColor: dp($.alphaScrollbar),
-	scrollbarColorHover: dp($.alphaScrollbarHover),
+	clearColor: Rp($.alpha4),
+	clearColorHover: wp(Rp($.alpha4), { lightness: .75 }),
+	clearColorPressed: wp(Rp($.alpha4), { lightness: .9 }),
+	scrollbarColor: Lp($.alphaScrollbar),
+	scrollbarColorHover: Lp($.alphaScrollbarHover),
 	scrollbarWidth: "5px",
 	scrollbarHeight: "5px",
 	scrollbarBorderRadius: "5px",
-	progressRailColor: fp($.alphaProgressRail),
+	progressRailColor: Rp($.alphaProgressRail),
 	railColor: "rgb(219, 219, 223)",
 	popoverColor: $.neutralPopover,
 	tableColor: $.neutralCard,
@@ -5900,9 +7061,9 @@ var pp = {
 	modalColor: $.neutralModal,
 	bodyColor: $.neutralBody,
 	tagColor: "#eee",
-	avatarColor: fp($.alphaAvatar),
+	avatarColor: Rp($.alphaAvatar),
 	invertedColor: "rgb(0, 20, 40)",
-	inputColor: fp($.alphaInput),
+	inputColor: Rp($.alphaInput),
 	codeColor: "rgb(244, 244, 248)",
 	tabColor: "rgb(247, 247, 250)",
 	actionColor: "rgb(250, 250, 252)",
@@ -5919,7 +7080,7 @@ var pp = {
 	boxShadow1: "0 1px 2px -2px rgba(0, 0, 0, .08), 0 3px 6px 0 rgba(0, 0, 0, .06), 0 5px 12px 4px rgba(0, 0, 0, .04)",
 	boxShadow2: "0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)",
 	boxShadow3: "0 6px 16px -9px rgba(0, 0, 0, .08), 0 9px 28px 0 rgba(0, 0, 0, .05), 0 12px 48px 16px rgba(0, 0, 0, .03)"
-}, mp = {
+}, Bp = {
 	railInsetHorizontalBottom: "auto 2px 4px 2px",
 	railInsetHorizontalTop: "4px 2px auto 2px",
 	railInsetVerticalRight: "2px 4px 2px auto",
@@ -5928,10 +7089,10 @@ var pp = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/_internal/scrollbar/styles/light.mjs
-function hp(e) {
+function Vp(e) {
 	let { scrollbarColor: t, scrollbarColorHover: n, scrollbarHeight: r, scrollbarWidth: i, scrollbarBorderRadius: a } = e;
 	return {
-		...mp,
+		...Bp,
 		height: r,
 		width: i,
 		borderRadius: a,
@@ -5939,15 +7100,15 @@ function hp(e) {
 		colorHover: n
 	};
 }
-var gp = {
+var Hp = {
 	name: "Scrollbar",
-	common: pp,
-	self: hp
-}, _p = {
+	common: zp,
+	self: Vp
+}, Up = {
 	name: "Scrollbar",
 	common: Q,
-	self: hp
-}, vp = {
+	self: Vp
+}, Wp = {
 	iconSizeTiny: "28px",
 	iconSizeSmall: "34px",
 	iconSizeMedium: "40px",
@@ -5956,10 +7117,10 @@ var gp = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/empty/styles/light.mjs
-function yp(e) {
+function Gp(e) {
 	let { textColorDisabled: t, iconColor: n, textColor2: r, fontSizeTiny: i, fontSizeSmall: a, fontSizeMedium: o, fontSizeLarge: s, fontSizeHuge: c } = e;
 	return {
-		...vp,
+		...Wp,
 		fontSizeTiny: i,
 		fontSizeSmall: a,
 		fontSizeMedium: o,
@@ -5970,34 +7131,34 @@ function yp(e) {
 		extraTextColor: r
 	};
 }
-var bp = {
+var Kp = {
 	name: "Empty",
-	common: pp,
-	self: yp
-}, xp = {
+	common: zp,
+	self: Gp
+}, qp = {
 	name: "Empty",
 	common: Q,
-	self: yp
+	self: Gp
 };
 //#endregion
 //#region node_modules/naive-ui/es/_mixins/use-css-vars-class.mjs
-function Sp(e, t, n, r) {
-	n || tf("useThemeClass", "cssVarsRef is not passed");
-	let i = Rn(af, null), a = i?.mergedThemeHashRef, o = i?.styleMountTarget, s = /* @__PURE__ */ N(""), c = _f(), l, u = `__${e}`, d = () => {
+function Jp(e, t, n, r) {
+	n || Df("useThemeClass", "cssVarsRef is not passed");
+	let i = Jn(Af, null), a = i?.mergedThemeHashRef, o = i?.styleMountTarget, s = /* @__PURE__ */ F(""), c = Hf(), l, u = `__${e}`, d = () => {
 		let e = u, i = t ? t.value : void 0, d = a?.value;
 		d && (e += `-${d}`), i && (e += `-${i}`);
 		let { themeOverrides: f, builtinThemeOverrides: p } = r;
-		f && (e += `-${ns(JSON.stringify(f))}`), p && (e += `-${ns(JSON.stringify(p))}`), s.value = e, l = () => {
+		f && (e += `-${ps(JSON.stringify(f))}`), p && (e += `-${ps(JSON.stringify(p))}`), s.value = e, l = () => {
 			let t = n.value, r = "";
 			for (let e in t) r += `${e}: ${t[e]};`;
-			z(`.${e}`, r).mount({
+			B(`.${e}`, r).mount({
 				id: e,
 				ssr: c,
 				parent: o
 			}), l = void 0;
 		};
 	};
-	return Vn(() => {
+	return Zn(() => {
 		d();
 	}), {
 		themeClass: s,
@@ -6008,11 +7169,11 @@ function Sp(e, t, n, r) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/_mixins/use-theme.mjs
-function Cp(e) {
+function Yp(e) {
 	return e;
 }
-function wp(e, t, n, r, i, a) {
-	let o = _f(), s = Rn(af, null);
+function Xp(e, t, n, r, i, a) {
+	let o = Hf(), s = Jn(Af, null);
 	if (n) {
 		let e = () => {
 			let e = a?.value;
@@ -6020,37 +7181,37 @@ function wp(e, t, n, r, i, a) {
 				id: e === void 0 ? t : e + t,
 				head: !0,
 				props: { bPrefix: e ? `.${e}-` : void 0 },
-				anchorMetaName: sf,
+				anchorMetaName: Mf,
 				ssr: o,
 				parent: s?.styleMountTarget
-			}), s?.preflightStyleDisabled || ff.mount({
+			}), s?.preflightStyleDisabled || Lf.mount({
 				id: "n-global",
 				head: !0,
-				anchorMetaName: sf,
+				anchorMetaName: Mf,
 				ssr: o,
 				parent: s?.styleMountTarget
 			});
 		};
-		o ? e() : br(e);
+		o ? e() : jr(e);
 	}
-	return L(() => {
-		let { theme: { common: t, self: n, peers: a = {} } = {}, themeOverrides: o = {}, builtinThemeOverrides: c = {} } = i, { common: l, peers: u } = o, { common: d = void 0, [e]: { common: f = void 0, self: p = void 0, peers: m = {} } = {} } = s?.mergedThemeRef.value || {}, { common: h = void 0, [e]: g = {} } = s?.mergedThemeOverridesRef.value || {}, { common: _, peers: v = {} } = g, y = $d({}, t || f || d || r.common, h, _, l);
+	return R(() => {
+		let { theme: { common: t, self: n, peers: a = {} } = {}, themeOverrides: o = {}, builtinThemeOverrides: c = {} } = i, { common: l, peers: u } = o, { common: d = void 0, [e]: { common: f = void 0, self: p = void 0, peers: m = {} } = {} } = s?.mergedThemeRef.value || {}, { common: h = void 0, [e]: g = {} } = s?.mergedThemeOverridesRef.value || {}, { common: _, peers: v = {} } = g, y = Tf({}, t || f || d || r.common, h, _, l);
 		return {
 			common: y,
-			self: $d((n || p || r.self)?.(y), c, g, o),
-			peers: $d({}, r.peers, m, a),
-			peerOverrides: $d({}, c.peers, v, u)
+			self: Tf((n || p || r.self)?.(y), c, g, o),
+			peers: Tf({}, r.peers, m, a),
+			peerOverrides: Tf({}, c.peers, v, u)
 		};
 	});
 }
-wp.props = {
+Xp.props = {
 	theme: Object,
 	themeOverrides: Object,
 	builtinThemeOverrides: Object
 };
 //#endregion
 //#region node_modules/naive-ui/es/_internal/icon/src/styles/index.cssr.mjs
-var Tp = B("base-icon", "\n height: 1em;\n width: 1em;\n line-height: 1em;\n text-align: center;\n display: inline-block;\n position: relative;\n fill: currentColor;\n", [z("svg", "\n height: 1em;\n width: 1em;\n ")]), Ep = [
+var Zp = V("base-icon", "\n height: 1em;\n width: 1em;\n line-height: 1em;\n text-align: center;\n display: inline-block;\n position: relative;\n fill: currentColor;\n", [B("svg", "\n height: 1em;\n width: 1em;\n ")]), Qp = [
 	"onClick",
 	"onMousedown",
 	"onMouseup",
@@ -6058,7 +7219,7 @@ var Tp = B("base-icon", "\n height: 1em;\n width: 1em;\n line-height: 1em;\n tex
 	"aria-label",
 	"aria-hidden",
 	"aria-disabled"
-], Dp = /* @__PURE__ */ P({
+], $p = /* @__PURE__ */ _r({
 	name: "BaseIcon",
 	props: {
 		role: String,
@@ -6080,11 +7241,11 @@ var Tp = B("base-icon", "\n height: 1em;\n width: 1em;\n line-height: 1em;\n tex
 		onMouseup: Function
 	},
 	setup(e) {
-		vf("-base-icon", Tp, /* @__PURE__ */ tn(e, "clsPrefix"));
+		Uf("-base-icon", Zp, /* @__PURE__ */ fn(e, "clsPrefix"));
 	},
 	render() {
-		return F(), I("i", {
-			class: K(`${this.clsPrefix}-base-icon`),
+		return I(), L("i", {
+			class: q(`${this.clsPrefix}-base-icon`),
 			onClick: this.onClick,
 			onMousedown: this.onMousedown,
 			onMouseup: this.onMouseup,
@@ -6092,9 +7253,9 @@ var Tp = B("base-icon", "\n height: 1em;\n width: 1em;\n line-height: 1em;\n tex
 			"aria-label": this.ariaLabel,
 			"aria-hidden": this.ariaHidden,
 			"aria-disabled": this.ariaDisabled
-		}, [G(() => this.$slots.default?.())], 42, Ep);
+		}, [K(() => this.$slots.default?.())], 42, Qp);
 	}
-}), Op = {
+}), em = {
 	height: "calc(var(--n-option-height) * 7.6)",
 	paddingTiny: "4px 0",
 	paddingSmall: "4px 0",
@@ -6110,10 +7271,10 @@ var Tp = B("base-icon", "\n height: 1em;\n width: 1em;\n line-height: 1em;\n tex
 };
 //#endregion
 //#region node_modules/naive-ui/es/_internal/select-menu/styles/light.mjs
-function kp(e) {
+function tm(e) {
 	let { borderRadius: t, popoverColor: n, textColor3: r, dividerColor: i, textColor2: a, primaryColorPressed: o, textColorDisabled: s, primaryColor: c, opacityDisabled: l, hoverColor: u, fontSizeTiny: d, fontSizeSmall: f, fontSizeMedium: p, fontSizeLarge: m, fontSizeHuge: h, heightTiny: g, heightSmall: _, heightMedium: v, heightLarge: y, heightHuge: b } = e;
 	return {
-		...Op,
+		...em,
 		optionFontSizeTiny: d,
 		optionFontSizeSmall: f,
 		optionFontSizeMedium: p,
@@ -6141,15 +7302,15 @@ function kp(e) {
 		loadingColor: c
 	};
 }
-var Ap = {
+var nm = {
 	name: "InternalSelectMenu",
 	common: Q,
 	peers: {
-		Scrollbar: _p,
-		Empty: xp
+		Scrollbar: Up,
+		Empty: qp
 	},
-	self: kp
-}, jp = {
+	self: tm
+}, rm = {
 	space: "6px",
 	spaceArrow: "10px",
 	arrowOffset: "10px",
@@ -6159,10 +7320,10 @@ var Ap = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/popover/styles/light.mjs
-function Mp(e) {
+function im(e) {
 	let { boxShadow2: t, popoverColor: n, textColor2: r, borderRadius: i, fontSize: a, dividerColor: o } = e;
 	return {
-		...jp,
+		...rm,
 		fontSize: a,
 		borderRadius: i,
 		color: n,
@@ -6171,27 +7332,27 @@ function Mp(e) {
 		boxShadow: t
 	};
 }
-var Np = {
+var am = {
 	name: "Popover",
 	common: Q,
-	peers: { Scrollbar: _p },
-	self: Mp
+	peers: { Scrollbar: Up },
+	self: im
 };
 //#endregion
 //#region node_modules/evtd/es/utils.js
-function Pp(e) {
+function om(e) {
 	return e.composedPath()[0];
 }
 //#endregion
 //#region node_modules/evtd/es/traps.js
-var Fp = {
+var sm = {
 	mousemoveoutside: /* @__PURE__ */ new WeakMap(),
 	clickoutside: /* @__PURE__ */ new WeakMap()
 };
-function Ip(e, t, n) {
+function cm(e, t, n) {
 	if (e === "mousemoveoutside") {
 		let e = (e) => {
-			t.contains(Pp(e)) || n(e);
+			t.contains(om(e)) || n(e);
 		};
 		return {
 			mousemove: e,
@@ -6200,9 +7361,9 @@ function Ip(e, t, n) {
 	}
 	if (e === "clickoutside") {
 		let e = !1, r = (n) => {
-			e = !t.contains(Pp(n));
+			e = !t.contains(om(n));
 		}, i = (r) => {
-			e && (t.contains(Pp(r)) || n(r));
+			e && (t.contains(om(r)) || n(r));
 		};
 		return {
 			mousedown: r,
@@ -6213,33 +7374,33 @@ function Ip(e, t, n) {
 	}
 	return console.error(`[evtd/create-trap-handler]: name \`${e}\` is invalid. This could be a bug of evtd.`), {};
 }
-function Lp(e, t, n) {
-	let r = Fp[e], i = r.get(t);
+function lm(e, t, n) {
+	let r = sm[e], i = r.get(t);
 	i === void 0 && r.set(t, i = /* @__PURE__ */ new WeakMap());
 	let a = i.get(n);
-	return a === void 0 && i.set(n, a = Ip(e, t, n)), a;
+	return a === void 0 && i.set(n, a = cm(e, t, n)), a;
 }
-function Rp(e, t, n, r) {
+function um(e, t, n, r) {
 	if (e === "mousemoveoutside" || e === "clickoutside") {
-		let i = Lp(e, t, n);
+		let i = lm(e, t, n);
 		return Object.keys(i).forEach((e) => {
-			Vp(e, document, i[e], r);
+			pm(e, document, i[e], r);
 		}), !0;
 	}
 	return !1;
 }
-function zp(e, t, n, r) {
+function dm(e, t, n, r) {
 	if (e === "mousemoveoutside" || e === "clickoutside") {
-		let i = Lp(e, t, n);
+		let i = lm(e, t, n);
 		return Object.keys(i).forEach((e) => {
-			Hp(e, document, i[e], r);
+			mm(e, document, i[e], r);
 		}), !0;
 	}
 	return !1;
 }
 //#endregion
 //#region node_modules/evtd/es/delegate.js
-function Bp() {
+function fm() {
 	if (typeof window > "u") return {
 		on: () => {},
 		off: () => {}
@@ -6277,7 +7438,7 @@ function Bp() {
 	}, d = {};
 	function f() {
 		let s = function(s) {
-			let { type: d, eventPhase: f, bubbles: p } = s, m = Pp(s);
+			let { type: d, eventPhase: f, bubbles: p } = s, m = om(s);
 			if (f === 2) return;
 			let h = f === 1 ? "capture" : "bubble", g = m, _ = [];
 			for (; g === null && (g = window), _.push(g), g !== window;) g = g.parentNode || null;
@@ -6355,7 +7516,7 @@ function Bp() {
 		let i;
 		if (i = typeof r == "object" && r.once === !0 ? (a) => {
 			S(e, t, i, r), n(a);
-		} : n, Rp(e, t, i, r)) return;
+		} : n, um(e, t, i, r)) return;
 		let a = v(g(r === !0 || typeof r == "object" && r.capture === !0 ? "capture" : "bubble", e), t);
 		if (a.has(i) || a.add(i), t === window) {
 			let t = _(e);
@@ -6363,7 +7524,7 @@ function Bp() {
 		}
 	}
 	function S(e, t, n, r) {
-		if (zp(e, t, n, r)) return;
+		if (dm(e, t, n, r)) return;
 		let i = r === !0 || typeof r == "object" && r.capture === !0, a = i ? "capture" : "bubble", o = g(a, e), s = v(o, t);
 		if (t === window && !y(t, i ? "bubble" : "capture", e, n) && b(e, n)) {
 			let t = d[e];
@@ -6376,12 +7537,12 @@ function Bp() {
 		off: S
 	};
 }
-var { on: Vp, off: Hp } = Bp();
+var { on: pm, off: mm } = fm();
 //#endregion
 //#region node_modules/vooks/es/use-memo.js
-function Up(e) {
-	let t = L(e), n = /* @__PURE__ */ N(t.value);
-	return Hn(t, (e) => {
+function hm(e) {
+	let t = R(e), n = /* @__PURE__ */ F(t.value);
+	return Qn(t, (e) => {
 		n.value = e;
 	}), typeof e == "function" ? n : {
 		__v_isRef: !0,
@@ -6395,140 +7556,140 @@ function Up(e) {
 }
 //#endregion
 //#region node_modules/vooks/es/life-cycle/use-is-mounted.js
-function Wp() {
-	let e = /* @__PURE__ */ N(!1);
-	return xr(() => {
+function gm() {
+	let e = /* @__PURE__ */ F(!1);
+	return Mr(() => {
 		e.value = !0;
-	}), /* @__PURE__ */ Lt(e);
+	}), /* @__PURE__ */ qt(e);
 }
 //#endregion
 //#region node_modules/vooks/es/use-is-ios.js
-var Gp = (typeof window > "u" ? !1 : /iPad|iPhone|iPod/.test(navigator.platform) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) && !window.MSStream;
-function Kp() {
-	return Gp;
+var _m = (typeof window > "u" ? !1 : /iPad|iPhone|iPod/.test(navigator.platform) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) && !window.MSStream;
+function vm() {
+	return _m;
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/vue/call.mjs
-function qp(e, ...t) {
-	if (Array.isArray(e)) e.forEach((e) => qp(e, ...t));
+function ym(e, ...t) {
+	if (Array.isArray(e)) e.forEach((e) => ym(e, ...t));
 	else return e(...t);
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/vue/resolve-slot.mjs
-function Jp(e) {
-	return e.some((e) => !Pi(e) || !(e.type === Ti || e.type === Ci && !Jp(e.children))) ? e : null;
+function bm(e) {
+	return e.some((e) => !Gi(e) || !(e.type === Ii || e.type === Pi && !bm(e.children))) ? e : null;
 }
-function Yp(e, t) {
-	return t(e && Jp(e()) || null);
+function xm(e, t) {
+	return t(e && bm(e()) || null);
 }
-function Xp(e) {
-	return !(e && Jp(e()));
+function Sm(e) {
+	return !(e && bm(e()));
 }
 //#endregion
 //#region node_modules/naive-ui/es/_mixins/use-rtl.mjs
-function Zp(e, t, n) {
+function Cm(e, t, n) {
 	if (!t) return;
-	let r = _f(), i = L(() => {
+	let r = Hf(), i = R(() => {
 		let { value: n } = t;
 		if (!n) return;
 		let r = n[e];
 		if (r) return r;
-	}), a = Rn(af, null), o = () => {
-		Vn(() => {
+	}), a = Jn(Af, null), o = () => {
+		Zn(() => {
 			let { value: t } = n, o = `${t}${e}Rtl`;
-			if (fs(o, r)) return;
+			if (Cs(o, r)) return;
 			let { value: s } = i;
 			s && s.style.mount({
 				id: o,
 				head: !0,
-				anchorMetaName: sf,
+				anchorMetaName: Mf,
 				props: { bPrefix: t ? `.${t}-` : void 0 },
 				ssr: r,
 				parent: a?.styleMountTarget
 			});
 		});
 	};
-	return r ? o() : br(o), i;
+	return r ? o() : jr(o), i;
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/composable/use-reactivated.mjs
-function Qp(e) {
+function wm(e) {
 	let t = { isDeactivated: !1 }, n = !1;
-	return mr(() => {
+	return Tr(() => {
 		if (t.isDeactivated = !1, !n) {
 			n = !0;
 			return;
 		}
 		e();
-	}), hr(() => {
+	}), Er(() => {
 		t.isDeactivated = !0, n ||= !0;
 	}), t;
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/css/rtl-inset.mjs
-function $p(e) {
-	let { left: t, right: n, top: r, bottom: i } = Ef(e);
+function Tm(e) {
+	let { left: t, right: n, top: r, bottom: i } = Zf(e);
 	return `${r} ${t} ${i} ${n}`;
 }
 //#endregion
 //#region node_modules/naive-ui/es/_utils/vue/wrapper.mjs
-var em = /* @__PURE__ */ P({ render() {
+var Em = /* @__PURE__ */ _r({ render() {
 	return this.$slots.default?.();
-} }), { cubicBezierEaseInOut: tm } = cf;
-function nm({ name: e = "fade-in", enterDuration: t = "0.2s", leaveDuration: n = "0.2s", enterCubicBezier: r = tm, leaveCubicBezier: i = tm } = {}) {
+} }), { cubicBezierEaseInOut: Dm } = Nf;
+function Om({ name: e = "fade-in", enterDuration: t = "0.2s", leaveDuration: n = "0.2s", enterCubicBezier: r = Dm, leaveCubicBezier: i = Dm } = {}) {
 	return [
-		z(`&.${e}-transition-enter-active`, { transition: `all ${t} ${r}!important` }),
-		z(`&.${e}-transition-leave-active`, { transition: `all ${n} ${i}!important` }),
-		z(`&.${e}-transition-enter-from, &.${e}-transition-leave-to`, { opacity: 0 }),
-		z(`&.${e}-transition-leave-from, &.${e}-transition-enter-to`, { opacity: 1 })
+		B(`&.${e}-transition-enter-active`, { transition: `all ${t} ${r}!important` }),
+		B(`&.${e}-transition-leave-active`, { transition: `all ${n} ${i}!important` }),
+		B(`&.${e}-transition-enter-from, &.${e}-transition-leave-to`, { opacity: 0 }),
+		B(`&.${e}-transition-leave-from, &.${e}-transition-enter-to`, { opacity: 1 })
 	];
 }
 //#endregion
 //#region node_modules/naive-ui/es/_internal/scrollbar/src/styles/index.cssr.mjs
-var rm = B("scrollbar", "\n overflow: hidden;\n position: relative;\n z-index: auto;\n height: 100%;\n width: 100%;\n", [z(">", [B("scrollbar-container", "\n width: 100%;\n overflow: scroll;\n height: 100%;\n min-height: inherit;\n max-height: inherit;\n scrollbar-width: none;\n ", [z("&::-webkit-scrollbar, &::-webkit-scrollbar-track-piece, &::-webkit-scrollbar-thumb", "\n width: 0;\n height: 0;\n display: none;\n "), z(">", [B("scrollbar-content", "\n box-sizing: border-box;\n min-width: 100%;\n ")])])]), z(">, +", [B("scrollbar-rail", "\n position: absolute;\n pointer-events: none;\n user-select: none;\n background: var(--n-scrollbar-rail-color);\n -webkit-user-select: none;\n ", [
-	H("horizontal", "\n height: var(--n-scrollbar-height);\n ", [z(">", [V("scrollbar", "\n height: var(--n-scrollbar-height);\n border-radius: var(--n-scrollbar-border-radius);\n right: 0;\n ")])]),
-	H("horizontal--top", "\n top: var(--n-scrollbar-rail-top-horizontal-top); \n right: var(--n-scrollbar-rail-right-horizontal-top); \n bottom: var(--n-scrollbar-rail-bottom-horizontal-top); \n left: var(--n-scrollbar-rail-left-horizontal-top); \n "),
-	H("horizontal--bottom", "\n top: var(--n-scrollbar-rail-top-horizontal-bottom); \n right: var(--n-scrollbar-rail-right-horizontal-bottom); \n bottom: var(--n-scrollbar-rail-bottom-horizontal-bottom); \n left: var(--n-scrollbar-rail-left-horizontal-bottom); \n "),
-	H("vertical", "\n width: var(--n-scrollbar-width);\n ", [z(">", [V("scrollbar", "\n width: var(--n-scrollbar-width);\n border-radius: var(--n-scrollbar-border-radius);\n bottom: 0;\n ")])]),
-	H("vertical--left", "\n top: var(--n-scrollbar-rail-top-vertical-left); \n right: var(--n-scrollbar-rail-right-vertical-left); \n bottom: var(--n-scrollbar-rail-bottom-vertical-left); \n left: var(--n-scrollbar-rail-left-vertical-left); \n "),
-	H("vertical--right", "\n top: var(--n-scrollbar-rail-top-vertical-right); \n right: var(--n-scrollbar-rail-right-vertical-right); \n bottom: var(--n-scrollbar-rail-bottom-vertical-right); \n left: var(--n-scrollbar-rail-left-vertical-right); \n "),
-	H("disabled", [z(">", [V("scrollbar", "pointer-events: none;")])]),
-	z(">", [V("scrollbar", "\n z-index: 1;\n position: absolute;\n cursor: pointer;\n pointer-events: all;\n background-color: var(--n-scrollbar-color);\n transition: background-color .2s var(--n-scrollbar-bezier);\n ", [nm(), z("&:hover", "background-color: var(--n-scrollbar-color-hover);")])])
+var km = V("scrollbar", "\n overflow: hidden;\n position: relative;\n z-index: auto;\n height: 100%;\n width: 100%;\n", [B(">", [V("scrollbar-container", "\n width: 100%;\n overflow: scroll;\n height: 100%;\n min-height: inherit;\n max-height: inherit;\n scrollbar-width: none;\n ", [B("&::-webkit-scrollbar, &::-webkit-scrollbar-track-piece, &::-webkit-scrollbar-thumb", "\n width: 0;\n height: 0;\n display: none;\n "), B(">", [V("scrollbar-content", "\n box-sizing: border-box;\n min-width: 100%;\n ")])])]), B(">, +", [V("scrollbar-rail", "\n position: absolute;\n pointer-events: none;\n user-select: none;\n background: var(--n-scrollbar-rail-color);\n -webkit-user-select: none;\n ", [
+	U("horizontal", "\n height: var(--n-scrollbar-height);\n ", [B(">", [H("scrollbar", "\n height: var(--n-scrollbar-height);\n border-radius: var(--n-scrollbar-border-radius);\n right: 0;\n ")])]),
+	U("horizontal--top", "\n top: var(--n-scrollbar-rail-top-horizontal-top); \n right: var(--n-scrollbar-rail-right-horizontal-top); \n bottom: var(--n-scrollbar-rail-bottom-horizontal-top); \n left: var(--n-scrollbar-rail-left-horizontal-top); \n "),
+	U("horizontal--bottom", "\n top: var(--n-scrollbar-rail-top-horizontal-bottom); \n right: var(--n-scrollbar-rail-right-horizontal-bottom); \n bottom: var(--n-scrollbar-rail-bottom-horizontal-bottom); \n left: var(--n-scrollbar-rail-left-horizontal-bottom); \n "),
+	U("vertical", "\n width: var(--n-scrollbar-width);\n ", [B(">", [H("scrollbar", "\n width: var(--n-scrollbar-width);\n border-radius: var(--n-scrollbar-border-radius);\n bottom: 0;\n ")])]),
+	U("vertical--left", "\n top: var(--n-scrollbar-rail-top-vertical-left); \n right: var(--n-scrollbar-rail-right-vertical-left); \n bottom: var(--n-scrollbar-rail-bottom-vertical-left); \n left: var(--n-scrollbar-rail-left-vertical-left); \n "),
+	U("vertical--right", "\n top: var(--n-scrollbar-rail-top-vertical-right); \n right: var(--n-scrollbar-rail-right-vertical-right); \n bottom: var(--n-scrollbar-rail-bottom-vertical-right); \n left: var(--n-scrollbar-rail-left-vertical-right); \n "),
+	U("disabled", [B(">", [H("scrollbar", "pointer-events: none;")])]),
+	B(">", [H("scrollbar", "\n z-index: 1;\n position: absolute;\n cursor: pointer;\n pointer-events: all;\n background-color: var(--n-scrollbar-color);\n transition: background-color .2s var(--n-scrollbar-bezier);\n ", [Om(), B("&:hover", "background-color: var(--n-scrollbar-color-hover);")])])
 ])])]);
 //#endregion
 //#region node_modules/vueuc/es/shared/warn.js
-function im(e, t) {
+function Am(e, t) {
 	console.error(`[vueuc/${e}]: ${t}`);
 }
 //#endregion
 //#region node_modules/@juggle/resize-observer/lib/utils/resizeObservers.js
-var am = [], om = function() {
-	return am.some(function(e) {
+var jm = [], Mm = function() {
+	return jm.some(function(e) {
 		return e.activeTargets.length > 0;
 	});
-}, sm = function() {
-	return am.some(function(e) {
+}, Nm = function() {
+	return jm.some(function(e) {
 		return e.skippedTargets.length > 0;
 	});
-}, cm = "ResizeObserver loop completed with undelivered notifications.", lm = function() {
+}, Pm = "ResizeObserver loop completed with undelivered notifications.", Fm = function() {
 	var e;
-	typeof ErrorEvent == "function" ? e = new ErrorEvent("error", { message: cm }) : (e = document.createEvent("Event"), e.initEvent("error", !1, !1), e.message = cm), window.dispatchEvent(e);
-}, um;
+	typeof ErrorEvent == "function" ? e = new ErrorEvent("error", { message: Pm }) : (e = document.createEvent("Event"), e.initEvent("error", !1, !1), e.message = Pm), window.dispatchEvent(e);
+}, Im;
 (function(e) {
 	e.BORDER_BOX = "border-box", e.CONTENT_BOX = "content-box", e.DEVICE_PIXEL_CONTENT_BOX = "device-pixel-content-box";
-})(um ||= {});
+})(Im ||= {});
 //#endregion
 //#region node_modules/@juggle/resize-observer/lib/utils/freeze.js
-var dm = function(e) {
+var Lm = function(e) {
 	return Object.freeze(e);
-}, fm = function() {
+}, Rm = function() {
 	function e(e, t) {
-		this.inlineSize = e, this.blockSize = t, dm(this);
+		this.inlineSize = e, this.blockSize = t, Lm(this);
 	}
 	return e;
-}(), pm = function() {
+}(), zm = function() {
 	function e(e, t, n, r) {
-		return this.x = e, this.y = t, this.width = n, this.height = r, this.top = this.y, this.left = this.x, this.bottom = this.top + this.height, this.right = this.left + this.width, dm(this);
+		return this.x = e, this.y = t, this.width = n, this.height = r, this.top = this.y, this.left = this.x, this.bottom = this.top + this.height, this.right = this.left + this.width, Lm(this);
 	}
 	return e.prototype.toJSON = function() {
 		var e = this;
@@ -6545,20 +7706,20 @@ var dm = function(e) {
 	}, e.fromRect = function(t) {
 		return new e(t.x, t.y, t.width, t.height);
 	}, e;
-}(), mm = function(e) {
+}(), Bm = function(e) {
 	return e instanceof SVGElement && "getBBox" in e;
-}, hm = function(e) {
-	if (mm(e)) {
+}, Vm = function(e) {
+	if (Bm(e)) {
 		var t = e.getBBox(), n = t.width, r = t.height;
 		return !n && !r;
 	}
 	var i = e, a = i.offsetWidth, o = i.offsetHeight;
 	return !(a || o || e.getClientRects().length);
-}, gm = function(e) {
+}, Hm = function(e) {
 	if (e instanceof Element) return !0;
 	var t = e?.ownerDocument?.defaultView;
 	return !!(t && e instanceof t.Element);
-}, _m = function(e) {
+}, Um = function(e) {
 	switch (e.tagName) {
 		case "INPUT": if (e.type !== "image") break;
 		case "VIDEO":
@@ -6570,50 +7731,50 @@ var dm = function(e) {
 		case "IMG": return !0;
 	}
 	return !1;
-}, vm = typeof window < "u" ? window : {}, ym = /* @__PURE__ */ new WeakMap(), bm = /auto|scroll/, xm = /^tb|vertical/, Sm = /msie|trident/i.test(vm.navigator && vm.navigator.userAgent), Cm = function(e) {
+}, Wm = typeof window < "u" ? window : {}, Gm = /* @__PURE__ */ new WeakMap(), Km = /auto|scroll/, qm = /^tb|vertical/, Jm = /msie|trident/i.test(Wm.navigator && Wm.navigator.userAgent), Ym = function(e) {
 	return parseFloat(e || "0");
-}, wm = function(e, t, n) {
-	return e === void 0 && (e = 0), t === void 0 && (t = 0), n === void 0 && (n = !1), new fm((n ? t : e) || 0, (n ? e : t) || 0);
-}, Tm = dm({
-	devicePixelContentBoxSize: wm(),
-	borderBoxSize: wm(),
-	contentBoxSize: wm(),
-	contentRect: new pm(0, 0, 0, 0)
-}), Em = function(e, t) {
-	if (t === void 0 && (t = !1), ym.has(e) && !t) return ym.get(e);
-	if (hm(e)) return ym.set(e, Tm), Tm;
-	var n = getComputedStyle(e), r = mm(e) && e.ownerSVGElement && e.getBBox(), i = !Sm && n.boxSizing === "border-box", a = xm.test(n.writingMode || ""), o = !r && bm.test(n.overflowY || ""), s = !r && bm.test(n.overflowX || ""), c = r ? 0 : Cm(n.paddingTop), l = r ? 0 : Cm(n.paddingRight), u = r ? 0 : Cm(n.paddingBottom), d = r ? 0 : Cm(n.paddingLeft), f = r ? 0 : Cm(n.borderTopWidth), p = r ? 0 : Cm(n.borderRightWidth), m = r ? 0 : Cm(n.borderBottomWidth), h = r ? 0 : Cm(n.borderLeftWidth), g = d + l, _ = c + u, v = h + p, y = f + m, b = s ? e.offsetHeight - y - e.clientHeight : 0, x = o ? e.offsetWidth - v - e.clientWidth : 0, S = i ? g + v : 0, C = i ? _ + y : 0, w = r ? r.width : Cm(n.width) - S - x, T = r ? r.height : Cm(n.height) - C - b, E = w + g + x + v, D = T + _ + b + y, O = dm({
-		devicePixelContentBoxSize: wm(Math.round(w * devicePixelRatio), Math.round(T * devicePixelRatio), a),
-		borderBoxSize: wm(E, D, a),
-		contentBoxSize: wm(w, T, a),
-		contentRect: new pm(d, c, w, T)
+}, Xm = function(e, t, n) {
+	return e === void 0 && (e = 0), t === void 0 && (t = 0), n === void 0 && (n = !1), new Rm((n ? t : e) || 0, (n ? e : t) || 0);
+}, Zm = Lm({
+	devicePixelContentBoxSize: Xm(),
+	borderBoxSize: Xm(),
+	contentBoxSize: Xm(),
+	contentRect: new zm(0, 0, 0, 0)
+}), Qm = function(e, t) {
+	if (t === void 0 && (t = !1), Gm.has(e) && !t) return Gm.get(e);
+	if (Vm(e)) return Gm.set(e, Zm), Zm;
+	var n = getComputedStyle(e), r = Bm(e) && e.ownerSVGElement && e.getBBox(), i = !Jm && n.boxSizing === "border-box", a = qm.test(n.writingMode || ""), o = !r && Km.test(n.overflowY || ""), s = !r && Km.test(n.overflowX || ""), c = r ? 0 : Ym(n.paddingTop), l = r ? 0 : Ym(n.paddingRight), u = r ? 0 : Ym(n.paddingBottom), d = r ? 0 : Ym(n.paddingLeft), f = r ? 0 : Ym(n.borderTopWidth), p = r ? 0 : Ym(n.borderRightWidth), m = r ? 0 : Ym(n.borderBottomWidth), h = r ? 0 : Ym(n.borderLeftWidth), g = d + l, _ = c + u, v = h + p, y = f + m, b = s ? e.offsetHeight - y - e.clientHeight : 0, x = o ? e.offsetWidth - v - e.clientWidth : 0, S = i ? g + v : 0, C = i ? _ + y : 0, w = r ? r.width : Ym(n.width) - S - x, T = r ? r.height : Ym(n.height) - C - b, E = w + g + x + v, D = T + _ + b + y, O = Lm({
+		devicePixelContentBoxSize: Xm(Math.round(w * devicePixelRatio), Math.round(T * devicePixelRatio), a),
+		borderBoxSize: Xm(E, D, a),
+		contentBoxSize: Xm(w, T, a),
+		contentRect: new zm(d, c, w, T)
 	});
-	return ym.set(e, O), O;
-}, Dm = function(e, t, n) {
-	var r = Em(e, n), i = r.borderBoxSize, a = r.contentBoxSize, o = r.devicePixelContentBoxSize;
+	return Gm.set(e, O), O;
+}, $m = function(e, t, n) {
+	var r = Qm(e, n), i = r.borderBoxSize, a = r.contentBoxSize, o = r.devicePixelContentBoxSize;
 	switch (t) {
-		case um.DEVICE_PIXEL_CONTENT_BOX: return o;
-		case um.BORDER_BOX: return i;
+		case Im.DEVICE_PIXEL_CONTENT_BOX: return o;
+		case Im.BORDER_BOX: return i;
 		default: return a;
 	}
-}, Om = function() {
+}, eh = function() {
 	function e(e) {
-		var t = Em(e);
-		this.target = e, this.contentRect = t.contentRect, this.borderBoxSize = dm([t.borderBoxSize]), this.contentBoxSize = dm([t.contentBoxSize]), this.devicePixelContentBoxSize = dm([t.devicePixelContentBoxSize]);
+		var t = Qm(e);
+		this.target = e, this.contentRect = t.contentRect, this.borderBoxSize = Lm([t.borderBoxSize]), this.contentBoxSize = Lm([t.contentBoxSize]), this.devicePixelContentBoxSize = Lm([t.devicePixelContentBoxSize]);
 	}
 	return e;
-}(), km = function(e) {
-	if (hm(e)) return Infinity;
+}(), th = function(e) {
+	if (Vm(e)) return Infinity;
 	for (var t = 0, n = e.parentNode; n;) t += 1, n = n.parentNode;
 	return t;
-}, Am = function() {
+}, nh = function() {
 	var e = Infinity, t = [];
-	am.forEach(function(n) {
+	jm.forEach(function(n) {
 		if (n.activeTargets.length !== 0) {
 			var r = [];
 			n.activeTargets.forEach(function(t) {
-				var n = new Om(t.target), i = km(t.target);
-				r.push(n), t.lastReportedSize = Dm(t.target, t.observedBox), i < e && (e = i);
+				var n = new eh(t.target), i = th(t.target);
+				r.push(n), t.lastReportedSize = $m(t.target, t.observedBox), i < e && (e = i);
 			}), t.push(function() {
 				n.callback.call(n.observer, r, n.observer);
 			}), n.activeTargets.splice(0, n.activeTargets.length);
@@ -6624,42 +7785,42 @@ var dm = function(e) {
 		i();
 	}
 	return e;
-}, jm = function(e) {
-	am.forEach(function(t) {
+}, rh = function(e) {
+	jm.forEach(function(t) {
 		t.activeTargets.splice(0, t.activeTargets.length), t.skippedTargets.splice(0, t.skippedTargets.length), t.observationTargets.forEach(function(n) {
-			n.isActive() && (km(n.target) > e ? t.activeTargets.push(n) : t.skippedTargets.push(n));
+			n.isActive() && (th(n.target) > e ? t.activeTargets.push(n) : t.skippedTargets.push(n));
 		});
 	});
-}, Mm = function() {
+}, ih = function() {
 	var e = 0;
-	for (jm(e); om();) e = Am(), jm(e);
-	return sm() && lm(), e > 0;
-}, Nm, Pm = [], Fm = function() {
-	return Pm.splice(0).forEach(function(e) {
+	for (rh(e); Mm();) e = nh(), rh(e);
+	return Nm() && Fm(), e > 0;
+}, ah, oh = [], sh = function() {
+	return oh.splice(0).forEach(function(e) {
 		return e();
 	});
-}, Im = function(e) {
-	if (!Nm) {
+}, ch = function(e) {
+	if (!ah) {
 		var t = 0, n = document.createTextNode("");
 		new MutationObserver(function() {
-			return Fm();
-		}).observe(n, { characterData: !0 }), Nm = function() {
+			return sh();
+		}).observe(n, { characterData: !0 }), ah = function() {
 			n.textContent = `${t ? t-- : t++}`;
 		};
 	}
-	Pm.push(e), Nm();
-}, Lm = function(e) {
-	Im(function() {
+	oh.push(e), ah();
+}, lh = function(e) {
+	ch(function() {
 		requestAnimationFrame(e);
 	});
-}, Rm = 0, zm = function() {
-	return !!Rm;
-}, Bm = 250, Vm = {
+}, uh = 0, dh = function() {
+	return !!uh;
+}, fh = 250, ph = {
 	attributes: !0,
 	characterData: !0,
 	childList: !0,
 	subtree: !0
-}, Hm = [
+}, mh = [
 	"resize",
 	"load",
 	"transitionend",
@@ -6674,9 +7835,9 @@ var dm = function(e) {
 	"mouseout",
 	"blur",
 	"focus"
-], Um = function(e) {
+], hh = function(e) {
 	return e === void 0 && (e = 0), Date.now() + e;
-}, Wm = !1, Gm = new (function() {
+}, gh = !1, _h = new (function() {
 	function e() {
 		var e = this;
 		this.stopped = !0, this.listener = function() {
@@ -6685,15 +7846,15 @@ var dm = function(e) {
 	}
 	return e.prototype.run = function(e) {
 		var t = this;
-		if (e === void 0 && (e = Bm), !Wm) {
-			Wm = !0;
-			var n = Um(e);
-			Lm(function() {
+		if (e === void 0 && (e = fh), !gh) {
+			gh = !0;
+			var n = hh(e);
+			lh(function() {
 				var r = !1;
 				try {
-					r = Mm();
+					r = ih();
 				} finally {
-					if (Wm = !1, e = n - Um(), !zm()) return;
+					if (gh = !1, e = n - hh(), !dh()) return;
 					r ? t.run(1e3) : e > 0 ? t.run(e) : t.start();
 				}
 			});
@@ -6702,82 +7863,82 @@ var dm = function(e) {
 		this.stop(), this.run();
 	}, e.prototype.observe = function() {
 		var e = this, t = function() {
-			return e.observer && e.observer.observe(document.body, Vm);
+			return e.observer && e.observer.observe(document.body, ph);
 		};
-		document.body ? t() : vm.addEventListener("DOMContentLoaded", t);
+		document.body ? t() : Wm.addEventListener("DOMContentLoaded", t);
 	}, e.prototype.start = function() {
 		var e = this;
-		this.stopped && (this.stopped = !1, this.observer = new MutationObserver(this.listener), this.observe(), Hm.forEach(function(t) {
-			return vm.addEventListener(t, e.listener, !0);
+		this.stopped && (this.stopped = !1, this.observer = new MutationObserver(this.listener), this.observe(), mh.forEach(function(t) {
+			return Wm.addEventListener(t, e.listener, !0);
 		}));
 	}, e.prototype.stop = function() {
 		var e = this;
-		this.stopped ||= (this.observer && this.observer.disconnect(), Hm.forEach(function(t) {
-			return vm.removeEventListener(t, e.listener, !0);
+		this.stopped ||= (this.observer && this.observer.disconnect(), mh.forEach(function(t) {
+			return Wm.removeEventListener(t, e.listener, !0);
 		}), !0);
 	}, e;
-}())(), Km = function(e) {
-	!Rm && e > 0 && Gm.start(), Rm += e, !Rm && Gm.stop();
-}, qm = function(e) {
-	return !mm(e) && !_m(e) && getComputedStyle(e).display === "inline";
-}, Jm = function() {
+}())(), vh = function(e) {
+	!uh && e > 0 && _h.start(), uh += e, !uh && _h.stop();
+}, yh = function(e) {
+	return !Bm(e) && !Um(e) && getComputedStyle(e).display === "inline";
+}, bh = function() {
 	function e(e, t) {
-		this.target = e, this.observedBox = t || um.CONTENT_BOX, this.lastReportedSize = {
+		this.target = e, this.observedBox = t || Im.CONTENT_BOX, this.lastReportedSize = {
 			inlineSize: 0,
 			blockSize: 0
 		};
 	}
 	return e.prototype.isActive = function() {
-		var e = Dm(this.target, this.observedBox, !0);
-		return qm(this.target) && (this.lastReportedSize = e), this.lastReportedSize.inlineSize !== e.inlineSize || this.lastReportedSize.blockSize !== e.blockSize;
+		var e = $m(this.target, this.observedBox, !0);
+		return yh(this.target) && (this.lastReportedSize = e), this.lastReportedSize.inlineSize !== e.inlineSize || this.lastReportedSize.blockSize !== e.blockSize;
 	}, e;
-}(), Ym = function() {
+}(), xh = function() {
 	function e(e, t) {
 		this.activeTargets = [], this.skippedTargets = [], this.observationTargets = [], this.observer = e, this.callback = t;
 	}
 	return e;
-}(), Xm = /* @__PURE__ */ new WeakMap(), Zm = function(e, t) {
+}(), Sh = /* @__PURE__ */ new WeakMap(), Ch = function(e, t) {
 	for (var n = 0; n < e.length; n += 1) if (e[n].target === t) return n;
 	return -1;
-}, Qm = function() {
+}, wh = function() {
 	function e() {}
 	return e.connect = function(e, t) {
-		var n = new Ym(e, t);
-		Xm.set(e, n);
+		var n = new xh(e, t);
+		Sh.set(e, n);
 	}, e.observe = function(e, t, n) {
-		var r = Xm.get(e), i = r.observationTargets.length === 0;
-		Zm(r.observationTargets, t) < 0 && (i && am.push(r), r.observationTargets.push(new Jm(t, n && n.box)), Km(1), Gm.schedule());
+		var r = Sh.get(e), i = r.observationTargets.length === 0;
+		Ch(r.observationTargets, t) < 0 && (i && jm.push(r), r.observationTargets.push(new bh(t, n && n.box)), vh(1), _h.schedule());
 	}, e.unobserve = function(e, t) {
-		var n = Xm.get(e), r = Zm(n.observationTargets, t), i = n.observationTargets.length === 1;
-		r >= 0 && (i && am.splice(am.indexOf(n), 1), n.observationTargets.splice(r, 1), Km(-1));
+		var n = Sh.get(e), r = Ch(n.observationTargets, t), i = n.observationTargets.length === 1;
+		r >= 0 && (i && jm.splice(jm.indexOf(n), 1), n.observationTargets.splice(r, 1), vh(-1));
 	}, e.disconnect = function(e) {
-		var t = this, n = Xm.get(e);
+		var t = this, n = Sh.get(e);
 		n.observationTargets.slice().forEach(function(n) {
 			return t.unobserve(e, n.target);
 		}), n.activeTargets.splice(0, n.activeTargets.length);
 	}, e;
-}(), $m = function() {
+}(), Th = function() {
 	function e(e) {
 		if (arguments.length === 0) throw TypeError("Failed to construct 'ResizeObserver': 1 argument required, but only 0 present.");
 		if (typeof e != "function") throw TypeError("Failed to construct 'ResizeObserver': The callback provided as parameter 1 is not a function.");
-		Qm.connect(this, e);
+		wh.connect(this, e);
 	}
 	return e.prototype.observe = function(e, t) {
 		if (arguments.length === 0) throw TypeError("Failed to execute 'observe' on 'ResizeObserver': 1 argument required, but only 0 present.");
-		if (!gm(e)) throw TypeError("Failed to execute 'observe' on 'ResizeObserver': parameter 1 is not of type 'Element");
-		Qm.observe(this, e, t);
+		if (!Hm(e)) throw TypeError("Failed to execute 'observe' on 'ResizeObserver': parameter 1 is not of type 'Element");
+		wh.observe(this, e, t);
 	}, e.prototype.unobserve = function(e) {
 		if (arguments.length === 0) throw TypeError("Failed to execute 'unobserve' on 'ResizeObserver': 1 argument required, but only 0 present.");
-		if (!gm(e)) throw TypeError("Failed to execute 'unobserve' on 'ResizeObserver': parameter 1 is not of type 'Element");
-		Qm.unobserve(this, e);
+		if (!Hm(e)) throw TypeError("Failed to execute 'unobserve' on 'ResizeObserver': parameter 1 is not of type 'Element");
+		wh.unobserve(this, e);
 	}, e.prototype.disconnect = function() {
-		Qm.disconnect(this);
+		wh.disconnect(this);
 	}, e.toString = function() {
 		return "function ResizeObserver () { [polyfill code] }";
 	}, e;
-}(), eh = new class {
+}(), Eh = new class {
 	constructor() {
-		this.handleResize = this.handleResize.bind(this), this.observer = new (typeof window < "u" && window.ResizeObserver || $m)(this.handleResize), this.elHandlersMap = /* @__PURE__ */ new Map();
+		this.handleResize = this.handleResize.bind(this), this.observer = new (typeof window < "u" && window.ResizeObserver || Th)(this.handleResize), this.elHandlersMap = /* @__PURE__ */ new Map();
 	}
 	handleResize(e) {
 		for (let t of e) {
@@ -6791,37 +7952,37 @@ var dm = function(e) {
 	unregisterHandler(e) {
 		this.elHandlersMap.has(e) && (this.elHandlersMap.delete(e), this.observer.unobserve(e));
 	}
-}(), th = /* @__PURE__ */ P({
+}(), Dh = /* @__PURE__ */ _r({
 	name: "ResizeObserver",
 	props: { onResize: Function },
 	setup(e) {
-		let t = !1, n = ea().proxy;
+		let t = !1, n = da().proxy;
 		function r(t) {
 			let { onResize: n } = e;
 			n !== void 0 && n(t);
 		}
-		xr(() => {
+		Mr(() => {
 			let e = n.$el;
 			if (e === void 0) {
-				im("resize-observer", "$el does not exist.");
+				Am("resize-observer", "$el does not exist.");
 				return;
 			}
 			if (e.nextElementSibling !== e.nextSibling && e.nodeType === 3 && e.nodeValue !== "") {
-				im("resize-observer", "$el can not be observed (it may be a text node).");
+				Am("resize-observer", "$el can not be observed (it may be a text node).");
 				return;
 			}
-			e.nextElementSibling !== null && (eh.registerHandler(e.nextElementSibling, r), t = !0);
-		}), Cr(() => {
-			t && eh.unregisterHandler(n.$el.nextElementSibling);
+			e.nextElementSibling !== null && (Eh.registerHandler(e.nextElementSibling, r), t = !0);
+		}), Pr(() => {
+			t && Eh.unregisterHandler(n.$el.nextElementSibling);
 		});
 	},
 	render() {
-		return Er(this.$slots, "default");
+		return Lr(this.$slots, "default");
 	}
-}), nh = ["onMousedown"], rh = ["onScroll", "onWheel"], ih = ["onMousedown"], ah = /* @__PURE__ */ P({
+}), Oh = ["onMousedown"], kh = ["onScroll", "onWheel"], Ah = ["onMousedown"], jh = /* @__PURE__ */ _r({
 	name: "Scrollbar",
 	props: {
-		...wp.props,
+		...Xp.props,
 		duration: {
 			type: Number,
 			default: 0
@@ -6862,70 +8023,70 @@ var dm = function(e) {
 	},
 	inheritAttrs: !1,
 	setup(e) {
-		let { mergedClsPrefixRef: t, inlineThemeDisabled: n, mergedRtlRef: r } = of(e), i = Zp("Scrollbar", r, t), a = /* @__PURE__ */ N(null), o = /* @__PURE__ */ N(null), s = /* @__PURE__ */ N(null), c = /* @__PURE__ */ N(null), l = /* @__PURE__ */ N(null), u = /* @__PURE__ */ N(null), d = /* @__PURE__ */ N(null), f = /* @__PURE__ */ N(null), p = /* @__PURE__ */ N(null), m = /* @__PURE__ */ N(null), h = /* @__PURE__ */ N(null), g = /* @__PURE__ */ N(0), _ = /* @__PURE__ */ N(0), v = /* @__PURE__ */ N(!1), y = /* @__PURE__ */ N(!1), b = !1, x = !1, S, C, w = 0, T = 0, E = 0, D = 0, O = Kp(), ee = wp("Scrollbar", "-scrollbar", rm, gp, e, t), te = L(() => {
+		let { mergedClsPrefixRef: t, inlineThemeDisabled: n, mergedRtlRef: r } = jf(e), i = Cm("Scrollbar", r, t), a = /* @__PURE__ */ F(null), o = /* @__PURE__ */ F(null), s = /* @__PURE__ */ F(null), c = /* @__PURE__ */ F(null), l = /* @__PURE__ */ F(null), u = /* @__PURE__ */ F(null), d = /* @__PURE__ */ F(null), f = /* @__PURE__ */ F(null), p = /* @__PURE__ */ F(null), m = /* @__PURE__ */ F(null), h = /* @__PURE__ */ F(null), g = /* @__PURE__ */ F(0), _ = /* @__PURE__ */ F(0), v = /* @__PURE__ */ F(!1), y = /* @__PURE__ */ F(!1), b = !1, x = !1, S, C, w = 0, T = 0, E = 0, D = 0, O = vm(), k = Xp("Scrollbar", "-scrollbar", km, Hp, e, t), A = R(() => {
 			let { value: e } = f, { value: t } = u, { value: n } = m;
-			return e === null || t === null || n === null ? 0 : Math.min(e, n * e / t + wf(ee.value.self.width) * 1.5);
-		}), ne = L(() => `${te.value}px`), re = L(() => {
+			return e === null || t === null || n === null ? 0 : Math.min(e, n * e / t + Yf(k.value.self.width) * 1.5);
+		}), ee = R(() => `${A.value}px`), j = R(() => {
 			let { value: e } = p, { value: t } = d, { value: n } = h;
-			return e === null || t === null || n === null ? 0 : n * e / t + wf(ee.value.self.height) * 1.5;
-		}), ie = L(() => `${re.value}px`), ae = L(() => {
+			return e === null || t === null || n === null ? 0 : n * e / t + Yf(k.value.self.height) * 1.5;
+		}), te = R(() => `${j.value}px`), ne = R(() => {
 			let { value: e } = f, { value: t } = g, { value: n } = u, { value: r } = m;
 			if (e === null || n === null || r === null) return 0;
 			{
 				let i = n - e;
-				return i ? t / i * (r - te.value) : 0;
+				return i ? t / i * (r - A.value) : 0;
 			}
-		}), oe = L(() => `${ae.value}px`), se = L(() => {
+		}), re = R(() => `${ne.value}px`), ie = R(() => {
 			let { value: e } = p, { value: t } = _, { value: n } = d, { value: r } = h;
 			if (e === null || n === null || r === null) return 0;
 			{
 				let i = n - e;
-				return i ? t / i * (r - re.value) : 0;
+				return i ? t / i * (r - j.value) : 0;
 			}
-		}), ce = L(() => `${se.value}px`), le = L(() => {
+		}), ae = R(() => `${ie.value}px`), oe = R(() => {
 			let { value: e } = f, { value: t } = u;
 			return e !== null && t !== null && t > e;
-		}), ue = L(() => {
+		}), se = R(() => {
 			let { value: e } = p, { value: t } = d;
 			return e !== null && t !== null && t > e;
-		}), k = L(() => {
+		}), ce = R(() => {
 			let { trigger: t } = e;
 			return t === "none" || v.value;
-		}), de = L(() => {
+		}), le = R(() => {
 			let { trigger: t } = e;
 			return t === "none" || y.value;
-		}), fe = L(() => {
+		}), ue = R(() => {
 			let { container: t } = e;
 			return t ? t() : o.value;
-		}), pe = L(() => {
+		}), de = R(() => {
 			let { content: t } = e;
 			return t ? t() : s.value;
-		}), me = (t, n) => {
+		}), fe = (t, n) => {
 			if (!e.scrollable) return;
 			if (typeof t == "number") {
-				ye(t, n ?? 0, 0, !1, "auto");
+				_e(t, n ?? 0, 0, !1, "auto");
 				return;
 			}
 			let { left: r, top: i, index: a, elSize: o, position: s, behavior: c, el: l, debounce: u = !0 } = t;
-			(r !== void 0 || i !== void 0) && ye(r ?? 0, i ?? 0, 0, !1, c), l === void 0 ? a !== void 0 && o !== void 0 ? ye(0, a * o, o, u, c) : s === "bottom" ? ye(0, 2 ** 53 - 1, 0, !1, c) : s === "top" && ye(0, 0, 0, !1, c) : ye(0, l.offsetTop, l.offsetHeight, u, c);
-		}, he = Qp(() => {
-			e.container || me({
+			(r !== void 0 || i !== void 0) && _e(r ?? 0, i ?? 0, 0, !1, c), l === void 0 ? a !== void 0 && o !== void 0 ? _e(0, a * o, o, u, c) : s === "bottom" ? _e(0, 2 ** 53 - 1, 0, !1, c) : s === "top" && _e(0, 0, 0, !1, c) : _e(0, l.offsetTop, l.offsetHeight, u, c);
+		}, pe = wm(() => {
+			e.container || fe({
 				top: g.value,
 				left: _.value
 			});
-		}), ge = () => {
-			he.isDeactivated || ke();
-		}, _e = (t) => {
-			if (he.isDeactivated) return;
+		}), me = () => {
+			pe.isDeactivated || Oe();
+		}, he = (t) => {
+			if (pe.isDeactivated) return;
 			let { onResize: n } = e;
-			n && n(t), ke();
-		}, ve = (t, n) => {
+			n && n(t), Oe();
+		}, ge = (t, n) => {
 			if (!e.scrollable) return;
-			let { value: r } = fe;
+			let { value: r } = ue;
 			r && (typeof t == "object" ? r.scrollBy(t) : r.scrollBy(t, n || 0));
 		};
-		function ye(e, t, n, r, i) {
-			let { value: a } = fe;
+		function _e(e, t, n, r, i) {
+			let { value: a } = ue;
 			if (a) {
 				if (r) {
 					let { scrollTop: r, offsetHeight: o } = a;
@@ -6945,105 +8106,105 @@ var dm = function(e) {
 				});
 			}
 		}
+		function ve() {
+			Se(), Ce(), Oe();
+		}
+		function ye() {
+			M();
+		}
+		function M() {
+			be(), xe();
+		}
 		function be() {
-			we(), Te(), ke();
-		}
-		function xe() {
-			Se();
-		}
-		function Se() {
-			Ce(), A();
-		}
-		function Ce() {
 			C !== void 0 && window.clearTimeout(C), C = window.setTimeout(() => {
 				y.value = !1;
 			}, e.duration);
 		}
-		function A() {
+		function xe() {
 			S !== void 0 && window.clearTimeout(S), S = window.setTimeout(() => {
 				v.value = !1;
 			}, e.duration);
 		}
-		function we() {
+		function Se() {
 			S !== void 0 && window.clearTimeout(S), v.value = !0;
 		}
-		function Te() {
+		function Ce() {
 			C !== void 0 && window.clearTimeout(C), y.value = !0;
 		}
-		function j(t) {
+		function we(t) {
 			let { onScroll: n } = e;
-			n && n(t), Ee();
+			n && n(t), Te();
 		}
-		function Ee() {
-			let { value: e } = fe;
+		function Te() {
+			let { value: e } = ue;
 			e && (g.value = e.scrollTop, _.value = e.scrollLeft * (i?.value ? -1 : 1));
 		}
-		function De() {
-			let { value: e } = pe;
+		function Ee() {
+			let { value: e } = de;
 			e && (u.value = e.offsetHeight, d.value = e.offsetWidth);
-			let { value: t } = fe;
+			let { value: t } = ue;
 			t && (f.value = t.offsetHeight, p.value = t.offsetWidth);
 			let { value: n } = l, { value: r } = c;
 			n && (h.value = n.offsetWidth), r && (m.value = r.offsetHeight);
 		}
-		function Oe() {
-			let { value: e } = fe;
+		function De() {
+			let { value: e } = ue;
 			e && (g.value = e.scrollTop, _.value = e.scrollLeft * (i?.value ? -1 : 1), f.value = e.offsetHeight, p.value = e.offsetWidth, u.value = e.scrollHeight, d.value = e.scrollWidth);
 			let { value: t } = l, { value: n } = c;
 			t && (h.value = t.offsetWidth), n && (m.value = n.offsetHeight);
 		}
-		function ke() {
-			e.scrollable && (e.useUnifiedContainer ? Oe() : (De(), Ee()));
+		function Oe() {
+			e.scrollable && (e.useUnifiedContainer ? De() : (Ee(), Te()));
+		}
+		function ke(e) {
+			return !a.value?.contains(Jf(e));
 		}
 		function Ae(e) {
-			return !a.value?.contains(Cf(e));
+			e.preventDefault(), e.stopPropagation(), x = !0, pm("mousemove", window, je, !0), pm("mouseup", window, Me, !0), T = _.value, E = i?.value ? window.innerWidth - e.clientX : e.clientX;
 		}
-		function je(e) {
-			e.preventDefault(), e.stopPropagation(), x = !0, Vp("mousemove", window, Me, !0), Vp("mouseup", window, Ne, !0), T = _.value, E = i?.value ? window.innerWidth - e.clientX : e.clientX;
-		}
-		function Me(t) {
+		function je(t) {
 			if (!x) return;
 			S !== void 0 && window.clearTimeout(S), C !== void 0 && window.clearTimeout(C);
-			let { value: n } = p, { value: r } = d, { value: a } = re;
+			let { value: n } = p, { value: r } = d, { value: a } = j;
 			if (n === null || r === null) return;
 			let o = (i?.value ? window.innerWidth - t.clientX - E : t.clientX - E) * (r - n) / (n - a), s = r - n, c = T + o;
 			c = Math.min(s, c), c = Math.max(c, 0);
-			let { value: l } = fe;
+			let { value: l } = ue;
 			if (l) {
 				l.scrollLeft = c * (i?.value ? -1 : 1);
 				let { internalOnUpdateScrollLeft: t } = e;
 				t && t(c);
 			}
 		}
+		function Me(e) {
+			e.preventDefault(), e.stopPropagation(), mm("mousemove", window, je, !0), mm("mouseup", window, Me, !0), x = !1, Oe(), ke(e) && M();
+		}
 		function Ne(e) {
-			e.preventDefault(), e.stopPropagation(), Hp("mousemove", window, Me, !0), Hp("mouseup", window, Ne, !0), x = !1, ke(), Ae(e) && Se();
+			e.preventDefault(), e.stopPropagation(), b = !0, pm("mousemove", window, Pe, !0), pm("mouseup", window, Fe, !0), w = g.value, D = e.clientY;
 		}
 		function Pe(e) {
-			e.preventDefault(), e.stopPropagation(), b = !0, Vp("mousemove", window, Fe, !0), Vp("mouseup", window, Ie, !0), w = g.value, D = e.clientY;
-		}
-		function Fe(e) {
 			if (!b) return;
 			S !== void 0 && window.clearTimeout(S), C !== void 0 && window.clearTimeout(C);
-			let { value: t } = f, { value: n } = u, { value: r } = te;
+			let { value: t } = f, { value: n } = u, { value: r } = A;
 			if (t === null || n === null) return;
 			let i = (e.clientY - D) * (n - t) / (t - r), a = n - t, o = w + i;
 			o = Math.min(a, o), o = Math.max(o, 0);
-			let { value: s } = fe;
+			let { value: s } = ue;
 			s && (s.scrollTop = o);
 		}
-		function Ie(e) {
-			e.preventDefault(), e.stopPropagation(), Hp("mousemove", window, Fe, !0), Hp("mouseup", window, Ie, !0), b = !1, ke(), Ae(e) && Se();
+		function Fe(e) {
+			e.preventDefault(), e.stopPropagation(), mm("mousemove", window, Pe, !0), mm("mouseup", window, Fe, !0), b = !1, Oe(), ke(e) && M();
 		}
-		Vn(() => {
-			let { value: e } = ue, { value: n } = le, { value: r } = t, { value: i } = l, { value: a } = c;
+		Zn(() => {
+			let { value: e } = se, { value: n } = oe, { value: r } = t, { value: i } = l, { value: a } = c;
 			i && (e ? i.classList.remove(`${r}-scrollbar-rail--disabled`) : i.classList.add(`${r}-scrollbar-rail--disabled`)), a && (n ? a.classList.remove(`${r}-scrollbar-rail--disabled`) : a.classList.add(`${r}-scrollbar-rail--disabled`));
-		}), xr(() => {
-			e.container || ke();
-		}), Cr(() => {
-			S !== void 0 && window.clearTimeout(S), C !== void 0 && window.clearTimeout(C), Hp("mousemove", window, Fe, !0), Hp("mouseup", window, Ie, !0);
+		}), Mr(() => {
+			e.container || Oe();
+		}), Pr(() => {
+			S !== void 0 && window.clearTimeout(S), C !== void 0 && window.clearTimeout(C), mm("mousemove", window, Pe, !0), mm("mouseup", window, Fe, !0);
 		});
-		let Le = L(() => {
-			let { common: { cubicBezierEaseInOut: e }, self: { color: t, colorHover: n, height: r, width: a, borderRadius: o, railInsetHorizontalTop: s, railInsetHorizontalBottom: c, railInsetVerticalRight: l, railInsetVerticalLeft: u, railColor: d } } = ee.value, { top: f, right: p, bottom: m, left: h } = Ef(s), { top: g, right: _, bottom: v, left: y } = Ef(c), { top: b, right: x, bottom: S, left: C } = Ef(i?.value ? $p(l) : l), { top: w, right: T, bottom: E, left: D } = Ef(i?.value ? $p(u) : u);
+		let N = R(() => {
+			let { common: { cubicBezierEaseInOut: e }, self: { color: t, colorHover: n, height: r, width: a, borderRadius: o, railInsetHorizontalTop: s, railInsetHorizontalBottom: c, railInsetVerticalRight: l, railInsetVerticalLeft: u, railColor: d } } = k.value, { top: f, right: p, bottom: m, left: h } = Zf(s), { top: g, right: _, bottom: v, left: y } = Zf(c), { top: b, right: x, bottom: S, left: C } = Zf(i?.value ? Tm(l) : l), { top: w, right: T, bottom: E, left: D } = Zf(i?.value ? Tm(u) : u);
 			return {
 				"--n-scrollbar-bezier": e,
 				"--n-scrollbar-color": t,
@@ -7069,14 +8230,14 @@ var dm = function(e) {
 				"--n-scrollbar-rail-left-vertical-left": D,
 				"--n-scrollbar-rail-color": d
 			};
-		}), Re = n ? Sp("scrollbar", void 0, Le, e) : void 0;
+		}), Ie = n ? Jp("scrollbar", void 0, N, e) : void 0;
 		return {
-			scrollTo: me,
-			scrollBy: ve,
-			sync: ke,
-			syncUnifiedContainer: Oe,
-			handleMouseEnterWrapper: be,
-			handleMouseLeaveWrapper: xe,
+			scrollTo: fe,
+			scrollBy: ge,
+			sync: Oe,
+			syncUnifiedContainer: De,
+			handleMouseEnterWrapper: ve,
+			handleMouseLeaveWrapper: ye,
 			mergedClsPrefix: t,
 			rtlEnabled: i,
 			containerScrollTop: g,
@@ -7085,49 +8246,49 @@ var dm = function(e) {
 			contentRef: s,
 			yRailRef: c,
 			xRailRef: l,
-			needYBar: le,
-			needXBar: ue,
-			yBarSizePx: ne,
-			xBarSizePx: ie,
-			yBarTopPx: oe,
-			xBarLeftPx: ce,
-			isShowXBar: k,
-			isShowYBar: de,
+			needYBar: oe,
+			needXBar: se,
+			yBarSizePx: ee,
+			xBarSizePx: te,
+			yBarTopPx: re,
+			xBarLeftPx: ae,
+			isShowXBar: ce,
+			isShowYBar: le,
 			isIos: O,
-			handleScroll: j,
-			handleContentResize: ge,
-			handleContainerResize: _e,
-			handleYScrollMouseDown: Pe,
-			handleXScrollMouseDown: je,
+			handleScroll: we,
+			handleContentResize: me,
+			handleContainerResize: he,
+			handleYScrollMouseDown: Ne,
+			handleXScrollMouseDown: Ae,
 			containerWidth: p,
-			cssVars: n ? void 0 : Le,
-			themeClass: Re?.themeClass,
-			onRender: Re?.onRender
+			cssVars: n ? void 0 : N,
+			themeClass: Ie?.themeClass,
+			onRender: Ie?.onRender
 		};
 	},
 	render() {
 		let { $slots: e, mergedClsPrefix: t, triggerDisplayManually: n, rtlEnabled: r, internalHoistYRail: i, yPlacement: a, xPlacement: o, xScrollable: s } = this;
 		if (!this.scrollable) return e.default?.();
-		let c = this.trigger === "none", l = (e, n) => (F(), I("div", {
+		let c = this.trigger === "none", l = (e, n) => (I(), L("div", {
 			ref: "yRailRef",
-			class: K([
+			class: q([
 				`${t}-scrollbar-rail`,
 				`${t}-scrollbar-rail--vertical`,
 				`${t}-scrollbar-rail--vertical--${a}`,
 				e
 			]),
 			"data-scrollbar-rail": !0,
-			style: k([n || "", this.verticalRailStyle]),
+			style: M([n || "", this.verticalRailStyle]),
 			"aria-hidden": !0
-		}, [G(() => R(c ? em : ka, c ? null : { name: "fade-in-transition" }, { default: () => this.needYBar && this.isShowYBar && !this.isIos ? (F(), I("div", {
+		}, [K(() => z(c ? Em : Ba, c ? null : { name: "fade-in-transition" }, { default: () => this.needYBar && this.isShowYBar && !this.isIos ? (I(), L("div", {
 			key: 1,
-			class: K(`${t}-scrollbar-rail__scrollbar`),
-			style: k({
+			class: q(`${t}-scrollbar-rail__scrollbar`),
+			style: M({
 				height: this.yBarSizePx,
 				top: this.yBarTopPx
 			}),
 			onMousedown: this.handleYScrollMouseDown
-		}, null, 46, nh)) : null }))], 6)), u = () => (this.onRender?.(), R("div", Ji(this.$attrs, {
+		}, null, 46, Oh)) : null }))], 6)), u = () => (this.onRender?.(), z("div", aa(this.$attrs, {
 			role: "none",
 			ref: "wrapperRef",
 			class: [
@@ -7139,48 +8300,48 @@ var dm = function(e) {
 			onMouseenter: n ? void 0 : this.handleMouseEnterWrapper,
 			onMouseleave: n ? void 0 : this.handleMouseLeaveWrapper
 		}), [
-			this.container ? e.default?.() : (F(), I("div", {
+			this.container ? e.default?.() : (I(), L("div", {
 				key: 2,
 				role: "none",
 				ref: "containerRef",
-				class: K([`${t}-scrollbar-container`, this.containerClass]),
-				style: k([this.containerStyle, this.internalExposeWidthCssVar ? { "--n-scrollbar-current-width": Tf(this.containerWidth) } : void 0]),
+				class: q([`${t}-scrollbar-container`, this.containerClass]),
+				style: M([this.containerStyle, this.internalExposeWidthCssVar ? { "--n-scrollbar-current-width": Xf(this.containerWidth) } : void 0]),
 				onScroll: this.handleScroll,
 				onWheel: this.onWheel
-			}, [(F(), Ni(th, { onResize: this.handleContentResize }, { default: () => (F(), I("div", {
+			}, [(I(), Wi(Dh, { onResize: this.handleContentResize }, { default: () => (I(), L("div", {
 				ref: "contentRef",
 				role: "none",
-				style: k([{ width: this.xScrollable ? "fit-content" : null }, this.contentStyle]),
-				class: K([`${t}-scrollbar-content`, this.contentClass])
-			}, [G(() => e.default?.())], 6)) }, 1032, ["onResize"]))], 46, rh)),
+				style: M([{ width: this.xScrollable ? "fit-content" : null }, this.contentStyle]),
+				class: q([`${t}-scrollbar-content`, this.contentClass])
+			}, [K(() => e.default?.())], 6)) }, 1032, ["onResize"]))], 46, kh)),
 			i ? null : l(void 0, void 0),
-			s && (F(), I("div", {
+			s && (I(), L("div", {
 				ref: "xRailRef",
-				class: K([
+				class: q([
 					`${t}-scrollbar-rail`,
 					`${t}-scrollbar-rail--horizontal`,
 					`${t}-scrollbar-rail--horizontal--${o}`
 				]),
-				style: k(this.horizontalRailStyle),
+				style: M(this.horizontalRailStyle),
 				"data-scrollbar-rail": !0,
 				"aria-hidden": !0
-			}, [G(() => R(c ? em : ka, c ? null : { name: "fade-in-transition" }, { default: () => this.needXBar && this.isShowXBar && !this.isIos ? (F(), I("div", {
+			}, [K(() => z(c ? Em : Ba, c ? null : { name: "fade-in-transition" }, { default: () => this.needXBar && this.isShowXBar && !this.isIos ? (I(), L("div", {
 				key: 3,
-				class: K(`${t}-scrollbar-rail__scrollbar`),
-				style: k({
+				class: q(`${t}-scrollbar-rail__scrollbar`),
+				style: M({
 					width: this.xBarSizePx,
 					right: r ? this.xBarLeftPx : void 0,
 					left: r ? void 0 : this.xBarLeftPx
 				}),
 				onMousedown: this.handleXScrollMouseDown
-			}, null, 46, ih)) : null }))], 6))
-		])), d = this.container ? u() : (F(), Ni(th, {
+			}, null, 46, Ah)) : null }))], 6))
+		])), d = this.container ? u() : (I(), Wi(Dh, {
 			key: 4,
 			onResize: this.handleContainerResize
 		}, { default: u }, 1032, ["onResize"]));
-		return i ? (F(), I(Ci, { key: 5 }, [G(() => d), G(() => l(this.themeClass, this.cssVars))], 64)) : d;
+		return i ? (I(), L(Pi, { key: 5 }, [K(() => d), K(() => l(this.themeClass, this.cssVars))], 64)) : d;
 	}
-}), oh = {
+}), Mh = {
 	closeIconSizeTiny: "12px",
 	closeIconSizeSmall: "12px",
 	closeIconSizeMedium: "14px",
@@ -7191,13 +8352,13 @@ var dm = function(e) {
 	closeSizeLarge: "18px",
 	padding: "0 7px",
 	closeMargin: "0 0 0 4px"
-}, sh = {
+}, Nh = {
 	name: "Tag",
 	common: Q,
 	self(e) {
-		let { textColor2: t, primaryColorHover: n, primaryColorPressed: r, primaryColor: i, infoColor: a, successColor: o, warningColor: s, errorColor: c, baseColor: l, borderColor: u, tagColor: d, opacityDisabled: f, closeIconColor: p, closeIconColorHover: m, closeIconColorPressed: h, closeColorHover: g, closeColorPressed: _, borderRadiusSmall: v, fontSizeMini: y, fontSizeTiny: b, fontSizeSmall: x, fontSizeMedium: S, heightMini: C, heightTiny: w, heightSmall: T, heightMedium: E, buttonColor2Hover: D, buttonColor2Pressed: O, fontWeightStrong: ee } = e;
+		let { textColor2: t, primaryColorHover: n, primaryColorPressed: r, primaryColor: i, infoColor: a, successColor: o, warningColor: s, errorColor: c, baseColor: l, borderColor: u, tagColor: d, opacityDisabled: f, closeIconColor: p, closeIconColorHover: m, closeIconColorPressed: h, closeColorHover: g, closeColorPressed: _, borderRadiusSmall: v, fontSizeMini: y, fontSizeTiny: b, fontSizeSmall: x, fontSizeMedium: S, heightMini: C, heightTiny: w, heightSmall: T, heightMedium: E, buttonColor2Hover: D, buttonColor2Pressed: O, fontWeightStrong: k } = e;
 		return {
-			...oh,
+			...Mh,
 			closeBorderRadius: v,
 			heightTiny: C,
 			heightSmall: w,
@@ -7209,7 +8370,7 @@ var dm = function(e) {
 			fontSizeSmall: b,
 			fontSizeMedium: x,
 			fontSizeLarge: S,
-			fontWeightStrong: ee,
+			fontWeightStrong: k,
 			textColorCheckable: t,
 			textColorHoverCheckable: t,
 			textColorPressedCheckable: t,
@@ -7229,107 +8390,107 @@ var dm = function(e) {
 			closeIconColorPressed: h,
 			closeColorHover: g,
 			closeColorPressed: _,
-			borderPrimary: `1px solid ${J(i, { alpha: .3 })}`,
+			borderPrimary: `1px solid ${Y(i, { alpha: .3 })}`,
 			textColorPrimary: i,
-			colorPrimary: J(i, { alpha: .16 }),
+			colorPrimary: Y(i, { alpha: .16 }),
 			colorBorderedPrimary: "#0000",
-			closeIconColorPrimary: Y(i, { lightness: .7 }),
-			closeIconColorHoverPrimary: Y(i, { lightness: .7 }),
-			closeIconColorPressedPrimary: Y(i, { lightness: .7 }),
-			closeColorHoverPrimary: J(i, { alpha: .16 }),
-			closeColorPressedPrimary: J(i, { alpha: .12 }),
-			borderInfo: `1px solid ${J(a, { alpha: .3 })}`,
+			closeIconColorPrimary: wp(i, { lightness: .7 }),
+			closeIconColorHoverPrimary: wp(i, { lightness: .7 }),
+			closeIconColorPressedPrimary: wp(i, { lightness: .7 }),
+			closeColorHoverPrimary: Y(i, { alpha: .16 }),
+			closeColorPressedPrimary: Y(i, { alpha: .12 }),
+			borderInfo: `1px solid ${Y(a, { alpha: .3 })}`,
 			textColorInfo: a,
-			colorInfo: J(a, { alpha: .16 }),
+			colorInfo: Y(a, { alpha: .16 }),
 			colorBorderedInfo: "#0000",
-			closeIconColorInfo: Y(a, { alpha: .7 }),
-			closeIconColorHoverInfo: Y(a, { alpha: .7 }),
-			closeIconColorPressedInfo: Y(a, { alpha: .7 }),
-			closeColorHoverInfo: J(a, { alpha: .16 }),
-			closeColorPressedInfo: J(a, { alpha: .12 }),
-			borderSuccess: `1px solid ${J(o, { alpha: .3 })}`,
+			closeIconColorInfo: wp(a, { alpha: .7 }),
+			closeIconColorHoverInfo: wp(a, { alpha: .7 }),
+			closeIconColorPressedInfo: wp(a, { alpha: .7 }),
+			closeColorHoverInfo: Y(a, { alpha: .16 }),
+			closeColorPressedInfo: Y(a, { alpha: .12 }),
+			borderSuccess: `1px solid ${Y(o, { alpha: .3 })}`,
 			textColorSuccess: o,
-			colorSuccess: J(o, { alpha: .16 }),
+			colorSuccess: Y(o, { alpha: .16 }),
 			colorBorderedSuccess: "#0000",
-			closeIconColorSuccess: Y(o, { alpha: .7 }),
-			closeIconColorHoverSuccess: Y(o, { alpha: .7 }),
-			closeIconColorPressedSuccess: Y(o, { alpha: .7 }),
-			closeColorHoverSuccess: J(o, { alpha: .16 }),
-			closeColorPressedSuccess: J(o, { alpha: .12 }),
-			borderWarning: `1px solid ${J(s, { alpha: .3 })}`,
+			closeIconColorSuccess: wp(o, { alpha: .7 }),
+			closeIconColorHoverSuccess: wp(o, { alpha: .7 }),
+			closeIconColorPressedSuccess: wp(o, { alpha: .7 }),
+			closeColorHoverSuccess: Y(o, { alpha: .16 }),
+			closeColorPressedSuccess: Y(o, { alpha: .12 }),
+			borderWarning: `1px solid ${Y(s, { alpha: .3 })}`,
 			textColorWarning: s,
-			colorWarning: J(s, { alpha: .16 }),
+			colorWarning: Y(s, { alpha: .16 }),
 			colorBorderedWarning: "#0000",
-			closeIconColorWarning: Y(s, { alpha: .7 }),
-			closeIconColorHoverWarning: Y(s, { alpha: .7 }),
-			closeIconColorPressedWarning: Y(s, { alpha: .7 }),
-			closeColorHoverWarning: J(s, { alpha: .16 }),
-			closeColorPressedWarning: J(s, { alpha: .11 }),
-			borderError: `1px solid ${J(c, { alpha: .3 })}`,
+			closeIconColorWarning: wp(s, { alpha: .7 }),
+			closeIconColorHoverWarning: wp(s, { alpha: .7 }),
+			closeIconColorPressedWarning: wp(s, { alpha: .7 }),
+			closeColorHoverWarning: Y(s, { alpha: .16 }),
+			closeColorPressedWarning: Y(s, { alpha: .11 }),
+			borderError: `1px solid ${Y(c, { alpha: .3 })}`,
 			textColorError: c,
-			colorError: J(c, { alpha: .16 }),
+			colorError: Y(c, { alpha: .16 }),
 			colorBorderedError: "#0000",
-			closeIconColorError: Y(c, { alpha: .7 }),
-			closeIconColorHoverError: Y(c, { alpha: .7 }),
-			closeIconColorPressedError: Y(c, { alpha: .7 }),
-			closeColorHoverError: J(c, { alpha: .16 }),
-			closeColorPressedError: J(c, { alpha: .12 })
+			closeIconColorError: wp(c, { alpha: .7 }),
+			closeIconColorHoverError: wp(c, { alpha: .7 }),
+			closeIconColorPressedError: wp(c, { alpha: .7 }),
+			closeColorHoverError: Y(c, { alpha: .16 }),
+			closeColorPressedError: Y(c, { alpha: .12 })
 		};
 	}
 };
 //#endregion
 //#region node_modules/naive-ui/es/_utils/css/color-to-class.mjs
-function ch(e) {
+function Ph(e) {
 	return e.replace(/#|\(|\)|,|\s|\./g, "_");
 }
 //#endregion
 //#region node_modules/naive-ui/es/_internal/icons/replaceable.mjs
-function lh(e, t) {
-	let n = /* @__PURE__ */ P({ render() {
+function Fh(e, t) {
+	let n = /* @__PURE__ */ _r({ render() {
 		return t();
 	} });
-	return /* @__PURE__ */ P({
-		name: Od(e),
+	return /* @__PURE__ */ _r({
+		name: $d(e),
 		setup() {
-			let t = Rn(af, null)?.mergedIconsRef;
+			let t = Jn(Af, null)?.mergedIconsRef;
 			return () => {
 				let r = t?.value?.[e];
-				return r ? r() : (F(), Ni(n, { key: 1 }));
+				return r ? r() : (I(), Wi(n, { key: 1 }));
 			};
 		}
 	});
 }
 //#endregion
 //#region node_modules/naive-ui/es/_internal/icons/Close.mjs
-var uh = lh("close", () => (() => {
-	let e = bf("6b30a2290cd08d4");
-	return e[0] ||= Ri("svg", {
+var Ih = Fh("close", () => (() => {
+	let e = Gf("6b30a2290cd08d4");
+	return e[0] ||= Yi("svg", {
 		viewBox: "0 0 12 12",
 		version: "1.1",
 		xmlns: "http://www.w3.org/2000/svg",
 		"aria-hidden": !0
-	}, [Ri("g", {
+	}, [Yi("g", {
 		stroke: "none",
 		"stroke-width": "1",
 		fill: "none",
 		"fill-rule": "evenodd"
-	}, [Ri("g", {
+	}, [Yi("g", {
 		fill: "currentColor",
 		"fill-rule": "nonzero"
-	}, [Ri("path", { d: "M2.08859116,2.2156945 L2.14644661,2.14644661 C2.32001296,1.97288026 2.58943736,1.95359511 2.7843055,2.08859116 L2.85355339,2.14644661 L6,5.293 L9.14644661,2.14644661 C9.34170876,1.95118446 9.65829124,1.95118446 9.85355339,2.14644661 C10.0488155,2.34170876 10.0488155,2.65829124 9.85355339,2.85355339 L6.707,6 L9.85355339,9.14644661 C10.0271197,9.32001296 10.0464049,9.58943736 9.91140884,9.7843055 L9.85355339,9.85355339 C9.67998704,10.0271197 9.41056264,10.0464049 9.2156945,9.91140884 L9.14644661,9.85355339 L6,6.707 L2.85355339,9.85355339 C2.65829124,10.0488155 2.34170876,10.0488155 2.14644661,9.85355339 C1.95118446,9.65829124 1.95118446,9.34170876 2.14644661,9.14644661 L5.293,6 L2.14644661,2.85355339 C1.97288026,2.67998704 1.95359511,2.41056264 2.08859116,2.2156945 L2.14644661,2.14644661 L2.08859116,2.2156945 Z" })])])], -1);
-})()), dh = B("base-close", "\n display: flex;\n align-items: center;\n justify-content: center;\n cursor: pointer;\n background-color: transparent;\n color: var(--n-close-icon-color);\n border-radius: var(--n-close-border-radius);\n height: var(--n-close-size);\n width: var(--n-close-size);\n font-size: var(--n-close-icon-size);\n outline: none;\n border: none;\n position: relative;\n padding: 0;\n", [
-	H("absolute", "\n height: var(--n-close-icon-size);\n width: var(--n-close-icon-size);\n "),
-	z("&::before", "\n content: \"\";\n position: absolute;\n width: var(--n-close-size);\n height: var(--n-close-size);\n left: 50%;\n top: 50%;\n transform: translateY(-50%) translateX(-50%);\n transition: inherit;\n border-radius: inherit;\n "),
-	ys("disabled", [
-		z("&:hover", "\n color: var(--n-close-icon-color-hover);\n "),
-		z("&:hover::before", "\n background-color: var(--n-close-color-hover);\n "),
-		z("&:focus::before", "\n background-color: var(--n-close-color-hover);\n "),
-		z("&:active", "\n color: var(--n-close-icon-color-pressed);\n "),
-		z("&:active::before", "\n background-color: var(--n-close-color-pressed);\n ")
+	}, [Yi("path", { d: "M2.08859116,2.2156945 L2.14644661,2.14644661 C2.32001296,1.97288026 2.58943736,1.95359511 2.7843055,2.08859116 L2.85355339,2.14644661 L6,5.293 L9.14644661,2.14644661 C9.34170876,1.95118446 9.65829124,1.95118446 9.85355339,2.14644661 C10.0488155,2.34170876 10.0488155,2.65829124 9.85355339,2.85355339 L6.707,6 L9.85355339,9.14644661 C10.0271197,9.32001296 10.0464049,9.58943736 9.91140884,9.7843055 L9.85355339,9.85355339 C9.67998704,10.0271197 9.41056264,10.0464049 9.2156945,9.91140884 L9.14644661,9.85355339 L6,6.707 L2.85355339,9.85355339 C2.65829124,10.0488155 2.34170876,10.0488155 2.14644661,9.85355339 C1.95118446,9.65829124 1.95118446,9.34170876 2.14644661,9.14644661 L5.293,6 L2.14644661,2.85355339 C1.97288026,2.67998704 1.95359511,2.41056264 2.08859116,2.2156945 L2.14644661,2.14644661 L2.08859116,2.2156945 Z" })])])], -1);
+})()), Lh = V("base-close", "\n display: flex;\n align-items: center;\n justify-content: center;\n cursor: pointer;\n background-color: transparent;\n color: var(--n-close-icon-color);\n border-radius: var(--n-close-border-radius);\n height: var(--n-close-size);\n width: var(--n-close-size);\n font-size: var(--n-close-icon-size);\n outline: none;\n border: none;\n position: relative;\n padding: 0;\n", [
+	U("absolute", "\n height: var(--n-close-icon-size);\n width: var(--n-close-icon-size);\n "),
+	B("&::before", "\n content: \"\";\n position: absolute;\n width: var(--n-close-size);\n height: var(--n-close-size);\n left: 50%;\n top: 50%;\n transform: translateY(-50%) translateX(-50%);\n transition: inherit;\n border-radius: inherit;\n "),
+	As("disabled", [
+		B("&:hover", "\n color: var(--n-close-icon-color-hover);\n "),
+		B("&:hover::before", "\n background-color: var(--n-close-color-hover);\n "),
+		B("&:focus::before", "\n background-color: var(--n-close-color-hover);\n "),
+		B("&:active", "\n color: var(--n-close-icon-color-pressed);\n "),
+		B("&:active::before", "\n background-color: var(--n-close-color-pressed);\n ")
 	]),
-	H("disabled", "\n cursor: not-allowed;\n color: var(--n-close-icon-color-disabled);\n background-color: transparent;\n "),
-	H("round", [z("&::before", "\n border-radius: 50%;\n ")])
-]), fh = /* @__PURE__ */ P({
+	U("disabled", "\n cursor: not-allowed;\n color: var(--n-close-icon-color-disabled);\n background-color: transparent;\n "),
+	U("round", [B("&::before", "\n border-radius: 50%;\n ")])
+]), Rh = /* @__PURE__ */ _r({
 	name: "BaseClose",
 	props: {
 		isButtonTag: {
@@ -7353,18 +8514,18 @@ var uh = lh("close", () => (() => {
 		absolute: Boolean
 	},
 	setup(e) {
-		return vf("-base-close", dh, /* @__PURE__ */ tn(e, "clsPrefix")), () => {
+		return Uf("-base-close", Lh, /* @__PURE__ */ fn(e, "clsPrefix")), () => {
 			let { clsPrefix: t, disabled: n, absolute: r, round: i, isButtonTag: a } = e, o = a ? "button" : "div";
 			return (() => {
-				let s = bf("b5bdc9fe09f5ae00");
-				return F(), Ni(o, {
+				let s = Gf("b5bdc9fe09f5ae00");
+				return I(), Wi(o, {
 					type: a ? "button" : void 0,
 					tabindex: n || !e.focusable ? -1 : 0,
 					"aria-disabled": n,
 					"aria-label": "close",
 					role: a ? void 0 : "button",
 					disabled: n,
-					class: K([
+					class: q([
 						`${t}-base-close`,
 						r && `${t}-base-close--absolute`,
 						n && `${t}-base-close--disabled`,
@@ -7375,7 +8536,7 @@ var uh = lh("close", () => (() => {
 					},
 					onClick: e.onClick
 				}, {
-					default: Fn(() => [(F(), Ni(Dp, { clsPrefix: t }, { default: () => (F(), Ni(uh)) }, 1032, ["clsPrefix"]))]),
+					default: Gn(() => [(I(), Wi($p, { clsPrefix: t }, { default: () => (I(), Wi(Ih)) }, 1032, ["clsPrefix"]))]),
 					_: 2
 				}, 1032, [
 					"type",
@@ -7389,19 +8550,19 @@ var uh = lh("close", () => (() => {
 			})();
 		};
 	}
-}), ph = {
+}), zh = {
 	paddingSingle: "0 26px 0 12px",
 	paddingMultiple: "3px 26px 0 12px",
 	clearSize: "16px",
 	arrowSize: "16px"
-}, mh = {
+}, Bh = {
 	name: "InternalSelection",
 	common: Q,
-	peers: { Popover: Np },
+	peers: { Popover: am },
 	self(e) {
 		let { borderRadius: t, textColor2: n, textColorDisabled: r, inputColor: i, inputColorDisabled: a, primaryColor: o, primaryColorHover: s, warningColor: c, warningColorHover: l, errorColor: u, errorColorHover: d, iconColor: f, iconColorDisabled: p, clearColor: m, clearColorHover: h, clearColorPressed: g, placeholderColor: _, placeholderColorDisabled: v, fontSizeTiny: y, fontSizeSmall: b, fontSizeMedium: x, fontSizeLarge: S, heightTiny: C, heightSmall: w, heightMedium: T, heightLarge: E, fontWeight: D } = e;
 		return {
-			...ph,
+			...zh,
 			fontWeight: D,
 			fontSizeTiny: y,
 			fontSizeSmall: b,
@@ -7418,14 +8579,14 @@ var uh = lh("close", () => (() => {
 			placeholderColorDisabled: v,
 			color: i,
 			colorDisabled: a,
-			colorActive: J(o, { alpha: .1 }),
+			colorActive: Y(o, { alpha: .1 }),
 			border: "1px solid #0000",
 			borderHover: `1px solid ${s}`,
 			borderActive: `1px solid ${o}`,
 			borderFocus: `1px solid ${s}`,
 			boxShadowHover: "none",
-			boxShadowActive: `0 0 8px 0 ${J(o, { alpha: .4 })}`,
-			boxShadowFocus: `0 0 8px 0 ${J(o, { alpha: .4 })}`,
+			boxShadowActive: `0 0 8px 0 ${Y(o, { alpha: .4 })}`,
+			boxShadowFocus: `0 0 8px 0 ${Y(o, { alpha: .4 })}`,
 			caretColor: o,
 			arrowColor: f,
 			arrowColorDisabled: p,
@@ -7435,25 +8596,25 @@ var uh = lh("close", () => (() => {
 			borderActiveWarning: `1px solid ${c}`,
 			borderFocusWarning: `1px solid ${l}`,
 			boxShadowHoverWarning: "none",
-			boxShadowActiveWarning: `0 0 8px 0 ${J(c, { alpha: .4 })}`,
-			boxShadowFocusWarning: `0 0 8px 0 ${J(c, { alpha: .4 })}`,
-			colorActiveWarning: J(c, { alpha: .1 }),
+			boxShadowActiveWarning: `0 0 8px 0 ${Y(c, { alpha: .4 })}`,
+			boxShadowFocusWarning: `0 0 8px 0 ${Y(c, { alpha: .4 })}`,
+			colorActiveWarning: Y(c, { alpha: .1 }),
 			caretColorWarning: c,
 			borderError: `1px solid ${u}`,
 			borderHoverError: `1px solid ${d}`,
 			borderActiveError: `1px solid ${u}`,
 			borderFocusError: `1px solid ${d}`,
 			boxShadowHoverError: "none",
-			boxShadowActiveError: `0 0 8px 0 ${J(u, { alpha: .4 })}`,
-			boxShadowFocusError: `0 0 8px 0 ${J(u, { alpha: .4 })}`,
-			colorActiveError: J(u, { alpha: .1 }),
+			boxShadowActiveError: `0 0 8px 0 ${Y(u, { alpha: .4 })}`,
+			boxShadowFocusError: `0 0 8px 0 ${Y(u, { alpha: .4 })}`,
+			colorActiveError: Y(u, { alpha: .1 }),
 			caretColorError: u,
 			clearColor: m,
 			clearColorHover: h,
 			clearColorPressed: g
 		};
 	}
-}, hh = {
+}, Vh = {
 	iconMargin: "11px 8px 0 12px",
 	iconMarginRtl: "11px 12px 0 8px",
 	iconSize: "24px",
@@ -7462,13 +8623,13 @@ var uh = lh("close", () => (() => {
 	closeMargin: "13px 14px 0 0",
 	closeMarginRtl: "13px 0 0 14px",
 	padding: "13px"
-}, gh = {
+}, Hh = {
 	name: "Alert",
 	common: Q,
 	self(e) {
 		let { lineHeight: t, borderRadius: n, fontWeightStrong: r, dividerColor: i, inputColor: a, textColor1: o, textColor2: s, closeColorHover: c, closeColorPressed: l, closeIconColor: u, closeIconColorHover: d, closeIconColorPressed: f, infoColorSuppl: p, successColorSuppl: m, warningColorSuppl: h, errorColorSuppl: g, fontSize: _ } = e;
 		return {
-			...hh,
+			...Vh,
 			fontSize: _,
 			lineHeight: t,
 			titleFontWeight: r,
@@ -7484,8 +8645,8 @@ var uh = lh("close", () => (() => {
 			closeIconColor: u,
 			closeIconColorHover: d,
 			closeIconColorPressed: f,
-			borderInfo: `1px solid ${J(p, { alpha: .35 })}`,
-			colorInfo: J(p, { alpha: .25 }),
+			borderInfo: `1px solid ${Y(p, { alpha: .35 })}`,
+			colorInfo: Y(p, { alpha: .25 }),
 			titleTextColorInfo: o,
 			iconColorInfo: p,
 			contentTextColorInfo: s,
@@ -7494,8 +8655,8 @@ var uh = lh("close", () => (() => {
 			closeIconColorInfo: u,
 			closeIconColorHoverInfo: d,
 			closeIconColorPressedInfo: f,
-			borderSuccess: `1px solid ${J(m, { alpha: .35 })}`,
-			colorSuccess: J(m, { alpha: .25 }),
+			borderSuccess: `1px solid ${Y(m, { alpha: .35 })}`,
+			colorSuccess: Y(m, { alpha: .25 }),
 			titleTextColorSuccess: o,
 			iconColorSuccess: m,
 			contentTextColorSuccess: s,
@@ -7504,8 +8665,8 @@ var uh = lh("close", () => (() => {
 			closeIconColorSuccess: u,
 			closeIconColorHoverSuccess: d,
 			closeIconColorPressedSuccess: f,
-			borderWarning: `1px solid ${J(h, { alpha: .35 })}`,
-			colorWarning: J(h, { alpha: .25 }),
+			borderWarning: `1px solid ${Y(h, { alpha: .35 })}`,
+			colorWarning: Y(h, { alpha: .25 }),
 			titleTextColorWarning: o,
 			iconColorWarning: h,
 			contentTextColorWarning: s,
@@ -7514,8 +8675,8 @@ var uh = lh("close", () => (() => {
 			closeIconColorWarning: u,
 			closeIconColorHoverWarning: d,
 			closeIconColorPressedWarning: f,
-			borderError: `1px solid ${J(g, { alpha: .35 })}`,
-			colorError: J(g, { alpha: .25 }),
+			borderError: `1px solid ${Y(g, { alpha: .35 })}`,
+			colorError: Y(g, { alpha: .25 }),
 			titleTextColorError: o,
 			iconColorError: g,
 			contentTextColorError: s,
@@ -7526,7 +8687,7 @@ var uh = lh("close", () => (() => {
 			closeIconColorPressedError: f
 		};
 	}
-}, _h = /* @__PURE__ */ P({
+}, Uh = /* @__PURE__ */ _r({
 	name: "FadeInExpandTransition",
 	props: {
 		appear: Boolean,
@@ -7567,7 +8728,7 @@ var uh = lh("close", () => (() => {
 			e.width ? t.style.maxWidth = "" : e.reverse || (t.style.maxHeight = ""), e.onAfterEnter?.();
 		}
 		return () => {
-			let { group: s, width: c, appear: l, mode: u } = e, d = s ? To : ka, f = {
+			let { group: s, width: c, appear: l, mode: u } = e, d = s ? Io : Ba, f = {
 				name: c ? "fade-in-width-expand-transition" : "fade-in-height-expand-transition",
 				appear: l,
 				onEnter: a,
@@ -7576,24 +8737,24 @@ var uh = lh("close", () => (() => {
 				onLeave: r,
 				onAfterLeave: i
 			};
-			return s || (f.mode = u), R(d, f, t);
+			return s || (f.mode = u), z(d, f, t);
 		};
 	}
-}), vh = {
+}), Wh = {
 	linkFontSize: "13px",
 	linkPadding: "0 0 0 16px",
 	railWidth: "4px"
 };
 //#endregion
 //#region node_modules/naive-ui/es/anchor/styles/light.mjs
-function yh(e) {
+function Gh(e) {
 	let { borderRadius: t, railColor: n, primaryColor: r, primaryColorHover: i, primaryColorPressed: a, textColor2: o } = e;
 	return {
-		...vh,
+		...Wh,
 		borderRadius: t,
 		railColor: n,
 		railColorActive: r,
-		linkColor: J(r, { alpha: .15 }),
+		linkColor: Y(r, { alpha: .15 }),
 		linkTextColor: o,
 		linkTextColorHover: i,
 		linkTextColorPressed: a,
@@ -7602,11 +8763,11 @@ function yh(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/anchor/styles/dark.mjs
-var bh = {
+var Kh = {
 	name: "Anchor",
 	common: Q,
-	self: yh
-}, xh = {
+	self: Gh
+}, qh = {
 	paddingTiny: "0 8px",
 	paddingSmall: "0 10px",
 	paddingMedium: "0 12px",
@@ -7615,11 +8776,11 @@ var bh = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/input/styles/dark.mjs
-function Sh(e) {
-	let { textColor2: t, textColor3: n, textColorDisabled: r, primaryColor: i, primaryColorHover: a, inputColor: o, inputColorDisabled: s, warningColor: c, warningColorHover: l, errorColor: u, errorColorHover: d, borderRadius: f, lineHeight: p, fontSizeTiny: m, fontSizeSmall: h, fontSizeMedium: g, fontSizeLarge: _, heightTiny: v, heightSmall: y, heightMedium: b, heightLarge: x, clearColor: S, clearColorHover: C, clearColorPressed: w, placeholderColor: T, placeholderColorDisabled: E, iconColor: D, iconColorDisabled: O, iconColorHover: ee, iconColorPressed: te, fontWeight: ne } = e;
+function Jh(e) {
+	let { textColor2: t, textColor3: n, textColorDisabled: r, primaryColor: i, primaryColorHover: a, inputColor: o, inputColorDisabled: s, warningColor: c, warningColorHover: l, errorColor: u, errorColorHover: d, borderRadius: f, lineHeight: p, fontSizeTiny: m, fontSizeSmall: h, fontSizeMedium: g, fontSizeLarge: _, heightTiny: v, heightSmall: y, heightMedium: b, heightLarge: x, clearColor: S, clearColorHover: C, clearColorPressed: w, placeholderColor: T, placeholderColorDisabled: E, iconColor: D, iconColorDisabled: O, iconColorHover: k, iconColorPressed: A, fontWeight: ee } = e;
 	return {
-		...xh,
-		fontWeight: ne,
+		...qh,
+		fontWeight: ee,
 		countTextColorDisabled: r,
 		countTextColor: n,
 		heightTiny: v,
@@ -7645,48 +8806,48 @@ function Sh(e) {
 		color: o,
 		colorHover: o,
 		colorDisabled: s,
-		colorFocus: J(i, { alpha: .1 }),
+		colorFocus: Y(i, { alpha: .1 }),
 		groupLabelBorder: "1px solid #0000",
 		border: "1px solid #0000",
 		borderHover: `1px solid ${a}`,
 		borderDisabled: "1px solid #0000",
 		borderFocus: `1px solid ${a}`,
-		boxShadowFocus: `0 0 8px 0 ${J(i, { alpha: .3 })}`,
+		boxShadowFocus: `0 0 8px 0 ${Y(i, { alpha: .3 })}`,
 		loadingColor: i,
 		loadingColorWarning: c,
 		borderWarning: `1px solid ${c}`,
 		borderHoverWarning: `1px solid ${l}`,
-		colorFocusWarning: J(c, { alpha: .1 }),
+		colorFocusWarning: Y(c, { alpha: .1 }),
 		borderFocusWarning: `1px solid ${l}`,
-		boxShadowFocusWarning: `0 0 8px 0 ${J(c, { alpha: .3 })}`,
+		boxShadowFocusWarning: `0 0 8px 0 ${Y(c, { alpha: .3 })}`,
 		caretColorWarning: c,
 		loadingColorError: u,
 		borderError: `1px solid ${u}`,
 		borderHoverError: `1px solid ${d}`,
-		colorFocusError: J(u, { alpha: .1 }),
+		colorFocusError: Y(u, { alpha: .1 }),
 		borderFocusError: `1px solid ${d}`,
-		boxShadowFocusError: `0 0 8px 0 ${J(u, { alpha: .3 })}`,
+		boxShadowFocusError: `0 0 8px 0 ${Y(u, { alpha: .3 })}`,
 		caretColorError: u,
 		clearColor: S,
 		clearColorHover: C,
 		clearColorPressed: w,
 		iconColor: D,
 		iconColorDisabled: O,
-		iconColorHover: ee,
-		iconColorPressed: te,
+		iconColorHover: k,
+		iconColorPressed: A,
 		suffixTextColor: t
 	};
 }
-var Ch = Cp({
+var Yh = Yp({
 	name: "Input",
 	common: Q,
-	peers: { Scrollbar: _p },
-	self: Sh
-}), wh = rf("n-form-item");
-function Th(e, { defaultSize: t = "medium", mergedSize: n, mergedDisabled: r } = {}) {
-	let i = Rn(wh, null);
-	Ln(wh, null);
-	let a = L(n ? () => n(i) : () => {
+	peers: { Scrollbar: Up },
+	self: Jh
+}), Xh = kf("n-form-item");
+function Zh(e, { defaultSize: t = "medium", mergedSize: n, mergedDisabled: r } = {}) {
+	let i = Jn(Xh, null);
+	qn(Xh, null);
+	let a = R(n ? () => n(i) : () => {
 		let { size: n } = e;
 		if (n) return n;
 		if (i) {
@@ -7694,14 +8855,14 @@ function Th(e, { defaultSize: t = "medium", mergedSize: n, mergedDisabled: r } =
 			if (e.value !== void 0) return e.value;
 		}
 		return t;
-	}), o = L(r ? () => r(i) : () => {
+	}), o = R(r ? () => r(i) : () => {
 		let { disabled: t } = e;
 		return t === void 0 ? i ? i.disabled.value : !1 : t;
-	}), s = L(() => {
+	}), s = R(() => {
 		let { status: t } = e;
 		return t || i?.mergedValidationStatus.value;
 	});
-	return Cr(() => {
+	return Pr(() => {
 		i && i.restoreValidation();
 	}), {
 		mergedSizeRef: a,
@@ -7723,31 +8884,31 @@ function Th(e, { defaultSize: t = "medium", mergedSize: n, mergedDisabled: r } =
 }
 //#endregion
 //#region node_modules/naive-ui/es/_internal/icon-switch-transition/src/IconSwitchTransition.mjs
-var Eh = /* @__PURE__ */ P({
+var Qh = /* @__PURE__ */ _r({
 	name: "BaseIconSwitchTransition",
 	setup(e, { slots: t }) {
-		let n = Wp();
-		return () => (F(), Ni(ka, {
+		let n = gm();
+		return () => (I(), Wi(Ba, {
 			name: "icon-switch-transition",
 			appear: n.value
-		}, Sf(t), 1032, ["appear"]));
+		}, qf(t), 1032, ["appear"]));
 	}
-}), { cubicBezierEaseInOut: Dh } = cf;
-function Oh({ originalTransform: e = "", left: t = 0, top: n = 0, transition: r = `all .3s ${Dh} !important` } = {}) {
+}), { cubicBezierEaseInOut: $h } = Nf;
+function eg({ originalTransform: e = "", left: t = 0, top: n = 0, transition: r = `all .3s ${$h} !important` } = {}) {
 	return [
-		z("&.icon-switch-transition-enter-from, &.icon-switch-transition-leave-to", {
+		B("&.icon-switch-transition-enter-from, &.icon-switch-transition-leave-to", {
 			transform: `${e} scale(0.75)`,
 			left: t,
 			top: n,
 			opacity: 0
 		}),
-		z("&.icon-switch-transition-enter-to, &.icon-switch-transition-leave-from", {
+		B("&.icon-switch-transition-enter-to, &.icon-switch-transition-leave-from", {
 			transform: `scale(1) ${e}`,
 			left: t,
 			top: n,
 			opacity: 1
 		}),
-		z("&.icon-switch-transition-enter-active, &.icon-switch-transition-leave-active", {
+		B("&.icon-switch-transition-enter-active, &.icon-switch-transition-leave-active", {
 			transformOrigin: "center",
 			position: "absolute",
 			left: t,
@@ -7758,22 +8919,22 @@ function Oh({ originalTransform: e = "", left: t = 0, top: n = 0, transition: r 
 }
 //#endregion
 //#region node_modules/naive-ui/es/_internal/loading/src/styles/index.cssr.mjs
-var kh = z([z("@keyframes rotator", "\n 0% {\n -webkit-transform: rotate(0deg);\n transform: rotate(0deg);\n }\n 100% {\n -webkit-transform: rotate(360deg);\n transform: rotate(360deg);\n }"), B("base-loading", "\n position: relative;\n line-height: 0;\n width: 1em;\n height: 1em;\n ", [
-	V("transition-wrapper", "\n position: absolute;\n width: 100%;\n height: 100%;\n ", [Oh()]),
-	V("placeholder", "\n position: absolute;\n left: 50%;\n top: 50%;\n transform: translateX(-50%) translateY(-50%);\n ", [Oh({
+var tg = B([B("@keyframes rotator", "\n 0% {\n -webkit-transform: rotate(0deg);\n transform: rotate(0deg);\n }\n 100% {\n -webkit-transform: rotate(360deg);\n transform: rotate(360deg);\n }"), V("base-loading", "\n position: relative;\n line-height: 0;\n width: 1em;\n height: 1em;\n ", [
+	H("transition-wrapper", "\n position: absolute;\n width: 100%;\n height: 100%;\n ", [eg()]),
+	H("placeholder", "\n position: absolute;\n left: 50%;\n top: 50%;\n transform: translateX(-50%) translateY(-50%);\n ", [eg({
 		left: "50%",
 		top: "50%",
 		originalTransform: "translateX(-50%) translateY(-50%)"
 	})]),
-	V("container", "\n animation: rotator 3s linear infinite both;\n ", [V("icon", "\n height: 1em;\n width: 1em;\n ")])
-])]), Ah = ["viewBox"], jh = ["values", "dur"], Mh = [
+	H("container", "\n animation: rotator 3s linear infinite both;\n ", [H("icon", "\n height: 1em;\n width: 1em;\n ")])
+])]), ng = ["viewBox"], rg = ["values", "dur"], ig = [
 	"stroke-width",
 	"cx",
 	"cy",
 	"r",
 	"stroke-dasharray",
 	"stroke-dashoffset"
-], Nh = ["values", "dur"], Ph = ["values", "dur"], Fh = "1.6s", Ih = /* @__PURE__ */ P({
+], ag = ["values", "dur"], og = ["values", "dur"], sg = "1.6s", cg = /* @__PURE__ */ _r({
 	name: "BaseLoading",
 	props: {
 		clsPrefix: {
@@ -7802,32 +8963,32 @@ var kh = z([z("@keyframes rotator", "\n 0% {\n -webkit-transform: rotate(0deg);\
 		}
 	},
 	setup(e) {
-		vf("-base-loading", kh, /* @__PURE__ */ tn(e, "clsPrefix"));
+		Uf("-base-loading", tg, /* @__PURE__ */ fn(e, "clsPrefix"));
 	},
 	render() {
 		let { clsPrefix: e, radius: t, strokeWidth: n, stroke: r, scale: i } = this, a = t / i;
-		return F(), I("div", {
-			class: K(`${e}-base-loading`),
+		return I(), L("div", {
+			class: q(`${e}-base-loading`),
 			role: "img",
 			"aria-label": "loading"
-		}, [zi(Eh, null, { default: () => this.show ? (F(), I("div", {
+		}, [Xi(Qh, null, { default: () => this.show ? (I(), L("div", {
 			key: "icon",
-			class: K(`${e}-base-loading__transition-wrapper`)
-		}, [Ri("div", { class: K(`${e}-base-loading__container`) }, [(F(), I("svg", {
-			class: K(`${e}-base-loading__icon`),
+			class: q(`${e}-base-loading__transition-wrapper`)
+		}, [Yi("div", { class: q(`${e}-base-loading__container`) }, [(I(), L("svg", {
+			class: q(`${e}-base-loading__icon`),
 			viewBox: `0 0 ${2 * a} ${2 * a}`,
 			xmlns: "http://www.w3.org/2000/svg",
-			style: k({ color: r })
-		}, [Ri("g", null, [Ri("animateTransform", {
+			style: M({ color: r })
+		}, [Yi("g", null, [Yi("animateTransform", {
 			attributeName: "transform",
 			type: "rotate",
 			values: `0 ${a} ${a};270 ${a} ${a}`,
 			begin: "0s",
-			dur: Fh,
+			dur: sg,
 			fill: "freeze",
 			repeatCount: "indefinite"
-		}, null, 8, jh), Ri("circle", {
-			class: K(`${e}-base-loading__icon`),
+		}, null, 8, rg), Yi("circle", {
+			class: q(`${e}-base-loading__icon`),
 			fill: "none",
 			stroke: "currentColor",
 			"stroke-width": n,
@@ -7837,49 +8998,49 @@ var kh = z([z("@keyframes rotator", "\n 0% {\n -webkit-transform: rotate(0deg);\
 			r: t - n / 2,
 			"stroke-dasharray": 5.67 * t,
 			"stroke-dashoffset": 18.48 * t
-		}, [Ri("animateTransform", {
+		}, [Yi("animateTransform", {
 			attributeName: "transform",
 			type: "rotate",
 			values: `0 ${a} ${a};135 ${a} ${a};450 ${a} ${a}`,
 			begin: "0s",
-			dur: Fh,
+			dur: sg,
 			fill: "freeze",
 			repeatCount: "indefinite"
-		}, null, 8, Nh), Ri("animate", {
+		}, null, 8, ag), Yi("animate", {
 			attributeName: "stroke-dashoffset",
 			values: `${5.67 * t};${1.42 * t};${5.67 * t}`,
 			begin: "0s",
-			dur: Fh,
+			dur: sg,
 			fill: "freeze",
 			repeatCount: "indefinite"
-		}, null, 8, Ph)], 10, Mh)])], 14, Ah))], 2)], 2)) : (F(), I("div", {
+		}, null, 8, og)], 10, ig)])], 14, ng))], 2)], 2)) : (I(), L("div", {
 			key: "placeholder",
-			class: K(`${e}-base-loading__placeholder`)
-		}, [G(() => this.$slots.default?.())], 2)) }, 1024)], 2);
+			class: q(`${e}-base-loading__placeholder`)
+		}, [K(() => this.$slots.default?.())], 2)) }, 1024)], 2);
 	}
-}), Lh = typeof document < "u" && typeof window < "u", Rh = Lh && "chrome" in window;
-Lh && navigator.userAgent.includes("Firefox");
-var zh = Lh && navigator.userAgent.includes("Safari") && !Rh;
+}), lg = typeof document < "u" && typeof window < "u", ug = lg && "chrome" in window;
+lg && navigator.userAgent.includes("Firefox");
+var dg = lg && navigator.userAgent.includes("Safari") && !ug;
 //#endregion
 //#region node_modules/naive-ui/es/auto-complete/styles/light.mjs
-function Bh(e) {
+function fg(e) {
 	let { boxShadow2: t } = e;
 	return { menuBoxShadow: t };
 }
 //#endregion
 //#region node_modules/naive-ui/es/auto-complete/styles/dark.mjs
-var Vh = {
+var pg = {
 	name: "AutoComplete",
 	common: Q,
 	peers: {
-		InternalSelectMenu: Ap,
-		Input: Ch
+		InternalSelectMenu: nm,
+		Input: Yh
 	},
-	self: Bh
+	self: fg
 };
 //#endregion
 //#region node_modules/naive-ui/es/avatar/styles/light.mjs
-function Hh(e) {
+function mg(e) {
 	let { borderRadius: t, avatarColor: n, cardColor: r, fontSize: i, heightTiny: a, heightSmall: o, heightMedium: s, heightLarge: c, heightHuge: l, modalColor: u, popoverColor: d } = e;
 	return {
 		borderRadius: t,
@@ -7890,35 +9051,35 @@ function Hh(e) {
 		heightMedium: s,
 		heightLarge: c,
 		heightHuge: l,
-		color: q(r, n),
-		colorModal: q(u, n),
-		colorPopover: q(d, n)
+		color: J(r, n),
+		colorModal: J(u, n),
+		colorPopover: J(d, n)
 	};
 }
-var Uh = {
+var hg = {
 	name: "Avatar",
 	common: Q,
-	self: Hh
+	self: mg
 };
 //#endregion
 //#region node_modules/naive-ui/es/avatar-group/styles/light.mjs
-function Wh() {
+function gg() {
 	return { gap: "-12px" };
 }
 //#endregion
 //#region node_modules/naive-ui/es/back-top/styles/_common.mjs
-var Gh = {
+var _g = {
 	width: "44px",
 	height: "44px",
 	borderRadius: "22px",
 	iconSize: "26px"
-}, Kh = {
+}, vg = {
 	name: "BackTop",
 	common: Q,
 	self(e) {
 		let { popoverColor: t, textColor2: n, primaryColorHover: r, primaryColorPressed: i } = e;
 		return {
-			...Gh,
+			..._g,
 			color: t,
 			textColor: n,
 			iconColor: n,
@@ -7929,7 +9090,7 @@ var Gh = {
 			boxShadowPressed: "0 2px 12px 0px rgba(0, 0, 0, .18)"
 		};
 	}
-}, qh = {
+}, yg = {
 	name: "Badge",
 	common: Q,
 	self(e) {
@@ -7944,47 +9105,47 @@ var Gh = {
 			fontFamily: a
 		};
 	}
-}, { cubicBezierEaseInOut: Jh } = cf;
-function Yh({ duration: e = ".2s", delay: t = ".1s" } = {}) {
+}, { cubicBezierEaseInOut: bg } = Nf;
+function xg({ duration: e = ".2s", delay: t = ".1s" } = {}) {
 	return [
-		z("&.fade-in-width-expand-transition-leave-from, &.fade-in-width-expand-transition-enter-to", { opacity: 1 }),
-		z("&.fade-in-width-expand-transition-leave-to, &.fade-in-width-expand-transition-enter-from", "\n opacity: 0!important;\n margin-left: 0!important;\n margin-right: 0!important;\n "),
-		z("&.fade-in-width-expand-transition-leave-active", `
+		B("&.fade-in-width-expand-transition-leave-from, &.fade-in-width-expand-transition-enter-to", { opacity: 1 }),
+		B("&.fade-in-width-expand-transition-leave-to, &.fade-in-width-expand-transition-enter-from", "\n opacity: 0!important;\n margin-left: 0!important;\n margin-right: 0!important;\n "),
+		B("&.fade-in-width-expand-transition-leave-active", `
  overflow: hidden;
  transition:
- opacity ${e} ${Jh},
- max-width ${e} ${Jh} ${t},
- margin-left ${e} ${Jh} ${t},
- margin-right ${e} ${Jh} ${t};
+ opacity ${e} ${bg},
+ max-width ${e} ${bg} ${t},
+ margin-left ${e} ${bg} ${t},
+ margin-right ${e} ${bg} ${t};
  `),
-		z("&.fade-in-width-expand-transition-enter-active", `
+		B("&.fade-in-width-expand-transition-enter-active", `
  overflow: hidden;
  transition:
- opacity ${e} ${Jh} ${t},
- max-width ${e} ${Jh},
- margin-left ${e} ${Jh},
- margin-right ${e} ${Jh};
+ opacity ${e} ${bg} ${t},
+ max-width ${e} ${bg},
+ margin-left ${e} ${bg},
+ margin-right ${e} ${bg};
  `)
 	];
 }
 //#endregion
 //#region node_modules/naive-ui/es/_internal/wave/src/styles/index.cssr.mjs
-var Xh = B("base-wave", "\n position: absolute;\n left: 0;\n right: 0;\n top: 0;\n bottom: 0;\n border-radius: inherit;\n"), Zh = /* @__PURE__ */ P({
+var Sg = V("base-wave", "\n position: absolute;\n left: 0;\n right: 0;\n top: 0;\n bottom: 0;\n border-radius: inherit;\n"), Cg = /* @__PURE__ */ _r({
 	name: "BaseWave",
 	props: { clsPrefix: {
 		type: String,
 		required: !0
 	} },
 	setup(e) {
-		vf("-base-wave", Xh, /* @__PURE__ */ tn(e, "clsPrefix"));
-		let t = /* @__PURE__ */ N(null), n = /* @__PURE__ */ N(!1), r = null;
-		return Cr(() => {
+		Uf("-base-wave", Sg, /* @__PURE__ */ fn(e, "clsPrefix"));
+		let t = /* @__PURE__ */ F(null), n = /* @__PURE__ */ F(!1), r = null;
+		return Pr(() => {
 			r !== null && window.clearTimeout(r);
 		}), {
 			active: n,
 			selfRef: t,
 			play() {
-				r !== null && (window.clearTimeout(r), n.value = !1, r = null), Cn(() => {
+				r !== null && (window.clearTimeout(r), n.value = !1, r = null), Nn(() => {
 					t.value?.offsetHeight, n.value = !0, r = window.setTimeout(() => {
 						n.value = !1, r = null;
 					}, 1e3);
@@ -7994,19 +9155,19 @@ var Xh = B("base-wave", "\n position: absolute;\n left: 0;\n right: 0;\n top: 0;
 	},
 	render() {
 		let { clsPrefix: e } = this;
-		return F(), I("div", {
+		return I(), L("div", {
 			ref: "selfRef",
 			"aria-hidden": !0,
-			class: K([`${e}-base-wave`, this.active && `${e}-base-wave--active`])
+			class: q([`${e}-base-wave`, this.active && `${e}-base-wave--active`])
 		}, null, 2);
 	}
-}), Qh = { fontWeightActive: "400" };
+}), wg = { fontWeightActive: "400" };
 //#endregion
 //#region node_modules/naive-ui/es/breadcrumb/styles/light.mjs
-function $h(e) {
+function Tg(e) {
 	let { fontSize: t, textColor3: n, textColor2: r, borderRadius: i, buttonColor2Hover: a, buttonColor2Pressed: o } = e;
 	return {
-		...Qh,
+		...wg,
 		fontSize: t,
 		itemLineHeight: "1.25",
 		itemTextColor: n,
@@ -8021,11 +9182,11 @@ function $h(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/breadcrumb/styles/dark.mjs
-var eg = {
+var Eg = {
 	name: "Breadcrumb",
 	common: Q,
-	self: $h
-}, tg = {
+	self: Tg
+}, Dg = {
 	paddingTiny: "0 6px",
 	paddingSmall: "0 10px",
 	paddingMedium: "0 14px",
@@ -8046,10 +9207,10 @@ var eg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/button/styles/light.mjs
-function ng(e) {
-	let { heightTiny: t, heightSmall: n, heightMedium: r, heightLarge: i, borderRadius: a, fontSizeTiny: o, fontSizeSmall: s, fontSizeMedium: c, fontSizeLarge: l, opacityDisabled: u, textColor2: d, textColor3: f, primaryColorHover: p, primaryColorPressed: m, borderColor: h, primaryColor: g, baseColor: _, infoColor: v, infoColorHover: y, infoColorPressed: b, successColor: x, successColorHover: S, successColorPressed: C, warningColor: w, warningColorHover: T, warningColorPressed: E, errorColor: D, errorColorHover: O, errorColorPressed: ee, fontWeight: te, buttonColor2: ne, buttonColor2Hover: re, buttonColor2Pressed: ie, fontWeightStrong: ae } = e;
+function Og(e) {
+	let { heightTiny: t, heightSmall: n, heightMedium: r, heightLarge: i, borderRadius: a, fontSizeTiny: o, fontSizeSmall: s, fontSizeMedium: c, fontSizeLarge: l, opacityDisabled: u, textColor2: d, textColor3: f, primaryColorHover: p, primaryColorPressed: m, borderColor: h, primaryColor: g, baseColor: _, infoColor: v, infoColorHover: y, infoColorPressed: b, successColor: x, successColorHover: S, successColorPressed: C, warningColor: w, warningColorHover: T, warningColorPressed: E, errorColor: D, errorColorHover: O, errorColorPressed: k, fontWeight: A, buttonColor2: ee, buttonColor2Hover: j, buttonColor2Pressed: te, fontWeightStrong: ne } = e;
 	return {
-		...tg,
+		...Dg,
 		heightTiny: t,
 		heightSmall: n,
 		heightMedium: r,
@@ -8066,15 +9227,15 @@ function ng(e) {
 		colorOpacitySecondary: "0.16",
 		colorOpacitySecondaryHover: "0.22",
 		colorOpacitySecondaryPressed: "0.28",
-		colorSecondary: ne,
-		colorSecondaryHover: re,
-		colorSecondaryPressed: ie,
-		colorTertiary: ne,
-		colorTertiaryHover: re,
-		colorTertiaryPressed: ie,
+		colorSecondary: ee,
+		colorSecondaryHover: j,
+		colorSecondaryPressed: te,
+		colorTertiary: ee,
+		colorTertiaryHover: j,
+		colorTertiaryPressed: te,
 		colorQuaternary: "#0000",
-		colorQuaternaryHover: re,
-		colorQuaternaryPressed: ie,
+		colorQuaternaryHover: j,
+		colorQuaternaryPressed: te,
 		color: "#0000",
 		colorHover: "#0000",
 		colorPressed: "#0000",
@@ -8208,7 +9369,7 @@ function ng(e) {
 		rippleColorWarning: w,
 		colorError: D,
 		colorHoverError: O,
-		colorPressedError: ee,
+		colorPressedError: k,
 		colorFocusError: O,
 		colorDisabledError: D,
 		textColorError: _,
@@ -8218,49 +9379,49 @@ function ng(e) {
 		textColorDisabledError: _,
 		textColorTextError: D,
 		textColorTextHoverError: O,
-		textColorTextPressedError: ee,
+		textColorTextPressedError: k,
 		textColorTextFocusError: O,
 		textColorTextDisabledError: d,
 		textColorGhostError: D,
 		textColorGhostHoverError: O,
-		textColorGhostPressedError: ee,
+		textColorGhostPressedError: k,
 		textColorGhostFocusError: O,
 		textColorGhostDisabledError: D,
 		borderError: `1px solid ${D}`,
 		borderHoverError: `1px solid ${O}`,
-		borderPressedError: `1px solid ${ee}`,
+		borderPressedError: `1px solid ${k}`,
 		borderFocusError: `1px solid ${O}`,
 		borderDisabledError: `1px solid ${D}`,
 		rippleColorError: D,
 		waveOpacity: "0.6",
-		fontWeight: te,
-		fontWeightStrong: ae
+		fontWeight: A,
+		fontWeightStrong: ne
 	};
 }
-var rg = {
+var kg = {
 	name: "Button",
-	common: pp,
-	self: ng
-}, ig = {
+	common: zp,
+	self: Og
+}, Ag = {
 	name: "Button",
 	common: Q,
 	self(e) {
-		let t = ng(e);
+		let t = Og(e);
 		return t.waveOpacity = "0.8", t.colorOpacitySecondary = "0.16", t.colorOpacitySecondaryHover = "0.2", t.colorOpacitySecondaryPressed = "0.12", t;
 	}
 };
 //#endregion
 //#region node_modules/naive-ui/es/_utils/color/index.mjs
-function ag(e) {
-	return q(e, [
+function jg(e) {
+	return J(e, [
 		255,
 		255,
 		255,
 		.16
 	]);
 }
-function og(e) {
-	return q(e, [
+function Mg(e) {
+	return J(e, [
 		0,
 		0,
 		0,
@@ -8269,76 +9430,76 @@ function og(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/button-group/src/context.mjs
-var sg = rf("n-button-group"), cg = z([
-	B("button", "\n margin: 0;\n font-weight: var(--n-font-weight);\n line-height: 1;\n font-family: inherit;\n padding: var(--n-padding);\n height: var(--n-height);\n font-size: var(--n-font-size);\n border-radius: var(--n-border-radius);\n color: var(--n-text-color);\n background-color: var(--n-color);\n width: var(--n-width);\n white-space: nowrap;\n outline: none;\n position: relative;\n z-index: auto;\n border: none;\n display: inline-flex;\n flex-wrap: nowrap;\n flex-shrink: 0;\n align-items: center;\n justify-content: center;\n user-select: none;\n -webkit-user-select: none;\n text-align: center;\n cursor: pointer;\n text-decoration: none;\n transition:\n color .3s var(--n-bezier),\n background-color .3s var(--n-bezier),\n opacity .3s var(--n-bezier),\n border-color .3s var(--n-bezier);\n ", [
-		H("color", [
-			V("border", { borderColor: "var(--n-border-color)" }),
-			H("disabled", [V("border", { borderColor: "var(--n-border-color-disabled)" })]),
-			ys("disabled", [
-				z("&:focus", [V("state-border", { borderColor: "var(--n-border-color-focus)" })]),
-				z("&:hover", [V("state-border", { borderColor: "var(--n-border-color-hover)" })]),
-				z("&:active", [V("state-border", { borderColor: "var(--n-border-color-pressed)" })]),
-				H("pressed", [V("state-border", { borderColor: "var(--n-border-color-pressed)" })])
+var Ng = kf("n-button-group"), Pg = B([
+	V("button", "\n margin: 0;\n font-weight: var(--n-font-weight);\n line-height: 1;\n font-family: inherit;\n padding: var(--n-padding);\n height: var(--n-height);\n font-size: var(--n-font-size);\n border-radius: var(--n-border-radius);\n color: var(--n-text-color);\n background-color: var(--n-color);\n width: var(--n-width);\n white-space: nowrap;\n outline: none;\n position: relative;\n z-index: auto;\n border: none;\n display: inline-flex;\n flex-wrap: nowrap;\n flex-shrink: 0;\n align-items: center;\n justify-content: center;\n user-select: none;\n -webkit-user-select: none;\n text-align: center;\n cursor: pointer;\n text-decoration: none;\n transition:\n color .3s var(--n-bezier),\n background-color .3s var(--n-bezier),\n opacity .3s var(--n-bezier),\n border-color .3s var(--n-bezier);\n ", [
+		U("color", [
+			H("border", { borderColor: "var(--n-border-color)" }),
+			U("disabled", [H("border", { borderColor: "var(--n-border-color-disabled)" })]),
+			As("disabled", [
+				B("&:focus", [H("state-border", { borderColor: "var(--n-border-color-focus)" })]),
+				B("&:hover", [H("state-border", { borderColor: "var(--n-border-color-hover)" })]),
+				B("&:active", [H("state-border", { borderColor: "var(--n-border-color-pressed)" })]),
+				U("pressed", [H("state-border", { borderColor: "var(--n-border-color-pressed)" })])
 			])
 		]),
-		H("disabled", {
+		U("disabled", {
 			backgroundColor: "var(--n-color-disabled)",
 			color: "var(--n-text-color-disabled)"
-		}, [V("border", { border: "var(--n-border-disabled)" })]),
-		ys("disabled", [
-			z("&:focus", {
+		}, [H("border", { border: "var(--n-border-disabled)" })]),
+		As("disabled", [
+			B("&:focus", {
 				backgroundColor: "var(--n-color-focus)",
 				color: "var(--n-text-color-focus)"
-			}, [V("state-border", { border: "var(--n-border-focus)" })]),
-			z("&:hover", {
+			}, [H("state-border", { border: "var(--n-border-focus)" })]),
+			B("&:hover", {
 				backgroundColor: "var(--n-color-hover)",
 				color: "var(--n-text-color-hover)"
-			}, [V("state-border", { border: "var(--n-border-hover)" })]),
-			z("&:active", {
+			}, [H("state-border", { border: "var(--n-border-hover)" })]),
+			B("&:active", {
 				backgroundColor: "var(--n-color-pressed)",
 				color: "var(--n-text-color-pressed)"
-			}, [V("state-border", { border: "var(--n-border-pressed)" })]),
-			H("pressed", {
+			}, [H("state-border", { border: "var(--n-border-pressed)" })]),
+			U("pressed", {
 				backgroundColor: "var(--n-color-pressed)",
 				color: "var(--n-text-color-pressed)"
-			}, [V("state-border", { border: "var(--n-border-pressed)" })])
+			}, [H("state-border", { border: "var(--n-border-pressed)" })])
 		]),
-		H("loading", "cursor: wait;"),
-		B("base-wave", "\n pointer-events: none;\n top: 0;\n right: 0;\n bottom: 0;\n left: 0;\n animation-iteration-count: 1;\n animation-duration: var(--n-ripple-duration);\n animation-timing-function: var(--n-bezier-ease-out), var(--n-bezier-ease-out);\n ", [H("active", {
+		U("loading", "cursor: wait;"),
+		V("base-wave", "\n pointer-events: none;\n top: 0;\n right: 0;\n bottom: 0;\n left: 0;\n animation-iteration-count: 1;\n animation-duration: var(--n-ripple-duration);\n animation-timing-function: var(--n-bezier-ease-out), var(--n-bezier-ease-out);\n ", [U("active", {
 			zIndex: 1,
 			animationName: "button-wave-spread, button-wave-opacity"
 		})]),
-		Lh && "MozBoxSizing" in document.createElement("div").style ? z("&::moz-focus-inner", { border: 0 }) : null,
-		V("border, state-border", "\n position: absolute;\n left: 0;\n top: 0;\n right: 0;\n bottom: 0;\n border-radius: inherit;\n transition: border-color .3s var(--n-bezier);\n pointer-events: none;\n "),
-		V("border", "\n border: var(--n-border);\n "),
-		V("state-border", "\n border: var(--n-border);\n border-color: #0000;\n z-index: 1;\n "),
-		V("icon", "\n margin: var(--n-icon-margin);\n margin-left: 0;\n height: var(--n-icon-size);\n width: var(--n-icon-size);\n max-width: var(--n-icon-size);\n font-size: var(--n-icon-size);\n position: relative;\n flex-shrink: 0;\n ", [B("icon-slot", "\n height: var(--n-icon-size);\n width: var(--n-icon-size);\n position: absolute;\n left: 0;\n top: 50%;\n transform: translateY(-50%);\n display: flex;\n align-items: center;\n justify-content: center;\n ", [Oh({
+		lg && "MozBoxSizing" in document.createElement("div").style ? B("&::moz-focus-inner", { border: 0 }) : null,
+		H("border, state-border", "\n position: absolute;\n left: 0;\n top: 0;\n right: 0;\n bottom: 0;\n border-radius: inherit;\n transition: border-color .3s var(--n-bezier);\n pointer-events: none;\n "),
+		H("border", "\n border: var(--n-border);\n "),
+		H("state-border", "\n border: var(--n-border);\n border-color: #0000;\n z-index: 1;\n "),
+		H("icon", "\n margin: var(--n-icon-margin);\n margin-left: 0;\n height: var(--n-icon-size);\n width: var(--n-icon-size);\n max-width: var(--n-icon-size);\n font-size: var(--n-icon-size);\n position: relative;\n flex-shrink: 0;\n ", [V("icon-slot", "\n height: var(--n-icon-size);\n width: var(--n-icon-size);\n position: absolute;\n left: 0;\n top: 50%;\n transform: translateY(-50%);\n display: flex;\n align-items: center;\n justify-content: center;\n ", [eg({
 			top: "50%",
 			originalTransform: "translateY(-50%)"
-		})]), Yh()]),
-		V("content", "\n display: flex;\n align-items: center;\n flex-wrap: nowrap;\n min-width: 0;\n ", [z("~", [V("icon", {
+		})]), xg()]),
+		H("content", "\n display: flex;\n align-items: center;\n flex-wrap: nowrap;\n min-width: 0;\n ", [B("~", [H("icon", {
 			margin: "var(--n-icon-margin)",
 			marginRight: 0
 		})])]),
-		H("block", "\n display: flex;\n width: 100%;\n "),
-		H("dashed", [V("border, state-border", { borderStyle: "dashed !important" })]),
-		H("disabled", {
+		U("block", "\n display: flex;\n width: 100%;\n "),
+		U("dashed", [H("border, state-border", { borderStyle: "dashed !important" })]),
+		U("disabled", {
 			cursor: "not-allowed",
 			opacity: "var(--n-opacity-disabled)"
 		})
 	]),
-	z("@keyframes button-wave-spread", {
+	B("@keyframes button-wave-spread", {
 		from: { boxShadow: "0 0 0.5px 0 var(--n-ripple-color)" },
 		to: { boxShadow: "0 0 0.5px 4.5px var(--n-ripple-color)" }
 	}),
-	z("@keyframes button-wave-opacity", {
+	B("@keyframes button-wave-opacity", {
 		from: { opacity: "var(--n-wave-opacity)" },
 		to: { opacity: 0 }
 	})
-]), lg = /* @__PURE__ */ P({
+]), Fg = /* @__PURE__ */ _r({
 	name: "Button",
 	props: {
-		...wp.props,
+		...Xp.props,
 		color: String,
 		textColor: String,
 		text: Boolean,
@@ -8386,13 +9547,13 @@ var sg = rf("n-button-group"), cg = z([
 		onClick: [Function, Array],
 		nativeFocusBehavior: {
 			type: Boolean,
-			default: !zh
+			default: !dg
 		},
 		spinProps: Object
 	},
 	slots: Object,
 	setup(e) {
-		let t = /* @__PURE__ */ N(null), n = /* @__PURE__ */ N(null), r = /* @__PURE__ */ N(!1), i = Up(() => !e.quaternary && !e.tertiary && !e.secondary && !e.text && (!e.color || e.ghost || e.dashed) && e.bordered), a = Rn(sg, {}), { inlineThemeDisabled: o, mergedClsPrefixRef: s, mergedRtlRef: c, mergedComponentPropsRef: l } = of(e), { mergedSizeRef: u } = Th({}, {
+		let t = /* @__PURE__ */ F(null), n = /* @__PURE__ */ F(null), r = /* @__PURE__ */ F(!1), i = hm(() => !e.quaternary && !e.tertiary && !e.secondary && !e.text && (!e.color || e.ghost || e.dashed) && e.bordered), a = Jn(Ng, {}), { inlineThemeDisabled: o, mergedClsPrefixRef: s, mergedRtlRef: c, mergedComponentPropsRef: l } = jf(e), { mergedSizeRef: u } = Zh({}, {
 			defaultSize: "medium",
 			mergedSize: (t) => {
 				let { size: n } = e;
@@ -8402,12 +9563,12 @@ var sg = rf("n-button-group"), cg = z([
 				let { mergedSize: i } = t || {};
 				return i ? i.value : l?.value?.Button?.size || "medium";
 			}
-		}), d = L(() => e.focusable && !e.disabled), f = (n) => {
+		}), d = R(() => e.focusable && !e.disabled), f = (n) => {
 			d.value || n.preventDefault(), !e.nativeFocusBehavior && (n.preventDefault(), !e.disabled && d.value && t.value?.focus({ preventScroll: !0 }));
 		}, p = (t) => {
 			if (!e.disabled && !e.loading) {
 				let { onClick: r } = e;
-				r && qp(r, t), e.text || n.value?.play();
+				r && ym(r, t), e.text || n.value?.play();
 			}
 		}, m = (t) => {
 			if (t.key === "Enter") {
@@ -8424,7 +9585,7 @@ var sg = rf("n-button-group"), cg = z([
 			}
 		}, g = () => {
 			r.value = !1;
-		}, _ = wp("Button", "-button", cg, rg, e, s), v = Zp("Button", c, s), y = L(() => {
+		}, _ = Xp("Button", "-button", Pg, kg, e, s), v = Cm("Button", c, s), y = R(() => {
 			let { common: { cubicBezierEaseInOut: t, cubicBezierEaseOut: n }, self: r } = _.value, { rippleDuration: i, opacityDisabled: a, fontWeight: o, fontWeightStrong: s } = r, c = u.value, { dashed: l, type: d, ghost: f, text: p, color: m, round: h, circle: g, textColor: v, secondary: y, tertiary: b, quaternary: x, strong: S } = e, C = { "--n-font-weight": S ? s : o }, w = {
 				"--n-color": "initial",
 				"--n-color-hover": "initial",
@@ -8447,11 +9608,11 @@ var sg = rf("n-button-group"), cg = z([
 					"--n-color-focus": "#0000",
 					"--n-color-disabled": "#0000",
 					"--n-ripple-color": "#0000",
-					"--n-text-color": e || r[U("textColorText", D)],
-					"--n-text-color-hover": e ? ag(e) : r[U("textColorTextHover", D)],
-					"--n-text-color-pressed": e ? og(e) : r[U("textColorTextPressed", D)],
-					"--n-text-color-focus": e ? ag(e) : r[U("textColorTextHover", D)],
-					"--n-text-color-disabled": e || r[U("textColorTextDisabled", D)]
+					"--n-text-color": e || r[W("textColorText", D)],
+					"--n-text-color-hover": e ? jg(e) : r[W("textColorTextHover", D)],
+					"--n-text-color-pressed": e ? Mg(e) : r[W("textColorTextPressed", D)],
+					"--n-text-color-focus": e ? jg(e) : r[W("textColorTextHover", D)],
+					"--n-text-color-disabled": e || r[W("textColorTextDisabled", D)]
 				};
 			} else if (f || l) {
 				let e = v || m;
@@ -8461,20 +9622,20 @@ var sg = rf("n-button-group"), cg = z([
 					"--n-color-pressed": "#0000",
 					"--n-color-focus": "#0000",
 					"--n-color-disabled": "#0000",
-					"--n-ripple-color": m || r[U("rippleColor", D)],
-					"--n-text-color": e || r[U("textColorGhost", D)],
-					"--n-text-color-hover": e ? ag(e) : r[U("textColorGhostHover", D)],
-					"--n-text-color-pressed": e ? og(e) : r[U("textColorGhostPressed", D)],
-					"--n-text-color-focus": e ? ag(e) : r[U("textColorGhostHover", D)],
-					"--n-text-color-disabled": e || r[U("textColorGhostDisabled", D)]
+					"--n-ripple-color": m || r[W("rippleColor", D)],
+					"--n-text-color": e || r[W("textColorGhost", D)],
+					"--n-text-color-hover": e ? jg(e) : r[W("textColorGhostHover", D)],
+					"--n-text-color-pressed": e ? Mg(e) : r[W("textColorGhostPressed", D)],
+					"--n-text-color-focus": e ? jg(e) : r[W("textColorGhostHover", D)],
+					"--n-text-color-disabled": e || r[W("textColorGhostDisabled", D)]
 				};
 			} else if (y) {
-				let e = E ? r.textColor : T ? r.textColorTertiary : r[U("color", D)], t = m || e, n = d !== "default" && d !== "tertiary";
+				let e = E ? r.textColor : T ? r.textColorTertiary : r[W("color", D)], t = m || e, n = d !== "default" && d !== "tertiary";
 				w = {
-					"--n-color": n ? J(t, { alpha: Number(r.colorOpacitySecondary) }) : r.colorSecondary,
-					"--n-color-hover": n ? J(t, { alpha: Number(r.colorOpacitySecondaryHover) }) : r.colorSecondaryHover,
-					"--n-color-pressed": n ? J(t, { alpha: Number(r.colorOpacitySecondaryPressed) }) : r.colorSecondaryPressed,
-					"--n-color-focus": n ? J(t, { alpha: Number(r.colorOpacitySecondaryHover) }) : r.colorSecondaryHover,
+					"--n-color": n ? Y(t, { alpha: Number(r.colorOpacitySecondary) }) : r.colorSecondary,
+					"--n-color-hover": n ? Y(t, { alpha: Number(r.colorOpacitySecondaryHover) }) : r.colorSecondaryHover,
+					"--n-color-pressed": n ? Y(t, { alpha: Number(r.colorOpacitySecondaryPressed) }) : r.colorSecondaryPressed,
+					"--n-color-focus": n ? Y(t, { alpha: Number(r.colorOpacitySecondaryHover) }) : r.colorSecondaryHover,
 					"--n-color-disabled": r.colorSecondary,
 					"--n-ripple-color": "#0000",
 					"--n-text-color": t,
@@ -8484,20 +9645,20 @@ var sg = rf("n-button-group"), cg = z([
 					"--n-text-color-disabled": t
 				};
 			} else if (b || x) {
-				let e = E ? r.textColor : T ? r.textColorTertiary : r[U("color", D)], t = m || e;
+				let e = E ? r.textColor : T ? r.textColorTertiary : r[W("color", D)], t = m || e;
 				b ? (w["--n-color"] = r.colorTertiary, w["--n-color-hover"] = r.colorTertiaryHover, w["--n-color-pressed"] = r.colorTertiaryPressed, w["--n-color-focus"] = r.colorSecondaryHover, w["--n-color-disabled"] = r.colorTertiary) : (w["--n-color"] = r.colorQuaternary, w["--n-color-hover"] = r.colorQuaternaryHover, w["--n-color-pressed"] = r.colorQuaternaryPressed, w["--n-color-focus"] = r.colorQuaternaryHover, w["--n-color-disabled"] = r.colorQuaternary), w["--n-ripple-color"] = "#0000", w["--n-text-color"] = t, w["--n-text-color-hover"] = t, w["--n-text-color-pressed"] = t, w["--n-text-color-focus"] = t, w["--n-text-color-disabled"] = t;
 			} else w = {
-				"--n-color": m || r[U("color", D)],
-				"--n-color-hover": m ? ag(m) : r[U("colorHover", D)],
-				"--n-color-pressed": m ? og(m) : r[U("colorPressed", D)],
-				"--n-color-focus": m ? ag(m) : r[U("colorFocus", D)],
-				"--n-color-disabled": m || r[U("colorDisabled", D)],
-				"--n-ripple-color": m || r[U("rippleColor", D)],
-				"--n-text-color": v || (m ? r.textColorPrimary : T ? r.textColorTertiary : r[U("textColor", D)]),
-				"--n-text-color-hover": v || (m ? r.textColorHoverPrimary : r[U("textColorHover", D)]),
-				"--n-text-color-pressed": v || (m ? r.textColorPressedPrimary : r[U("textColorPressed", D)]),
-				"--n-text-color-focus": v || (m ? r.textColorFocusPrimary : r[U("textColorFocus", D)]),
-				"--n-text-color-disabled": v || (m ? r.textColorDisabledPrimary : r[U("textColorDisabled", D)])
+				"--n-color": m || r[W("color", D)],
+				"--n-color-hover": m ? jg(m) : r[W("colorHover", D)],
+				"--n-color-pressed": m ? Mg(m) : r[W("colorPressed", D)],
+				"--n-color-focus": m ? jg(m) : r[W("colorFocus", D)],
+				"--n-color-disabled": m || r[W("colorDisabled", D)],
+				"--n-ripple-color": m || r[W("rippleColor", D)],
+				"--n-text-color": v || (m ? r.textColorPrimary : T ? r.textColorTertiary : r[W("textColor", D)]),
+				"--n-text-color-hover": v || (m ? r.textColorHoverPrimary : r[W("textColorHover", D)]),
+				"--n-text-color-pressed": v || (m ? r.textColorPressedPrimary : r[W("textColorPressed", D)]),
+				"--n-text-color-focus": v || (m ? r.textColorFocusPrimary : r[W("textColorFocus", D)]),
+				"--n-text-color-disabled": v || (m ? r.textColorDisabledPrimary : r[W("textColorDisabled", D)])
 			};
 			let O = {
 				"--n-border": "initial",
@@ -8513,35 +9674,35 @@ var sg = rf("n-button-group"), cg = z([
 				"--n-border-focus": "none",
 				"--n-border-disabled": "none"
 			} : {
-				"--n-border": r[U("border", D)],
-				"--n-border-hover": r[U("borderHover", D)],
-				"--n-border-pressed": r[U("borderPressed", D)],
-				"--n-border-focus": r[U("borderFocus", D)],
-				"--n-border-disabled": r[U("borderDisabled", D)]
+				"--n-border": r[W("border", D)],
+				"--n-border-hover": r[W("borderHover", D)],
+				"--n-border-pressed": r[W("borderPressed", D)],
+				"--n-border-focus": r[W("borderFocus", D)],
+				"--n-border-disabled": r[W("borderDisabled", D)]
 			};
-			let { [U("height", c)]: ee, [U("fontSize", c)]: te, [U("padding", c)]: ne, [U("paddingRound", c)]: re, [U("iconSize", c)]: ie, [U("borderRadius", c)]: ae, [U("iconMargin", c)]: oe, waveOpacity: se } = r, ce = {
-				"--n-width": g && !p ? ee : "initial",
-				"--n-height": p ? "initial" : ee,
-				"--n-font-size": te,
-				"--n-padding": g || p ? "initial" : h ? re : ne,
-				"--n-icon-size": ie,
-				"--n-icon-margin": oe,
-				"--n-border-radius": p ? "initial" : g || h ? ee : ae
+			let { [W("height", c)]: k, [W("fontSize", c)]: A, [W("padding", c)]: ee, [W("paddingRound", c)]: j, [W("iconSize", c)]: te, [W("borderRadius", c)]: ne, [W("iconMargin", c)]: re, waveOpacity: ie } = r, ae = {
+				"--n-width": g && !p ? k : "initial",
+				"--n-height": p ? "initial" : k,
+				"--n-font-size": A,
+				"--n-padding": g || p ? "initial" : h ? j : ee,
+				"--n-icon-size": te,
+				"--n-icon-margin": re,
+				"--n-border-radius": p ? "initial" : g || h ? k : ne
 			};
 			return {
 				"--n-bezier": t,
 				"--n-bezier-ease-out": n,
 				"--n-ripple-duration": i,
 				"--n-opacity-disabled": a,
-				"--n-wave-opacity": se,
+				"--n-wave-opacity": ie,
 				...C,
 				...w,
 				...O,
-				...ce
+				...ae
 			};
-		}), b = o ? Sp("button", L(() => {
+		}), b = o ? Jp("button", R(() => {
 			let t = "", { dashed: n, type: r, ghost: i, text: a, color: o, round: s, circle: c, textColor: l, secondary: d, tertiary: f, quaternary: p, strong: m } = e;
-			n && (t += "a"), i && (t += "b"), a && (t += "c"), s && (t += "d"), c && (t += "e"), d && (t += "f"), f && (t += "g"), p && (t += "h"), m && (t += "i"), o && (t += `j${ch(o)}`), l && (t += `k${ch(l)}`);
+			n && (t += "a"), i && (t += "b"), a && (t += "c"), s && (t += "d"), c && (t += "e"), d && (t += "f"), f && (t += "g"), p && (t += "h"), m && (t += "i"), o && (t += `j${Ph(o)}`), l && (t += `k${Ph(l)}`);
 			let { value: h } = u;
 			return t += `l${h[0]}`, t += `m${r[0]}`, t;
 		}), y, e) : void 0;
@@ -8559,14 +9720,14 @@ var sg = rf("n-button-group"), cg = z([
 			handleBlur: g,
 			handleKeyup: m,
 			handleClick: p,
-			customColorCssVars: L(() => {
+			customColorCssVars: R(() => {
 				let { color: t } = e;
 				if (!t) return null;
-				let n = ag(t);
+				let n = jg(t);
 				return {
 					"--n-border-color": t,
 					"--n-border-color-hover": n,
-					"--n-border-color-pressed": og(t),
+					"--n-border-color-pressed": Mg(t),
 					"--n-border-color-focus": n,
 					"--n-border-color-disabled": t
 				};
@@ -8579,10 +9740,10 @@ var sg = rf("n-button-group"), cg = z([
 	render() {
 		let { mergedClsPrefix: e, tag: t, onRender: n } = this;
 		n?.();
-		let r = Yp(this.$slots.default, (t) => t && (F(), I("span", { class: K(`${e}-button__content`) }, [G(() => t)], 2)));
-		return F(), Ni(t, {
+		let r = xm(this.$slots.default, (t) => t && (I(), L("span", { class: q(`${e}-button__content`) }, [K(() => t)], 2)));
+		return I(), Wi(t, {
 			ref: "selfElRef",
-			class: K([
+			class: q([
 				this.themeClass,
 				`${e}-button`,
 				`${e}-button--${this.type}-type`,
@@ -8599,7 +9760,7 @@ var sg = rf("n-button-group"), cg = z([
 			]),
 			tabindex: this.mergedFocusable ? 0 : -1,
 			type: this.attrType,
-			style: k(this.cssVars),
+			style: M(this.cssVars),
 			disabled: this.disabled,
 			onClick: this.handleClick,
 			onBlur: this.handleBlur,
@@ -8607,39 +9768,39 @@ var sg = rf("n-button-group"), cg = z([
 			onKeyup: this.handleKeyup,
 			onKeydown: this.handleKeydown
 		}, {
-			default: Fn(() => [
-				G(() => this.iconPlacement === "right" && r),
-				zi(_h, { width: !0 }, { default: () => Yp(this.$slots.icon, (t) => (this.loading || this.renderIcon || t) && (F(), I("span", {
-					class: K(`${e}-button__icon`),
-					style: k({ margin: Xp(this.$slots.default) ? "0" : "" })
-				}, [zi(Eh, null, { default: () => this.loading ? (F(), Ni(Ih, Ji({
+			default: Gn(() => [
+				K(() => this.iconPlacement === "right" && r),
+				Xi(Uh, { width: !0 }, { default: () => xm(this.$slots.icon, (t) => (this.loading || this.renderIcon || t) && (I(), L("span", {
+					class: q(`${e}-button__icon`),
+					style: M({ margin: Sm(this.$slots.default) ? "0" : "" })
+				}, [Xi(Qh, null, { default: () => this.loading ? (I(), Wi(cg, aa({
 					clsPrefix: e,
 					key: "loading",
 					class: `${e}-icon-slot`,
 					strokeWidth: 20
-				}, this.spinProps), null, 16, ["clsPrefix", "class"])) : (F(), I("div", {
+				}, this.spinProps), null, 16, ["clsPrefix", "class"])) : (I(), L("div", {
 					key: "icon",
-					class: K(`${e}-icon-slot`),
+					class: q(`${e}-icon-slot`),
 					role: "none"
-				}, [this.renderIcon ? (F(), I(Ci, { key: 0 }, [G(() => this.renderIcon())], 64)) : (F(), I(Ci, { key: 1 }, [G(() => t)], 64))], 2)) }, 1024)], 6))) }, 1024),
-				G(() => this.iconPlacement === "left" && r),
-				this.text ? G(() => null) : (F(), Ni(Zh, {
+				}, [this.renderIcon ? (I(), L(Pi, { key: 0 }, [K(() => this.renderIcon())], 64)) : (I(), L(Pi, { key: 1 }, [K(() => t)], 64))], 2)) }, 1024)], 6))) }, 1024),
+				K(() => this.iconPlacement === "left" && r),
+				this.text ? K(() => null) : (I(), Wi(Cg, {
 					key: 0,
 					ref: "waveElRef",
 					clsPrefix: e
 				}, null, 8, ["clsPrefix"])),
-				this.showBorder ? (F(), I("div", {
+				this.showBorder ? (I(), L("div", {
 					key: 2,
 					"aria-hidden": !0,
-					class: K(`${e}-button__border`),
-					style: k(this.customColorCssVars)
-				}, null, 6)) : G(() => null),
-				this.showBorder ? (F(), I("div", {
+					class: q(`${e}-button__border`),
+					style: M(this.customColorCssVars)
+				}, null, 6)) : K(() => null),
+				this.showBorder ? (I(), L("div", {
 					key: 4,
 					"aria-hidden": !0,
-					class: K(`${e}-button__state-border`),
-					style: k(this.customColorCssVars)
-				}, null, 6)) : G(() => null)
+					class: q(`${e}-button__state-border`),
+					style: M(this.customColorCssVars)
+				}, null, 6)) : K(() => null)
 			]),
 			_: 2
 		}, 1032, [
@@ -8655,17 +9816,17 @@ var sg = rf("n-button-group"), cg = z([
 			"onKeydown"
 		]);
 	}
-}), ug = { titleFontSize: "22px" };
+}), Ig = { titleFontSize: "22px" };
 //#endregion
 //#region node_modules/naive-ui/es/calendar/styles/light.mjs
-function dg(e) {
+function Lg(e) {
 	let { borderRadius: t, fontSize: n, lineHeight: r, textColor2: i, textColor1: a, textColorDisabled: o, dividerColor: s, fontWeightStrong: c, primaryColor: l, baseColor: u, hoverColor: d, cardColor: f, modalColor: p, popoverColor: m } = e;
 	return {
-		...ug,
+		...Ig,
 		borderRadius: t,
-		borderColor: q(f, s),
-		borderColorModal: q(p, s),
-		borderColorPopover: q(m, s),
+		borderColor: J(f, s),
+		borderColorModal: J(p, s),
+		borderColorPopover: J(m, s),
 		textColor: i,
 		titleFontWeight: c,
 		titleTextColor: a,
@@ -8674,9 +9835,9 @@ function dg(e) {
 		lineHeight: r,
 		dateColorCurrent: l,
 		dateTextColorCurrent: u,
-		cellColorHover: q(f, d),
-		cellColorHoverModal: q(p, d),
-		cellColorHoverPopover: q(m, d),
+		cellColorHover: J(f, d),
+		cellColorHoverModal: J(p, d),
+		cellColorHoverPopover: J(m, d),
 		cellColor: f,
 		cellColorModal: p,
 		cellColorPopover: m,
@@ -8685,7 +9846,7 @@ function dg(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/card/styles/_common.mjs
-var fg = {
+var Rg = {
 	paddingSmall: "12px 16px 12px",
 	paddingMedium: "19px 24px 20px",
 	paddingLarge: "23px 32px 24px",
@@ -8699,10 +9860,10 @@ var fg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/card/styles/light.mjs
-function pg(e) {
+function zg(e) {
 	let { primaryColor: t, borderRadius: n, lineHeight: r, fontSize: i, cardColor: a, textColor2: o, textColor1: s, dividerColor: c, fontWeightStrong: l, closeIconColor: u, closeIconColorHover: d, closeIconColorPressed: f, closeColorHover: p, closeColorPressed: m, modalColor: h, boxShadow1: g, popoverColor: _, actionColor: v } = e;
 	return {
-		...fg,
+		...Rg,
 		lineHeight: r,
 		color: a,
 		colorModal: h,
@@ -8730,48 +9891,48 @@ function pg(e) {
 		borderRadius: n
 	};
 }
-var mg = {
+var Bg = {
 	name: "Card",
-	common: pp,
-	self: pg
-}, hg = {
+	common: zp,
+	self: zg
+}, Vg = {
 	name: "Card",
 	common: Q,
 	self(e) {
-		let t = pg(e), { cardColor: n, modalColor: r, popoverColor: i } = e;
+		let t = zg(e), { cardColor: n, modalColor: r, popoverColor: i } = e;
 		return t.colorEmbedded = n, t.colorEmbeddedModal = r, t.colorEmbeddedPopover = i, t;
 	}
-}, gg = B("card-content", "\n flex: 1;\n min-width: 0;\n box-sizing: border-box;\n padding: 0 var(--n-padding-left) var(--n-padding-bottom) var(--n-padding-left);\n font-size: var(--n-font-size);\n"), _g = z([
-	B("card", "\n font-size: var(--n-font-size);\n line-height: var(--n-line-height);\n display: flex;\n flex-direction: column;\n width: 100%;\n box-sizing: border-box;\n position: relative;\n border-radius: var(--n-border-radius);\n background-color: var(--n-color);\n color: var(--n-text-color);\n word-break: break-word;\n transition: \n color .3s var(--n-bezier),\n background-color .3s var(--n-bezier),\n box-shadow .3s var(--n-bezier),\n border-color .3s var(--n-bezier);\n ", [
-		Ss({ background: "var(--n-color-modal)" }),
-		H("hoverable", [z("&:hover", "box-shadow: var(--n-box-shadow);")]),
-		H("content-segmented", [z(">", [B("card-content", "\n padding-top: var(--n-padding-bottom);\n "), V("content-scrollbar", [z(">", [B("scrollbar-container", [z(">", [B("card-content", "\n padding-top: var(--n-padding-bottom);\n ")])])])])])]),
-		H("content-soft-segmented", [z(">", [B("card-content", "\n margin: 0 var(--n-padding-left);\n padding: var(--n-padding-bottom) 0;\n "), V("content-scrollbar", [z(">", [B("scrollbar-container", [z(">", [B("card-content", "\n margin: 0 var(--n-padding-left);\n padding: var(--n-padding-bottom) 0;\n ")])])])])])]),
-		H("footer-segmented", [z(">", [V("footer", "\n padding-top: var(--n-padding-bottom);\n ")])]),
-		H("footer-soft-segmented", [z(">", [V("footer", "\n padding: var(--n-padding-bottom) 0;\n margin: 0 var(--n-padding-left);\n ")])]),
-		z(">", [
-			B("card-header", "\n box-sizing: border-box;\n display: flex;\n align-items: center;\n font-size: var(--n-title-font-size);\n padding:\n var(--n-padding-top)\n var(--n-padding-left)\n var(--n-padding-bottom)\n var(--n-padding-left);\n ", [
-				V("main", "\n font-weight: var(--n-title-font-weight);\n transition: color .3s var(--n-bezier);\n flex: 1;\n min-width: 0;\n color: var(--n-title-text-color);\n "),
-				V("extra", "\n display: flex;\n align-items: center;\n font-size: var(--n-font-size);\n font-weight: 400;\n transition: color .3s var(--n-bezier);\n color: var(--n-text-color);\n "),
-				V("close", "\n margin: 0 0 0 8px;\n transition:\n background-color .3s var(--n-bezier),\n color .3s var(--n-bezier);\n ")
+}, Hg = V("card-content", "\n flex: 1;\n min-width: 0;\n box-sizing: border-box;\n padding: 0 var(--n-padding-left) var(--n-padding-bottom) var(--n-padding-left);\n font-size: var(--n-font-size);\n"), Ug = B([
+	V("card", "\n font-size: var(--n-font-size);\n line-height: var(--n-line-height);\n display: flex;\n flex-direction: column;\n width: 100%;\n box-sizing: border-box;\n position: relative;\n border-radius: var(--n-border-radius);\n background-color: var(--n-color);\n color: var(--n-text-color);\n word-break: break-word;\n transition: \n color .3s var(--n-bezier),\n background-color .3s var(--n-bezier),\n box-shadow .3s var(--n-bezier),\n border-color .3s var(--n-bezier);\n ", [
+		Ns({ background: "var(--n-color-modal)" }),
+		U("hoverable", [B("&:hover", "box-shadow: var(--n-box-shadow);")]),
+		U("content-segmented", [B(">", [V("card-content", "\n padding-top: var(--n-padding-bottom);\n "), H("content-scrollbar", [B(">", [V("scrollbar-container", [B(">", [V("card-content", "\n padding-top: var(--n-padding-bottom);\n ")])])])])])]),
+		U("content-soft-segmented", [B(">", [V("card-content", "\n margin: 0 var(--n-padding-left);\n padding: var(--n-padding-bottom) 0;\n "), H("content-scrollbar", [B(">", [V("scrollbar-container", [B(">", [V("card-content", "\n margin: 0 var(--n-padding-left);\n padding: var(--n-padding-bottom) 0;\n ")])])])])])]),
+		U("footer-segmented", [B(">", [H("footer", "\n padding-top: var(--n-padding-bottom);\n ")])]),
+		U("footer-soft-segmented", [B(">", [H("footer", "\n padding: var(--n-padding-bottom) 0;\n margin: 0 var(--n-padding-left);\n ")])]),
+		B(">", [
+			V("card-header", "\n box-sizing: border-box;\n display: flex;\n align-items: center;\n font-size: var(--n-title-font-size);\n padding:\n var(--n-padding-top)\n var(--n-padding-left)\n var(--n-padding-bottom)\n var(--n-padding-left);\n ", [
+				H("main", "\n font-weight: var(--n-title-font-weight);\n transition: color .3s var(--n-bezier);\n flex: 1;\n min-width: 0;\n color: var(--n-title-text-color);\n "),
+				H("extra", "\n display: flex;\n align-items: center;\n font-size: var(--n-font-size);\n font-weight: 400;\n transition: color .3s var(--n-bezier);\n color: var(--n-text-color);\n "),
+				H("close", "\n margin: 0 0 0 8px;\n transition:\n background-color .3s var(--n-bezier),\n color .3s var(--n-bezier);\n ")
 			]),
-			V("action", "\n box-sizing: border-box;\n transition:\n background-color .3s var(--n-bezier),\n border-color .3s var(--n-bezier);\n background-clip: padding-box;\n background-color: var(--n-action-color);\n "),
-			gg,
-			B("card-content", [z("&:first-child", "\n padding-top: var(--n-padding-bottom);\n ")]),
-			V("content-scrollbar", "\n display: flex;\n flex-direction: column;\n ", [z(">", [B("scrollbar-container", [z(">", [gg])])]), z("&:first-child >", [B("scrollbar-container", [z(">", [B("card-content", "\n padding-top: var(--n-padding-bottom);\n ")])])])]),
-			V("footer", "\n box-sizing: border-box;\n padding: 0 var(--n-padding-left) var(--n-padding-bottom) var(--n-padding-left);\n font-size: var(--n-font-size);\n ", [z("&:first-child", "\n padding-top: var(--n-padding-bottom);\n ")]),
-			V("action", "\n background-color: var(--n-action-color);\n padding: var(--n-padding-bottom) var(--n-padding-left);\n border-bottom-left-radius: var(--n-border-radius);\n border-bottom-right-radius: var(--n-border-radius);\n ")
+			H("action", "\n box-sizing: border-box;\n transition:\n background-color .3s var(--n-bezier),\n border-color .3s var(--n-bezier);\n background-clip: padding-box;\n background-color: var(--n-action-color);\n "),
+			Hg,
+			V("card-content", [B("&:first-child", "\n padding-top: var(--n-padding-bottom);\n ")]),
+			H("content-scrollbar", "\n display: flex;\n flex-direction: column;\n ", [B(">", [V("scrollbar-container", [B(">", [Hg])])]), B("&:first-child >", [V("scrollbar-container", [B(">", [V("card-content", "\n padding-top: var(--n-padding-bottom);\n ")])])])]),
+			H("footer", "\n box-sizing: border-box;\n padding: 0 var(--n-padding-left) var(--n-padding-bottom) var(--n-padding-left);\n font-size: var(--n-font-size);\n ", [B("&:first-child", "\n padding-top: var(--n-padding-bottom);\n ")]),
+			H("action", "\n background-color: var(--n-action-color);\n padding: var(--n-padding-bottom) var(--n-padding-left);\n border-bottom-left-radius: var(--n-border-radius);\n border-bottom-right-radius: var(--n-border-radius);\n ")
 		]),
-		B("card-cover", "\n overflow: hidden;\n width: 100%;\n border-radius: var(--n-border-radius) var(--n-border-radius) 0 0;\n ", [z("img", "\n display: block;\n width: 100%;\n ")]),
-		H("bordered", "\n border: 1px solid var(--n-border-color);\n ", [z("&:target", "border-color: var(--n-color-target);")]),
-		H("action-segmented", [z(">", [V("action", [z("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")])])]),
-		H("content-segmented, content-soft-segmented", [z(">", [B("card-content", "\n transition: border-color 0.3s var(--n-bezier);\n ", [z("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")]), V("content-scrollbar", "\n transition: border-color 0.3s var(--n-bezier);\n ", [z("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")])])]),
-		H("footer-segmented, footer-soft-segmented", [z(">", [V("footer", "\n transition: border-color 0.3s var(--n-bezier);\n ", [z("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")])])]),
-		H("embedded", "\n background-color: var(--n-color-embedded);\n ")
+		V("card-cover", "\n overflow: hidden;\n width: 100%;\n border-radius: var(--n-border-radius) var(--n-border-radius) 0 0;\n ", [B("img", "\n display: block;\n width: 100%;\n ")]),
+		U("bordered", "\n border: 1px solid var(--n-border-color);\n ", [B("&:target", "border-color: var(--n-color-target);")]),
+		U("action-segmented", [B(">", [H("action", [B("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")])])]),
+		U("content-segmented, content-soft-segmented", [B(">", [V("card-content", "\n transition: border-color 0.3s var(--n-bezier);\n ", [B("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")]), H("content-scrollbar", "\n transition: border-color 0.3s var(--n-bezier);\n ", [B("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")])])]),
+		U("footer-segmented, footer-soft-segmented", [B(">", [H("footer", "\n transition: border-color 0.3s var(--n-bezier);\n ", [B("&:not(:first-child)", "\n border-top: 1px solid var(--n-border-color);\n ")])])]),
+		U("embedded", "\n background-color: var(--n-color-embedded);\n ")
 	]),
-	bs(B("card", "\n background: var(--n-color-modal);\n ", [H("embedded", "\n background-color: var(--n-color-embedded-modal);\n ")])),
-	xs(B("card", "\n background: var(--n-color-popover);\n ", [H("embedded", "\n background-color: var(--n-color-embedded-popover);\n ")]))
-]), vg = {
+	js(V("card", "\n background: var(--n-color-modal);\n ", [U("embedded", "\n background-color: var(--n-color-embedded-modal);\n ")])),
+	Ms(V("card", "\n background: var(--n-color-popover);\n ", [U("embedded", "\n background-color: var(--n-color-embedded-popover);\n ")]))
+]), Wg = {
 	title: [String, Function],
 	contentClass: String,
 	contentStyle: [Object, String],
@@ -8807,22 +9968,22 @@ var mg = {
 	headerExtra: Function,
 	closeFocusable: Boolean
 };
-nf(vg);
-var yg = /* @__PURE__ */ P({
+Of(Wg);
+var Gg = /* @__PURE__ */ _r({
 	name: "Card",
 	props: {
-		...wp.props,
-		...vg
+		...Xp.props,
+		...Wg
 	},
 	slots: Object,
 	setup(e) {
 		let t = () => {
 			let { onClose: t } = e;
-			t && qp(t);
-		}, { inlineThemeDisabled: n, mergedClsPrefixRef: r, mergedRtlRef: i, mergedComponentPropsRef: a } = of(e), o = wp("Card", "-card", _g, mg, e, r), s = Zp("Card", i, r), c = L(() => e.size || a?.value?.Card?.size || "medium"), l = L(() => {
-			let e = c.value, { self: { color: t, colorModal: n, colorTarget: r, textColor: i, titleTextColor: a, titleFontWeight: s, borderColor: l, actionColor: u, borderRadius: d, lineHeight: f, closeIconColor: p, closeIconColorHover: m, closeIconColorPressed: h, closeColorHover: g, closeColorPressed: _, closeBorderRadius: v, closeIconSize: y, closeSize: b, boxShadow: x, colorPopover: S, colorEmbedded: C, colorEmbeddedModal: w, colorEmbeddedPopover: T, [U("padding", e)]: E, [U("fontSize", e)]: D, [U("titleFontSize", e)]: O }, common: { cubicBezierEaseInOut: ee } } = o.value, { top: te, left: ne, bottom: re } = Ef(E);
+			t && ym(t);
+		}, { inlineThemeDisabled: n, mergedClsPrefixRef: r, mergedRtlRef: i, mergedComponentPropsRef: a } = jf(e), o = Xp("Card", "-card", Ug, Bg, e, r), s = Cm("Card", i, r), c = R(() => e.size || a?.value?.Card?.size || "medium"), l = R(() => {
+			let e = c.value, { self: { color: t, colorModal: n, colorTarget: r, textColor: i, titleTextColor: a, titleFontWeight: s, borderColor: l, actionColor: u, borderRadius: d, lineHeight: f, closeIconColor: p, closeIconColorHover: m, closeIconColorPressed: h, closeColorHover: g, closeColorPressed: _, closeBorderRadius: v, closeIconSize: y, closeSize: b, boxShadow: x, colorPopover: S, colorEmbedded: C, colorEmbeddedModal: w, colorEmbeddedPopover: T, [W("padding", e)]: E, [W("fontSize", e)]: D, [W("titleFontSize", e)]: O }, common: { cubicBezierEaseInOut: k } } = o.value, { top: A, left: ee, bottom: j } = Zf(E);
 			return {
-				"--n-bezier": ee,
+				"--n-bezier": k,
 				"--n-border-radius": d,
 				"--n-color": t,
 				"--n-color-modal": n,
@@ -8843,16 +10004,16 @@ var yg = /* @__PURE__ */ P({
 				"--n-close-color-pressed": _,
 				"--n-border-color": l,
 				"--n-box-shadow": x,
-				"--n-padding-top": te,
-				"--n-padding-bottom": re,
-				"--n-padding-left": ne,
+				"--n-padding-top": A,
+				"--n-padding-bottom": j,
+				"--n-padding-left": ee,
 				"--n-font-size": D,
 				"--n-title-font-size": O,
 				"--n-close-size": b,
 				"--n-close-icon-size": y,
 				"--n-close-border-radius": v
 			};
-		}), u = n ? Sp("card", L(() => c.value[0]), l, e) : void 0;
+		}), u = n ? Jp("card", R(() => c.value[0]), l, e) : void 0;
 		return {
 			rtlEnabled: s,
 			mergedClsPrefix: r,
@@ -8865,8 +10026,8 @@ var yg = /* @__PURE__ */ P({
 	},
 	render() {
 		let { segmented: e, bordered: t, hoverable: n, mergedClsPrefix: r, rtlEnabled: i, onRender: a, embedded: o, tag: s, $slots: c } = this;
-		return a?.(), F(), Ni(s, {
-			class: K([
+		return a?.(), I(), Wi(s, {
+			class: q([
 				`${r}-card`,
 				this.themeClass,
 				o && `${r}-card--embedded`,
@@ -8880,39 +10041,39 @@ var yg = /* @__PURE__ */ P({
 					[`${r}-card--hoverable`]: n
 				}
 			]),
-			style: k(this.cssVars),
+			style: M(this.cssVars),
 			role: this.role
 		}, {
-			default: Fn(() => [
-				G(() => Yp(c.cover, (e) => {
-					let t = this.cover ? Jp([this.cover()]) : e;
-					return t && (F(), I("div", {
-						class: K(`${r}-card-cover`),
+			default: Gn(() => [
+				K(() => xm(c.cover, (e) => {
+					let t = this.cover ? bm([this.cover()]) : e;
+					return t && (I(), L("div", {
+						class: q(`${r}-card-cover`),
 						role: "none"
-					}, [G(() => t)], 2));
+					}, [K(() => t)], 2));
 				})),
-				G(() => Yp(c.header, (e) => {
-					let { title: t } = this, n = t ? Jp(typeof t == "function" ? [t()] : [t]) : e;
-					return n || this.closable ? (F(), I("div", {
+				K(() => xm(c.header, (e) => {
+					let { title: t } = this, n = t ? bm(typeof t == "function" ? [t()] : [t]) : e;
+					return n || this.closable ? (I(), L("div", {
 						key: 1,
-						class: K([`${r}-card-header`, this.headerClass]),
-						style: k(this.headerStyle),
+						class: q([`${r}-card-header`, this.headerClass]),
+						style: M(this.headerStyle),
 						role: "heading"
 					}, [
-						Ri("div", {
-							class: K(`${r}-card-header__main`),
+						Yi("div", {
+							class: q(`${r}-card-header__main`),
 							role: "heading"
-						}, [G(() => n)], 2),
-						G(() => Yp(c["header-extra"], (e) => {
-							let t = this.headerExtra ? Jp([this.headerExtra()]) : e;
-							return t && (F(), I("div", {
-								class: K([`${r}-card-header__extra`, this.headerExtraClass]),
-								style: k(this.headerExtraStyle)
-							}, [G(() => t)], 6));
+						}, [K(() => n)], 2),
+						K(() => xm(c["header-extra"], (e) => {
+							let t = this.headerExtra ? bm([this.headerExtra()]) : e;
+							return t && (I(), L("div", {
+								class: q([`${r}-card-header__extra`, this.headerExtraClass]),
+								style: M(this.headerExtraStyle)
+							}, [K(() => t)], 6));
 						})),
-						G(() => this.closable && (F(), Ni(fh, {
+						K(() => this.closable && (I(), Wi(Rh, {
 							clsPrefix: r,
-							class: K(`${r}-card-header__close`),
+							class: q(`${r}-card-header__close`),
 							onClick: this.handleCloseClick,
 							focusable: this.closeFocusable,
 							absolute: !0
@@ -8924,38 +10085,38 @@ var yg = /* @__PURE__ */ P({
 						])))
 					], 6)) : null;
 				})),
-				G(() => Yp(c.default, (e) => {
-					let { content: t } = this, n = t ? Jp(typeof t == "function" ? [t()] : [t]) : e;
-					return n ? this.contentScrollable ? (F(), Ni(ah, {
+				K(() => xm(c.default, (e) => {
+					let { content: t } = this, n = t ? bm(typeof t == "function" ? [t()] : [t]) : e;
+					return n ? this.contentScrollable ? (I(), Wi(jh, {
 						key: 2,
-						class: K(`${r}-card__content-scrollbar`),
+						class: q(`${r}-card__content-scrollbar`),
 						contentClass: [`${r}-card-content`, this.contentClass],
 						contentStyle: this.contentStyle
 					}, { default: () => n }, 1032, [
 						"class",
 						"contentClass",
 						"contentStyle"
-					])) : (F(), I("div", {
+					])) : (I(), L("div", {
 						key: 3,
-						class: K([`${r}-card-content`, this.contentClass]),
-						style: k(this.contentStyle),
+						class: q([`${r}-card-content`, this.contentClass]),
+						style: M(this.contentStyle),
 						role: "none"
-					}, [G(() => n)], 6)) : null;
+					}, [K(() => n)], 6)) : null;
 				})),
-				G(() => Yp(c.footer, (e) => {
-					let t = this.footer ? Jp([this.footer()]) : e;
-					return t && (F(), I("div", {
-						class: K([`${r}-card__footer`, this.footerClass]),
-						style: k(this.footerStyle),
+				K(() => xm(c.footer, (e) => {
+					let t = this.footer ? bm([this.footer()]) : e;
+					return t && (I(), L("div", {
+						class: q([`${r}-card__footer`, this.footerClass]),
+						style: M(this.footerStyle),
 						role: "none"
-					}, [G(() => t)], 6));
+					}, [K(() => t)], 6));
 				})),
-				G(() => Yp(c.action, (e) => {
-					let t = this.action ? Jp([this.action()]) : e;
-					return t && (F(), I("div", {
-						class: K(`${r}-card__action`),
+				K(() => xm(c.action, (e) => {
+					let t = this.action ? bm([this.action()]) : e;
+					return t && (I(), L("div", {
+						class: q(`${r}-card__action`),
 						role: "none"
-					}, [G(() => t)], 2));
+					}, [K(() => t)], 2));
 				}))
 			]),
 			_: 2
@@ -8968,7 +10129,7 @@ var yg = /* @__PURE__ */ P({
 });
 //#endregion
 //#region node_modules/naive-ui/es/carousel/styles/light.mjs
-function bg() {
+function Kg() {
 	return {
 		dotSize: "8px",
 		dotColor: "rgba(255, 255, 255, .3)",
@@ -8981,7 +10142,7 @@ function bg() {
 }
 //#endregion
 //#region node_modules/naive-ui/es/checkbox/styles/_common.mjs
-var xg = {
+var qg = {
 	sizeSmall: "14px",
 	sizeMedium: "16px",
 	sizeLarge: "18px",
@@ -8990,10 +10151,10 @@ var xg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/checkbox/styles/light.mjs
-function Sg(e) {
+function Jg(e) {
 	let { baseColor: t, inputColorDisabled: n, cardColor: r, modalColor: i, popoverColor: a, textColorDisabled: o, borderColor: s, primaryColor: c, textColor2: l, fontSizeSmall: u, fontSizeMedium: d, fontSizeLarge: f, borderRadiusSmall: p, lineHeight: m } = e;
 	return {
-		...xg,
+		...qg,
 		labelLineHeight: m,
 		fontSizeSmall: u,
 		fontSizeMedium: d,
@@ -9014,22 +10175,22 @@ function Sg(e) {
 		borderDisabledChecked: `1px solid ${s}`,
 		borderChecked: `1px solid ${c}`,
 		borderFocus: `1px solid ${c}`,
-		boxShadowFocus: `0 0 0 2px ${J(c, { alpha: .3 })}`,
+		boxShadowFocus: `0 0 0 2px ${Y(c, { alpha: .3 })}`,
 		textColor: l,
 		textColorDisabled: o
 	};
 }
-var Cg = {
+var Yg = {
 	name: "Checkbox",
 	common: Q,
 	self(e) {
-		let { cardColor: t } = e, n = Sg(e);
+		let { cardColor: t } = e, n = Jg(e);
 		return n.color = "#0000", n.checkMarkColor = t, n;
 	}
 };
 //#endregion
 //#region node_modules/naive-ui/es/cascader/styles/light.mjs
-function wg(e) {
+function Xg(e) {
 	let { borderRadius: t, boxShadow2: n, popoverColor: r, textColor2: i, textColor3: a, primaryColor: o, textColorDisabled: s, dividerColor: c, hoverColor: l, fontSizeMedium: u, heightMedium: d } = e;
 	return {
 		menuBorderRadius: t,
@@ -9051,18 +10212,18 @@ function wg(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/cascader/styles/dark.mjs
-var Tg = {
+var Zg = {
 	name: "Cascader",
 	common: Q,
 	peers: {
-		InternalSelectMenu: Ap,
-		InternalSelection: mh,
-		Scrollbar: _p,
-		Checkbox: Cg,
-		Empty: bp
+		InternalSelectMenu: nm,
+		InternalSelection: Bh,
+		Scrollbar: Up,
+		Checkbox: Yg,
+		Empty: Kp
 	},
-	self: wg
-}, Eg = {
+	self: Xg
+}, Qg = {
 	name: "Code",
 	common: Q,
 	self(e) {
@@ -9086,7 +10247,7 @@ var Tg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/collapse/styles/light.mjs
-function Dg(e) {
+function $g(e) {
 	let { fontWeight: t, textColor1: n, textColor2: r, textColorDisabled: i, dividerColor: a, fontSize: o } = e;
 	return {
 		titleFontSize: o,
@@ -9104,20 +10265,20 @@ function Dg(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/collapse/styles/dark.mjs
-var Og = {
+var e_ = {
 	name: "Collapse",
 	common: Q,
-	self: Dg
+	self: $g
 };
 //#endregion
 //#region node_modules/naive-ui/es/collapse-transition/styles/light.mjs
-function kg(e) {
+function t_(e) {
 	let { cubicBezierEaseInOut: t } = e;
 	return { bezier: t };
 }
 //#endregion
 //#region node_modules/naive-ui/es/color-picker/styles/light.mjs
-function Ag(e) {
+function n_(e) {
 	let { fontSize: t, boxShadow2: n, popoverColor: r, textColor2: i, borderRadius: a, borderColor: o, heightSmall: s, heightMedium: c, heightLarge: l, fontSizeSmall: u, fontSizeMedium: d, fontSizeLarge: f, dividerColor: p } = e;
 	return {
 		panelFontSize: t,
@@ -9135,7 +10296,7 @@ function Ag(e) {
 		dividerColor: p
 	};
 }
-var jg = /* @__PURE__ */ P({
+var r_ = /* @__PURE__ */ _r({
 	name: "ConfigProvider",
 	alias: ["App"],
 	props: {
@@ -9168,53 +10329,53 @@ var jg = /* @__PURE__ */ P({
 		},
 		as: {
 			type: String,
-			validator: () => (ef("config-provider", "`as` is deprecated, please use `tag` instead."), !0),
+			validator: () => (Ef("config-provider", "`as` is deprecated, please use `tag` instead."), !0),
 			default: void 0
 		}
 	},
 	setup(e) {
-		let t = Rn(af, null), n = L(() => {
+		let t = Jn(Af, null), n = R(() => {
 			let { theme: n } = e;
 			if (n === null) return;
 			let r = t?.mergedThemeRef.value;
 			return n === void 0 ? r : r === void 0 ? n : Object.assign({}, r, n);
-		}), r = L(() => {
+		}), r = R(() => {
 			let { themeOverrides: n } = e;
 			if (n !== null) {
 				if (n === void 0) return t?.mergedThemeOverridesRef.value;
 				{
 					let e = t?.mergedThemeOverridesRef.value;
-					return e === void 0 ? n : $d({}, e, n);
+					return e === void 0 ? n : Tf({}, e, n);
 				}
 			}
-		}), i = Up(() => {
+		}), i = hm(() => {
 			let { namespace: n } = e;
 			return n === void 0 ? t?.mergedNamespaceRef.value : n;
-		}), a = Up(() => {
+		}), a = hm(() => {
 			let { bordered: n } = e;
 			return n === void 0 ? t?.mergedBorderedRef.value : n;
-		}), o = L(() => {
+		}), o = R(() => {
 			let { icons: n } = e;
 			return n === void 0 ? t?.mergedIconsRef.value : n;
-		}), s = L(() => {
+		}), s = R(() => {
 			let { componentOptions: n } = e;
 			return n === void 0 ? t?.mergedComponentPropsRef.value : n;
-		}), c = L(() => {
+		}), c = R(() => {
 			let { clsPrefix: n } = e;
 			return n === void 0 ? t ? t.mergedClsPrefixRef.value : "n" : n;
-		}), l = L(() => {
+		}), l = R(() => {
 			let { rtl: n } = e;
 			if (n === void 0) return t?.mergedRtlRef.value;
 			let r = {};
-			for (let e of n) r[e.name] = Ut(e), e.peers?.forEach((e) => {
-				e.name in r || (r[e.name] = Ut(e));
+			for (let e of n) r[e.name] = $t(e), e.peers?.forEach((e) => {
+				e.name in r || (r[e.name] = $t(e));
 			});
 			return r;
-		}), u = L(() => e.breakpoints || t?.mergedBreakpointsRef.value), d = e.inlineThemeDisabled || t?.inlineThemeDisabled, f = e.preflightStyleDisabled || t?.preflightStyleDisabled, p = e.styleMountTarget || t?.styleMountTarget;
-		return Ln(af, {
-			mergedThemeHashRef: L(() => {
+		}), u = R(() => e.breakpoints || t?.mergedBreakpointsRef.value), d = e.inlineThemeDisabled || t?.inlineThemeDisabled, f = e.preflightStyleDisabled || t?.preflightStyleDisabled, p = e.styleMountTarget || t?.styleMountTarget;
+		return qn(Af, {
+			mergedThemeHashRef: R(() => {
 				let { value: e } = n, { value: t } = r, i = t && Object.keys(t).length !== 0, a = e?.name;
-				return a ? i ? `${a}-${ns(JSON.stringify(r.value))}` : a : i ? ns(JSON.stringify(r.value)) : "";
+				return a ? i ? `${a}-${ps(JSON.stringify(r.value))}` : a : i ? ps(JSON.stringify(r.value)) : "";
 			}),
 			mergedBreakpointsRef: u,
 			mergedRtlRef: l,
@@ -9223,19 +10384,19 @@ var jg = /* @__PURE__ */ P({
 			mergedBorderedRef: a,
 			mergedNamespaceRef: i,
 			mergedClsPrefixRef: c,
-			mergedLocaleRef: L(() => {
+			mergedLocaleRef: R(() => {
 				let { locale: n } = e;
 				if (n !== null) return n === void 0 ? t?.mergedLocaleRef.value : n;
 			}),
-			mergedDateLocaleRef: L(() => {
+			mergedDateLocaleRef: R(() => {
 				let { dateLocale: n } = e;
 				if (n !== null) return n === void 0 ? t?.mergedDateLocaleRef.value : n;
 			}),
-			mergedHljsRef: L(() => {
+			mergedHljsRef: R(() => {
 				let { hljs: n } = e;
 				return n === void 0 ? t?.mergedHljsRef.value : n;
 			}),
-			mergedKatexRef: L(() => {
+			mergedKatexRef: R(() => {
 				let { katex: n } = e;
 				return n === void 0 ? t?.mergedKatexRef.value : n;
 			}),
@@ -9253,31 +10414,31 @@ var jg = /* @__PURE__ */ P({
 		};
 	},
 	render() {
-		return this.abstract ? this.$slots.default?.() : R(this.as || this.tag, { class: `${this.mergedClsPrefix || "n"}-config-provider` }, this.$slots.default?.());
+		return this.abstract ? this.$slots.default?.() : z(this.as || this.tag, { class: `${this.mergedClsPrefix || "n"}-config-provider` }, this.$slots.default?.());
 	}
-}), Mg = {
+}), i_ = {
 	name: "Popselect",
 	common: Q,
 	peers: {
-		Popover: Np,
-		InternalSelectMenu: Ap
+		Popover: am,
+		InternalSelectMenu: nm
 	}
 };
 //#endregion
 //#region node_modules/naive-ui/es/select/styles/light.mjs
-function Ng(e) {
+function a_(e) {
 	let { boxShadow2: t } = e;
 	return { menuBoxShadow: t };
 }
-var Pg = {
+var o_ = {
 	name: "Select",
 	common: Q,
 	peers: {
-		InternalSelection: mh,
-		InternalSelectMenu: Ap
+		InternalSelection: Bh,
+		InternalSelectMenu: nm
 	},
-	self: Ng
-}, Fg = {
+	self: a_
+}, s_ = {
 	itemPaddingSmall: "0 4px",
 	itemMarginSmall: "0 0 0 8px",
 	itemMarginSmallRtl: "0 8px 0 0",
@@ -9314,10 +10475,10 @@ var Pg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/pagination/styles/light.mjs
-function Ig(e) {
+function c_(e) {
 	let { textColor2: t, primaryColor: n, primaryColorHover: r, primaryColorPressed: i, inputColorDisabled: a, textColorDisabled: o, borderColor: s, borderRadius: c, fontSizeTiny: l, fontSizeSmall: u, fontSizeMedium: d, heightTiny: f, heightSmall: p, heightMedium: m } = e;
 	return {
-		...Fg,
+		...s_,
 		buttonColor: "#0000",
 		buttonColorHover: "#0000",
 		buttonColorPressed: "#0000",
@@ -9357,19 +10518,19 @@ function Ig(e) {
 		jumperTextColorDisabled: o
 	};
 }
-var Lg = {
+var l_ = {
 	name: "Pagination",
 	common: Q,
 	peers: {
-		Select: Pg,
-		Input: Ch,
-		Popselect: Mg
+		Select: o_,
+		Input: Yh,
+		Popselect: i_
 	},
 	self(e) {
-		let { primaryColor: t, opacity3: n } = e, r = J(t, { alpha: Number(n) }), i = Ig(e);
+		let { primaryColor: t, opacity3: n } = e, r = Y(t, { alpha: Number(n) }), i = c_(e);
 		return i.itemBorderActive = `1px solid ${r}`, i.itemBorderDisabled = "1px solid #0000", i;
 	}
-}, Rg = {
+}, u_ = {
 	padding: "4px 0",
 	optionIconSizeSmall: "14px",
 	optionIconSizeMedium: "16px",
@@ -9394,10 +10555,10 @@ var Lg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/dropdown/styles/light.mjs
-function zg(e) {
+function d_(e) {
 	let { primaryColor: t, textColor2: n, dividerColor: r, hoverColor: i, popoverColor: a, invertedColor: o, borderRadius: s, fontSizeSmall: c, fontSizeMedium: l, fontSizeLarge: u, fontSizeHuge: d, heightSmall: f, heightMedium: p, heightLarge: m, heightHuge: h, textColor3: g, opacityDisabled: _ } = e;
 	return {
-		...Rg,
+		...u_,
 		optionHeightSmall: f,
 		optionHeightMedium: p,
 		optionHeightLarge: m,
@@ -9416,7 +10577,7 @@ function zg(e) {
 		suffixColor: n,
 		prefixColor: n,
 		optionColorHover: i,
-		optionColorActive: J(t, { alpha: .1 }),
+		optionColorActive: Y(t, { alpha: .1 }),
 		groupHeaderTextColor: g,
 		optionTextColorInverted: "#BBB",
 		optionTextColorHoverInverted: "#FFF",
@@ -9432,41 +10593,41 @@ function zg(e) {
 		optionOpacityDisabled: _
 	};
 }
-var Bg = {
+var f_ = {
 	name: "Dropdown",
 	common: Q,
-	peers: { Popover: Np },
+	peers: { Popover: am },
 	self(e) {
-		let { primaryColorSuppl: t, primaryColor: n, popoverColor: r } = e, i = zg(e);
-		return i.colorInverted = r, i.optionColorActive = J(n, { alpha: .15 }), i.optionColorActiveInverted = t, i.optionColorHoverInverted = t, i;
+		let { primaryColorSuppl: t, primaryColor: n, popoverColor: r } = e, i = d_(e);
+		return i.colorInverted = r, i.optionColorActive = Y(n, { alpha: .15 }), i.optionColorActiveInverted = t, i.optionColorHoverInverted = t, i;
 	}
-}, Vg = { padding: "8px 14px" }, Hg = {
+}, p_ = { padding: "8px 14px" }, m_ = {
 	name: "Tooltip",
 	common: Q,
-	peers: { Popover: Np },
+	peers: { Popover: am },
 	self(e) {
 		let { borderRadius: t, boxShadow2: n, popoverColor: r, textColor2: i } = e;
 		return {
-			...Vg,
+			...p_,
 			borderRadius: t,
 			boxShadow: n,
 			color: r,
 			textColor: i
 		};
 	}
-}, Ug = {
+}, h_ = {
 	radioSizeSmall: "14px",
 	radioSizeMedium: "16px",
 	radioSizeLarge: "18px",
 	labelPadding: "0 8px",
 	labelFontWeight: "400"
-}, Wg = {
+}, g_ = {
 	name: "Radio",
 	common: Q,
 	self(e) {
 		let { borderColor: t, primaryColor: n, baseColor: r, textColorDisabled: i, inputColorDisabled: a, textColor2: o, opacityDisabled: s, borderRadius: c, fontSizeSmall: l, fontSizeMedium: u, fontSizeLarge: d, heightSmall: f, heightMedium: p, heightLarge: m, lineHeight: h } = e;
 		return {
-			...Ug,
+			...h_,
 			labelLineHeight: h,
 			buttonHeightSmall: f,
 			buttonHeightMedium: p,
@@ -9476,7 +10637,7 @@ var Bg = {
 			fontSizeLarge: d,
 			boxShadow: `inset 0 0 0 1px ${t}`,
 			boxShadowActive: `inset 0 0 0 1px ${n}`,
-			boxShadowFocus: `inset 0 0 0 1px ${n}, 0 0 0 2px ${J(n, { alpha: .3 })}`,
+			boxShadowFocus: `inset 0 0 0 1px ${n}, 0 0 0 2px ${Y(n, { alpha: .3 })}`,
 			boxShadowHover: `inset 0 0 0 1px ${n}`,
 			boxShadowDisabled: `inset 0 0 0 1px ${t}`,
 			color: "#0000",
@@ -9495,17 +10656,17 @@ var Bg = {
 			buttonTextColorActive: r,
 			buttonTextColorHover: n,
 			opacityDisabled: s,
-			buttonBoxShadowFocus: `inset 0 0 0 1px ${n}, 0 0 0 2px ${J(n, { alpha: .3 })}`,
+			buttonBoxShadowFocus: `inset 0 0 0 1px ${n}, 0 0 0 2px ${Y(n, { alpha: .3 })}`,
 			buttonBoxShadowHover: `inset 0 0 0 1px ${n}`,
 			buttonBoxShadow: "inset 0 0 0 1px #0000",
 			buttonBorderRadius: c
 		};
 	}
-}, Gg = {
+}, __ = {
 	name: "Ellipsis",
 	common: Q,
-	peers: { Tooltip: Hg }
-}, Kg = {
+	peers: { Tooltip: m_ }
+}, v_ = {
 	thPaddingSmall: "8px",
 	thPaddingMedium: "12px",
 	thPaddingLarge: "12px",
@@ -9523,23 +10684,23 @@ var Bg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/data-table/styles/light.mjs
-function qg(e) {
+function y_(e) {
 	let { cardColor: t, modalColor: n, popoverColor: r, textColor2: i, textColor1: a, tableHeaderColor: o, tableColorHover: s, iconColor: c, primaryColor: l, fontWeightStrong: u, borderRadius: d, lineHeight: f, fontSizeSmall: p, fontSizeMedium: m, fontSizeLarge: h, dividerColor: g, heightSmall: _, opacityDisabled: v, tableColorStriped: y } = e;
 	return {
-		...Kg,
+		...v_,
 		actionDividerColor: g,
 		lineHeight: f,
 		borderRadius: d,
 		fontSizeSmall: p,
 		fontSizeMedium: m,
 		fontSizeLarge: h,
-		borderColor: q(t, g),
-		tdColorHover: q(t, s),
-		tdColorSorting: q(t, s),
-		tdColorStriped: q(t, y),
-		thColor: q(t, o),
-		thColorHover: q(q(t, o), s),
-		thColorSorting: q(q(t, o), s),
+		borderColor: J(t, g),
+		tdColorHover: J(t, s),
+		tdColorSorting: J(t, s),
+		tdColorStriped: J(t, y),
+		thColor: J(t, o),
+		thColorHover: J(J(t, o), s),
+		thColorSorting: J(J(t, o), s),
 		tdColor: t,
 		tdTextColor: i,
 		thTextColor: a,
@@ -9547,21 +10708,21 @@ function qg(e) {
 		thButtonColorHover: s,
 		thIconColor: c,
 		thIconColorActive: l,
-		borderColorModal: q(n, g),
-		tdColorHoverModal: q(n, s),
-		tdColorSortingModal: q(n, s),
-		tdColorStripedModal: q(n, y),
-		thColorModal: q(n, o),
-		thColorHoverModal: q(q(n, o), s),
-		thColorSortingModal: q(q(n, o), s),
+		borderColorModal: J(n, g),
+		tdColorHoverModal: J(n, s),
+		tdColorSortingModal: J(n, s),
+		tdColorStripedModal: J(n, y),
+		thColorModal: J(n, o),
+		thColorHoverModal: J(J(n, o), s),
+		thColorSortingModal: J(J(n, o), s),
 		tdColorModal: n,
-		borderColorPopover: q(r, g),
-		tdColorHoverPopover: q(r, s),
-		tdColorSortingPopover: q(r, s),
-		tdColorStripedPopover: q(r, y),
-		thColorPopover: q(r, o),
-		thColorHoverPopover: q(q(r, o), s),
-		thColorSortingPopover: q(q(r, o), s),
+		borderColorPopover: J(r, g),
+		tdColorHoverPopover: J(r, s),
+		tdColorSortingPopover: J(r, s),
+		tdColorStripedPopover: J(r, y),
+		thColorPopover: J(r, o),
+		thColorHoverPopover: J(J(r, o), s),
+		thColorSortingPopover: J(J(r, o), s),
 		tdColorPopover: r,
 		boxShadowBefore: "inset -12px 0 8px -12px rgba(0, 0, 0, .18)",
 		boxShadowAfter: "inset 12px 0 8px -12px rgba(0, 0, 0, .18)",
@@ -9572,28 +10733,28 @@ function qg(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/data-table/styles/dark.mjs
-var Jg = {
+var b_ = {
 	name: "DataTable",
 	common: Q,
 	peers: {
-		Button: ig,
-		Checkbox: Cg,
-		Radio: Wg,
-		Pagination: Lg,
-		Scrollbar: _p,
-		Empty: xp,
-		Popover: Np,
-		Ellipsis: Gg,
-		Dropdown: Bg
+		Button: Ag,
+		Checkbox: Yg,
+		Radio: g_,
+		Pagination: l_,
+		Scrollbar: Up,
+		Empty: qp,
+		Popover: am,
+		Ellipsis: __,
+		Dropdown: f_
 	},
 	self(e) {
-		let t = qg(e);
+		let t = y_(e);
 		return t.boxShadowAfter = "inset 12px 0 8px -12px rgba(0, 0, 0, .36)", t.boxShadowBefore = "inset -12px 0 8px -12px rgba(0, 0, 0, .36)", t;
 	}
 };
 //#endregion
 //#region node_modules/naive-ui/es/icon/styles/light.mjs
-function Yg(e) {
+function x_(e) {
 	let { textColorBase: t, opacity1: n, opacity2: r, opacity3: i, opacity4: a, opacity5: o } = e;
 	return {
 		color: t,
@@ -9606,11 +10767,11 @@ function Yg(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/icon/styles/dark.mjs
-var Xg = {
+var S_ = {
 	name: "Icon",
 	common: Q,
-	self: Yg
-}, Zg = {
+	self: x_
+}, C_ = {
 	itemFontSize: "12px",
 	itemHeight: "36px",
 	itemWidth: "52px",
@@ -9618,10 +10779,10 @@ var Xg = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/time-picker/styles/light.mjs
-function Qg(e) {
+function w_(e) {
 	let { popoverColor: t, textColor2: n, primaryColor: r, hoverColor: i, dividerColor: a, opacityDisabled: o, boxShadow2: s, borderRadius: c, iconColor: l, iconColorDisabled: u } = e;
 	return {
-		...Zg,
+		...C_,
 		panelColor: t,
 		panelBoxShadow: s,
 		panelDividerColor: a,
@@ -9635,16 +10796,16 @@ function Qg(e) {
 		iconColorDisabled: u
 	};
 }
-var $g = {
+var T_ = {
 	name: "TimePicker",
 	common: Q,
 	peers: {
-		Scrollbar: _p,
-		Button: ig,
-		Input: Ch
+		Scrollbar: Up,
+		Button: Ag,
+		Input: Yh
 	},
-	self: Qg
-}, e_ = {
+	self: w_
+}, E_ = {
 	itemSize: "24px",
 	itemCellWidth: "38px",
 	itemCellHeight: "32px",
@@ -9683,10 +10844,10 @@ var $g = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/date-picker/styles/light.mjs
-function t_(e) {
+function D_(e) {
 	let { hoverColor: t, fontSize: n, textColor2: r, textColorDisabled: i, popoverColor: a, primaryColor: o, borderRadiusSmall: s, iconColor: c, iconColorDisabled: l, textColor1: u, dividerColor: d, boxShadow2: f, borderRadius: p, fontWeightStrong: m } = e;
 	return {
-		...e_,
+		...E_,
 		itemFontSize: n,
 		calendarDaysFontSize: n,
 		calendarTitleFontSize: n,
@@ -9694,7 +10855,7 @@ function t_(e) {
 		itemTextColorDisabled: i,
 		itemTextColorActive: a,
 		itemTextColorCurrent: o,
-		itemColorIncluded: J(o, { alpha: .1 }),
+		itemColorIncluded: Y(o, { alpha: .1 }),
 		itemColorHover: t,
 		itemColorDisabled: t,
 		itemColorActive: o,
@@ -9719,20 +10880,20 @@ function t_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/date-picker/styles/dark.mjs
-var n_ = {
+var O_ = {
 	name: "DatePicker",
 	common: Q,
 	peers: {
-		Input: Ch,
-		Button: ig,
-		TimePicker: $g,
-		Scrollbar: _p
+		Input: Yh,
+		Button: Ag,
+		TimePicker: T_,
+		Scrollbar: Up
 	},
 	self(e) {
-		let { popoverColor: t, hoverColor: n, primaryColor: r } = e, i = t_(e);
-		return i.itemColorDisabled = q(t, n), i.itemColorIncluded = J(r, { alpha: .15 }), i.itemColorHover = q(t, n), i;
+		let { popoverColor: t, hoverColor: n, primaryColor: r } = e, i = D_(e);
+		return i.itemColorDisabled = J(t, n), i.itemColorIncluded = Y(r, { alpha: .15 }), i.itemColorHover = J(t, n), i;
 	}
-}, r_ = {
+}, k_ = {
 	thPaddingBorderedSmall: "8px 12px",
 	thPaddingBorderedMedium: "12px 16px",
 	thPaddingBorderedLarge: "16px 24px",
@@ -9748,37 +10909,37 @@ var n_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/descriptions/styles/light.mjs
-function i_(e) {
+function A_(e) {
 	let { tableHeaderColor: t, textColor2: n, textColor1: r, cardColor: i, modalColor: a, popoverColor: o, dividerColor: s, borderRadius: c, fontWeightStrong: l, lineHeight: u, fontSizeSmall: d, fontSizeMedium: f, fontSizeLarge: p } = e;
 	return {
-		...r_,
+		...k_,
 		lineHeight: u,
 		fontSizeSmall: d,
 		fontSizeMedium: f,
 		fontSizeLarge: p,
 		titleTextColor: r,
-		thColor: q(i, t),
-		thColorModal: q(a, t),
-		thColorPopover: q(o, t),
+		thColor: J(i, t),
+		thColorModal: J(a, t),
+		thColorPopover: J(o, t),
 		thTextColor: r,
 		thFontWeight: l,
 		tdTextColor: n,
 		tdColor: i,
 		tdColorModal: a,
 		tdColorPopover: o,
-		borderColor: q(i, s),
-		borderColorModal: q(a, s),
-		borderColorPopover: q(o, s),
+		borderColor: J(i, s),
+		borderColorModal: J(a, s),
+		borderColorPopover: J(o, s),
 		borderRadius: c
 	};
 }
 //#endregion
 //#region node_modules/naive-ui/es/descriptions/styles/dark.mjs
-var a_ = {
+var j_ = {
 	name: "Descriptions",
 	common: Q,
-	self: i_
-}, o_ = {
+	self: A_
+}, M_ = {
 	titleFontSize: "18px",
 	padding: "16px 28px 20px 28px",
 	iconSize: "28px",
@@ -9793,10 +10954,10 @@ var a_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/dialog/styles/light.mjs
-function s_(e) {
+function N_(e) {
 	let { textColor1: t, textColor2: n, modalColor: r, closeIconColor: i, closeIconColorHover: a, closeIconColorPressed: o, closeColorHover: s, closeColorPressed: c, infoColor: l, successColor: u, warningColor: d, errorColor: f, primaryColor: p, dividerColor: m, borderRadius: h, fontWeightStrong: g, lineHeight: _, fontSize: v } = e;
 	return {
-		...o_,
+		...M_,
 		fontSize: v,
 		lineHeight: _,
 		border: `1px solid ${m}`,
@@ -9818,15 +10979,15 @@ function s_(e) {
 		titleFontWeight: g
 	};
 }
-var c_ = {
+var P_ = {
 	name: "Dialog",
 	common: Q,
-	peers: { Button: ig },
-	self: s_
+	peers: { Button: Ag },
+	self: N_
 };
 //#endregion
 //#region node_modules/naive-ui/es/modal/styles/light.mjs
-function l_(e) {
+function F_(e) {
 	let { modalColor: t, textColor2: n, boxShadow3: r } = e;
 	return {
 		color: t,
@@ -9836,16 +10997,16 @@ function l_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/modal/styles/dark.mjs
-var u_ = {
+var I_ = {
 	name: "Modal",
 	common: Q,
 	peers: {
-		Scrollbar: _p,
-		Dialog: c_,
-		Card: hg
+		Scrollbar: Up,
+		Dialog: P_,
+		Card: Vg
 	},
-	self: l_
-}, d_ = {
+	self: F_
+}, L_ = {
 	name: "LoadingBar",
 	common: Q,
 	self(e) {
@@ -9856,7 +11017,7 @@ var u_ = {
 			height: "2px"
 		};
 	}
-}, f_ = {
+}, R_ = {
 	margin: "0 0 8px 0",
 	padding: "10px 20px",
 	maxWidth: "720px",
@@ -9870,10 +11031,10 @@ var u_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/message/styles/light.mjs
-function p_(e) {
+function z_(e) {
 	let { textColor2: t, closeIconColor: n, closeIconColorHover: r, closeIconColorPressed: i, infoColor: a, successColor: o, errorColor: s, warningColor: c, popoverColor: l, boxShadow2: u, primaryColor: d, lineHeight: f, borderRadius: p, closeColorHover: m, closeColorPressed: h } = e;
 	return {
-		...f_,
+		...R_,
 		closeBorderRadius: p,
 		textColor: t,
 		textColorInfo: t,
@@ -9937,11 +11098,11 @@ function p_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/message/styles/dark.mjs
-var m_ = {
+var B_ = {
 	name: "Message",
 	common: Q,
-	self: p_
-}, h_ = {
+	self: z_
+}, V_ = {
 	closeMargin: "16px 12px",
 	closeSize: "20px",
 	closeIconSize: "16px",
@@ -9953,10 +11114,10 @@ var m_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/notification/styles/light.mjs
-function g_(e) {
+function H_(e) {
 	let { textColor2: t, successColor: n, infoColor: r, warningColor: i, errorColor: a, popoverColor: o, closeIconColor: s, closeIconColorHover: c, closeIconColorPressed: l, closeColorHover: u, closeColorPressed: d, textColor1: f, textColor3: p, borderRadius: m, fontWeightStrong: h, boxShadow2: g, lineHeight: _, fontSize: v } = e;
 	return {
-		...h_,
+		...V_,
 		borderRadius: m,
 		lineHeight: _,
 		fontSize: v,
@@ -9982,15 +11143,15 @@ function g_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/notification/styles/dark.mjs
-var __ = {
+var U_ = {
 	name: "Notification",
 	common: Q,
-	peers: { Scrollbar: _p },
-	self: g_
+	peers: { Scrollbar: Up },
+	self: H_
 };
 //#endregion
 //#region node_modules/naive-ui/es/divider/styles/light.mjs
-function v_(e) {
+function W_(e) {
 	let { textColor1: t, dividerColor: n, fontWeightStrong: r } = e;
 	return {
 		textColor: t,
@@ -10000,14 +11161,14 @@ function v_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/divider/styles/dark.mjs
-var y_ = {
+var G_ = {
 	name: "Divider",
 	common: Q,
-	self: v_
+	self: W_
 };
 //#endregion
 //#region node_modules/naive-ui/es/drawer/styles/light.mjs
-function b_(e) {
+function K_(e) {
 	let { modalColor: t, textColor1: n, textColor2: r, boxShadow3: i, lineHeight: a, fontWeightStrong: o, dividerColor: s, closeColorHover: c, closeColorPressed: l, closeIconColor: u, closeIconColorHover: d, closeIconColorPressed: f, borderRadius: p, primaryColorHover: m } = e;
 	return {
 		bodyPadding: "16px 24px",
@@ -10036,61 +11197,61 @@ function b_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/drawer/styles/dark.mjs
-var x_ = {
+var q_ = {
 	name: "Drawer",
 	common: Q,
-	peers: { Scrollbar: _p },
-	self: b_
-}, S_ = {
+	peers: { Scrollbar: Up },
+	self: K_
+}, J_ = {
 	actionMargin: "0 0 0 20px",
 	actionMarginRtl: "0 20px 0 0"
-}, C_ = {
+}, Y_ = {
 	name: "DynamicInput",
 	common: Q,
 	peers: {
-		Input: Ch,
-		Button: ig
+		Input: Yh,
+		Button: Ag
 	},
 	self() {
-		return S_;
+		return J_;
 	}
-}, w_ = {
+}, X_ = {
 	gapSmall: "4px 8px",
 	gapMedium: "8px 12px",
 	gapLarge: "12px 16px"
-}, T_ = {
+}, Z_ = {
 	name: "Space",
 	self() {
-		return w_;
+		return X_;
 	}
-}, E_ = {
+}, Q_ = {
 	name: "DynamicTags",
 	common: Q,
 	peers: {
-		Input: Ch,
-		Button: ig,
-		Tag: sh,
-		Space: T_
+		Input: Yh,
+		Button: Ag,
+		Tag: Nh,
+		Space: Z_
 	},
 	self() {
 		return { inputWidth: "64px" };
 	}
-}, D_ = {
+}, $_ = {
 	name: "Element",
 	common: Q
-}, O_ = {
+}, ev = {
 	gapSmall: "4px 8px",
 	gapMedium: "8px 12px",
 	gapLarge: "12px 16px"
-}, k_ = {
+}, tv = {
 	name: "Flex",
 	self() {
-		return O_;
+		return ev;
 	}
-}, A_ = {
+}, nv = {
 	name: "ButtonGroup",
 	common: Q
-}, j_ = {
+}, rv = {
 	feedbackPadding: "4px 0 0 2px",
 	feedbackHeightSmall: "24px",
 	feedbackHeightMedium: "24px",
@@ -10115,10 +11276,10 @@ var x_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/form/styles/light.mjs
-function M_(e) {
+function iv(e) {
 	let { heightSmall: t, heightMedium: n, heightLarge: r, textColor1: i, errorColor: a, warningColor: o, lineHeight: s, textColor3: c } = e;
 	return {
-		...j_,
+		...rv,
 		blankHeightSmall: t,
 		blankHeightMedium: n,
 		blankHeightLarge: r,
@@ -10132,11 +11293,11 @@ function M_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/form/styles/dark.mjs
-var N_ = {
+var av = {
 	name: "Form",
 	common: Q,
-	self: M_
-}, P_ = {
+	self: iv
+}, ov = {
 	name: "GradientText",
 	common: Q,
 	self(e) {
@@ -10156,12 +11317,12 @@ var N_ = {
 			colorEndSuccess: s
 		};
 	}
-}, F_ = {
+}, sv = {
 	name: "InputNumber",
 	common: Q,
 	peers: {
-		Button: ig,
-		Input: Ch
+		Button: Ag,
+		Input: Yh
 	},
 	self(e) {
 		let { textColorDisabled: t } = e;
@@ -10170,7 +11331,7 @@ var N_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/input-otp/styles/light.mjs
-function I_() {
+function cv() {
 	return {
 		inputWidthSmall: "24px",
 		inputWidthMedium: "30px",
@@ -10182,15 +11343,15 @@ function I_() {
 }
 //#endregion
 //#region node_modules/naive-ui/es/input-otp/styles/dark.mjs
-var L_ = {
+var lv = {
 	name: "InputOtp",
 	common: Q,
-	peers: { Input: Ch },
-	self: I_
-}, R_ = {
+	peers: { Input: Yh },
+	self: cv
+}, uv = {
 	name: "Layout",
 	common: Q,
-	peers: { Scrollbar: _p },
+	peers: { Scrollbar: Up },
 	self(e) {
 		let { textColor2: t, bodyColor: n, popoverColor: r, cardColor: i, dividerColor: a, scrollbarColor: o, scrollbarColorHover: s } = e;
 		return {
@@ -10214,43 +11375,43 @@ var L_ = {
 			siderToggleButtonColor: r,
 			siderToggleButtonIconColor: t,
 			siderToggleButtonIconColorInverted: t,
-			siderToggleBarColor: q(n, o),
-			siderToggleBarColorHover: q(n, s),
+			siderToggleBarColor: J(n, o),
+			siderToggleBarColorHover: J(n, s),
 			__invertScrollbar: "false"
 		};
 	}
 };
 //#endregion
 //#region node_modules/naive-ui/es/list/styles/light.mjs
-function z_(e) {
+function dv(e) {
 	let { textColor2: t, cardColor: n, modalColor: r, popoverColor: i, dividerColor: a, borderRadius: o, fontSize: s, hoverColor: c } = e;
 	return {
 		textColor: t,
 		color: n,
 		colorHover: c,
 		colorModal: r,
-		colorHoverModal: q(r, c),
+		colorHoverModal: J(r, c),
 		colorPopover: i,
-		colorHoverPopover: q(i, c),
+		colorHoverPopover: J(i, c),
 		borderColor: a,
-		borderColorModal: q(r, a),
-		borderColorPopover: q(i, a),
+		borderColorModal: J(r, a),
+		borderColorPopover: J(i, a),
 		borderRadius: o,
 		fontSize: s
 	};
 }
 //#endregion
 //#region node_modules/naive-ui/es/list/styles/dark.mjs
-var B_ = {
+var fv = {
 	name: "List",
 	common: Q,
-	self: z_
-}, V_ = {
+	self: dv
+}, pv = {
 	name: "Log",
 	common: Q,
 	peers: {
-		Scrollbar: _p,
-		Code: Eg
+		Scrollbar: Up,
+		Code: Qg
 	},
 	self(e) {
 		let { textColor2: t, inputColor: n, fontSize: r, primaryColor: i } = e;
@@ -10262,12 +11423,12 @@ var B_ = {
 			loadingColor: i
 		};
 	}
-}, H_ = {
+}, mv = {
 	name: "Mention",
 	common: Q,
 	peers: {
-		InternalSelectMenu: Ap,
-		Input: Ch
+		InternalSelectMenu: nm,
+		Input: Yh
 	},
 	self(e) {
 		let { boxShadow2: t } = e;
@@ -10276,7 +11437,7 @@ var B_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/menu/styles/light.mjs
-function U_(e, t, n, r) {
+function hv(e, t, n, r) {
 	return {
 		itemColorHoverInverted: "#0000",
 		itemColorActiveInverted: t,
@@ -10316,16 +11477,16 @@ function U_(e, t, n, r) {
 		groupTextColorInverted: r
 	};
 }
-function W_(e) {
+function gv(e) {
 	let { borderRadius: t, textColor3: n, primaryColor: r, textColor2: i, textColor1: a, fontSize: o, dividerColor: s, hoverColor: c, primaryColorHover: l } = e;
 	return {
 		borderRadius: t,
 		color: "#0000",
 		groupTextColor: n,
 		itemColorHover: c,
-		itemColorActive: J(r, { alpha: .1 }),
-		itemColorActiveHover: J(r, { alpha: .1 }),
-		itemColorActiveCollapsed: J(r, { alpha: .1 }),
+		itemColorActive: Y(r, { alpha: .1 }),
+		itemColorActiveHover: Y(r, { alpha: .1 }),
+		itemColorActiveCollapsed: Y(r, { alpha: .1 }),
 		itemTextColor: i,
 		itemTextColorHover: i,
 		itemTextColorActive: r,
@@ -10362,47 +11523,47 @@ function W_(e) {
 		borderColorHorizontal: "#0000",
 		fontSize: o,
 		dividerColor: s,
-		...U_("#BBB", r, "#FFF", "#AAA")
+		...hv("#BBB", r, "#FFF", "#AAA")
 	};
 }
 //#endregion
 //#region node_modules/naive-ui/es/menu/styles/dark.mjs
-var G_ = {
+var _v = {
 	name: "Menu",
 	common: Q,
 	peers: {
-		Tooltip: Hg,
-		Dropdown: Bg
+		Tooltip: m_,
+		Dropdown: f_
 	},
 	self(e) {
-		let { primaryColor: t, primaryColorSuppl: n } = e, r = W_(e);
-		return r.itemColorActive = J(t, { alpha: .15 }), r.itemColorActiveHover = J(t, { alpha: .15 }), r.itemColorActiveCollapsed = J(t, { alpha: .15 }), r.itemColorActiveInverted = n, r.itemColorActiveHoverInverted = n, r.itemColorActiveCollapsedInverted = n, r;
+		let { primaryColor: t, primaryColorSuppl: n } = e, r = gv(e);
+		return r.itemColorActive = Y(t, { alpha: .15 }), r.itemColorActiveHover = Y(t, { alpha: .15 }), r.itemColorActiveCollapsed = Y(t, { alpha: .15 }), r.itemColorActiveInverted = n, r.itemColorActiveHoverInverted = n, r.itemColorActiveCollapsedInverted = n, r;
 	}
-}, K_ = { iconSize: "22px" };
+}, vv = { iconSize: "22px" };
 //#endregion
 //#region node_modules/naive-ui/es/popconfirm/styles/light.mjs
-function q_(e) {
+function yv(e) {
 	let { fontSize: t, warningColor: n } = e;
 	return {
-		...K_,
+		...vv,
 		fontSize: t,
 		iconColor: n
 	};
 }
 //#endregion
 //#region node_modules/naive-ui/es/popconfirm/styles/dark.mjs
-var J_ = {
+var bv = {
 	name: "Popconfirm",
 	common: Q,
 	peers: {
-		Button: ig,
-		Popover: Np
+		Button: Ag,
+		Popover: am
 	},
-	self: q_
+	self: yv
 };
 //#endregion
 //#region node_modules/naive-ui/es/progress/styles/light.mjs
-function Y_(e) {
+function xv(e) {
 	let { infoColor: t, successColor: n, warningColor: r, errorColor: i, textColor2: a, progressRailColor: o, fontSize: s, fontWeight: c } = e;
 	return {
 		fontSize: s,
@@ -10428,14 +11589,14 @@ function Y_(e) {
 		lineBgProcessing: "linear-gradient(90deg, rgba(255, 255, 255, .3) 0%, rgba(255, 255, 255, .5) 100%)"
 	};
 }
-var X_ = {
+var Sv = {
 	name: "Progress",
 	common: Q,
 	self(e) {
-		let t = Y_(e);
+		let t = xv(e);
 		return t.textColorLineInner = "rgb(0, 0, 0)", t.lineBgProcessing = "linear-gradient(90deg, rgba(255, 255, 255, .3) 0%, rgba(255, 255, 255, .5) 100%)", t;
 	}
-}, Z_ = {
+}, Cv = {
 	name: "Rate",
 	common: Q,
 	self(e) {
@@ -10449,7 +11610,7 @@ var X_ = {
 			sizeLarge: "24px"
 		};
 	}
-}, Q_ = {
+}, wv = {
 	titleFontSizeSmall: "26px",
 	titleFontSizeMedium: "32px",
 	titleFontSizeLarge: "40px",
@@ -10469,10 +11630,10 @@ var X_ = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/result/styles/light.mjs
-function $_(e) {
+function Tv(e) {
 	let { textColor2: t, textColor1: n, errorColor: r, successColor: i, infoColor: a, warningColor: o, lineHeight: s, fontWeightStrong: c } = e;
 	return {
-		...Q_,
+		...wv,
 		lineHeight: s,
 		titleFontWeight: c,
 		titleTextColor: n,
@@ -10485,24 +11646,24 @@ function $_(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/result/styles/dark.mjs
-var ev = {
+var Ev = {
 	name: "Result",
 	common: Q,
-	self: $_
-}, tv = {
+	self: Tv
+}, Dv = {
 	railHeight: "4px",
 	railWidthVertical: "4px",
 	handleSize: "18px",
 	dotHeight: "8px",
 	dotWidth: "8px",
 	dotBorderRadius: "4px"
-}, nv = {
+}, Ov = {
 	name: "Slider",
 	common: Q,
 	self(e) {
 		let { railColor: t, modalColor: n, primaryColorSuppl: r, popoverColor: i, textColor2: a, cardColor: o, borderRadius: s, fontSize: c, opacityDisabled: l } = e;
 		return {
-			...tv,
+			...Dv,
 			fontSize: c,
 			markFontSize: c,
 			railColor: t,
@@ -10530,7 +11691,7 @@ var ev = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/spin/styles/light.mjs
-function rv(e) {
+function kv(e) {
 	let { opacityDisabled: t, heightTiny: n, heightSmall: r, heightMedium: i, heightLarge: a, heightHuge: o, primaryColor: s, fontSize: c } = e;
 	return {
 		fontSize: c,
@@ -10546,14 +11707,14 @@ function rv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/spin/styles/dark.mjs
-var iv = {
+var Av = {
 	name: "Spin",
 	common: Q,
-	self: rv
+	self: kv
 };
 //#endregion
 //#region node_modules/naive-ui/es/statistic/styles/light.mjs
-function av(e) {
+function jv(e) {
 	let { textColor2: t, textColor3: n, fontSize: r, fontWeight: i } = e;
 	return {
 		labelFontSize: r,
@@ -10568,11 +11729,11 @@ function av(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/statistic/styles/dark.mjs
-var ov = {
+var Mv = {
 	name: "Statistic",
 	common: Q,
-	self: av
-}, sv = {
+	self: jv
+}, Nv = {
 	stepHeaderFontSizeSmall: "14px",
 	stepHeaderFontSizeMedium: "16px",
 	indicatorIndexFontSizeSmall: "14px",
@@ -10584,10 +11745,10 @@ var ov = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/steps/styles/light.mjs
-function cv(e) {
+function Pv(e) {
 	let { fontWeightStrong: t, baseColor: n, textColorDisabled: r, primaryColor: i, errorColor: a, textColor1: o, textColor2: s } = e;
 	return {
-		...sv,
+		...Nv,
 		stepHeaderFontWeight: t,
 		indicatorTextColorProcess: n,
 		indicatorTextColorWait: r,
@@ -10617,11 +11778,11 @@ function cv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/steps/styles/dark.mjs
-var lv = {
+var Fv = {
 	name: "Steps",
 	common: Q,
-	self: cv
-}, uv = {
+	self: Pv
+}, Iv = {
 	buttonHeightSmall: "14px",
 	buttonHeightMedium: "18px",
 	buttonHeightLarge: "22px",
@@ -10637,13 +11798,13 @@ var lv = {
 	railWidthSmall: "32px",
 	railWidthMedium: "40px",
 	railWidthLarge: "48px"
-}, dv = {
+}, Lv = {
 	name: "Switch",
 	common: Q,
 	self(e) {
 		let { primaryColorSuppl: t, opacityDisabled: n, borderRadius: r, primaryColor: i, textColor2: a, baseColor: o } = e;
 		return {
-			...uv,
+			...Iv,
 			iconColor: o,
 			textColor: a,
 			loadingColor: t,
@@ -10658,10 +11819,10 @@ var lv = {
 			buttonBorderRadiusSmall: r,
 			buttonBorderRadiusMedium: r,
 			buttonBorderRadiusLarge: r,
-			boxShadowFocus: `0 0 8px 0 ${J(i, { alpha: .3 })}`
+			boxShadowFocus: `0 0 8px 0 ${Y(i, { alpha: .3 })}`
 		};
 	}
-}, fv = {
+}, Rv = {
 	thPaddingSmall: "6px",
 	thPaddingMedium: "12px",
 	thPaddingLarge: "12px",
@@ -10671,27 +11832,27 @@ var lv = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/table/styles/light.mjs
-function pv(e) {
+function zv(e) {
 	let { dividerColor: t, cardColor: n, modalColor: r, popoverColor: i, tableHeaderColor: a, tableColorStriped: o, textColor1: s, textColor2: c, borderRadius: l, fontWeightStrong: u, lineHeight: d, fontSizeSmall: f, fontSizeMedium: p, fontSizeLarge: m } = e;
 	return {
-		...fv,
+		...Rv,
 		fontSizeSmall: f,
 		fontSizeMedium: p,
 		fontSizeLarge: m,
 		lineHeight: d,
 		borderRadius: l,
-		borderColor: q(n, t),
-		borderColorModal: q(r, t),
-		borderColorPopover: q(i, t),
+		borderColor: J(n, t),
+		borderColorModal: J(r, t),
+		borderColorPopover: J(i, t),
 		tdColor: n,
 		tdColorModal: r,
 		tdColorPopover: i,
-		tdColorStriped: q(n, o),
-		tdColorStripedModal: q(r, o),
-		tdColorStripedPopover: q(i, o),
-		thColor: q(n, a),
-		thColorModal: q(r, a),
-		thColorPopover: q(i, a),
+		tdColorStriped: J(n, o),
+		tdColorStripedModal: J(r, o),
+		tdColorStripedPopover: J(i, o),
+		thColor: J(n, a),
+		thColorModal: J(r, a),
+		thColorPopover: J(i, a),
 		thTextColor: s,
 		tdTextColor: c,
 		thFontWeight: u
@@ -10699,11 +11860,11 @@ function pv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/table/styles/dark.mjs
-var mv = {
+var Bv = {
 	name: "Table",
 	common: Q,
-	self: pv
-}, hv = {
+	self: zv
+}, Vv = {
 	tabFontSizeSmall: "14px",
 	tabFontSizeMedium: "14px",
 	tabFontSizeLarge: "16px",
@@ -10763,10 +11924,10 @@ var mv = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/tabs/styles/light.mjs
-function gv(e) {
+function Hv(e) {
 	let { textColor2: t, primaryColor: n, textColorDisabled: r, closeIconColor: i, closeIconColorHover: a, closeIconColorPressed: o, closeColorHover: s, closeColorPressed: c, tabColor: l, baseColor: u, dividerColor: d, fontWeight: f, textColor1: p, borderRadius: m, fontSize: h, fontWeightStrong: g } = e;
 	return {
-		...hv,
+		...Vv,
 		colorSegment: l,
 		tabFontSizeCard: h,
 		tabTextColorLine: p,
@@ -10804,18 +11965,18 @@ function gv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/tabs/styles/dark.mjs
-var _v = {
+var Uv = {
 	name: "Tabs",
 	common: Q,
-	peers: { Button: ig },
+	peers: { Button: Ag },
 	self(e) {
-		let t = gv(e), { inputColor: n } = e;
+		let t = Hv(e), { inputColor: n } = e;
 		return t.colorSegment = n, t.tabColorSegment = n, t;
 	}
 };
 //#endregion
 //#region node_modules/naive-ui/es/thing/styles/light.mjs
-function vv(e) {
+function Wv(e) {
 	let { textColor1: t, textColor2: n, fontWeightStrong: r, fontSize: i } = e;
 	return {
 		fontSize: i,
@@ -10826,24 +11987,24 @@ function vv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/thing/styles/dark.mjs
-var yv = {
+var Gv = {
 	name: "Thing",
 	common: Q,
-	self: vv
-}, bv = {
+	self: Wv
+}, Kv = {
 	titleMarginMedium: "0 0 6px 0",
 	titleMarginLarge: "-2px 0 6px 0",
 	titleFontSizeMedium: "14px",
 	titleFontSizeLarge: "16px",
 	iconSizeMedium: "14px",
 	iconSizeLarge: "14px"
-}, xv = {
+}, qv = {
 	name: "Timeline",
 	common: Q,
 	self(e) {
 		let { textColor3: t, infoColorSuppl: n, errorColorSuppl: r, successColorSuppl: i, warningColorSuppl: a, textColor1: o, textColor2: s, railColor: c, fontWeightStrong: l, fontSize: u } = e;
 		return {
-			...bv,
+			...Kv,
 			contentFontSize: u,
 			titleFontWeight: l,
 			circleBorder: `2px solid ${t}`,
@@ -10862,7 +12023,7 @@ var yv = {
 			lineColor: c
 		};
 	}
-}, Sv = {
+}, Jv = {
 	extraFontSizeSmall: "12px",
 	extraFontSizeMedium: "12px",
 	extraFontSizeLarge: "14px",
@@ -10874,20 +12035,20 @@ var yv = {
 	headerHeightSmall: "44px",
 	headerHeightMedium: "44px",
 	headerHeightLarge: "50px"
-}, Cv = {
+}, Yv = {
 	name: "Transfer",
 	common: Q,
 	peers: {
-		Checkbox: Cg,
-		Scrollbar: _p,
-		Input: Ch,
-		Empty: xp,
-		Button: ig
+		Checkbox: Yg,
+		Scrollbar: Up,
+		Input: Yh,
+		Empty: qp,
+		Button: Ag
 	},
 	self(e) {
 		let { fontWeight: t, fontSizeLarge: n, fontSizeMedium: r, fontSizeSmall: i, heightLarge: a, heightMedium: o, borderRadius: s, inputColor: c, tableHeaderColor: l, textColor1: u, textColorDisabled: d, textColor2: f, textColor3: p, hoverColor: m, closeColorHover: h, closeColorPressed: g, closeIconColor: _, closeIconColorHover: v, closeIconColorPressed: y, dividerColor: b } = e;
 		return {
-			...Sv,
+			...Jv,
 			itemHeightSmall: o,
 			itemHeightMedium: o,
 			itemHeightLarge: a,
@@ -10917,7 +12078,7 @@ var yv = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/tree/styles/light.mjs
-function wv(e) {
+function Xv(e) {
 	let { borderRadiusSmall: t, dividerColor: n, hoverColor: r, pressedColor: i, primaryColor: a, textColor3: o, textColor2: s, textColorDisabled: c, fontSize: l } = e;
 	return {
 		fontSize: l,
@@ -10927,7 +12088,7 @@ function wv(e) {
 		nodeBorderRadius: t,
 		nodeColorHover: r,
 		nodeColorPressed: i,
-		nodeColorActive: J(a, { alpha: .1 }),
+		nodeColorActive: Y(a, { alpha: .1 }),
 		arrowColor: o,
 		nodeTextColor: s,
 		nodeTextColorDisabled: c,
@@ -10938,27 +12099,27 @@ function wv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/tree/styles/dark.mjs
-var Tv = {
+var Zv = {
 	name: "Tree",
 	common: Q,
 	peers: {
-		Checkbox: Cg,
-		Scrollbar: _p,
-		Empty: xp
+		Checkbox: Yg,
+		Scrollbar: Up,
+		Empty: qp
 	},
 	self(e) {
-		let { primaryColor: t } = e, n = wv(e);
-		return n.nodeColorActive = J(t, { alpha: .15 }), n;
+		let { primaryColor: t } = e, n = Xv(e);
+		return n.nodeColorActive = Y(t, { alpha: .15 }), n;
 	}
-}, Ev = {
+}, Qv = {
 	name: "TreeSelect",
 	common: Q,
 	peers: {
-		Tree: Tv,
-		Empty: xp,
-		InternalSelection: mh
+		Tree: Zv,
+		Empty: qp,
+		InternalSelection: Bh
 	}
-}, Dv = {
+}, $v = {
 	headerFontSize1: "30px",
 	headerFontSize2: "22px",
 	headerFontSize3: "18px",
@@ -10990,10 +12151,10 @@ var Tv = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/typography/styles/light.mjs
-function Ov(e) {
+function ey(e) {
 	let { primaryColor: t, textColor2: n, borderColor: r, lineHeight: i, fontSize: a, borderRadiusSmall: o, dividerColor: s, fontWeightStrong: c, textColor1: l, textColor3: u, infoColor: d, warningColor: f, errorColor: p, successColor: m, codeColor: h } = e;
 	return {
-		...Dv,
+		...$v,
 		aTextColor: t,
 		blockquoteTextColor: n,
 		blockquotePrefixColor: r,
@@ -11034,14 +12195,14 @@ function Ov(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/typography/styles/dark.mjs
-var kv = {
+var ty = {
 	name: "Typography",
 	common: Q,
-	self: Ov
+	self: ey
 };
 //#endregion
 //#region node_modules/naive-ui/es/upload/styles/light.mjs
-function Av(e) {
+function ny(e) {
 	let { iconColor: t, primaryColor: n, errorColor: r, textColor2: i, successColor: a, opacityDisabled: o, actionColor: s, borderColor: c, hoverColor: l, lineHeight: u, borderRadius: d, fontSize: f } = e;
 	return {
 		fontSize: f,
@@ -11051,7 +12212,7 @@ function Av(e) {
 		draggerBorder: `1px dashed ${c}`,
 		draggerBorderHover: `1px dashed ${n}`,
 		itemColorHover: l,
-		itemColorHoverError: J(r, { alpha: .06 }),
+		itemColorHoverError: Y(r, { alpha: .06 }),
 		itemTextColor: i,
 		itemTextColorError: r,
 		itemTextColorSuccess: a,
@@ -11063,18 +12224,18 @@ function Av(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/upload/styles/dark.mjs
-var jv = {
+var ry = {
 	name: "Upload",
 	common: Q,
 	peers: {
-		Button: ig,
-		Progress: X_
+		Button: Ag,
+		Progress: Sv
 	},
 	self(e) {
-		let { errorColor: t } = e, n = Av(e);
-		return n.itemColorHoverError = J(t, { alpha: .09 }), n;
+		let { errorColor: t } = e, n = ny(e);
+		return n.itemColorHoverError = Y(t, { alpha: .09 }), n;
 	}
-}, Mv = {
+}, iy = {
 	name: "Watermark",
 	common: Q,
 	self(e) {
@@ -11084,7 +12245,7 @@ var jv = {
 };
 //#endregion
 //#region node_modules/naive-ui/es/heatmap/styles/light.mjs
-function Nv(e) {
+function ay(e) {
 	let { borderRadius: t, fontSizeMini: n, fontSizeTiny: r, fontSizeSmall: i, fontWeight: a, textColor2: o, cardColor: s, buttonColor2Hover: c } = e;
 	return {
 		activeColors: [
@@ -11119,7 +12280,7 @@ function Nv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/icon-wrapper/styles/light.mjs
-function Pv(e) {
+function oy(e) {
 	let { primaryColor: t, baseColor: n } = e;
 	return {
 		color: t,
@@ -11128,27 +12289,27 @@ function Pv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/legacy-transfer/styles/_common.mjs
-var Fv = {
+var sy = {
 	extraFontSize: "12px",
 	width: "440px"
 };
 //#endregion
 //#region node_modules/naive-ui/es/marquee/styles/light.mjs
-function Iv() {
+function cy() {
 	return {};
 }
 //#endregion
 //#region node_modules/naive-ui/es/page-header/styles/_common.mjs
-var Lv = {
+var ly = {
 	titleFontSize: "18px",
 	backSize: "22px"
 };
 //#endregion
 //#region node_modules/naive-ui/es/page-header/styles/light.mjs
-function Rv(e) {
+function uy(e) {
 	let { textColor1: t, textColor2: n, textColor3: r, fontSize: i, fontWeightStrong: a, primaryColorHover: o, primaryColorPressed: s } = e;
 	return {
-		...Lv,
+		...ly,
 		titleFontWeight: a,
 		fontSize: i,
 		titleTextColor: t,
@@ -11160,80 +12321,80 @@ function Rv(e) {
 }
 //#endregion
 //#region node_modules/naive-ui/es/themes/dark.mjs
-var zv = {
+var dy = {
 	name: "dark",
 	common: Q,
-	Alert: gh,
-	Anchor: bh,
-	AutoComplete: Vh,
-	Avatar: Uh,
+	Alert: Hh,
+	Anchor: Kh,
+	AutoComplete: pg,
+	Avatar: hg,
 	AvatarGroup: {
 		name: "AvatarGroup",
 		common: Q,
-		peers: { Avatar: Uh },
-		self: Wh
+		peers: { Avatar: hg },
+		self: gg
 	},
-	BackTop: Kh,
-	Badge: qh,
-	Breadcrumb: eg,
-	Button: ig,
-	ButtonGroup: A_,
+	BackTop: vg,
+	Badge: yg,
+	Breadcrumb: Eg,
+	Button: Ag,
+	ButtonGroup: nv,
 	Calendar: {
 		name: "Calendar",
 		common: Q,
-		peers: { Button: ig },
-		self: dg
+		peers: { Button: Ag },
+		self: Lg
 	},
-	Card: hg,
+	Card: Vg,
 	Carousel: {
 		name: "Carousel",
 		common: Q,
-		self: bg
+		self: Kg
 	},
-	Cascader: Tg,
-	Checkbox: Cg,
-	Code: Eg,
-	Collapse: Og,
+	Cascader: Zg,
+	Checkbox: Yg,
+	Code: Qg,
+	Collapse: e_,
 	CollapseTransition: {
 		name: "CollapseTransition",
 		common: Q,
-		self: kg
+		self: t_
 	},
 	ColorPicker: {
 		name: "ColorPicker",
 		common: Q,
 		peers: {
-			Input: Ch,
-			Button: ig
+			Input: Yh,
+			Button: Ag
 		},
-		self: Ag
+		self: n_
 	},
-	DataTable: Jg,
-	DatePicker: n_,
-	Descriptions: a_,
-	Dialog: c_,
-	Divider: y_,
-	Drawer: x_,
-	Dropdown: Bg,
-	DynamicInput: C_,
-	DynamicTags: E_,
-	Element: D_,
-	Empty: xp,
-	Ellipsis: Gg,
+	DataTable: b_,
+	DatePicker: O_,
+	Descriptions: j_,
+	Dialog: P_,
+	Divider: G_,
+	Drawer: q_,
+	Dropdown: f_,
+	DynamicInput: Y_,
+	DynamicTags: Q_,
+	Element: $_,
+	Empty: qp,
+	Ellipsis: __,
 	Equation: {
 		name: "Equation",
 		common: Q,
 		self: () => ({})
 	},
-	Flex: k_,
-	Form: N_,
-	GradientText: P_,
+	Flex: tv,
+	Form: av,
+	GradientText: ov,
 	Heatmap: {
 		name: "Heatmap",
 		common: Q,
 		self(e) {
 			return {
-				...Nv(e),
+				...ay(e),
 				activeColors: [
 					"#0d4429",
 					"#006d32",
@@ -11246,16 +12407,16 @@ var zv = {
 			};
 		}
 	},
-	Icon: Xg,
+	Icon: S_,
 	IconWrapper: {
 		name: "IconWrapper",
 		common: Q,
-		self: Pv
+		self: oy
 	},
 	Image: {
 		name: "Image",
 		common: Q,
-		peers: { Tooltip: Hg },
+		peers: { Tooltip: m_ },
 		self: (e) => {
 			let { textColor2: t } = e;
 			return {
@@ -11266,23 +12427,23 @@ var zv = {
 			};
 		}
 	},
-	Input: Ch,
-	InputNumber: F_,
-	InputOtp: L_,
+	Input: Yh,
+	InputNumber: sv,
+	InputOtp: lv,
 	LegacyTransfer: {
 		name: "Transfer",
 		common: Q,
 		peers: {
-			Checkbox: Cg,
-			Scrollbar: _p,
-			Input: Ch,
-			Empty: xp,
-			Button: ig
+			Checkbox: Yg,
+			Scrollbar: Up,
+			Input: Yh,
+			Empty: qp,
+			Button: Ag
 		},
 		self(e) {
 			let { iconColorDisabled: t, iconColor: n, fontWeight: r, fontSizeLarge: i, fontSizeMedium: a, fontSizeSmall: o, heightLarge: s, heightMedium: c, heightSmall: l, borderRadius: u, inputColor: d, tableHeaderColor: f, textColor1: p, textColorDisabled: m, textColor2: h, hoverColor: g } = e;
 			return {
-				...Fv,
+				...sy,
 				itemHeightSmall: l,
 				itemHeightMedium: c,
 				itemHeightLarge: s,
@@ -11306,39 +12467,39 @@ var zv = {
 			};
 		}
 	},
-	Layout: R_,
-	List: B_,
-	LoadingBar: d_,
-	Log: V_,
-	Menu: G_,
-	Mention: H_,
-	Message: m_,
-	Modal: u_,
-	Notification: __,
+	Layout: uv,
+	List: fv,
+	LoadingBar: L_,
+	Log: pv,
+	Menu: _v,
+	Mention: mv,
+	Message: B_,
+	Modal: I_,
+	Notification: U_,
 	PageHeader: {
 		name: "PageHeader",
 		common: Q,
-		self: Rv
+		self: uy
 	},
-	Pagination: Lg,
-	Popconfirm: J_,
-	Popover: Np,
-	Popselect: Mg,
-	Progress: X_,
+	Pagination: l_,
+	Popconfirm: bv,
+	Popover: am,
+	Popselect: i_,
+	Progress: Sv,
 	QrCode: {
 		name: "QrCode",
 		common: Q,
 		self: (e) => ({ borderRadius: e.borderRadius })
 	},
-	Radio: Wg,
-	Rate: Z_,
-	Result: ev,
+	Radio: g_,
+	Rate: Cv,
+	Result: Ev,
 	Row: {
 		name: "Row",
 		common: Q
 	},
-	Scrollbar: _p,
-	Select: Pg,
+	Scrollbar: Up,
+	Select: o_,
 	Skeleton: {
 		name: "Skeleton",
 		common: Q,
@@ -11354,25 +12515,25 @@ var zv = {
 			};
 		}
 	},
-	Slider: nv,
-	Space: T_,
-	Spin: iv,
-	Statistic: ov,
-	Steps: lv,
-	Switch: dv,
-	Table: mv,
-	Tabs: _v,
-	Tag: sh,
-	Thing: yv,
-	TimePicker: $g,
-	Timeline: xv,
-	Tooltip: Hg,
-	Transfer: Cv,
-	Tree: Tv,
-	TreeSelect: Ev,
-	Typography: kv,
-	Upload: jv,
-	Watermark: Mv,
+	Slider: Ov,
+	Space: Z_,
+	Spin: Av,
+	Statistic: Mv,
+	Steps: Fv,
+	Switch: Lv,
+	Table: Bv,
+	Tabs: Uv,
+	Tag: Nh,
+	Thing: Gv,
+	TimePicker: T_,
+	Timeline: qv,
+	Tooltip: m_,
+	Transfer: Yv,
+	Tree: Zv,
+	TreeSelect: Qv,
+	Typography: ty,
+	Upload: ry,
+	Watermark: iy,
 	Split: {
 		name: "Split",
 		common: Q
@@ -11414,9 +12575,14 @@ var zv = {
 	Marquee: {
 		name: "Marquee",
 		common: Q,
-		self: Iv
+		self: cy
 	}
-}, Bv = /* @__PURE__ */ P({
+}, fy = {
+	"zh-CN": [Is, Tc],
+	"zh-TW": [Ls, Ec],
+	"ja-JP": [Fs, wc],
+	"en-US": [Ps, Cc]
+}, py = /* @__PURE__ */ _r({
 	props: {
 		theme: {
 			type: String,
@@ -11433,11 +12599,11 @@ var zv = {
 	},
 	setup(e, { slots: t }) {
 		return () => {
-			let n = e.theme === "dark", r = e.locale.startsWith("en");
-			return R(jg, {
-				theme: n ? zv : null,
-				locale: r ? Cs : ws,
-				dateLocale: r ? ec : tc,
+			let n = e.theme === "dark", [r, i] = fy[e.locale] ?? fy["zh-CN"];
+			return z(r_, {
+				theme: n ? dy : null,
+				locale: r,
+				dateLocale: i,
 				styleMountTarget: e.styleMountTarget,
 				preflightStyleDisabled: !0,
 				inlineThemeDisabled: !0,
@@ -11451,30 +12617,30 @@ var zv = {
 					cardColor: n ? "#2a2630" : "#efebe4",
 					textColorBase: n ? "#eae6df" : "#302c30"
 				} }
-			}, { default: () => R("div", {
+			}, { default: () => z("div", {
 				class: "ui-page",
 				"data-theme": e.theme
 			}, t.default?.()) });
 		};
 	}
-}), Vv = /* @__PURE__ */ P({ setup(e, { slots: t }) {
-	return () => R("div", {
+}), my = /* @__PURE__ */ _r({ setup(e, { slots: t }) {
+	return () => z("div", {
 		class: "ui-settings-layout",
 		"data-has-aside": !!t.aside
-	}, [R("div", { class: "ui-settings-main" }, t.default?.()), t.aside ? R("aside", { class: "ui-settings-aside" }, t.aside()) : null]);
-} }), Hv = /* @__PURE__ */ P({
+	}, [z("div", { class: "ui-settings-main" }, t.default?.()), t.aside ? z("aside", { class: "ui-settings-aside" }, t.aside()) : null]);
+} }), hy = /* @__PURE__ */ _r({
 	props: {
 		title: String,
 		eyebrow: String
 	},
 	setup(e, { slots: t }) {
-		return () => R("section", { class: "ui-surface" }, [
-			e.eyebrow ? R("p", { class: "ui-eyebrow" }, e.eyebrow) : null,
-			e.title ? R("h2", e.title) : null,
+		return () => z("section", { class: "ui-surface" }, [
+			e.eyebrow ? z("p", { class: "ui-eyebrow" }, e.eyebrow) : null,
+			e.title ? z("h2", e.title) : null,
 			t.default?.()
 		]);
 	}
-}), Uv = /* @__PURE__ */ P({
+}), gy = /* @__PURE__ */ _r({
 	props: {
 		title: {
 			type: String,
@@ -11485,13 +12651,13 @@ var zv = {
 		subtitle: String
 	},
 	setup(e, { slots: t }) {
-		return () => R("header", { class: "ui-page-header" }, [R("div", [
-			e.eyebrow ? R("p", { class: "ui-eyebrow" }, e.eyebrow) : null,
-			R("h1", { id: e.titleId }, e.title),
-			e.subtitle ? R("p", { class: "ui-subtitle" }, e.subtitle) : null
+		return () => z("header", { class: "ui-page-header" }, [z("div", [
+			e.eyebrow ? z("p", { class: "ui-eyebrow" }, e.eyebrow) : null,
+			z("h1", { id: e.titleId }, e.title),
+			e.subtitle ? z("p", { class: "ui-subtitle" }, e.subtitle) : null
 		]), t.default?.()]);
 	}
-}), Wv = /* @__PURE__ */ P({
+}), _y = /* @__PURE__ */ _r({
 	props: {
 		title: {
 			type: String,
@@ -11501,14 +12667,14 @@ var zv = {
 		number: String
 	},
 	setup(e, { slots: t }) {
-		return () => R(e.fieldset ? "fieldset" : "section", { class: "ui-settings-group" }, [e.fieldset ? R("legend", { class: "ui-group-legend" }, e.title) : R("header", { class: "ui-group-heading" }, [R("h2", [e.number ? R("span", {
+		return () => z(e.fieldset ? "fieldset" : "section", { class: "ui-settings-group" }, [e.fieldset ? z("legend", { class: "ui-group-legend" }, e.title) : z("header", { class: "ui-group-heading" }, [z("h2", [e.number ? z("span", {
 			class: "ui-section-number",
 			"aria-hidden": "true"
 		}, e.number) : null, e.title]), t.heading?.()]), t.default?.()]);
 	}
-}), Gv = /* @__PURE__ */ P({ setup(e, { slots: t }) {
-	return () => R("div", { class: "ui-action-bar" }, t.default?.());
-} }), Kv = /* @__PURE__ */ P({
+}), vy = /* @__PURE__ */ _r({ setup(e, { slots: t }) {
+	return () => z("div", { class: "ui-action-bar" }, t.default?.());
+} }), yy = /* @__PURE__ */ _r({
 	props: {
 		tone: {
 			type: String,
@@ -11520,14 +12686,14 @@ var zv = {
 		}
 	},
 	setup(e, { slots: t }) {
-		return () => R("p", {
+		return () => z("p", {
 			class: "ui-status-hint",
 			"data-tone": e.tone,
 			role: e.role === "none" ? void 0 : e.role,
 			"aria-live": e.role === "none" ? void 0 : e.role === "alert" ? "assertive" : "polite"
 		}, t.default?.());
 	}
-}), qv = /* @__PURE__ */ P({
+}), by = /* @__PURE__ */ _r({
 	props: {
 		controlId: {
 			type: String,
@@ -11551,8 +12717,8 @@ var zv = {
 	setup(e, { slots: t }) {
 		return () => {
 			let n = e.labelId || e.controlId + "-label", r = e.hintId || e.controlId + "-hint", i = e.errorId || e.controlId + "-error", a = [e.hint ? r : null, e.error ? i : null].filter(Boolean).join(" ") || void 0;
-			return R("div", { class: ["ui-form-field", e.layout === "row" ? "ui-settings-row" : "ui-form-field-stacked"] }, [
-				R("label", {
+			return z("div", { class: ["ui-form-field", e.layout === "row" ? "ui-settings-row" : "ui-form-field-stacked"] }, [
+				z("label", {
 					id: n,
 					for: e.controlId,
 					onClick: (t) => t.currentTarget.ownerDocument.getElementById(e.controlId)?.focus()
@@ -11564,11 +12730,11 @@ var zv = {
 					"aria-invalid": !!e.error
 				} }),
 				t.actions?.(),
-				e.hint ? R("p", {
+				e.hint ? z("p", {
 					id: r,
 					class: "ui-field-hint field-hint"
 				}, e.hint) : null,
-				R("p", {
+				z("p", {
 					id: i,
 					class: "ui-field-error field-detail",
 					hidden: !e.error
@@ -11576,13 +12742,13 @@ var zv = {
 			]);
 		};
 	}
-}), Jv = /* @__PURE__ */ P({
+}), xy = /* @__PURE__ */ _r({
 	props: { columns: {
 		type: Number,
 		default: 2
 	} },
 	setup(e, { slots: t }) {
-		return () => R("div", {
+		return () => z("div", {
 			class: "ui-form-grid",
 			"data-columns": e.columns
 		}, t.default?.());
@@ -11590,71 +12756,73 @@ var zv = {
 });
 //#endregion
 //#region src/confirmation.ts
-function Yv(e) {
-	let t = /* @__PURE__ */ qt(null), n = 0, r = !1, i = null;
-	function a(a, o, s = !1) {
-		if (t.value !== a) return;
-		let c = !!i?.contains(e.activeElement);
-		t.value = null, a.resolve(o && a.isCurrent()), s && c && Cn().then(() => Cn()).then(() => {
-			!r && n === a.id && !t.value && (a.canRestoreFocus ?? a.isCurrent)() && e.activeElement === e.body && a.trigger?.isConnected && a.trigger.focus({ preventScroll: !0 });
+function Sy(e, t) {
+	let n = /* @__PURE__ */ rn(null), r = 0, i = !1, a = null;
+	function o(t, o, s = !1) {
+		if (n.value !== t) return;
+		let c = !!a?.contains(e.activeElement);
+		n.value = null, t.resolve(o && t.isCurrent()), s && c && Nn().then(() => Nn()).then(() => {
+			!i && r === t.id && !n.value && (t.canRestoreFocus ?? t.isCurrent)() && e.activeElement === e.body && t.trigger?.isConnected && t.trigger.focus({ preventScroll: !0 });
 		});
 	}
-	function o(e = !1) {
-		t.value && a(t.value, !1, e);
+	function s(e = !1) {
+		n.value && o(n.value, !1, e);
 	}
 	return {
-		ask(a) {
-			return o(), r || !a.isCurrent() ? Promise.resolve(!1) : new Promise((r) => {
+		ask(t) {
+			return s(), i || !t.isCurrent() ? Promise.resolve(!1) : new Promise((i) => {
 				let o = {
-					...a,
-					id: ++n,
-					trigger: a.trigger ?? e.activeElement,
-					resolve: r
+					...t,
+					id: ++r,
+					trigger: t.trigger ?? e.activeElement,
+					resolve: i
 				};
-				t.value = o, Cn().then(() => {
-					t.value === o && o.isCurrent() && i?.querySelector("[data-confirm-cancel]")?.focus({ preventScroll: !0 });
+				n.value = o, Nn().then(() => {
+					n.value === o && o.isCurrent() && a?.querySelector("[data-confirm-cancel]")?.focus({ preventScroll: !0 });
 				});
 			});
 		},
-		cancel: o,
+		cancel: s,
 		invalidate() {
-			t.value && !t.value.isCurrent() && o();
+			n.value && !n.value.isCurrent() && s();
 		},
 		dispose() {
-			o(), r = !0;
+			s(), i = !0;
 		},
 		render() {
-			let e = t.value;
-			return e ? R("section", {
+			let e = n.value;
+			if (!e) return null;
+			let [r, i, s] = e.copy();
+			return z("section", {
 				key: e.id,
 				role: "group",
-				"aria-label": e.title,
+				"aria-label": r,
 				"data-unload-confirm": e.kind === "unload" ? e.owner : void 0,
 				"data-confirmation": e.kind,
 				ref: (e) => {
-					i = e;
+					a = e;
 				},
 				onKeydown: (t) => {
-					t.key === "Escape" && (t.preventDefault(), a(e, !1, !0));
+					t.key === "Escape" && (t.preventDefault(), o(e, !1, !0));
 				}
-			}, [R(yg, { title: e.title }, { default: () => [
-				R("p", e.message),
-				R(lg, {
+			}, [z(Gg, { title: r }, { default: () => [
+				z("p", i),
+				z(Fg, {
 					"data-action": "confirm-" + e.kind,
-					onClick: () => a(e, !0)
-				}, () => e.confirmLabel),
-				R(lg, {
+					onClick: () => o(e, !0)
+				}, () => s),
+				z(Fg, {
 					"data-action": "cancel-" + e.kind,
 					"data-confirm-cancel": "",
-					onClick: () => a(e, !1, !0)
-				}, () => "取消")
-			] })]) : null;
+					onClick: () => o(e, !1, !0)
+				}, t)
+			] })]);
 		}
 	};
 }
 //#endregion
 //#region src/alert-config.js
-var Xv = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prototype, null].includes(Object.getPrototypeOf(e)), Zv = /[\p{Cc}\p{Cf}\p{Cs}]/u, Qv = /^[1-9][0-9]{0,19}$/, $v = () => ({
+var Cy = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prototype, null].includes(Object.getPrototypeOf(e)), wy = /[\p{Cc}\p{Cf}\p{Cs}]/u, Ty = /^[1-9][0-9]{0,19}$/, Ey = () => ({
 	enabled: !1,
 	check_interval_minutes: 15,
 	metric: "",
@@ -11662,11 +12830,11 @@ var Xv = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prot
 	threshold: null,
 	recovery_threshold: null,
 	repeat_minutes: 0
-}), ey = () => ({ enabled: !0 });
-function ty(e) {
+}), Dy = () => ({ enabled: !0 });
+function Oy(e) {
 	return e.type === "alibaba_bailian" ? "AvailableAmount" : e.type === "deepseek" ? "total_balance" : e.type === "grsai" || e.type === "openai_compatible" && e.service_profile === "grsai" ? "credit" : e.type === "meinianda" ? "site_credit" : e.type === "openai_compatible" ? "mapped_balance" : "";
 }
-function ny(e) {
+function ky(e) {
 	return e.type === "alibaba_bailian" ? [
 		"AvailableAmount",
 		"AvailableCashAmount",
@@ -11677,23 +12845,23 @@ function ny(e) {
 		"topped_up_balance"
 	] : e.type === "grsai" || e.type === "openai_compatible" && e.service_profile === "grsai" ? ["credit"] : e.type === "meinianda" ? ["site_credit"] : e.type === "openai_compatible" ? ["mapped_balance"] : [];
 }
-var ry = {
-	AvailableAmount: "可用额度",
-	AvailableCashAmount: "现金余额",
-	CreditAmount: "信用额度",
-	total_balance: "总余额",
-	granted_balance: "赠送余额",
-	topped_up_balance: "充值余额",
-	credit: "积分",
-	site_credit: "站内额度",
-	mapped_balance: "已配置映射余额"
-}, iy = {
-	credit: "积分",
-	site_credit: "站内额度"
-}, ay = (e) => Object.hasOwn(iy, e) ? iy[e] : e, oy = (e) => Object.hasOwn(ry, e) ? ry[e] : "监测余额";
-function sy(e, t = "zh-CN") {
+var Ay = {
+	AvailableAmount: "web.metric.AvailableAmount",
+	AvailableCashAmount: "web.metric.AvailableCashAmount",
+	CreditAmount: "web.metric.CreditAmount",
+	total_balance: "web.metric.total_balance",
+	granted_balance: "web.metric.granted_balance",
+	topped_up_balance: "web.metric.topped_up_balance",
+	credit: "web.metric.credit",
+	site_credit: "web.metric.site_credit",
+	mapped_balance: "web.metric.mapped_balance"
+}, jy = {
+	credit: "web.metric.credit",
+	site_credit: "web.metric.site_credit"
+}, My = (e, t) => Object.hasOwn(jy, e) ? l(jy[e], t) : e, Ny = (e, t) => l(Object.hasOwn(Ay, e) ? Ay[e] : "web.metric.monitored", t);
+function Py(e, t = "zh-CN") {
 	let n = new Date(e);
-	if (!Number.isFinite(n.getTime())) return "时间不可用";
+	if (!Number.isFinite(n.getTime())) return l("web.common.time_unavailable", t);
 	let r = {
 		year: "numeric",
 		month: "2-digit",
@@ -11710,29 +12878,29 @@ function sy(e, t = "zh-CN") {
 		return new Intl.DateTimeFormat("zh-CN", r).format(n);
 	}
 }
-var cy = {
-	session_disabled: "目标会话已停用，请在 AstrBot 中启用会话。",
-	session_check_failed: "无法核对目标会话状态，请检查 AstrBot 会话设置与日志。",
-	fixed_hint: "已使用固定提示。",
-	target_invalid: "推送目标格式无效，请在全局设置中核对 UMO。",
-	platform_not_found: "未找到目标平台实例，请核对 UMO 的平台实例 ID。",
-	platform_unavailable: "目标平台实例暂不可用，请检查连接状态与宿主日志。",
-	platform_unsupported: "目标平台不支持此主动发送方式，请改用支持的推送目标。",
-	mention_unsupported: "目标不支持 QQ 提及，请移除 @ 后缀或使用支持的 QQ 群目标。",
-	mention_invalid: "QQ 提及格式无效，请核对群会话与 @QQ 号。",
-	transport_unavailable: "宿主主动发送接口不可用，请检查 AstrBot 版本与日志。",
-	message_components_unavailable: "消息组件无法构造，请检查宿主组件与日志。"
-}, ly = (e) => Object.hasOwn(cy, e) ? cy[e] : "暂无明确阻止原因，请核对全局推送目标、平台连接与宿主预警日志。";
-function uy(e) {
-	let t = ty(e);
+var Fy = {
+	session_disabled: "web.detail.session_disabled",
+	session_check_failed: "web.detail.session_check_failed",
+	fixed_hint: "web.detail.fixed_hint",
+	target_invalid: "web.detail.target_invalid",
+	platform_not_found: "web.detail.platform_not_found",
+	platform_unavailable: "web.detail.platform_unavailable",
+	platform_unsupported: "web.detail.platform_unsupported",
+	mention_unsupported: "web.detail.mention_unsupported",
+	mention_invalid: "web.detail.mention_invalid",
+	transport_unavailable: "web.detail.transport_unavailable",
+	message_components_unavailable: "web.detail.message_components_unavailable"
+}, Iy = (e, t) => l(Object.hasOwn(Fy, e) ? Fy[e] : "web.detail.unknown", t);
+function Ly(e) {
+	let t = Oy(e);
 	return t === "credit" ? "credit" : t === "site_credit" ? "site_credit" : null;
 }
-function dy(e) {
-	let t = (e, t) => typeof e == "string" && e.length > 0 && [...e].length <= t && !Zv.test(e), n = (e) => t(e, 32) && !/\s/u.test(e), r = (e) => e === null || typeof e == "string" && e.length <= 64 && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(e) && Number.isFinite(Date.parse(e));
-	if (!Xv(e) || !Array.isArray(e.accounts) || e.accounts.length > 100) throw Error("invalid_response");
+function Ry(e) {
+	let t = (e, t) => typeof e == "string" && e.length > 0 && [...e].length <= t && !wy.test(e), n = (e) => t(e, 32) && !/\s/u.test(e), r = (e) => e === null || typeof e == "string" && e.length <= 64 && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(e) && Number.isFinite(Date.parse(e));
+	if (!Cy(e) || !Array.isArray(e.accounts) || e.accounts.length > 100) throw Error("invalid_response");
 	let i = /* @__PURE__ */ new Set();
 	return { accounts: e.accounts.map((e) => {
-		if (!Xv(e) || !t(e.account_id, 128) || i.has(e.account_id) || ![
+		if (!Cy(e) || !t(e.account_id, 128) || i.has(e.account_id) || ![
 			"unidentified",
 			"verified",
 			"ambiguous",
@@ -11765,7 +12933,7 @@ function dy(e) {
 				"choices_observed_at"
 			].filter((t) => e[t] !== void 0).map((t) => [t, e[t]])),
 			choices: e.choices.map((e) => {
-				if (!Xv(e) || typeof e.id != "string" || !/^[0-9a-f]{64}$/.test(e.id) || a.has(e.id) || !t(e.metric, 64) || /\s/u.test(e.metric) || !n(e.unit)) throw Error("invalid_response");
+				if (!Cy(e) || typeof e.id != "string" || !/^[0-9a-f]{64}$/.test(e.id) || a.has(e.id) || !t(e.metric, 64) || /\s/u.test(e.metric) || !n(e.unit)) throw Error("invalid_response");
 				return a.add(e.id), {
 					id: e.id,
 					metric: e.metric,
@@ -11775,164 +12943,170 @@ function dy(e) {
 		};
 	}) };
 }
-function fy(e) {
-	if (typeof e != "string" || Zv.test(e)) throw Error("UMO 不允许控制字符或不可见字符。");
+function zy(e) {
+	if (typeof e != "string" || wy.test(e)) throw new u("web.validation.umo_invisible");
 	let t = e.trim(), n = t.indexOf(":"), r = t.indexOf(":", n + 1);
-	if ([...t].length > 512 || /\s/u.test(t) || n <= 0 || r <= n + 1 || r === t.length - 1) throw Error("请填写完整 UMO：平台实例:消息类型:会话 ID。");
+	if ([...t].length > 512 || /\s/u.test(t) || n <= 0 || r <= n + 1 || r === t.length - 1) throw new u("web.validation.umo_format");
 	let i = t.slice(n + 1, r), a = t.slice(r + 1);
 	if (![
 		"FriendMessage",
 		"GroupMessage",
 		"OtherMessage"
-	].includes(i)) throw Error("消息类型需为 FriendMessage、GroupMessage 或 OtherMessage。");
+	].includes(i)) throw new u("web.validation.umo_type");
 	return {
 		umo: t,
 		type: i,
 		session: a
 	};
 }
-function py(e, t = 100) {
-	if (!Array.isArray(e) || e.length > t) throw Error(`QQ 号最多 ${t} 项。`);
+function By(e, t = 100) {
+	if (!Array.isArray(e) || e.length > t) throw new u("web.validation.id_limit", { limit: t });
 	let n = [];
 	for (let t of e) {
-		if (typeof t != "string" || Zv.test(t) || !Qv.test(t.trim())) throw Error("QQ 号须为 1 至 20 位 ASCII 正整数字串；不支持 @all、昵称或 CQ 码。");
+		if (typeof t != "string" || wy.test(t) || !Ty.test(t.trim())) throw new u("web.validation.qq_id");
 		let e = t.trim();
 		n.includes(e) || n.push(e);
 	}
 	return n;
 }
-function my(e) {
-	if (!Array.isArray(e) || e.length > 20) throw Error("推送目标最多 20 个。");
+function Vy(e) {
+	if (!Array.isArray(e) || e.length > 20) throw new u("web.validation.target_limit");
 	let t = /* @__PURE__ */ new Set();
 	return e.map((e) => {
-		if (!Xv(e) || Object.keys(e).some((e) => !["umo", "mentions"].includes(e)) || !Object.hasOwn(e, "umo") || !Object.hasOwn(e, "mentions")) throw Error("每个目标须包含 UMO 和提及列表。");
-		let n = fy(e.umo), r = py(e.mentions, 20);
-		if (r.length && (n.type !== "GroupMessage" || !Qv.test(n.session.split("_").at(-1)))) throw Error("仅数字 QQ 群会话可附加 @QQ 号；私聊或其他会话请删除 @ 后缀。");
-		if (t.has(n.umo)) throw Error("UMO 重复，请合并为一行。");
+		if (!Cy(e) || Object.keys(e).some((e) => !["umo", "mentions"].includes(e)) || !Object.hasOwn(e, "umo") || !Object.hasOwn(e, "mentions")) throw new u("web.validation.target_fields");
+		let n = zy(e.umo), r = By(e.mentions, 20);
+		if (r.length && (n.type !== "GroupMessage" || !Ty.test(n.session.split("_").at(-1)))) throw new u("web.validation.group_mentions");
+		if (t.has(n.umo)) throw new u("web.validation.duplicate_umo");
 		return t.add(n.umo), {
 			umo: n.umo,
 			mentions: r
 		};
 	});
 }
-function hy(e) {
-	if (typeof e != "string") throw Error("请输入推送目标。");
+function Hy(e) {
+	if (typeof e != "string") throw new u("web.validation.targets_text");
 	let t = [], n = /* @__PURE__ */ new Set();
 	for (let [r, i] of e.split(/\r\n|\r|\n/).entries()) try {
-		if (/[\p{Cc}\p{Cf}\p{Cs}]/u.test(i.replaceAll("	", ""))) throw Error("不允许控制字符或不可见字符。");
+		if (/[\p{Cc}\p{Cf}\p{Cs}]/u.test(i.replaceAll("	", ""))) throw new u("web.validation.invisible_chars");
 		if (!i.trim()) continue;
 		let [e, ...r] = i.trim().split(/\s+/u);
-		if (r.some((e) => !e.startsWith("@"))) throw Error("UMO 后请使用空格分隔的 @QQ号。");
-		let a = my([{
+		if (r.some((e) => !e.startsWith("@"))) throw new u("web.validation.mentions_suffix");
+		let a = Vy([{
 			umo: e,
 			mentions: r.map((e) => e.slice(1))
 		}])[0];
-		if (n.has(a.umo)) throw Error("UMO 重复，请合并为一行。");
-		if (n.add(a.umo), t.push(a), t.length > 20) throw Error("推送目标最多 20 个。");
+		if (n.has(a.umo)) throw new u("web.validation.duplicate_umo");
+		if (n.add(a.umo), t.push(a), t.length > 20) throw new u("web.validation.target_limit");
 	} catch (e) {
-		throw Error(`第 ${r + 1} 行：${e.message}`);
+		throw new u("web.validation.target_line", {
+			line: r + 1,
+			message: e instanceof u ? e : new u("web.validation.invalid_input")
+		});
 	}
 	return t;
 }
-function gy(e) {
+function Uy(e) {
 	return Array.isArray(e) ? e.map((e) => [e.umo, ...e.mentions.map((e) => "@" + e)].join(" ")).join("\n") : "";
 }
-function _y(e) {
-	if (typeof e != "string" || Zv.test(e)) throw Error("阈值须为不含指数的有限十进制字符串。");
+function Wy(e) {
+	if (typeof e != "string" || wy.test(e)) throw new u("web.validation.finite_decimal");
 	let t = e.trim();
-	if (t.length > 50 || !/^-?(?:0|[1-9][0-9]{0,29})(?:\.[0-9]{1,18})?$/.test(t)) throw Error("阈值最多 30 位整数、18 位小数，不支持指数形式。");
+	if (t.length > 50 || !/^-?(?:0|[1-9][0-9]{0,29})(?:\.[0-9]{1,18})?$/.test(t)) throw new u("web.validation.decimal_length");
 	return /^-?0(?:\.0+)?$/.test(t) ? "0" : t;
 }
-function vy(e) {
-	let t = _y(e), [n, r = ""] = t.split(".");
+function Gy(e) {
+	let t = Wy(e), [n, r = ""] = t.split(".");
 	return {
 		n: BigInt(n.replace("-", "") + r) * (t.startsWith("-") ? -1n : 1n),
 		scale: r.length
 	};
 }
-function yy(e, t) {
-	let n = vy(e), r = vy(t), i = Math.max(n.scale, r.scale);
+function Ky(e, t) {
+	let n = Gy(e), r = Gy(t), i = Math.max(n.scale, r.scale);
 	return n.n * 10n ** BigInt(i - n.scale) - r.n * 10n ** BigInt(i - r.scale);
 }
-function by(e, t) {
+function qy(e, t) {
 	if (e === void 0) return {
-		...$v(),
-		metric: ty(t)
+		...Ey(),
+		metric: Oy(t)
 	};
-	if (!Xv(e) || Object.keys(e).some((e) => !Object.hasOwn($v(), e))) throw Error("预警配置字段无效。");
+	if (!Cy(e) || Object.keys(e).some((e) => !Object.hasOwn(Ey(), e))) throw new u("web.validation.alert_fields");
 	let n = {
-		...$v(),
+		...Ey(),
 		...e
 	};
-	if (typeof n.enabled != "boolean" || !Number.isInteger(n.check_interval_minutes) || n.check_interval_minutes < 1 || n.check_interval_minutes > 4320) throw Error("检查间隔须为 1 至 4320 的整数分钟。");
-	if (!Number.isInteger(n.repeat_minutes) || n.repeat_minutes < 0 || n.repeat_minutes > 4320) throw Error("重复提醒须为 0 至 4320 的整数分钟；0 表示不重复。");
-	if (typeof n.metric != "string" || Zv.test(n.metric) || n.metric.trim() && !ny(t).includes(n.metric.trim())) throw Error("请选择该供应商支持的预警指标。");
-	if (n.metric = n.metric.trim() || ty(t), typeof n.unit != "string" || [...n.unit.trim()].length > 32 || Zv.test(n.unit) || /\s/u.test(n.unit.trim())) throw Error("单位须为不超过 32 字的明确文本。");
+	if (typeof n.enabled != "boolean" || !Number.isInteger(n.check_interval_minutes) || n.check_interval_minutes < 1 || n.check_interval_minutes > 4320) throw new u("web.validation.interval_range");
+	if (!Number.isInteger(n.repeat_minutes) || n.repeat_minutes < 0 || n.repeat_minutes > 4320) throw new u("web.validation.repeat_range");
+	if (typeof n.metric != "string" || wy.test(n.metric) || n.metric.trim() && !ky(t).includes(n.metric.trim())) throw new u("web.validation.metric");
+	if (n.metric = n.metric.trim() || Oy(t), typeof n.unit != "string" || [...n.unit.trim()].length > 32 || wy.test(n.unit) || /\s/u.test(n.unit.trim())) throw new u("web.validation.unit");
 	n.unit = n.unit.trim();
-	for (let e of ["threshold", "recovery_threshold"]) n[e] !== null && (n[e] = _y(n[e]));
-	if (n.recovery_threshold !== null && (n.threshold === null || yy(n.recovery_threshold, n.threshold) <= 0n)) throw Error("恢复阈值须严格大于触发阈值。");
+	for (let e of ["threshold", "recovery_threshold"]) n[e] !== null && (n[e] = Wy(n[e]));
+	if (n.recovery_threshold !== null && (n.threshold === null || Ky(n.recovery_threshold, n.threshold) <= 0n)) throw new u("web.validation.recovery_order");
 	return n;
 }
-function xy(e) {
-	if (e === void 0) return ey();
-	if (!Xv(e) || Object.keys(e).some((e) => ![
+function Jy(e) {
+	if (e === void 0) return Dy();
+	if (!Cy(e) || Object.keys(e).some((e) => ![
 		"enabled",
 		"provider_id",
 		"persona_id"
-	].includes(e))) throw Error("提示模型配置无效。");
+	].includes(e))) throw new u("web.validation.llm_fields");
 	let t = {
-		...ey(),
+		...Dy(),
 		...e
 	};
-	if (typeof t.enabled != "boolean") throw Error("提示模型开关无效。");
+	if (typeof t.enabled != "boolean") throw new u("web.validation.llm_switch");
 	for (let e of ["provider_id", "persona_id"]) if (Object.hasOwn(t, e)) {
-		if (typeof t[e] != "string" || [...t[e].trim()].length > 128 || Zv.test(t[e])) throw Error("模型与人格 ID 须为不超过 128 字的文本。");
+		if (typeof t[e] != "string" || [...t[e].trim()].length > 128 || wy.test(t[e])) throw new u("web.validation.llm_ids");
 		t[e] = t[e].trim();
 	}
 	return t;
 }
-function Sy(e) {
-	let t = [], n = [];
+function Yy(e, t) {
+	let n = [], r = [];
 	try {
-		n = my(e.balance_alert_targets === void 0 ? [] : e.balance_alert_targets);
+		r = Vy(e.balance_alert_targets === void 0 ? [] : e.balance_alert_targets);
 	} catch (e) {
-		t.push(e.message);
-	}
-	try {
-		py(e.balance_alert_admin_qq_ids === void 0 ? [] : e.balance_alert_admin_qq_ids);
-	} catch (e) {
-		t.push(e.message);
+		n.push(d(e, t));
 	}
 	try {
-		xy(e.balance_alert_llm);
+		By(e.balance_alert_admin_qq_ids === void 0 ? [] : e.balance_alert_admin_qq_ids);
 	} catch (e) {
-		t.push(e.message);
+		n.push(d(e, t));
 	}
-	for (let r of e.providers || []) try {
-		let e = by(r.balance_alert, r);
-		if (e.enabled && (r.enabled !== void 0 && r.enabled !== !0 || e.threshold === null || !e.metric || n.length === 0)) throw Error("启用预警前，请启用账户并填写阈值和至少一个全局推送目标。");
+	try {
+		Jy(e.balance_alert_llm);
 	} catch (e) {
-		t.push(`${r.display_name || r.id}：${e.message}`);
+		n.push(d(e, t));
 	}
-	return t;
+	for (let i of e.providers || []) try {
+		let e = qy(i.balance_alert, i);
+		if (e.enabled && (i.enabled !== void 0 && i.enabled !== !0 || e.threshold === null || !e.metric || r.length === 0)) throw new u("web.validation.alert_prerequisites");
+	} catch (e) {
+		n.push(l("web.validation.account_alert", t, {
+			account: i.display_name || i.id,
+			message: d(e, t)
+		}));
+	}
+	return n;
 }
-function Cy(e) {
-	if (!Xv(e) || typeof e.running != "boolean" || typeof e.storage_available != "boolean" || !Array.isArray(e.accounts) || e.accounts.length > 100) throw Error("invalid_response");
+function Xy(e) {
+	if (!Cy(e) || typeof e.running != "boolean" || typeof e.storage_available != "boolean" || !Array.isArray(e.accounts) || e.accounts.length > 100) throw Error("invalid_response");
 	return {
 		running: e.running,
 		storage_available: e.storage_available,
 		accounts: e.accounts.map((e) => {
-			if (!Xv(e) || typeof e.account_id != "string" || e.account_id.length > 128 || typeof e.status != "string" || !/^[a-z_]{1,64}$/.test(e.status) || e.detail_code !== void 0 && (typeof e.detail_code != "string" || !/^[a-z_]{0,64}$/.test(e.detail_code))) throw Error("invalid_response");
+			if (!Cy(e) || typeof e.account_id != "string" || e.account_id.length > 128 || typeof e.status != "string" || !/^[a-z_]{1,64}$/.test(e.status) || e.detail_code !== void 0 && (typeof e.detail_code != "string" || !/^[a-z_]{0,64}$/.test(e.detail_code))) throw Error("invalid_response");
 			return {
 				account_id: e.account_id,
 				status: e.status,
 				...e.detail_code ? { detail_code: e.detail_code } : {},
-				...Object.fromEntries(["last_checked_at", "last_sent_at"].filter((t) => typeof e[t] == "string" && e[t].length <= 64 && !Zv.test(e[t])).map((t) => [t, e[t]]))
+				...Object.fromEntries(["last_checked_at", "last_sent_at"].filter((t) => typeof e[t] == "string" && e[t].length <= 64 && !wy.test(e[t])).map((t) => [t, e[t]]))
 			};
 		})
 	};
 }
-var wy = {
+var Zy = {
 	timeout_seconds: {
 		description: "单个账户查询的最长等待秒数",
 		type: "float",
@@ -12021,14 +13195,18 @@ var wy = {
 			}
 		}
 	}
-}, Ty = wy.providers.templates, Ey = [
+}, Qy = Zy.providers.templates, $y = [
 	"deepseek",
 	"alibaba_bailian",
 	"grsai",
 	"meinianda",
 	"openai_compatible"
-], Dy = Object.fromEntries(Object.entries(wy).filter(([e]) => e !== "providers")), Oy = [{
-	title: "查询与缓存",
+], eb = Object.fromEntries(Object.entries(Zy).filter(([e]) => e !== "providers")), tb = {
+	type: "string",
+	default: "auto",
+	options: ["auto", ...a]
+}, nb = [{
+	title: "web.settings.query_and_cache",
 	number: "01",
 	keys: [
 		"timeout_seconds",
@@ -12037,7 +13215,7 @@ var wy = {
 		"max_concurrency"
 	]
 }, {
-	title: "查询权限",
+	title: "web.settings.query_access",
 	number: "02",
 	keys: [
 		"command_admin_only",
@@ -12046,25 +13224,82 @@ var wy = {
 		"group_allowed_user_ids"
 	]
 }];
-function ky(e) {
+function rb(e) {
 	return JSON.parse(JSON.stringify(e));
 }
-function Ay(e) {
-	return Object.fromEntries(Object.entries(e).filter(([e, t]) => e !== "auth" && !t.secret && !(["provider_id", "persona_id"].includes(e) && t.invisible)).map(([e, t]) => [e, t.items && t.type === "object" ? Ay(t.items) : ky(Object.hasOwn(t, "default") ? t.default : "")]));
+function ib(e) {
+	return Object.fromEntries(Object.entries(e).filter(([e, t]) => e !== "auth" && !t.secret && !(["provider_id", "persona_id"].includes(e) && t.invisible)).map(([e, t]) => [e, t.items && t.type === "object" ? ib(t.items) : rb(Object.hasOwn(t, "default") ? t.default : "")]));
 }
-function jy(e) {
-	let t = {
-		...Ay(Ty[e].items),
+function ab(e, t) {
+	let n = {
+		...ib(Qy[e].items),
 		__template_key: e,
 		id: "",
-		display_name: Ty[e].name
+		display_name: sb(e, t)
 	};
-	return t.balance_alert = by(t.balance_alert, t), t;
+	return n.balance_alert = qy(n.balance_alert, n), n;
 }
-function My(e) {
-	return (Object.hasOwn(Ty, e?.__template_key) ? Ty[e.__template_key] : null) || (Object.hasOwn(Ty, e?.type) ? Ty[e.type] : null) || Ty.provider_account;
+function ob(e) {
+	return (Object.hasOwn(Qy, e?.__template_key) ? Qy[e.__template_key] : null) || (Object.hasOwn(Qy, e?.type) ? Qy[e.type] : null) || Qy.provider_account;
 }
-function Ny(e) {
+function sb(e, t) {
+	return e === "openai_compatible" ? l("web.provider.compatible_name", t) : e === "provider_account" ? l("web.provider.legacy_name", t) : Object.hasOwn(Qy, e) ? Qy[e].name : e;
+}
+var cb = Qy.openai_compatible.items, lb = Qy.provider_account.items, ub = new Map([
+	[eb.private_allowed_user_ids, "web.hint.private_allowlist"],
+	[Qy.meinianda.items.cache_ttl_seconds, "web.hint.meinianda_cache"],
+	[Qy.grsai.items.region, "web.hint.region"],
+	[cb.service_profile, "web.hint.service_profile"],
+	[cb.balance_scope, "web.hint.balance_scope"],
+	[cb.advanced_options, "web.hint.advanced_options"],
+	[cb.endpoint.items.base_url, "web.hint.base_url"],
+	[cb.endpoint.items.path, "web.hint.path"],
+	[cb.endpoint.items.method, "web.hint.method"],
+	[cb.endpoint.items.auth_mode, "web.hint.auth_mode"],
+	[cb.endpoint.items.auth_name, "web.hint.auth_name"],
+	[cb.endpoint.items.json_body, "web.hint.json_body"],
+	[lb.endpoint.items.url, "web.hint.url"],
+	[lb.endpoint.items.base_url, "web.hint.legacy_base_url"],
+	[lb.endpoint.items.method, "web.hint.legacy_method"],
+	[lb.endpoint.items.auth_name, "web.hint.auth_name"],
+	[lb.endpoint.items.json_body, "web.hint.legacy_json_body"],
+	...[
+		"amount_path",
+		"unit",
+		"unit_path",
+		"kind_path",
+		"status_values",
+		"expiry_path"
+	].map((e) => [lb.response_mapping.items[e], "web.hint." + e])
+]);
+function db(e, t) {
+	let n = ub.get(e);
+	return n ? l(n, t) : void 0;
+}
+var fb = {
+	region: {
+		china: "web.option.region.cn",
+		global: "web.option.region.overseas"
+	},
+	service_profile: { generic: "web.option.profile.generic" },
+	balance_scope: {
+		generic: "web.option.scope.none",
+		account: "web.option.scope.account",
+		api_key: "web.option.scope.api_key"
+	},
+	auth_mode: {
+		bearer: "web.option.auth.bearer",
+		header: "web.option.auth.header",
+		query: "web.option.auth.query"
+	}
+};
+function pb(e, t, n) {
+	if (e === "language") return l("web.language." + t, n);
+	let r = Object.hasOwn(fb, e) ? fb[e] : void 0;
+	return r && Object.hasOwn(r, t) ? l(r[t], n) : e === "service_profile" && t === "grsai" ? "Grsai" : t;
+}
+function mb(e, t) {
+	let n = (e) => l(e, t);
 	return e?.type === "alibaba_bailian" ? [
 		{
 			key: "access_key_id",
@@ -12076,61 +13311,61 @@ function Ny(e) {
 		},
 		{
 			key: "security_token",
-			label: "STS Security Token（可选）"
+			label: n("web.credential.optional_sts")
 		}
 	] : e?.type === "grsai" || e?.service_profile === "grsai" && e?.balance_scope === "account" ? [{
 		key: "token",
-		label: "Grsai 请求令牌 token"
+		label: n("web.credential.grsai_token")
 	}] : [{
 		key: "api_key",
-		label: e?.type === "deepseek" ? "DeepSeek API Key" : e?.type === "meinianda" ? "Meinianda API Key" : "余额查询 API Key"
+		label: e?.type === "deepseek" ? "DeepSeek API Key" : e?.type === "meinianda" ? "Meinianda API Key" : n("web.credential.balance_key")
 	}];
 }
-var Py = {
-	timeout_seconds: "账户超时（秒）",
-	cache_ttl_seconds: "成功结果缓存（秒）",
-	id: "账户 ID",
-	display_name: "显示名称",
-	aliases: "查询别名",
-	enabled: "启用账户",
-	type: "供应商",
-	base_url: "服务地址",
-	path: "接口路径",
-	url: "旧版完整 URL",
-	method: "请求方法",
-	auth_mode: "认证方式",
-	auth_name: "认证参数名",
-	json_body: "静态 JSON 请求体",
-	amount_path: "主余额路径",
-	total_path: "总量路径",
-	remaining_path: "剩余量路径",
-	used_path: "已用量路径",
-	unit: "固定单位",
-	unit_path: "单位路径",
-	kind: "余额类别",
-	kind_path: "类别路径",
-	status_path: "状态路径",
-	status_values: "状态值映射",
-	expires_at_path: "到期时间路径",
-	expiry_path: "旧版到期路径",
-	success_path: "业务成功路径",
-	success_value: "业务成功值",
-	failure_path: "业务失败路径",
-	failure_value: "业务失败值",
-	service_profile: "服务类型",
-	balance_scope: "积分范围",
-	region: "连接区域",
-	advanced_options: "显示高级设置"
-}, Fy = {
-	timeout_seconds: "单账户超时（秒）",
-	total_timeout_seconds: "整次查询超时（秒）",
-	cache_ttl_seconds: "成功结果缓存（秒）",
-	max_concurrency: "最大并发数",
-	command_admin_only: "余额查询命令仅管理员",
-	private_allowed_user_ids: "私聊白名单",
-	allow_group_queries: "允许群聊查询",
-	group_allowed_user_ids: "群聊用户白名单"
-}, Iy = /* @__PURE__ */ new Set(["__template_key", ...Object.values(Ty).flatMap((e) => Object.keys(e.items).filter((e) => e !== "auth"))]), Ly = new Set(Object.keys(Ty.provider_account.items.endpoint.items)), Ry = new Set(Object.keys(Ty.provider_account.items.response_mapping.items)), zy = /* @__PURE__ */ new Set([
+var hb = {
+	timeout_seconds: "web.field.timeout_seconds",
+	cache_ttl_seconds: "web.field.cache_ttl_seconds",
+	id: "web.field.id",
+	display_name: "web.field.display_name",
+	aliases: "web.field.aliases",
+	enabled: "web.field.enabled",
+	type: "web.account.provider",
+	base_url: "web.field.base_url",
+	path: "web.field.path",
+	url: "web.field.url",
+	method: "web.field.method",
+	auth_mode: "web.field.auth_mode",
+	auth_name: "web.field.auth_name",
+	json_body: "web.field.json_body",
+	amount_path: "web.field.amount_path",
+	total_path: "web.field.total_path",
+	remaining_path: "web.field.remaining_path",
+	used_path: "web.field.used_path",
+	unit: "web.field.unit",
+	unit_path: "web.field.unit_path",
+	kind: "web.field.kind",
+	kind_path: "web.field.kind_path",
+	status_path: "web.field.status_path",
+	status_values: "web.field.status_values",
+	expires_at_path: "web.field.expires_at_path",
+	expiry_path: "web.field.expiry_path",
+	success_path: "web.field.success_path",
+	success_value: "web.field.success_value",
+	failure_path: "web.field.failure_path",
+	failure_value: "web.field.failure_value",
+	service_profile: "web.field.service_profile",
+	balance_scope: "web.field.balance_scope",
+	region: "web.field.region",
+	advanced_options: "web.field.advanced_options"
+}, gb = {
+	timeout_seconds: "web.global.timeout_seconds",
+	total_timeout_seconds: "web.global.total_timeout_seconds",
+	cache_ttl_seconds: "web.field.cache_ttl_seconds",
+	max_concurrency: "web.global.max_concurrency",
+	command_admin_only: "web.global.command_admin_only",
+	private_allowed_user_ids: "web.global.private_allowed_user_ids",
+	allow_group_queries: "web.global.allow_group_queries",
+	group_allowed_user_ids: "web.global.group_allowed_user_ids"
+}, _b = /* @__PURE__ */ new Set(["__template_key", ...Object.values(Qy).flatMap((e) => Object.keys(e.items).filter((e) => e !== "auth"))]), vb = new Set(Object.keys(Qy.provider_account.items.endpoint.items)), yb = new Set(Object.keys(Qy.provider_account.items.response_mapping.items)), bb = /* @__PURE__ */ new Set([
 	"auth",
 	"api_key",
 	"access_key_id",
@@ -12140,44 +13375,44 @@ var Py = {
 	"secret",
 	"password",
 	"credentials"
-]), By = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prototype, null].includes(Object.getPrototypeOf(e));
-function Vy(e, t = 0) {
+]), xb = (e) => typeof e == "object" && !!e && !Array.isArray(e) && [Object.prototype, null].includes(Object.getPrototypeOf(e));
+function Sb(e, t = 0) {
 	if (t > 12) throw Error("invalid_response");
 	if (e !== null && typeof e != "boolean" && typeof e != "string" && !(typeof e == "number" && Number.isFinite(e))) {
 		if (Array.isArray(e)) {
-			e.forEach((e) => Vy(e, t + 1));
+			e.forEach((e) => Sb(e, t + 1));
 			return;
 		}
-		if (!By(e)) throw Error("invalid_response");
+		if (!xb(e)) throw Error("invalid_response");
 		for (let [n, r] of Object.entries(e)) {
-			if (zy.has(n.toLowerCase()) || [
+			if (bb.has(n.toLowerCase()) || [
 				"__proto__",
 				"prototype",
 				"constructor"
 			].includes(n)) throw Error("invalid_response");
-			Vy(r, t + 1);
+			Sb(r, t + 1);
 		}
 	}
 }
-function Hy(e) {
-	if (!By(e) || e.providers !== void 0 && !Array.isArray(e.providers) || Array.isArray(e.providers) && e.providers.length > 100 || Object.keys(e).some((e) => e !== "providers" && !Object.hasOwn(Dy, e))) throw Error("invalid_response");
-	Vy(e), e = ky({
-		...Ay(Dy),
+function Cb(e) {
+	if (!xb(e) || e.providers !== void 0 && !Array.isArray(e.providers) || Array.isArray(e.providers) && e.providers.length > 100 || Object.keys(e).some((e) => e !== "providers" && e !== "language" && !Object.hasOwn(eb, e))) throw Error("invalid_response");
+	Sb(e), e = rb({
+		...ib(eb),
 		...e,
 		providers: e.providers || []
-	});
-	for (let t of e.providers) if (By(t) && t.type === void 0 && Ey.includes(t.__template_key) && (t.type = t.__template_key), !By(t) || typeof t.id != "string" || typeof t.type != "string" || Object.keys(t).some((e) => !Iy.has(e)) || t.endpoint && (!By(t.endpoint) || Object.keys(t.endpoint).some((e) => !Ly.has(e))) || t.response_mapping && (!By(t.response_mapping) || Object.keys(t.response_mapping).some((e) => !Ry.has(e)))) throw Error("invalid_response");
-	e.balance_alert_targets = my(e.balance_alert_targets), e.balance_alert_admin_qq_ids = py(e.balance_alert_admin_qq_ids), e.balance_alert_llm = xy(e.balance_alert_llm);
-	for (let t of e.providers) t.balance_alert = by(t.balance_alert, t);
-	return ky(e);
+	}), e.language !== void 0 && !s(e.language) && (e.language = "auto");
+	for (let t of e.providers) if (xb(t) && t.type === void 0 && $y.includes(t.__template_key) && (t.type = t.__template_key), !xb(t) || typeof t.id != "string" || typeof t.type != "string" || Object.keys(t).some((e) => !_b.has(e)) || t.endpoint && (!xb(t.endpoint) || Object.keys(t.endpoint).some((e) => !vb.has(e))) || t.response_mapping && (!xb(t.response_mapping) || Object.keys(t.response_mapping).some((e) => !yb.has(e)))) throw Error("invalid_response");
+	e.balance_alert_targets = Vy(e.balance_alert_targets), e.balance_alert_admin_qq_ids = By(e.balance_alert_admin_qq_ids), e.balance_alert_llm = Jy(e.balance_alert_llm);
+	for (let t of e.providers) t.balance_alert = qy(t.balance_alert, t);
+	return rb(e);
 }
-function Uy(e) {
-	if (!By(e) || !Number.isSafeInteger(e.revision) || e.revision < 0) throw Error("invalid_response");
-	let t = Hy(e.config);
-	if (!By(e.credentials) || !By(e.encryption) || typeof e.encryption.ready != "boolean" || !By(e.migration) || typeof e.migration.pending != "boolean") throw Error("invalid_response");
+function wb(e) {
+	if (!xb(e) || !Number.isSafeInteger(e.revision) || e.revision < 0) throw Error("invalid_response");
+	let t = Cb(e.config);
+	if (!xb(e.credentials) || !xb(e.encryption) || typeof e.encryption.ready != "boolean" || !xb(e.migration) || typeof e.migration.pending != "boolean") throw Error("invalid_response");
 	let n = Object.create(null);
 	for (let [t, r] of Object.entries(e.credentials)) {
-		if (!By(r)) throw Error("invalid_response");
+		if (!xb(r)) throw Error("invalid_response");
 		n[t] = Object.create(null);
 		for (let [e, i] of Object.entries(r)) {
 			if (![
@@ -12188,7 +13423,7 @@ function Uy(e) {
 				"security_token",
 				"secret",
 				"key"
-			].includes(e) || !By(i) || typeof i.configured != "boolean" || ![
+			].includes(e) || !xb(i) || typeof i.configured != "boolean" || ![
 				"encrypted",
 				"environment",
 				"missing"
@@ -12216,8 +13451,8 @@ function Uy(e) {
 		}
 	};
 }
-function Wy(e) {
-	if (!By(e) || typeof e.pending != "boolean" || typeof e.plan_id != "string" || !e.plan_id || ![
+function Tb(e) {
+	if (!xb(e) || typeof e.pending != "boolean" || typeof e.plan_id != "string" || !e.plan_id || ![
 		"account_count",
 		"plaintext_count",
 		"environment_count"
@@ -12232,31 +13467,32 @@ function Wy(e) {
 		environment_count: e.environment_count
 	};
 }
-function Gy(e) {
-	let t = [];
-	for (let n of [
+function Eb(e, t) {
+	let n = (e) => l(e, t), r = [];
+	e.language !== void 0 && !s(e.language) && r.push(n("web.validation.language"));
+	for (let t of [
 		"timeout_seconds",
 		"total_timeout_seconds",
 		"cache_ttl_seconds",
 		"max_concurrency"
-	]) (!(typeof e[n] == "number" && Number.isFinite(e[n]) && e[n] > 0) || n === "max_concurrency" && !Number.isInteger(e[n])) && t.push("请填写有效的查询参数。");
-	let n = /* @__PURE__ */ new Set();
-	for (let r of e.providers) {
-		(!r.id?.trim() || n.has(r.id.trim())) && t.push("账户 ID 不能为空或重复。"), n.add(r.id?.trim()), r.display_name?.trim() || t.push("请填写账户显示名称。");
-		for (let e of ["timeout_seconds", "cache_ttl_seconds"]) r[e] !== void 0 && !(typeof r[e] == "number" && Number.isFinite(r[e]) && r[e] > 0) && t.push("账户超时和缓存必须为正数。");
+	]) (!(typeof e[t] == "number" && Number.isFinite(e[t]) && e[t] > 0) || t === "max_concurrency" && !Number.isInteger(e[t])) && r.push(n("web.validation.query_parameters"));
+	let i = /* @__PURE__ */ new Set();
+	for (let t of e.providers) {
+		(!t.id?.trim() || i.has(t.id.trim())) && r.push(n("web.validation.account_id")), i.add(t.id?.trim()), t.display_name?.trim() || r.push(n("web.validation.account_name"));
+		for (let e of ["timeout_seconds", "cache_ttl_seconds"]) t[e] !== void 0 && !(typeof t[e] == "number" && Number.isFinite(t[e]) && t[e] > 0) && r.push(n("web.validation.account_positive"));
 	}
-	return e.private_allowed_user_ids?.some((e) => !/^\S+:\S+$/.test(e)) && t.push("私聊白名单需使用 平台名:用户ID。"), (e.timeout_seconds > 120 || e.total_timeout_seconds > 300 || e.cache_ttl_seconds > 86400 || e.max_concurrency > 32) && t.push("全局参数超出允许范围。"), e.providers.some((e) => e.timeout_seconds > 120 || e.cache_ttl_seconds > 86400) && t.push("账户超时最多 120 秒，缓存最多 86400 秒。"), [.../* @__PURE__ */ new Set([...t, ...Sy(e)])];
+	return e.private_allowed_user_ids?.some((e) => !/^\S+:\S+$/.test(e)) && r.push(n("web.validation.private_allowlist")), (e.timeout_seconds > 120 || e.total_timeout_seconds > 300 || e.cache_ttl_seconds > 86400 || e.max_concurrency > 32) && r.push(n("web.validation.global_bounds")), e.providers.some((e) => e.timeout_seconds > 120 || e.cache_ttl_seconds > 86400) && r.push(n("web.validation.account_bounds")), [.../* @__PURE__ */ new Set([...r, ...Yy(e, t)])];
 }
 //#endregion
 //#region src/controller.js
-var Ky = /* @__PURE__ */ new Set([
+var Db = /* @__PURE__ */ new Set([
 	"isDark",
 	"theme",
 	"locale",
 	"i18n",
 	"displayName",
 	"pageTitle"
-]), qy = /* @__PURE__ */ new Set([
+]), Ob = /* @__PURE__ */ new Set([
 	"read",
 	"update",
 	"credential-status",
@@ -12264,7 +13500,7 @@ var Ky = /* @__PURE__ */ new Set([
 	"credential-clear",
 	"legacy-config-plan",
 	"legacy-config-execute"
-]), Jy = (e) => {
+]), kb = (e) => {
 	let t = [
 		e?.code,
 		e?.error_code,
@@ -12292,7 +13528,7 @@ var Ky = /* @__PURE__ */ new Set([
 		"invalid_account"
 	].includes(e)) ? "validation" : "unknown";
 };
-function Yy(e) {
+function Ab(e) {
 	if (!e || typeof e != "object" || Array.isArray(e) || e.pluginName !== "astrbot_plugin_yomihime_quota_link" || e.pageName !== "00-quota-link") throw Error("invalid_context");
 	let t = (e, n = 0) => {
 		if (n > 16) throw Error("invalid_context");
@@ -12301,20 +13537,29 @@ function Yy(e) {
 		if (e && typeof e == "object" && [Object.prototype, null].includes(Object.getPrototypeOf(e))) return Object.fromEntries(Object.keys(e).sort().map((r) => [r, t(e[r], n + 1)]));
 		throw Error("invalid_context");
 	};
-	return JSON.stringify(t(Object.fromEntries(Object.entries(e).filter(([e]) => !Ky.has(e)))));
+	return JSON.stringify(t(Object.fromEntries(Object.entries(e).filter(([e]) => !Db.has(e)))));
 }
-function Xy(e, t = () => {}) {
-	let n = {
+function jb(e, t = () => {}) {
+	let n, r = "web.notice.connecting", i = "", a = "", o = (e) => typeof e == "function" ? e(s.locale) : e ? l(e, s.locale) : "", s = {
+		get locale() {
+			return c(s.snapshot?.config.language, n);
+		},
+		get notice() {
+			return o(r);
+		},
+		get alertNotice() {
+			return o(i);
+		},
+		get unitsNotice() {
+			return o(a);
+		},
 		units: null,
 		unitsBusy: !1,
 		unitsUnknown: !1,
-		unitsNotice: "",
 		alertStatus: null,
 		alertBusy: !1,
-		alertNotice: "",
 		ready: !1,
 		theme: "light",
-		locale: "zh-CN",
 		snapshot: null,
 		draft: null,
 		secret: null,
@@ -12322,383 +13567,395 @@ function Xy(e, t = () => {}) {
 		busy: !1,
 		stale: !0,
 		unknown: !1,
-		notice: "正在连接宿主管理会话…",
 		tone: "neutral",
 		edit: 0,
 		route: "accounts",
 		selected: null
-	}, r = 0, i = 0, a = 0, o = 0, s = null, c = !1, l = !1, u, d = null, f = () => t(), p = (e, t = "neutral") => {
-		n.notice = e, n.tone = t;
-	}, m = () => !!n.snapshot && !!n.draft && JSON.stringify(n.snapshot.config) !== JSON.stringify(n.draft);
-	function h() {
-		n.snapshot && (n.draft = ky(n.snapshot.config));
+	}, u = 0, d = 0, f = 0, p = 0, m = null, h = !1, g = !1, _, v = null, y = () => t(), b = (e, t = "neutral") => {
+		r = e, s.tone = t;
+	}, x = () => !!s.snapshot && !!s.draft && JSON.stringify(s.snapshot.config) !== JSON.stringify(s.draft);
+	function S() {
+		s.snapshot && (s.draft = rb(s.snapshot.config));
 	}
-	function g() {
-		n.secret && (n.secret.value = "", n.secret.environment = ""), n.secret = null;
+	function C() {
+		s.secret && (s.secret.value = "", s.secret.environment = ""), s.secret = null;
 	}
-	function _() {
-		r++, i++, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertBusy = !1, n.alertNotice = "", g(), n.plan = null, n.draft = null, n.edit++;
+	function w() {
+		u++, d++, s.units = null, s.unitsBusy = !1, s.unitsUnknown = !1, a = "", s.alertStatus = null, s.alertBusy = !1, i = "", C(), s.plan = null, s.draft = null, s.edit++;
 	}
-	function v(e) {
-		a++, d = null, n.busy = !1, _(), n.snapshot = null, n.ready = !1, n.stale = !0, s = null, p(e, "error"), f();
+	function T(e) {
+		f++, v = null, s.busy = !1, w(), s.snapshot = null, s.ready = !1, s.stale = !0, m = null, b(e, "error"), y();
 	}
-	let y = (e) => !l && n.ready && e.epoch === a && d === e;
-	function b(e) {
-		r++, i++, n.alertBusy = !1, n.units = null, n.unitsBusy = !1, n.unitsUnknown = !1, n.unitsNotice = "", n.alertStatus = null, n.alertNotice = "", n.snapshot = e, h(), n.stale = !1, n.unknown = !1, n.plan = null, n.edit++;
+	let E = (e) => !g && s.ready && e.epoch === f && v === e;
+	function D(e) {
+		u++, d++, s.alertBusy = !1, s.units = null, s.unitsBusy = !1, s.unitsUnknown = !1, a = "", s.alertStatus = null, i = "", s.snapshot = e, S(), s.stale = !1, s.unknown = !1, s.plan = null, s.edit++;
 	}
-	async function x(t, n, r) {
-		if (!qy.has(t) || !y(r)) throw Error("stale_context");
+	async function O(t, n, r) {
+		if (!Ob.has(t) || !E(r)) throw Error("stale_context");
 		let i = await e.apiPost("admin/" + t, n);
-		if (!y(r)) throw Error("stale_context");
+		if (!E(r)) throw Error("stale_context");
 		return i;
 	}
-	async function S(e, t, { write: r = !1, plan: i = !1 } = {}) {
-		if (l || !n.ready || n.busy || r && (n.stale || !n.snapshot || n.snapshot.migration.pending && e !== "legacy-config-execute")) return !1;
-		let s = {
-			epoch: a,
-			serial: ++o,
-			write: r
+	async function k(e, t, { write: n = !1, plan: r = !1 } = {}) {
+		if (g || !s.ready || s.busy || n && (s.stale || !s.snapshot || s.snapshot.migration.pending && e !== "legacy-config-execute")) return !1;
+		let i = {
+			epoch: f,
+			serial: ++p,
+			write: n
 		};
-		d = s, n.busy = !0, g(), n.plan = null, p(r ? "正在提交，请勿重复操作…" : "正在读取最新状态…"), f();
+		v = i, s.busy = !0, C(), s.plan = null, b(n ? "web.notice.saving" : "web.notice.reading"), y();
 		try {
-			let a = await x(e, t, s);
-			if (!y(s)) return !1;
-			if (i) n.plan = Wy(a), p(n.plan.legacy_conflict ? "旧配置与当前存储不一致。不会覆盖现有存储或清理新的旧配置。" : n.plan.cleanup_pending ? "迁移已保存，可重试清理原来的宿主旧字段。" : n.plan.pending ? "迁移预览已就绪。执行前请核对下方范围。" : "没有待迁移的旧配置。");
+			let a = await O(e, t, i);
+			if (!E(i)) return !1;
+			if (r) s.plan = Tb(a), b(s.plan.legacy_conflict ? "web.notice.legacy_conflict" : s.plan.cleanup_pending ? "web.notice.legacy_cleanup_retry" : s.plan.pending ? "web.notice.legacy_preview_ready" : "web.notice.legacy_not_pending");
 			else {
-				let n = Uy(a);
-				if (r && (n.revision < t.revision || e !== "legacy-config-execute" && n.revision === t.revision)) throw Error("invalid_response");
-				b(n), p(n.migration.cleanup_pending ? "配置已迁移，但宿主旧字段清理尚未完成，请在配置维护中重新预览并完成清理。" : r ? "已保存，当前状态已重新核对。" : "已读取最新配置。", n.migration.cleanup_pending ? "warning" : "success");
+				let r = wb(a);
+				if (n && (r.revision < t.revision || e !== "legacy-config-execute" && r.revision === t.revision)) throw Error("invalid_response");
+				D(r), b(r.migration.cleanup_pending ? "web.notice.legacy_cleanup_incomplete" : n ? "web.notice.saved" : "web.notice.loaded", r.migration.cleanup_pending ? "warning" : "success");
 			}
 			return !0;
 		} catch (e) {
-			if (!y(s)) return !1;
-			let t = Jy(e);
-			return g(), t === "auth" ? (v("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unknown = !1, p("配置已被其他页面修改。请重新读取，再核对并提交；不会自动重试。", "warning")) : t === "validation" ? p("提交未通过校验。请检查字段和凭据类型；敏感输入已清空。", "error") : (n.stale = !0, n.unknown = r, p(r ? "提交结果尚未确认，敏感输入已清空。请重新读取状态后再决定，切勿直接重复提交。" : "无法读取可信的配置状态。请重新读取，或从宿主重新打开。", "warning")), !1);
+			if (!E(i)) return !1;
+			let t = kb(e);
+			return C(), t === "auth" ? (T("web.notice.authorization_lost"), !1) : (t === "conflict" ? (s.stale = !0, s.unknown = !1, b("web.notice.revision_conflict", "warning")) : t === "validation" ? b("web.notice.validation_failed", "error") : (s.stale = !0, s.unknown = n, b(n ? "web.notice.write_uncertain" : "web.notice.read_failed", "warning")), !1);
 		} finally {
-			y(s) && (n.busy = !1, d = null, f());
+			E(i) && (s.busy = !1, v = null, y());
 		}
 	}
-	async function C() {
-		return !n.ready || n.busy ? !1 : (g(), S("read", {}));
+	async function A() {
+		return !s.ready || s.busy ? !1 : (C(), k("read", {}));
 	}
-	async function w() {
-		if (l || !n.ready || n.busy || n.alertBusy) return !1;
+	async function ee() {
+		if (g || !s.ready || s.busy || s.alertBusy) return !1;
 		let t = {
-			epoch: a,
-			revision: n.snapshot?.revision,
-			serial: ++i
+			epoch: f,
+			revision: s.snapshot?.revision,
+			serial: ++d
 		};
-		n.alertBusy = !0, n.alertNotice = "正在读取预警运行状态…", f();
-		let r = () => !l && n.ready && t.epoch === a && t.revision === n.snapshot?.revision && t.serial === i;
+		s.alertBusy = !0, i = "web.notice.alert_loading", y();
+		let n = () => !g && s.ready && t.epoch === f && t.revision === s.snapshot?.revision && t.serial === d;
 		try {
 			let t = await e.apiPost("admin/alert-status", {});
-			return r() ? (n.alertStatus = Cy(t), n.alertNotice = "", !0) : !1;
+			return n() ? (s.alertStatus = Xy(t), i = "", !0) : !1;
 		} catch (e) {
-			return r() ? Jy(e) === "auth" ? (v("管理授权已失效。所有草稿已清空，请从 AstrBot 插件管理重新打开。"), !1) : (n.alertStatus = null, n.alertNotice = "无法读取可信的预警运行状态，请稍后重试。", !1) : !1;
+			return n() ? kb(e) === "auth" ? (T("web.notice.authorization_lost"), !1) : (s.alertStatus = null, i = "web.notice.alert_read_failed", !1) : !1;
 		} finally {
-			r() && (n.alertBusy = !1, f());
+			n() && (s.alertBusy = !1, y());
 		}
 	}
-	async function T() {
-		if (l || !n.ready || !n.snapshot || n.busy || n.unitsBusy) return !1;
+	async function j() {
+		if (g || !s.ready || !s.snapshot || s.busy || s.unitsBusy) return !1;
 		let t = {
-			epoch: a,
-			revision: n.snapshot.revision,
-			serial: ++r,
-			selected: n.selected
+			epoch: f,
+			revision: s.snapshot.revision,
+			serial: ++u,
+			selected: s.selected
 		};
-		n.unitsBusy = !0, n.unitsNotice = "", f();
-		let i = () => !l && n.ready && t.epoch === a && t.serial === r && t.revision === n.snapshot?.revision && t.selected === n.selected;
+		s.unitsBusy = !0, a = "", y();
+		let n = () => !g && s.ready && t.epoch === f && t.serial === u && t.revision === s.snapshot?.revision && t.selected === s.selected;
 		try {
 			let t = await e.apiPost("admin/alert-units", {});
-			return i() ? (n.units = dy(t), n.unitsUnknown = !1, !0) : !1;
+			return n() ? (s.units = Ry(t), s.unitsUnknown = !1, !0) : !1;
 		} catch (e) {
-			return i() ? (n.units = null, Jy(e) === "auth" ? v("管理授权已失效，请重新打开。") : n.unitsNotice = "单位获取失败，请刷新。", !1) : !1;
+			return n() ? (s.units = null, kb(e) === "auth" ? T("web.notice.authorization_reopen") : a = "web.notice.unit_read_failed", !1) : !1;
 		} finally {
-			i() && (n.unitsBusy = !1, f());
+			n() && (s.unitsBusy = !1, y());
 		}
 	}
-	async function E(t) {
-		if (l || !n.ready || n.stale || n.busy || n.unitsBusy || !n.snapshot || m() || n.secret || n.snapshot.migration.pending || n.route !== "accounts" || n.selected !== t || !n.snapshot.config.providers.some((e) => e.id === t)) return !1;
-		let i = {
-			epoch: a,
-			serial: ++o,
+	async function te(t) {
+		if (g || !s.ready || s.stale || s.busy || s.unitsBusy || !s.snapshot || x() || s.secret || s.snapshot.migration.pending || s.route !== "accounts" || s.selected !== t || !s.snapshot.config.providers.some((e) => e.id === t)) return !1;
+		let n = {
+			epoch: f,
+			serial: ++p,
 			write: !1
 		};
-		d = i, r++, n.busy = !0, n.unitsBusy = !0, n.unitsNotice = "正在查询余额以获取最新单位…", f();
+		v = n, u++, s.busy = !0, s.unitsBusy = !0, a = "web.notice.unit_querying", y();
 		try {
 			let r = await e.apiPost("admin/alert-refresh-units", {
-				revision: n.snapshot.revision,
+				revision: s.snapshot.revision,
 				account_id: t
 			});
-			if (!y(i)) return !1;
-			n.units = dy(r), n.unitsUnknown = !1;
-			let a = n.units.accounts.find((e) => e.account_id === t);
-			return n.unitsNotice = a?.unit_state === "verified" ? "已读取最新单位状态，已确认的单位仍有效。" : a?.choices.length ? "已获取最新候选，请核对后确认。" : "暂未取得可确认候选，请检查凭据、接口配置或查询退避状态后再查询。", !0;
+			if (!E(n)) return !1;
+			s.units = Ry(r), s.unitsUnknown = !1;
+			let i = s.units.accounts.find((e) => e.account_id === t);
+			return a = i?.unit_state === "verified" ? "web.notice.unit_current" : i?.choices.length ? "web.notice.unit_candidates" : "web.notice.unit_no_candidates", !0;
 		} catch (e) {
-			if (!y(i)) return !1;
-			n.units = null;
-			let t = Jy(e);
-			return t === "auth" ? v("管理授权已失效，请重新打开。") : t === "conflict" ? (n.stale = !0, n.unitsNotice = "配置已改变，请重新读取。", p("配置已改变，请重新读取。", "warning")) : n.unitsNotice = "未取得可信的新候选。请检查凭据、接口与查询状态后重新查询。", !1;
+			if (!E(n)) return !1;
+			s.units = null;
+			let t = kb(e);
+			return t === "auth" ? T("web.notice.authorization_reopen") : t === "conflict" ? (s.stale = !0, a = "web.notice.config_changed", b("web.notice.config_changed", "warning")) : a = "web.notice.unit_unverified_candidates", !1;
 		} finally {
-			y(i) && (n.busy = !1, n.unitsBusy = !1, d = null, f());
+			E(n) && (s.busy = !1, s.unitsBusy = !1, v = null, y());
 		}
 	}
-	async function D(t, i) {
-		if (l || !n.ready || n.stale || n.busy || n.unitsBusy || n.unitsUnknown || !n.snapshot || m() || n.route !== "accounts" || n.selected !== t) return !1;
-		let s = n.snapshot.config.providers.find((e) => e.id === t), c = n.units?.accounts.find((e) => e.account_id === t), u = c?.choices.find((e) => e.id === i && e.metric === s?.balance_alert?.metric);
-		if (!c || c.choices_state && c.choices_state !== "fresh" || !(["ambiguous", "changed"].includes(c.unit_state) || c.unit_state === "unidentified" && c.choices.filter((e) => e.metric === s?.balance_alert?.metric).length === 1) || !u || n.snapshot.migration.pending) return !1;
-		let h = {
-			epoch: a,
-			serial: ++o,
+	async function ne(t, n) {
+		if (g || !s.ready || s.stale || s.busy || s.unitsBusy || s.unitsUnknown || !s.snapshot || x() || s.route !== "accounts" || s.selected !== t) return !1;
+		let r = s.snapshot.config.providers.find((e) => e.id === t), i = s.units?.accounts.find((e) => e.account_id === t), o = i?.choices.find((e) => e.id === n && e.metric === r?.balance_alert?.metric);
+		if (!i || i.choices_state && i.choices_state !== "fresh" || !(["ambiguous", "changed"].includes(i.unit_state) || i.unit_state === "unidentified" && i.choices.filter((e) => e.metric === r?.balance_alert?.metric).length === 1) || !o || s.snapshot.migration.pending) return !1;
+		let c = {
+			epoch: f,
+			serial: ++p,
 			write: !0
 		};
-		d = h, r++, n.busy = !0, n.unitsBusy = !0, n.unitsNotice = "", g(), f();
+		v = c, u++, s.busy = !0, s.unitsBusy = !0, a = "", C(), y();
 		try {
-			let r = await e.apiPost("admin/alert-bind-unit", {
-				revision: n.snapshot.revision,
+			let n = await e.apiPost("admin/alert-bind-unit", {
+				revision: s.snapshot.revision,
 				account_id: t,
-				choice_id: u.id
+				choice_id: o.id
 			});
-			return y(h) ? (n.units = dy(r), n.unitsUnknown = !1, n.unitsNotice = "单位已确认。", !0) : !1;
+			return E(c) ? (s.units = Ry(n), s.unitsUnknown = !1, a = "web.notice.unit_confirmed", !0) : !1;
 		} catch (e) {
-			if (!y(h)) return !1;
-			n.units = null;
-			let t = Jy(e);
-			return t === "auth" ? (v("管理授权已失效，请重新打开。"), !1) : (t === "conflict" ? (n.stale = !0, n.unitsNotice = "配置已改变，请重新读取。", p("配置已改变，请重新读取。", "warning")) : t === "validation" ? n.unitsNotice = "候选已变化或过期，请重新查询后确认。" : (n.unitsUnknown = !0, n.unitsNotice = "确认结果未知，请刷新单位后再操作。"), !1);
+			if (!E(c)) return !1;
+			s.units = null;
+			let t = kb(e);
+			return t === "auth" ? (T("web.notice.authorization_reopen"), !1) : (t === "conflict" ? (s.stale = !0, a = "web.notice.config_changed", b("web.notice.config_changed", "warning")) : t === "validation" ? a = "web.notice.unit_candidate_changed" : (s.unitsUnknown = !0, a = "web.notice.unit_confirm_uncertain"), !1);
 		} finally {
-			y(h) && (n.busy = !1, n.unitsBusy = !1, d = null, f());
+			E(c) && (s.busy = !1, s.unitsBusy = !1, v = null, y());
 		}
 	}
-	function O(e) {
-		if (l) return;
-		c = !0, n.theme = e?.isDark === !0 || e?.theme === "dark" ? "dark" : "light", n.locale = typeof e?.locale == "string" ? e.locale : "zh-CN";
+	function re(e) {
+		if (g) return;
+		h = !0, s.theme = e?.isDark === !0 || e?.theme === "dark" ? "dark" : "light", n = e?.locale;
 		let t;
 		try {
-			t = Yy(e);
+			t = Ab(e);
 		} catch {
-			v("宿主管理上下文无效。请从 AstrBot 插件管理打开此页。");
+			T("web.notice.invalid_context");
 			return;
 		}
-		if (n.ready && t === s) {
-			f();
+		if (s.ready && t === m) {
+			y();
 			return;
 		}
-		a++, d = null, n.busy = !1, _(), n.snapshot = null, n.stale = !0, n.unknown = !1, n.ready = !0, s = t, f(), C();
+		f++, v = null, s.busy = !1, w(), s.snapshot = null, s.stale = !0, s.unknown = !1, s.ready = !0, m = t, y(), A();
 	}
-	function ee(e) {
-		n.ready && !n.stale && !n.busy && n.draft && (e(n.draft), n.edit++, n.plan = null, f());
+	function ie(e) {
+		s.ready && !s.stale && !s.busy && s.draft && (e(s.draft), s.edit++, s.plan = null, y());
 	}
-	function te(e, t = null) {
-		let o = d?.write;
-		a++, r++, i++, n.units = null, n.unitsBusy = !1, n.unitsNotice = "", n.alertBusy = !1, d = null, n.busy = !1, g(), n.plan = null, n.edit++, n.route = e, n.selected = t, h(), o && (n.stale = !0, n.unknown = !0, p("已离开原设置。已发出的请求无法撤回，请重新读取确认结果。", "warning")), f();
+	function ae(e, t = null) {
+		let n = v?.write;
+		f++, u++, d++, s.units = null, s.unitsBusy = !1, a = "", s.alertBusy = !1, v = null, s.busy = !1, C(), s.plan = null, s.edit++, s.route = e, s.selected = t, S(), n && (s.stale = !0, s.unknown = !0, b("web.notice.left_during_write", "warning")), y();
 	}
-	async function ne() {
-		if (!n.draft) return !1;
-		let e = Gy(n.draft);
-		return e.length ? (p(e.join(" "), "error"), f(), !1) : S("update", {
-			revision: n.snapshot?.revision,
-			config: ky(n.draft)
+	async function oe() {
+		if (!s.draft) return !1;
+		if (Eb(s.draft, s.locale).length) {
+			let e = rb(s.draft);
+			return b((t) => Eb(e, t).join(" "), "error"), y(), !1;
+		}
+		return k("update", {
+			revision: s.snapshot?.revision,
+			config: rb(s.draft)
 		}, { write: !0 });
 	}
-	function re(e, t, r = "value") {
-		!n.stale && !n.busy && n.ready && n.snapshot && (g(), n.secret = {
+	function se(e, t, n = "value") {
+		!s.stale && !s.busy && s.ready && s.snapshot && (C(), s.secret = {
 			account: e,
 			field: t,
-			mode: r,
+			mode: n,
 			value: "",
 			environment: ""
-		}, n.edit++, f());
+		}, s.edit++, y());
 	}
-	function ie(e, t) {
-		n.secret && !n.busy && (n.secret[e] = t, n.edit++, f());
+	function ce(e, t) {
+		s.secret && !s.busy && (s.secret[e] = t, s.edit++, y());
 	}
-	async function ae() {
-		let e = n.secret;
-		if (!e || m()) return !1;
+	async function le() {
+		let e = s.secret;
+		if (!e || x()) return !1;
 		let t = e.mode === "environment" ? e.environment : e.value;
-		return !t.trim() || e.mode === "environment" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(t) ? (p(e.mode === "environment" ? "请输入有效的环境变量名，不要填写变量的值。" : "请输入新凭据；留空不会执行清除。", "error"), f(), !1) : S("credential-replace", {
-			revision: n.snapshot.revision,
+		return !t.trim() || e.mode === "environment" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(t) ? (b(e.mode === "environment" ? "web.notice.invalid_environment" : "web.notice.missing_credential", "error"), y(), !1) : k("credential-replace", {
+			revision: s.snapshot.revision,
 			account_id: e.account,
 			field: e.field,
 			...e.mode === "environment" ? { environment: t } : { value: t }
 		}, { write: !0 });
 	}
-	async function oe(e, t) {
-		return !m() && S("credential-clear", {
-			revision: n.snapshot?.revision,
+	async function ue(e, t) {
+		return !x() && k("credential-clear", {
+			revision: s.snapshot?.revision,
 			account_id: e,
 			field: t
 		}, { write: !0 });
 	}
-	function se() {
-		g(), n.edit++, f();
+	function de() {
+		C(), s.edit++, y();
 	}
-	function ce() {
-		g(), n.plan = null, h(), n.edit++, p("未保存的草稿已丢弃。"), f();
+	function fe() {
+		C(), s.plan = null, S(), s.edit++, b("web.notice.discarded"), y();
 	}
-	function le() {
-		l || (l = !0, a++, d = null, n.busy = !1, _(), n.snapshot = null, n.ready = !1, u?.(), f());
+	function pe() {
+		g || (g = !0, f++, v = null, s.busy = !1, w(), s.snapshot = null, s.ready = !1, _?.(), y());
 	}
-	function ue() {
+	function me() {
 		if (!e || typeof e.apiPost != "function" || typeof e.ready != "function" || typeof e.onContext != "function") {
-			p("请从 AstrBot 插件管理页面打开此页。", "warning"), f();
+			b("web.notice.open_in_host", "warning"), y();
 			return;
 		}
-		u = e.onContext(O), Promise.resolve(e.ready()).then((e) => {
-			c || O(e);
+		_ = e.onContext(re), Promise.resolve(e.ready()).then((e) => {
+			h || re(e);
 		}).catch(() => {
-			!c && !l && v("宿主管理会话不可用，请重新打开此页。");
+			!h && !g && T("web.notice.session_unavailable");
 		});
 	}
 	return {
-		state: n,
-		start: ue,
-		accept: O,
-		close: le,
-		refresh: C,
-		refreshUnits: T,
-		queryUnits: E,
-		bindUnit: D,
-		refreshAlerts: w,
-		save: ne,
-		dirty: m,
-		edit: ee,
-		navigate: te,
-		beginSecret: re,
-		changeSecret: ie,
-		replace: ae,
-		clear: oe,
-		cancelSecret: se,
-		discard: ce,
+		state: s,
+		start: me,
+		accept: re,
+		close: pe,
+		refresh: A,
+		refreshUnits: j,
+		queryUnits: te,
+		bindUnit: ne,
+		refreshAlerts: ee,
+		save: oe,
+		dirty: x,
+		edit: ie,
+		navigate: ae,
+		beginSecret: se,
+		changeSecret: ce,
+		replace: le,
+		clear: ue,
+		cancelSecret: de,
+		discard: fe,
 		interactionKey: () => JSON.stringify([
-			a,
-			n.edit,
-			n.route,
-			n.selected,
-			n.snapshot?.revision,
-			n.busy,
-			n.ready,
-			n.stale,
-			r
+			f,
+			s.edit,
+			s.route,
+			s.selected,
+			s.snapshot?.revision,
+			s.busy,
+			s.ready,
+			s.stale,
+			u
 		]),
-		plan: () => S("legacy-config-plan", {}, { plan: !0 }),
-		migrate: () => (n.plan?.pending || n.plan?.cleanup_pending) && !n.plan?.legacy_conflict && !m() ? S("legacy-config-execute", {
-			revision: n.snapshot?.revision,
-			plan_id: n.plan.plan_id,
+		plan: () => k("legacy-config-plan", {}, { plan: !0 }),
+		migrate: () => (s.plan?.pending || s.plan?.cleanup_pending) && !s.plan?.legacy_conflict && !x() ? k("legacy-config-execute", {
+			revision: s.snapshot?.revision,
+			plan_id: s.plan.plan_id,
 			confirm: !0
 		}, { write: !0 }) : Promise.resolve(!1)
 	};
 }
-var Zy = Po(/* @__PURE__ */ P({ setup() {
-	let e = /* @__PURE__ */ N(0), t = /* @__PURE__ */ N(null), n = /* @__PURE__ */ N(null), r = /* @__PURE__ */ N("deepseek"), i = /* @__PURE__ */ N({}), a = /* @__PURE__ */ N({}), o = /* @__PURE__ */ N({}), s = Yv(document), c = /* @__PURE__ */ N(Object.create(null)), l, u, d = Xy(window.AstrBotPluginView, () => {
-		l !== d.state.draft && (i.value = {}, a.value = {}, o.value = {}, l = d.state.draft), u !== d.state.units && (c.value = Object.create(null), u = d.state.units), s.invalidate(), e.value++;
-	}), f = d.state, p = (e, t = {}) => R(lg, {
+var Mb = Go(/* @__PURE__ */ _r({ setup() {
+	let e = /* @__PURE__ */ F(0), t = /* @__PURE__ */ F(null), n = /* @__PURE__ */ F(null), r = /* @__PURE__ */ F("deepseek"), i = /* @__PURE__ */ F({}), a = /* @__PURE__ */ F({}), o = /* @__PURE__ */ F({}), s = Sy(document, () => g("web.common.cancel")), c = /* @__PURE__ */ F(Object.create(null)), f, p, m = jb(window.AstrBotPluginView, () => {
+		f !== m.state.draft && (i.value = {}, a.value = {}, o.value = {}, f = m.state.draft), p !== m.state.units && (c.value = Object.create(null), p = m.state.units), s.invalidate(), e.value++;
+	}), h = m.state, g = (e, t) => l(e, h.locale, t), _ = (e) => My(e, h.locale), v = (e) => Ny(e, h.locale), y = (e) => a.value[e] ? d(a.value[e], h.locale) : void 0, b = (e, t = {}) => z(Fg, {
 		size: "large",
 		...t
-	}, () => e), m = () => !f.ready || f.busy || f.stale || !!f.snapshot?.migration.pending, h = () => m() || d.dirty() || !f.snapshot?.encryption.ready, g = async (e, t, n, r, i) => {
-		let a = d.interactionKey();
+	}, () => e), x = () => !h.ready || h.busy || h.stale || !!h.snapshot?.migration.pending, S = () => x() || m.dirty() || !h.snapshot?.encryption.ready, C = async (e, t, n) => {
+		let r = m.interactionKey();
 		await s.ask({
 			kind: e,
-			title: t,
-			message: n,
-			confirmLabel: r,
-			isCurrent: () => a === d.interactionKey() && f.ready
-		}) && await i();
-	}, _ = async (e, t = null) => {
+			copy: t,
+			isCurrent: () => r === m.interactionKey() && h.ready
+		}) && await n();
+	}, w = async (e, t = null) => {
 		let n = () => {
-			d.navigate(e, t), e === "accounts" && t && f.snapshot?.config.providers.some((e) => e.id === t) && d.refreshUnits();
+			m.navigate(e, t), e === "accounts" && t && h.snapshot?.config.providers.some((e) => e.id === t) && m.refreshUnits();
 		};
-		d.dirty() || f.secret || f.busy ? await g("navigation", "离开当前设置？", "未保存的设置和凭据输入将清空。已发出的请求无法撤回，结果不明时需重新读取，不会自动重试。", "放弃草稿并离开", n) : n();
-	}, v = async () => {
+		m.dirty() || h.secret || h.busy ? await C("navigation", () => [
+			g("web.navigation.leave_title"),
+			g("web.navigation.leave_body"),
+			g("web.navigation.leave_action")
+		], n) : n();
+	}, T = async () => {
 		let e = async () => {
-			await d.refresh() && f.route === "accounts" && f.selected && await d.refreshUnits();
+			await m.refresh() && h.route === "accounts" && h.selected && await m.refreshUnits();
 		};
-		d.dirty() || f.secret ? await g("navigation", "重新读取配置？", "这会清空当前未保存的设置和凭据输入。", "丢弃草稿并读取", e) : await e();
-	}, y = (e) => R("svg", {
+		m.dirty() || h.secret ? await C("navigation", () => [
+			g("web.navigation.reload_title"),
+			g("web.navigation.reload_body"),
+			g("web.navigation.reload_action")
+		], e) : await e();
+	}, E = (e) => z("svg", {
 		class: "shell-icon",
 		viewBox: "0 0 24 24",
 		fill: "none",
 		stroke: "currentColor",
 		"stroke-width": 1.5,
 		"aria-hidden": "true"
-	}, e === "account" ? [R("rect", {
+	}, e === "account" ? [z("rect", {
 		x: 3,
 		y: 5,
 		width: 18,
 		height: 14,
 		rx: 2
-	}), R("path", { d: "M3 10h18M7 15h4" })] : e === "settings" ? [R("circle", {
+	}), z("path", { d: "M3 10h18M7 15h4" })] : e === "settings" ? [z("circle", {
 		cx: 12,
 		cy: 12,
 		r: 4
-	}), R("path", { d: "M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2" })] : [R("path", { d: "M4 12a8 8 0 1 1 2 6M4 12V5m0 7h7" })]), b = (e, t, n) => R("a", {
+	}), z("path", { d: "M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2" })] : [z("path", { d: "M4 12a8 8 0 1 1 2 6M4 12V5m0 7h7" })]), D = (e, t, n) => z("a", {
 		href: "#/" + t,
-		"aria-current": f.route === t ? "page" : void 0,
+		"aria-current": h.route === t ? "page" : void 0,
 		onClick: (e) => {
-			e.preventDefault(), _(t);
+			e.preventDefault(), w(t);
 		}
-	}, [y(n), R("span", e)]), x = () => R("div", { class: "shell-brand" }, [R("span", {
+	}, [E(n), z("span", e)]), O = () => z("div", { class: "shell-brand" }, [z("span", {
 		class: "shell-brand-mark",
 		"aria-hidden": "true"
-	}, "✧"), R("span", [R("span", { class: "shell-brand-line" }, "如月怜的"), R("span", { class: "shell-brand-line" }, "额度连结")])]), S = (e, t) => t.reduce((e, t) => e?.[t], e), C = (e, t, n) => d.edit((r) => {
+	}, "✧"), z("span", [z("span", { class: "shell-brand-line" }, g("web.shell.brand_author")), z("span", { class: "shell-brand-line" }, g("web.shell.brand_name"))])]), k = (e, t) => t.reduce((e, t) => e?.[t], e), A = (e, t, n) => m.edit((r) => {
 		let i = n === null ? r : r.providers[n];
 		for (let t of e.slice(0, -1)) (!i[t] || typeof i[t] != "object") && (i[t] = {}), i = i[t];
-		i[e.at(-1)] = t, n !== null && e.length === 1 && e[0] === "id" && (f.selected = String(t));
-	}), w = async (e, t) => {
-		let n = f.draft?.providers[e];
+		i[e.at(-1)] = t, n !== null && e.length === 1 && e[0] === "id" && (h.selected = String(t));
+	}), ee = async (e, t) => {
+		let n = h.draft?.providers[e];
 		if (!n || t === n.service_profile) return;
-		let r = n.balance_alert, i = r?.threshold !== null && r?.threshold !== void 0 || r?.recovery_threshold !== null && r?.recovery_threshold !== void 0 || r?.enabled, a = () => d.edit((n) => {
+		let r = n.balance_alert, i = r?.threshold !== null && r?.threshold !== void 0 || r?.recovery_threshold !== null && r?.recovery_threshold !== void 0 || r?.enabled, a = () => m.edit((n) => {
 			let r = n.providers[e];
 			r.service_profile = t, r.balance_alert = {
 				...r.balance_alert,
 				enabled: !1,
-				metric: ty(r),
+				metric: Oy(r),
 				threshold: null,
 				recovery_threshold: null
 			};
 		});
-		i ? await g("maintenance", "更换服务类型并重设预警？", "将清空阈值并关闭预警，单位会重新识别。", "更换并清空阈值", a) : a();
+		i ? await C("maintenance", () => [
+			g("web.account.profile_title"),
+			g("web.account.profile_body"),
+			g("web.account.profile_action")
+		], a) : a();
 	};
-	function T(e, t, n, r = [e], o = {}) {
-		let s = n === null ? f.draft : f.draft?.providers[n];
+	function j(e, t, n, r = [e], o = {}) {
+		let s = n === null ? h.draft : h.draft?.providers[n];
 		if (!s) return null;
-		let c = "field-" + (n === null ? "global" : n) + "-" + r.join("-"), l = S(s, r) ?? t.default ?? "", u = (n === null ? Fy : Py)[e] || t.description, d = o.locked || m(), p = (t) => {
+		let c = "field-" + (n === null ? "global" : n) + "-" + r.join("-"), l = k(s, r) ?? t.default ?? "", d = g(e === "language" ? "web.settings.language" : (n === null ? gb : hb)[e]), f = o.locked || x(), p = (t) => {
 			if (delete a.value[c], n !== null && r.length === 1 && e === "service_profile") {
-				w(n, String(t));
+				ee(n, String(t));
 				return;
 			}
-			C(r, t, n);
-		}, h;
-		return h = t.type === "bool" ? (e) => R("label", { class: "ui-check-label" }, [R("input", {
+			A(r, t, n);
+		}, m;
+		return m = t.type === "bool" ? (e) => z("label", { class: "ui-check-label" }, [z("input", {
 			...e,
 			type: "checkbox",
 			checked: !!l,
-			disabled: d,
+			disabled: f,
 			onChange: (e) => p(e.target.checked)
-		}), R("span", l ? "已开启" : "已关闭")]) : t.options ? (e) => R("select", {
-			...e,
+		}), z("span", g(l ? "web.common.on" : "web.common.off"))]) : t.options ? (n) => z("select", {
+			...n,
 			class: "ui-control",
 			value: l,
-			disabled: d,
+			disabled: f,
 			onChange: (e) => p(e.target.value)
-		}, [t.options.includes(l) ? [] : [R("option", { value: l }, l || "请选择")], ...t.options.map((e, n) => R("option", { value: e }, t.labels?.[n] || e))]) : t.type === "list" ? (e) => R("textarea", {
+		}, [t.options.includes(l) ? [] : [z("option", { value: l }, l || g("web.common.choose"))], ...t.options.map((t) => z("option", { value: t }, pb(e, t, h.locale)))]) : t.type === "list" ? (e) => z("textarea", {
 			...e,
 			class: "ui-control",
 			rows: 3,
 			value: i.value[c] ?? (Array.isArray(l) ? l.join("\n") : ""),
-			disabled: d,
-			placeholder: "每行一项",
+			disabled: f,
+			placeholder: g("web.common.one_per_line"),
 			onInput: (e) => {
 				let t = e.target.value;
 				i.value[c] = t, p(t.split("\n").map((e) => e.trim()).filter(Boolean));
 			}
-		}) : t.type === "dict" ? (e) => R("textarea", {
+		}) : t.type === "dict" ? (e) => z("textarea", {
 			...e,
 			class: "ui-control quota-json",
 			rows: 4,
 			value: i.value[c] ?? JSON.stringify(l || {}, null, 2),
-			disabled: d,
+			disabled: f,
 			spellcheck: !1,
 			onInput: (e) => {
 				let t = e.target.value;
@@ -12708,10 +13965,10 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 					if (!e || typeof e != "object" || Array.isArray(e)) throw Error();
 					p(e);
 				} catch {
-					a.value[c] = "请输入有效的 JSON 对象，不要填写凭据。";
+					a.value[c] = new u("web.validation.json_object");
 				}
 			}
-		}) : (n) => R("input", {
+		}) : (n) => z("input", {
 			...n,
 			class: "ui-control",
 			type: ["float", "int"].includes(t.type) ? "number" : "text",
@@ -12719,152 +13976,156 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 			max: e === "max_concurrency" ? 32 : e === "total_timeout_seconds" ? 300 : e === "timeout_seconds" ? 120 : e === "cache_ttl_seconds" ? 86400 : void 0,
 			step: t.type === "int" ? 1 : t.type === "float" ? "any" : void 0,
 			value: l,
-			disabled: d,
+			disabled: f,
 			autocomplete: "off",
 			onInput: (e) => {
 				let n = e.target.value;
 				p(["float", "int"].includes(t.type) ? n === "" ? "" : Number(n) : n);
 			}
-		}), R(qv, {
+		}), z(by, {
 			key: c,
 			controlId: c,
-			label: u,
-			hint: o.hint ?? t.hint,
-			error: a.value[c],
+			label: d,
+			hint: o.hint ?? db(t, h.locale),
+			error: y(c),
 			class: t.type === "list" || t.type === "dict" ? "ui-field-wide" : void 0
-		}, { default: ({ controlAttrs: e }) => h(e) });
+		}, { default: ({ controlAttrs: e }) => m(e) });
 	}
-	let E = (e) => f.snapshot?.config.providers.find((t) => t.id === e), D = () => R(Gv, {}, () => [
-		p("保存设置", {
+	let te = (e) => h.snapshot?.config.providers.find((t) => t.id === e), ne = () => z(vy, {}, () => [
+		b(g("web.settings.save"), {
 			type: "primary",
 			"data-action": "save",
-			disabled: m() || !d.dirty() || Object.keys(a.value).length > 0,
+			disabled: x() || !m.dirty() || Object.keys(a.value).length > 0,
 			onClick: async () => {
-				await d.save() && f.route === "accounts" && f.selected && await d.refreshUnits();
+				await m.save() && h.route === "accounts" && h.selected && await m.refreshUnits();
 			}
 		}),
-		p("放弃修改", {
-			disabled: m() || !d.dirty(),
-			onClick: () => d.discard()
+		b(g("web.settings.discard"), {
+			disabled: x() || !m.dirty(),
+			onClick: () => m.discard()
 		}),
-		d.dirty() ? R("span", { class: "dirty-indicator" }, "有未保存修改") : R("span", { class: "quota-muted" }, "普通设置与凭据分别保存")
-	]), O = (e) => R(Hv, {
-		title: "查询凭据",
-		eyebrow: "SOURCE ACCESS"
+		m.dirty() ? z("span", { class: "dirty-indicator" }, g("web.settings.unsaved")) : z("span", { class: "quota-muted" }, g("web.settings.separate_credentials"))
+	]), re = (e) => z(hy, {
+		title: g("web.credential.title"),
+		eyebrow: g("web.credential.eyebrow")
 	}, { default: () => [
-		R(Kv, {}, () => "凭据单独保存。"),
-		E(e.id) ? null : R(Kv, { tone: "warning" }, () => "请先保存新账户，再配置凭据。"),
-		d.dirty() ? R(Kv, { tone: "warning" }, () => "请先保存或放弃普通设置修改，再操作凭据。") : null,
-		...[...Ny(e), ...Object.entries(f.snapshot?.credentials[e.id] || {}).filter(([t, n]) => n.configured && !Ny(e).some((e) => e.key === t)).map(([e]) => ({
+		z(yy, {}, () => g("web.credential.separate")),
+		te(e.id) ? null : z(yy, { tone: "warning" }, () => g("web.credential.save_account")),
+		m.dirty() ? z(yy, { tone: "warning" }, () => g("web.credential.finish_settings")) : null,
+		...[...mb(e, h.locale), ...Object.entries(h.snapshot?.credentials[e.id] || {}).filter(([t, n]) => n.configured && !mb(e, h.locale).some((e) => e.key === t)).map(([e]) => ({
 			key: e,
-			label: "旧版凭据（" + e + "）"
+			label: g("web.credential.legacy_field", { field: e })
 		}))].map(({ key: t, label: n }) => {
-			let r = f.snapshot?.credentials[e.id]?.[t], i = f.secret?.account === e.id && f.secret?.field === t;
-			return R("section", {
+			let r = h.snapshot?.credentials[e.id]?.[t], i = h.secret?.account === e.id && h.secret?.field === t;
+			return z("section", {
 				class: "quota-credential",
 				key: t
 			}, [
-				R("h3", n),
-				R("p", {
+				z("h3", n),
+				z("p", {
 					class: "ui-badge",
 					"data-testid": "credential-status"
-				}, r ? r.configured ? r.source === "environment" ? "已配置 · 环境变量引用" : "已配置 · 加密存储" : "未配置" : "状态未读取"),
-				r?.configured ? R(Kv, {}, () => "凭据已保存，将在余额查询时验证有效性。") : null,
-				i ? R("form", {
+				}, r ? r.configured ? r.source === "environment" ? g("web.credential.environment_status") : g("web.credential.encrypted_status") : g("web.credential.missing") : g("web.credential.status_unread")),
+				r?.configured ? z(yy, {}, () => g("web.credential.saved_hint")) : null,
+				i ? z("form", {
 					autocomplete: "off",
 					onSubmit: (e) => {
-						e.preventDefault(), d.replace();
+						e.preventDefault(), m.replace();
 					}
 				}, [
-					R("div", {
+					z("div", {
 						class: "ui-segmented",
-						"aria-label": "新凭据来源"
-					}, [p("输入新凭据", {
-						"aria-pressed": f.secret?.mode === "value",
-						disabled: f.busy,
-						onClick: () => d.beginSecret(e.id, t, "value")
-					}), p("引用环境变量", {
-						"aria-pressed": f.secret?.mode === "environment",
-						disabled: f.busy,
-						onClick: () => d.beginSecret(e.id, t, "environment")
+						"aria-label": g("web.credential.new_source")
+					}, [b(g("web.credential.enter_new"), {
+						"aria-pressed": h.secret?.mode === "value",
+						disabled: h.busy,
+						onClick: () => m.beginSecret(e.id, t, "value")
+					}), b(g("web.credential.use_environment"), {
+						"aria-pressed": h.secret?.mode === "environment",
+						disabled: h.busy,
+						onClick: () => m.beginSecret(e.id, t, "environment")
 					})]),
-					R(qv, {
+					z(by, {
 						controlId: "credential-new-value",
-						label: f.secret?.mode === "environment" ? "环境变量名" : "新凭据",
-						hint: f.secret?.mode === "environment" ? "仅填写环境变量名，例如 QUOTA_API_KEY；凭据值由运行环境提供。" : "空值不会清除已有凭据。提交后立即清空输入。"
-					}, { default: ({ controlAttrs: e }) => R("input", {
+						label: h.secret?.mode === "environment" ? g("web.credential.environment_name") : g("web.credential.new_value"),
+						hint: h.secret?.mode === "environment" ? g("web.credential.environment_hint") : g("web.credential.new_value_hint")
+					}, { default: ({ controlAttrs: e }) => z("input", {
 						...e,
 						class: "ui-control",
-						type: f.secret?.mode === "environment" ? "text" : "password",
-						value: f.secret?.mode === "environment" ? f.secret?.environment : f.secret?.value,
+						type: h.secret?.mode === "environment" ? "text" : "password",
+						value: h.secret?.mode === "environment" ? h.secret?.environment : h.secret?.value,
 						autocomplete: "new-password",
 						spellcheck: !1,
 						autocapitalize: "none",
 						maxlength: 8192,
-						disabled: h(),
-						onInput: (e) => d.changeSecret(f.secret?.mode === "environment" ? "environment" : "value", e.target.value)
+						disabled: S(),
+						onInput: (e) => m.changeSecret(h.secret?.mode === "environment" ? "environment" : "value", e.target.value)
 					}) }),
-					R(Gv, {}, () => [p("保存新凭据", {
+					z(vy, {}, () => [b(g("web.credential.save_new"), {
 						type: "primary",
 						attrType: "submit",
 						"data-action": "credential-save",
-						disabled: h()
-					}), p("取消输入", {
-						disabled: f.busy,
-						onClick: () => d.cancelSecret()
+						disabled: S()
+					}), b(g("web.credential.cancel_entry"), {
+						disabled: h.busy,
+						onClick: () => m.cancelSecret()
 					})])
-				]) : R(Gv, {}, () => [p("更换凭据", {
+				]) : z(vy, {}, () => [b(g("web.credential.replace"), {
 					"data-action": "credential-replace",
-					disabled: h() || !E(e.id),
-					onClick: () => d.beginSecret(e.id, t)
-				}), p("清除凭据", {
+					disabled: S() || !te(e.id),
+					onClick: () => m.beginSecret(e.id, t)
+				}), b(g("web.credential.clear"), {
 					"data-action": "credential-clear",
-					disabled: m() || d.dirty() || !r?.configured,
-					onClick: () => void g("credential-clear", "清除 " + n + "？", "将移除账户「" + e.display_name + "」的此项凭据或引用。账户设置保留；之后需重新配置才能查询。", "确认清除", () => d.clear(e.id, t))
+					disabled: x() || m.dirty() || !r?.configured,
+					onClick: () => void C("credential-clear", () => [
+						g("web.credential.clear_title", { credential: mb(e, h.locale).find((e) => e.key === t)?.label ?? g("web.credential.legacy_field", { field: t }) }),
+						g("web.credential.clear_body", { account: e.display_name }),
+						g("web.credential.confirm_clear")
+					], () => m.clear(e.id, t))
 				})])
 			]);
 		}),
-		R("p", { class: "quota-muted" }, "")
-	] }), ee = {
-		unit_unidentified: "等待识别单位",
-		units_ambiguous: "多个单位待确认",
-		unit_changed: "监测项或单位已变化，请确认",
-		waiting_budget: "等待同一推送目标的发送间隔（至少 300 秒 / 5 分钟）；将在后续有效检查中重试",
-		disabled: "预警已关闭",
-		waiting: "等待下次检查",
-		monitoring: "余额监测中",
-		recovering: "额度已回升，尚未达到恢复阈值",
-		submitted: "已提交平台；不代表最终送达",
-		storage_unavailable: "告警状态存储不可用，预警未运行",
-		ready: "等待下次检查",
-		normal: "余额在阈值以上",
-		low: "低于或等于阈值，当前告警持续中",
-		recovered: "余额已恢复",
-		pending: "等待检查",
-		pending_send: "等待合并提醒",
-		sent: "发送请求已受理（不代表送达）",
-		accepted: "发送请求已受理（不代表送达）",
-		unknown: "发送结果未知；不会盲目重试",
-		send_unknown: "发送结果未知；不会盲目重试",
-		failed: "发送失败",
-		send_failed: "发送失败",
-		paused: "认证或权限校验失败；修正配置或手动重试后恢复检查",
-		auth_paused: "凭据被拒绝，检查已暂停",
-		blocked: "预警发送已暂停，请检查下方原因",
-		incomplete: "配置不完整，未启动",
-		error: "检查失败，保留上次告警状态",
-		stale: "结果过期或指标、单位不匹配，不用于预警判断"
-	}, te = (e) => {
-		let t = f.alertStatus, n = e ? t?.accounts.find((t) => t.account_id === e) : null;
-		return R("div", { class: "quota-alert-runtime" }, [
-			R("div", { class: "quota-alert-runtime-heading" }, [R("strong", "运行状态"), p(f.alertBusy ? "读取中…" : "刷新预警状态", {
+		z("p", { class: "quota-muted" }, "")
+	] }), ie = {
+		unit_unidentified: "web.status.unit_unidentified",
+		units_ambiguous: "web.status.units_ambiguous",
+		unit_changed: "web.status.unit_changed",
+		waiting_budget: "web.status.waiting_budget",
+		disabled: "web.status.disabled",
+		waiting: "web.status.waiting",
+		monitoring: "web.status.monitoring",
+		recovering: "web.status.recovering",
+		submitted: "web.status.submitted",
+		storage_unavailable: "web.status.storage_unavailable",
+		ready: "web.status.waiting",
+		normal: "web.status.normal",
+		low: "web.status.low",
+		recovered: "web.status.recovered",
+		pending: "web.status.pending",
+		pending_send: "web.status.pending_send",
+		sent: "web.status.accepted",
+		accepted: "web.status.accepted",
+		unknown: "web.status.unknown",
+		send_unknown: "web.status.unknown",
+		failed: "web.status.failed",
+		send_failed: "web.status.failed",
+		paused: "web.status.paused",
+		auth_paused: "web.status.auth_paused",
+		blocked: "web.status.blocked",
+		incomplete: "web.status.incomplete",
+		error: "web.status.error",
+		stale: "web.status.stale"
+	}, ae = (e) => {
+		let t = h.alertStatus, n = e ? t?.accounts.find((t) => t.account_id === e) : null;
+		return z("div", { class: "quota-alert-runtime" }, [
+			z("div", { class: "quota-alert-runtime-heading" }, [z("strong", g("web.runtime.title")), b(h.alertBusy ? g("web.runtime.loading") : g("web.runtime.refresh"), {
 				text: !0,
 				"data-action": "alert-status",
-				disabled: !f.ready || f.busy || f.alertBusy,
-				onClick: () => void d.refreshAlerts()
+				disabled: !h.ready || h.busy || h.alertBusy,
+				onClick: () => void m.refreshAlerts()
 			})]),
-			f.alertNotice ? R("p", { class: "quota-muted" }, f.alertNotice) : null,
-			t ? R(Kv, { tone: !t.storage_available || n?.status === "storage_unavailable" || n?.status === "failed" ? "error" : !t.running || n && [
+			h.alertNotice ? z("p", { class: "quota-muted" }, h.alertNotice) : null,
+			t ? z(yy, { tone: !t.storage_available || n?.status === "storage_unavailable" || n?.status === "failed" ? "error" : !t.running || n && [
 				"low",
 				"recovering",
 				"unknown",
@@ -12875,13 +14136,13 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 				"units_ambiguous",
 				"unit_changed",
 				"waiting_budget"
-			].includes(n.status) ? "warning" : "neutral" }, () => t.storage_available ? t.running ? e ? n ? ee[n.status] || "状态已更新，请通过预警命令查看详情。" : "此账户尚无运行记录。" : "检查任务已运行；仅配置完整且单独开启的账户参与。" : "检查任务未运行。" : "告警状态存储不可用，预警未运行。") : null,
-			n?.detail_code || n?.status === "blocked" ? R(Kv, { tone: "warning" }, () => ly(n?.detail_code)) : null,
-			n?.last_checked_at ? R("p", { class: "quota-muted" }, ["最近检查：", R("time", { datetime: n.last_checked_at }, sy(n.last_checked_at, f.locale))]) : null,
-			n?.last_sent_at ? R("p", { class: "quota-muted" }, ["最近发送尝试：", R("time", { datetime: n.last_sent_at }, sy(n.last_sent_at, f.locale))]) : null
+			].includes(n.status) ? "warning" : "neutral" }, () => t.storage_available ? t.running ? g(e ? n ? Object.hasOwn(ie, n.status) ? ie[n.status] : "web.runtime.unknown_status" : "web.runtime.no_account_record" : "web.runtime.running") : g("web.runtime.stopped") : g("web.runtime.storage_unavailable")) : null,
+			n?.detail_code || n?.status === "blocked" ? z(yy, { tone: "warning" }, () => Iy(n?.detail_code, h.locale)) : null,
+			n?.last_checked_at ? z("p", { class: "quota-muted" }, [g("web.runtime.last_checked"), z("time", { datetime: n.last_checked_at }, Py(n.last_checked_at, h.locale))]) : null,
+			n?.last_sent_at ? z("p", { class: "quota-muted" }, [g("web.runtime.last_sent"), z("time", { datetime: n.last_sent_at }, Py(n.last_sent_at, h.locale))]) : null
 		]);
-	}, ne = (e, t) => {
-		let n = E(e.id), r = !!n && [
+	}, oe = (e, t) => {
+		let n = te(e.id), r = !!n && [
 			"type",
 			"service_profile",
 			"balance_scope",
@@ -12889,57 +14150,67 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 			"response_mapping",
 			"endpoint",
 			"region"
-		].every((t) => JSON.stringify(e[t]) === JSON.stringify(n[t])) && e.balance_alert?.metric === n.balance_alert?.metric, i = r ? f.units?.accounts.find((t) => t.account_id === e.id) : void 0, a = i?.choices.filter((t) => t.metric === (e.balance_alert?.metric || ty(e))) || [], o = !!i && (["ambiguous", "changed"].includes(i.unit_state) || i.unit_state === "unidentified" && a.length === 1), l = i?.unit || uy(e), u = c.value[e.id] || "", h = a.find((e) => e.id === u), _ = i?.unit_state === "ambiguous" ? "发现多个单位，请选择。" : i?.unit_state === "changed" ? i.change_reason === "metric_changed" ? "监测项已变化：" + oy(i.binding_metric) + " → " + oy(i.metric) + "。请重新确认单位和阈值。" : i.change_reason === "query_identity_changed" ? "查询账户或接口已变化，请重新确认单位和阈值。" : i.change_reason === "unit_changed" ? "查询单位已变化，请重新确认。" : "监测项或单位已变化，请重新确认。" : i?.unit_state === "stale" ? "查询候选已过期，请重新查询。已确认的单位记录仍保留。" : null, v = m() || f.unitsBusy || !n || !r || d.dirty() || !!f.secret;
-		return R("section", {
+		].every((t) => JSON.stringify(e[t]) === JSON.stringify(n[t])) && e.balance_alert?.metric === n.balance_alert?.metric, i = r ? h.units?.accounts.find((t) => t.account_id === e.id) : void 0, a = i?.choices.filter((t) => t.metric === (e.balance_alert?.metric || Oy(e))) || [], o = !!i && (["ambiguous", "changed"].includes(i.unit_state) || i.unit_state === "unidentified" && a.length === 1), l = i?.unit || Ly(e), u = c.value[e.id] || "", d = a.find((e) => e.id === u), f = i?.unit_state === "ambiguous" ? g("web.unit.ambiguous") : i?.unit_state === "changed" ? i.change_reason === "metric_changed" ? g("web.unit.metric_changed", {
+			previous: v(i.binding_metric),
+			current: v(i.metric)
+		}) : i.change_reason === "query_identity_changed" ? g("web.unit.query_changed") : i.change_reason === "unit_changed" ? g("web.unit.changed") : g("web.unit.metric_or_unit_changed") : i?.unit_state === "stale" ? g("web.unit.candidates_stale") : null, p = x() || h.unitsBusy || !n || !r || m.dirty() || !!h.secret;
+		return z("section", {
 			class: "quota-alert-unit",
-			"aria-label": "预警单位"
+			"aria-label": g("web.unit.title")
 		}, [
-			R("div", { class: "quota-alert-runtime-heading" }, [R("strong", { "data-testid": "alert-unit" }, "单位：" + (l ? ay(l) : "待获取")), p(f.unitsBusy ? "处理中…" : "读取单位状态", {
+			z("div", { class: "quota-alert-runtime-heading" }, [z("strong", { "data-testid": "alert-unit" }, g("web.unit.current", { unit: l ? _(l) : g("web.unit.awaiting") })), b(h.unitsBusy ? g("web.unit.loading") : g("web.unit.read"), {
 				text: !0,
 				"data-action": "alert-units",
-				disabled: !f.ready || f.busy || f.unitsBusy || !n,
-				onClick: () => void d.refreshUnits()
+				disabled: !h.ready || h.busy || h.unitsBusy || !n,
+				onClick: () => void m.refreshUnits()
 			})]),
-			i?.unit_state === "verified" ? R("p", { class: "quota-muted" }, i.choices_state === "expired" ? "单位已验证。查询候选已过期，已确认的单位仍有效。" : "单位已验证。") : null,
-			!l && !_ ? R("p", { class: "quota-muted" }, r ? o ? "请确认查询到的单位。" : "查询余额后自动识别。" : n ? "保存设置后重新识别。" : "保存账户后自动识别。") : null,
-			n && !r ? R("p", { class: "quota-muted" }, e.balance_alert?.metric === n.balance_alert?.metric ? "查询配置已修改，保存后重新识别单位。" : "监测项已改为“" + oy(e.balance_alert?.metric) + "”，保存后重新查询并确认。") : null,
-			i?.observed_at ? R("p", { class: "quota-muted" }, ["单位记录：", R("time", { datetime: i.observed_at }, sy(i.observed_at, f.locale))]) : null,
-			_ ? R(Kv, { tone: "warning" }, () => _) : null,
-			o && !a.length ? R("p", { class: "quota-muted" }, i?.choices_state === "expired" ? "可确认候选已过期，重新查询后再选择。" : "当前没有可确认候选，重新查询后再选择。") : null,
-			f.unitsNotice ? R(Kv, { tone: f.unitsUnknown ? "warning" : "neutral" }, () => f.unitsNotice) : null,
-			o && a.length ? R(qv, {
+			i?.unit_state === "verified" ? z("p", { class: "quota-muted" }, i.choices_state === "expired" ? g("web.unit.verified_expired") : g("web.unit.verified")) : null,
+			!l && !f ? z("p", { class: "quota-muted" }, g(r ? o ? "web.unit.confirm_observed" : "web.unit.detect_on_query" : n ? "web.unit.detect_on_save" : "web.unit.detect_on_account_save")) : null,
+			n && !r ? z("p", { class: "quota-muted" }, e.balance_alert?.metric === n.balance_alert?.metric ? g("web.unit.query_edited") : g("web.unit.metric_edited", { metric: v(e.balance_alert?.metric) })) : null,
+			i?.observed_at ? z("p", { class: "quota-muted" }, [g("web.unit.recorded"), z("time", { datetime: i.observed_at }, Py(i.observed_at, h.locale))]) : null,
+			f ? z(yy, { tone: "warning" }, () => f) : null,
+			o && !a.length ? z("p", { class: "quota-muted" }, i?.choices_state === "expired" ? g("web.unit.choices_expired") : g("web.unit.no_choices")) : null,
+			h.unitsNotice ? z(yy, { tone: h.unitsUnknown ? "warning" : "neutral" }, () => h.unitsNotice) : null,
+			o && a.length ? z(by, {
 				controlId: "field-" + t + "-unit-choice",
-				label: "选择单位",
-				hint: d.dirty() ? "请先保存设置。" : void 0
-			}, { default: ({ controlAttrs: t }) => R("div", { class: "quota-unit-choice" }, [R("select", {
+				label: g("web.unit.choose"),
+				hint: m.dirty() ? g("web.settings.save_first") : void 0
+			}, { default: ({ controlAttrs: t }) => z("div", { class: "quota-unit-choice" }, [z("select", {
 				...t,
 				class: "ui-control",
 				value: u,
-				disabled: m() || f.unitsBusy || d.dirty() || f.unitsUnknown,
+				disabled: x() || h.unitsBusy || m.dirty() || h.unitsUnknown,
 				onChange: (t) => {
 					s.cancel(), c.value[e.id] = t.target.value;
 				}
-			}, [R("option", { value: "" }, "请选择"), ...a.map((e) => R("option", { value: e.id }, ay(e.unit)))]), p("确认单位", {
+			}, [z("option", { value: "" }, g("web.common.choose")), ...a.map((e) => z("option", { value: e.id }, _(e.unit)))]), b(g("web.unit.confirm"), {
 				"data-action": "alert-bind-unit",
-				disabled: m() || f.unitsBusy || f.unitsUnknown || d.dirty() || !h,
-				onClick: () => void g("maintenance", "确认单位 " + ay(h?.unit) + "？", e.balance_alert?.threshold !== null && e.balance_alert?.threshold !== void 0 ? "改用 " + ay(h?.unit) + "，按阈值 " + e.balance_alert.threshold + " 比较？" : "改用 " + ay(h?.unit) + "？阈值尚未设置。", "确认单位", () => d.bindUnit(e.id, u))
+				disabled: x() || h.unitsBusy || h.unitsUnknown || m.dirty() || !d,
+				onClick: () => void C("maintenance", () => [
+					g("web.unit.confirm_title", { unit: _(d?.unit) }),
+					e.balance_alert?.threshold !== null && e.balance_alert?.threshold !== void 0 ? g("web.unit.confirm_threshold", {
+						unit: _(d?.unit),
+						threshold: e.balance_alert.threshold
+					}) : g("web.unit.confirm_no_threshold", { unit: _(d?.unit) }),
+					g("web.unit.confirm")
+				], () => m.bindUnit(e.id, u))
 			})]) }) : null,
-			n ? R("div", { class: "quota-unit-query" }, [p("重新查询单位", {
+			n ? z("div", { class: "quota-unit-query" }, [b(g("web.unit.query"), {
 				"data-action": "alert-refresh-units",
-				disabled: v,
-				onClick: () => void d.queryUnits(e.id)
-			}), R("p", { class: "quota-muted" }, d.dirty() ? "保存设置后可重新查询单位。" : f.secret ? "完成或取消凭据输入后可重新查询。" : "请求此账户的余额接口，获取新候选；不发送预警。")]) : null
+				disabled: p,
+				onClick: () => void m.queryUnits(e.id)
+			}), z("p", { class: "quota-muted" }, m.dirty() ? g("web.unit.save_before_query") : h.secret ? g("web.unit.finish_credential_before_query") : g("web.unit.query_hint"))]) : null
 		]);
-	}, re = (e, t) => {
+	}, se = (e, t) => {
 		let n = {
-			...$v(),
+			...Ey(),
 			...e.balance_alert
-		}, r = "field-" + t + "-balance_alert-", i = m(), s = (e, n) => C(["balance_alert", e], n, t), c = (t, o, c, l = "") => R(qv, {
+		}, r = "field-" + t + "-balance_alert-", i = x(), s = (e, n) => A(["balance_alert", e], n, t), c = (t, o, c, l = "") => z(by, {
 			controlId: r + t,
 			label: o,
 			hint: c,
-			error: a.value[r + t]
-		}, { default: ({ controlAttrs: o }) => R("input", {
+			error: y(r + t)
+		}, { default: ({ controlAttrs: o }) => z("input", {
 			...o,
 			class: "ui-control",
 			type: "text",
@@ -12954,57 +14225,57 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 				s(t, t.includes("threshold") && o === "" ? null : o);
 				for (let e of ["threshold", "recovery_threshold"]) delete a.value[r + e];
 				try {
-					by({
+					qy({
 						...n,
 						[t]: t.includes("threshold") && o === "" ? null : o
 					}, e);
 				} catch (e) {
-					a.value[r + t] = e.message;
+					a.value[r + t] = e;
 				}
 			}
-		}) }), l = n.check_interval_minutes, u = Number.isInteger(l) && l >= 1 && l <= 4320;
-		u && (o.value[r] = l);
-		let d = u ? l : o.value[r] ?? 15, h = (e) => {
+		}) }), l = n.check_interval_minutes, d = Number.isInteger(l) && l >= 1 && l <= 4320;
+		d && (o.value[r] = l);
+		let f = d ? l : o.value[r] ?? 15, p = (e) => {
 			let t = /^[0-9]+$/.test(e) ? Number(e) : NaN;
-			Number.isInteger(t) && t >= 1 && t <= 4320 ? (s("check_interval_minutes", t), delete a.value[r + "check_interval_minutes"]) : (s("check_interval_minutes", e), a.value[r + "check_interval_minutes"] = "请输入 1 至 4320 的整数分钟；不会自动截断或夹值。");
-		}, g = Sy({
-			...f.draft,
+			Number.isInteger(t) && t >= 1 && t <= 4320 ? (s("check_interval_minutes", t), delete a.value[r + "check_interval_minutes"]) : (s("check_interval_minutes", e), a.value[r + "check_interval_minutes"] = new u("web.validation.interval_input"));
+		}, m = Yy({
+			...h.draft,
 			providers: [e]
-		});
-		return R(Wv, {
-			title: "额度预警",
+		}, h.locale);
+		return z(_y, {
+			title: g("web.alert.title"),
 			number: "03"
 		}, { default: () => [
-			R(qv, {
+			z(by, {
 				controlId: r + "enabled",
-				label: "启用此账户预警",
-				hint: "保存后生效。"
-			}, { default: ({ controlAttrs: e }) => R("label", { class: "ui-check-label" }, [R("input", {
+				label: g("web.alert.enable_account"),
+				hint: g("web.settings.applies_after_save")
+			}, { default: ({ controlAttrs: e }) => z("label", { class: "ui-check-label" }, [z("input", {
 				...e,
 				type: "checkbox",
 				checked: n.enabled === !0,
 				disabled: i,
 				onChange: (e) => s("enabled", e.target.checked)
-			}), R("span", n.enabled ? "已开启" : "已关闭")]) }),
-			g.length ? R(Kv, { tone: "warning" }, () => g.join(" ")) : null,
-			R(qv, {
+			}), z("span", n.enabled ? g("web.common.on") : g("web.common.off"))]) }),
+			m.length ? z(yy, { tone: "warning" }, () => m.join(" ")) : null,
+			z(by, {
 				controlId: r + "check_interval_minutes",
-				label: "检查间隔（分钟）",
-				hint: "1–4320 分钟，默认 15。",
-				error: a.value[r + "check_interval_minutes"]
-			}, { default: ({ controlAttrs: e }) => R("div", { class: "quota-alert-interval" }, [R("div", { class: "quota-alert-interval-controls" }, [
-				R("input", {
+				label: g("web.alert.interval"),
+				hint: g("web.alert.interval_hint"),
+				error: y(r + "check_interval_minutes")
+			}, { default: ({ controlAttrs: e }) => z("div", { class: "quota-alert-interval" }, [z("div", { class: "quota-alert-interval-controls" }, [
+				z("input", {
 					type: "range",
 					id: r + "interval-slider",
-					"aria-label": "检查间隔滑条（分钟）",
+					"aria-label": g("web.alert.interval_slider"),
 					min: 1,
 					max: 4320,
 					step: 1,
-					value: d,
+					value: f,
 					disabled: i,
-					onInput: (e) => h(e.target.value)
+					onInput: (e) => p(e.target.value)
 				}),
-				R("input", {
+				z("input", {
 					...e,
 					class: "ui-control",
 					type: "number",
@@ -13013,47 +14284,47 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 					step: 1,
 					value: l,
 					disabled: i,
-					onInput: (e) => h(e.target.value)
+					onInput: (e) => p(e.target.value)
 				}),
-				R("span", "分钟")
-			]), R("div", {
+				z("span", g("web.alert.minutes"))
+			]), z("div", {
 				class: "quota-alert-quick-values",
 				role: "group",
-				"aria-label": "检查间隔快捷设置"
-			}, [R("span", { class: "quota-muted" }, "快捷设置："), ...[
+				"aria-label": g("web.alert.quick_group")
+			}, [z("span", { class: "quota-muted" }, g("web.alert.quick_label")), ...[
 				1,
 				15,
 				60,
 				1440,
 				4320
-			].map((e) => p(e >= 1440 ? `${e / 1440} 天` : `${e} 分钟`, {
+			].map((e) => b(e >= 1440 ? g("web.alert.interval_days", { count: e / 1440 }) : g("web.alert.interval_minutes", { count: e }), {
 				size: "small",
-				"aria-label": `设为 ${e} 分钟`,
+				"aria-label": g("web.alert.interval_set", { count: e }),
 				"aria-pressed": l === e,
 				disabled: i,
-				onClick: () => h(String(e))
+				onClick: () => p(String(e))
 			}))])]) }),
-			R(Jv, {}, () => [
-				R(qv, {
+			z(xy, {}, () => [
+				z(by, {
 					controlId: r + "metric",
-					label: "预警指标",
-					hint: "选择需要监测的余额。"
-				}, { default: ({ controlAttrs: t }) => R("select", {
+					label: g("web.alert.metric"),
+					hint: g("web.alert.metric_hint")
+				}, { default: ({ controlAttrs: t }) => z("select", {
 					...t,
 					class: "ui-control",
-					value: n.metric || ty(e),
+					value: n.metric || Oy(e),
 					disabled: i,
 					onChange: (e) => s("metric", e.target.value)
-				}, ny(e).map((e) => R("option", { value: e }, oy(e)))) }),
-				ne(e, t),
-				c("threshold", "触发阈值", "余额低于或等于此值时提醒。", "填写触发阈值"),
-				c("recovery_threshold", "恢复阈值（可选）", "留空自动设置，须高于触发阈值。", "留空自动设置"),
-				R(qv, {
+				}, ky(e).map((e) => z("option", { value: e }, v(e)))) }),
+				oe(e, t),
+				c("threshold", g("web.alert.threshold"), g("web.alert.threshold_hint"), g("web.alert.threshold_placeholder")),
+				c("recovery_threshold", g("web.alert.recovery"), g("web.alert.recovery_hint"), g("web.alert.recovery_placeholder")),
+				z(by, {
 					controlId: r + "repeat_minutes",
-					label: "持续低额重复提醒（分钟）",
-					hint: "0 不重复，最多 4320 分钟。",
-					error: a.value[r + "repeat_minutes"]
-				}, { default: ({ controlAttrs: e }) => R("input", {
+					label: g("web.alert.repeat"),
+					hint: g("web.alert.repeat_hint"),
+					error: y(r + "repeat_minutes")
+				}, { default: ({ controlAttrs: e }) => z("input", {
 					...e,
 					class: "ui-control",
 					type: "number",
@@ -13064,326 +14335,338 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 					disabled: i,
 					onInput: (e) => {
 						let t = e.target.value, n = /^[0-9]+$/.test(t) ? Number(t) : NaN;
-						s("repeat_minutes", Number.isInteger(n) ? n : t), !Number.isInteger(n) || n < 0 || n > 4320 ? a.value[r + "repeat_minutes"] = "请输入 0 至 4320 的整数分钟。" : delete a.value[r + "repeat_minutes"];
+						s("repeat_minutes", Number.isInteger(n) ? n : t), !Number.isInteger(n) || n < 0 || n > 4320 ? a.value[r + "repeat_minutes"] = new u("web.validation.repeat_input") : delete a.value[r + "repeat_minutes"];
 					}
 				}) })
 			]),
-			te(e.id)
+			ae(e.id)
 		] });
-	}, ie = () => R(Wv, {
-		title: "额度预警推送目标",
+	}, ce = () => z(_y, {
+		title: g("web.alert.targets_title"),
 		number: "03"
-	}, { default: () => [R(qv, {
+	}, { default: () => [z(by, {
 		controlId: "field-global-balance_alert_targets",
-		label: "目标 UMO（每行一个）",
-		hint: "每行一个 UMO，群聊可追加 @QQ号。",
-		error: a.value["field-global-balance_alert_targets"]
-	}, { default: ({ controlAttrs: e }) => R("textarea", {
+		label: g("web.alert.targets"),
+		hint: g("web.alert.targets_hint"),
+		error: y("field-global-balance_alert_targets")
+	}, { default: ({ controlAttrs: e }) => z("textarea", {
 		...e,
 		class: "ui-control quota-targets",
 		rows: 5,
 		spellcheck: !1,
 		autocomplete: "off",
-		value: i.value["field-global-balance_alert_targets"] ?? gy(f.draft?.balance_alert_targets),
+		value: i.value["field-global-balance_alert_targets"] ?? Uy(h.draft?.balance_alert_targets),
 		placeholder: "Synthetic-QQ:FriendMessage:10001\nSynthetic-QQ:GroupMessage:10002 @10003 @10004",
-		disabled: m(),
+		disabled: x(),
 		onInput: (e) => {
 			let t = e.target.value;
 			i.value["field-global-balance_alert_targets"] = t;
 			try {
-				C(["balance_alert_targets"], hy(t), null), delete a.value["field-global-balance_alert_targets"];
+				A(["balance_alert_targets"], Hy(t), null), delete a.value["field-global-balance_alert_targets"];
 			} catch (e) {
-				C(["balance_alert_targets"], t, null), a.value["field-global-balance_alert_targets"] = e.message;
+				A(["balance_alert_targets"], t, null), a.value["field-global-balance_alert_targets"] = e;
 			}
 		}
-	}) }), te()] }), ae = () => R(Wv, {
-		title: "预警管理权限",
+	}) }), ae()] }), le = () => z(_y, {
+		title: g("web.alert.permissions"),
 		number: "04"
-	}, { default: () => [R(qv, {
+	}, { default: () => [z(by, {
 		controlId: "field-global-balance_alert_admin_qq_ids",
-		label: "预警管理 QQ 白名单",
-		hint: "每行一个 QQ 号；名单成员或 AstrBot 管理员可管理预警。",
-		error: a.value["field-global-balance_alert_admin_qq_ids"]
-	}, { default: ({ controlAttrs: e }) => R("textarea", {
+		label: g("web.alert.admin_list"),
+		hint: g("web.alert.admin_list_hint"),
+		error: y("field-global-balance_alert_admin_qq_ids")
+	}, { default: ({ controlAttrs: e }) => z("textarea", {
 		...e,
 		class: "ui-control",
 		rows: 3,
-		value: i.value["field-global-balance_alert_admin_qq_ids"] ?? (Array.isArray(f.draft?.balance_alert_admin_qq_ids) ? f.draft?.balance_alert_admin_qq_ids.join("\n") : ""),
-		placeholder: "每行一个 QQ 号",
-		disabled: m(),
+		value: i.value["field-global-balance_alert_admin_qq_ids"] ?? (Array.isArray(h.draft?.balance_alert_admin_qq_ids) ? h.draft?.balance_alert_admin_qq_ids.join("\n") : ""),
+		placeholder: g("web.alert.admin_list_placeholder"),
+		disabled: x(),
 		onInput: (e) => {
 			let t = e.target.value;
 			i.value["field-global-balance_alert_admin_qq_ids"] = t;
 			try {
-				if (/[\p{Cc}\p{Cf}\p{Cs}]/u.test(t.replace(/[\r\n\t]/g, ""))) throw Error("不允许控制字符或不可见字符。");
-				let e = py(t.split(/\s+/u).filter(Boolean));
-				C(["balance_alert_admin_qq_ids"], e, null), delete a.value["field-global-balance_alert_admin_qq_ids"];
+				if (/[\p{Cc}\p{Cf}\p{Cs}]/u.test(t.replace(/[\r\n\t]/g, ""))) throw new u("web.validation.invisible_chars");
+				let e = By(t.split(/\s+/u).filter(Boolean));
+				A(["balance_alert_admin_qq_ids"], e, null), delete a.value["field-global-balance_alert_admin_qq_ids"];
 			} catch (e) {
-				C(["balance_alert_admin_qq_ids"], t, null), a.value["field-global-balance_alert_admin_qq_ids"] = e.message;
+				A(["balance_alert_admin_qq_ids"], t, null), a.value["field-global-balance_alert_admin_qq_ids"] = e;
 			}
 		}
-	}) })] }), oe = () => R(Wv, {
-		title: "预警提示",
+	}) })] }), ue = () => z(_y, {
+		title: g("web.alert.hints_title"),
 		number: "05"
-	}, { default: () => [R(qv, {
+	}, { default: () => [z(by, {
 		controlId: "field-global-balance_alert_llm-enabled",
-		label: "智能提示",
-		hint: "使用目标会话的模型与人格。"
-	}, { default: ({ controlAttrs: e }) => R("label", { class: "ui-check-label" }, [R("input", {
+		label: g("web.alert.smart_hint"),
+		hint: g("web.alert.smart_hint_help")
+	}, { default: ({ controlAttrs: e }) => z("label", { class: "ui-check-label" }, [z("input", {
 		...e,
 		type: "checkbox",
-		checked: f.draft?.balance_alert_llm?.enabled !== !1,
-		disabled: m(),
-		onChange: (e) => C(["balance_alert_llm", "enabled"], e.target.checked, null)
-	}), R("span", f.draft?.balance_alert_llm?.enabled === !1 ? "已关闭" : "已开启")]) })] });
-	function se(t, n) {
-		let r = My(t).items, i = !!E(t.id), a = t.type === "openai_compatible", o = r.endpoint?.items || Ty.provider_account.items.endpoint.items, s = Ty.provider_account.items.response_mapping.items;
-		return R(Vv, {}, {
+		checked: h.draft?.balance_alert_llm?.enabled !== !1,
+		disabled: x(),
+		onChange: (e) => A(["balance_alert_llm", "enabled"], e.target.checked, null)
+	}), z("span", h.draft?.balance_alert_llm?.enabled === !1 ? g("web.common.off") : g("web.common.on"))]) })] });
+	function de(t, n) {
+		let r = ob(t).items, i = !!te(t.id), a = t.type === "openai_compatible", o = r.endpoint?.items || Qy.provider_account.items.endpoint.items, s = Qy.provider_account.items.response_mapping.items;
+		return z(my, {}, {
 			default: () => [
-				R(Wv, {
-					title: "账户设置",
+				z(_y, {
+					title: g("web.account.settings"),
 					number: "01"
-				}, { default: () => R(Jv, {}, () => [
-					T("id", r.id, n, void 0, {
+				}, { default: () => z(xy, {}, () => [
+					j("id", r.id, n, void 0, {
 						locked: i,
-						hint: i ? "已有账户 ID 不可修改，避免凭据误绑定。" : "使用稳定、唯一的 ID；保存后不可更改。"
+						hint: g(i ? "web.account.id_locked" : "web.account.id_hint")
 					}),
-					T("display_name", r.display_name, n),
-					T("aliases", r.aliases, n, void 0, { hint: "命令与自然语言使用这些别名。每行一项，避免与其他账户重名。" }),
-					T("enabled", r.enabled, n),
-					R("div", { class: "quota-provider-readonly" }, [R("span", "供应商"), R("strong", Ty[t.type]?.name || t.type)]),
-					T("timeout_seconds", r.timeout_seconds, n),
-					T("cache_ttl_seconds", r.cache_ttl_seconds, n)
+					j("display_name", r.display_name, n),
+					j("aliases", r.aliases, n, void 0, { hint: g("web.account.aliases_hint") }),
+					j("enabled", r.enabled, n),
+					z("div", { class: "quota-provider-readonly" }, [z("span", g("web.account.provider")), z("strong", sb(t.type, h.locale))]),
+					j("timeout_seconds", r.timeout_seconds, n),
+					j("cache_ttl_seconds", r.cache_ttl_seconds, n)
 				]) }),
-				R(Wv, {
-					title: "供应商设置",
+				z(_y, {
+					title: g("web.account.provider_settings"),
 					number: "02"
-				}, { default: () => [R(Kv, {}, () => t.type === "deepseek" ? "DeepSeek 官方账户余额，查询地址与解析规则已内置。" : t.type === "alibaba_bailian" ? "阿里云 BSS：现金余额、可用额度和信用额度。" : t.type === "meinianda" ? "查询 Meinianda 账户站内额度。建议缓存至少 60 秒。" : t.type === "grsai" ? "Grsai 账户积分使用请求令牌 token。固定 POST /client/openapi/getCredits，不使用模型 API Key。" : "余额查询使用供应商专属接口，请按其文档配置只读余额接口。"), R(Jv, {}, () => [...r.region ? [T("region", r.region, n)] : [], ...a ? [
-					T("service_profile", Ty.openai_compatible.items.service_profile, n),
-					...t.service_profile === "grsai" ? [T("balance_scope", Ty.openai_compatible.items.balance_scope, n)] : [],
-					...t.endpoint?.url ? [T("url", Ty.provider_account.items.endpoint.items.url, n, ["endpoint", "url"])] : [],
-					T("base_url", o.base_url, n, ["endpoint", "base_url"]),
-					T("path", o.path, n, ["endpoint", "path"])
+				}, { default: () => [z(yy, {}, () => t.type === "deepseek" ? g("web.provider.deepseek_help") : t.type === "alibaba_bailian" ? g("web.provider.alibaba_help") : t.type === "meinianda" ? g("web.provider.meinianda_help") : t.type === "grsai" ? g("web.provider.grsai_help") : g("web.provider.compatible_help")), z(xy, {}, () => [...r.region ? [j("region", r.region, n)] : [], ...a ? [
+					j("service_profile", Qy.openai_compatible.items.service_profile, n),
+					...t.service_profile === "grsai" ? [j("balance_scope", Qy.openai_compatible.items.balance_scope, n)] : [],
+					...t.endpoint?.url ? [j("url", Qy.provider_account.items.endpoint.items.url, n, ["endpoint", "url"])] : [],
+					j("base_url", o.base_url, n, ["endpoint", "base_url"]),
+					j("path", o.path, n, ["endpoint", "path"])
 				] : []])] }),
-				re(t, n),
-				a ? R(Wv, {
-					title: "高级接口与响应映射",
+				se(t, n),
+				a ? z(_y, {
+					title: g("web.account.advanced"),
 					number: "04"
-				}, { default: () => [T("advanced_options", Ty.openai_compatible.items.advanced_options, n), t.advanced_options ? R("div", { class: "quota-advanced" }, [
-					R("h3", "请求协议"),
-					R(Jv, {}, () => [
+				}, { default: () => [j("advanced_options", Qy.openai_compatible.items.advanced_options, n), t.advanced_options ? z("div", { class: "quota-advanced" }, [
+					z("h3", g("web.account.protocol")),
+					z(xy, {}, () => [
 						"method",
 						"auth_mode",
 						"auth_name",
 						"json_body"
-					].map((e) => T(e, o[e], n, ["endpoint", e]))),
-					R("h3", "余额响应映射"),
-					R(Kv, {}, () => "使用 JSON Pointer，例如 /data/remaining。静态请求体和映射中不允许放入凭据。"),
-					R(Jv, {}, () => Object.keys(s).map((e) => T(e, s[e], n, ["response_mapping", e])))
+					].map((e) => j(e, o[e], n, ["endpoint", e]))),
+					z("h3", g("web.account.mapping")),
+					z(yy, {}, () => g("web.account.mapping_hint")),
+					z(xy, {}, () => Object.keys(s).map((e) => j(e, s[e], n, ["response_mapping", e])))
 				]) : null] }) : null,
-				D(),
-				R("div", { class: "quota-danger-row" }, [p("移除账户", {
-					disabled: m(),
-					onClick: () => void g("maintenance", "移除账户「" + t.display_name + "」？", "将从草稿移除此账户。保存设置后才会生效，并移除其已保存凭据；其他账户不受影响。", "从草稿移除", () => {
-						d.cancelSecret(), d.edit((e) => e.providers.splice(n, 1)), f.selected = null, e.value++;
+				ne(),
+				z("div", { class: "quota-danger-row" }, [b(g("web.account.remove"), {
+					disabled: x(),
+					onClick: () => void C("maintenance", () => [
+						g("web.account.remove_title", { account: t.display_name }),
+						g("web.account.remove_body"),
+						g("web.account.remove_action")
+					], () => {
+						m.cancelSecret(), m.edit((e) => e.providers.splice(n, 1)), h.selected = null, e.value++;
 					})
-				}), R("span", { class: "quota-muted" }, "移除操作在保存设置后生效。")])
+				}), z("span", { class: "quota-muted" }, g("web.account.remove_hint"))])
 			],
-			aside: () => O(t)
+			aside: () => re(t)
 		});
 	}
-	let ce = () => {
-		let e = f.draft?.providers || [], t = f.selected === null ? -1 : e.findIndex((e) => e.id === f.selected), n = e[t];
-		return n ? se(n, t) : R("section", { class: "workspace-index quota-directory" }, [R("div", { class: "workspace-catalog" }, [
-			R("div", { class: "workspace-index-heading" }, [R("h2", { class: "shell-eyebrow" }, "查询账户"), R("span", { class: "workspace-count" }, e.length + " 个账户")]),
-			e.length ? null : R("div", { class: "shell-empty" }, [R("h2", "还没有查询账户"), R("p", "选择供应商添加账户，再单独配置加密凭据。")]),
-			R("div", { class: "workspace-package-grid" }, e.map((e) => R("article", {
+	let fe = () => {
+		let e = h.draft?.providers || [], t = h.selected === null ? -1 : e.findIndex((e) => e.id === h.selected), n = e[t];
+		return n ? de(n, t) : z("section", { class: "workspace-index quota-directory" }, [z("div", { class: "workspace-catalog" }, [
+			z("div", { class: "workspace-index-heading" }, [z("h2", { class: "shell-eyebrow" }, g("web.account.list")), z("span", { class: "workspace-count" }, g("web.account.count", { count: e.length }))]),
+			e.length ? null : z("div", { class: "shell-empty" }, [z("h2", g("web.account.empty")), z("p", g("web.account.empty_hint"))]),
+			z("div", { class: "workspace-package-grid" }, e.map((e) => z("article", {
 				class: "workspace-module",
 				key: e.id
-			}, [R("div", { class: "workspace-module-heading" }, [R("span", {
+			}, [z("div", { class: "workspace-module-heading" }, [z("span", {
 				class: "workspace-emblem",
 				"aria-hidden": "true"
-			}, "◈"), R("div", [R("div", { class: "workspace-module-title" }, [R("h2", [R("a", {
+			}, "◈"), z("div", [z("div", { class: "workspace-module-title" }, [z("h2", [z("a", {
 				href: "#/accounts/" + encodeURIComponent(e.id),
 				onClick: (t) => {
-					t.preventDefault(), _("accounts", e.id);
+					t.preventDefault(), w("accounts", e.id);
 				}
-			}, e.display_name || e.id)]), R("span", { class: "workspace-state" }, e.enabled === !1 ? "已停用" : "已启用")]), R("p", { class: "workspace-module-summary" }, (Ty[e.type]?.name || e.type) + " · " + e.id)])]), R("div", { class: "quota-account-meta" }, [R("span", Ny(e).every(({ key: t }) => f.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? "凭据已配置" : "待配置凭据"), p("账户设置", {
+			}, e.display_name || e.id)]), z("span", { class: "workspace-state" }, e.enabled === !1 ? g("web.account.disabled") : g("web.account.enabled"))]), z("p", { class: "workspace-module-summary" }, sb(e.type, h.locale) + " · " + e.id)])]), z("div", { class: "quota-account-meta" }, [z("span", mb(e).every(({ key: t }) => h.snapshot?.credentials[e.id]?.[t]?.configured || t === "security_token") ? g("web.account.credentials_configured") : g("web.account.credentials_pending")), b(g("web.account.settings"), {
 				text: !0,
-				disabled: !f.ready,
-				onClick: () => void _("accounts", e.id)
+				disabled: !h.ready,
+				onClick: () => void w("accounts", e.id)
 			})])]))),
-			d.dirty() ? D() : null
-		]), R("aside", {
+			m.dirty() ? ne() : null
+		]), z("aside", {
 			class: "workspace-aside",
-			"aria-label": "添加查询账户"
+			"aria-label": g("web.account.add_query")
 		}, [
-			R("h2", { class: "shell-eyebrow" }, "新建账户"),
-			R("label", { for: "new-provider" }, "供应商"),
-			R("select", {
+			z("h2", { class: "shell-eyebrow" }, g("web.account.new")),
+			z("label", { for: "new-provider" }, g("web.account.provider")),
+			z("select", {
 				id: "new-provider",
 				class: "ui-control",
 				value: r.value,
-				disabled: m(),
+				disabled: x(),
 				onChange: (e) => r.value = e.target.value
-			}, Ey.map((e) => R("option", { value: e }, Ty[e].name))),
-			p("添加账户", {
+			}, $y.map((e) => z("option", { value: e }, sb(e, h.locale)))),
+			b(g("web.account.add"), {
 				type: "primary",
-				disabled: m() || d.dirty(),
+				disabled: x() || m.dirty(),
 				onClick: () => {
-					if (d.dirty()) return;
-					let t = jy(r.value), n = 1;
+					if (m.dirty()) return;
+					let t = ab(r.value, h.locale), n = 1;
 					for (; e.some((e) => e.id === r.value + "-" + n);) n++;
-					t.id = r.value + "-" + n, d.navigate("accounts", t.id), d.edit((e) => e.providers.push(t));
+					t.id = r.value + "-" + n, m.navigate("accounts", t.id), m.edit((e) => e.providers.push(t));
 				}
 			}),
-			R("p", { class: "workspace-scope-note" }, "各供应商使用自己的余额协议和查询凭据，不复用模型聊天配置。")
+			z("p", { class: "workspace-scope-note" }, g("web.account.provider_scope"))
 		])]);
-	}, le = () => R(Vv, {}, {
+	}, pe = () => z(my, {}, {
 		default: () => [
-			...Oy.map((e) => R(Wv, {
-				title: e.title,
+			...nb.map((e) => z(_y, {
+				title: g(e.title),
 				number: e.number
-			}, { default: () => R(Jv, {}, () => e.keys.map((e) => T(e, Dy[e], null))) })),
-			ie(),
-			ae(),
-			oe(),
-			D()
+			}, { default: () => z(xy, {}, () => e.keys.map((e) => j(e, eb[e], null))) })),
+			ce(),
+			le(),
+			ue(),
+			z(_y, {
+				title: g("web.settings.appearance"),
+				number: "06"
+			}, { default: () => z(xy, {}, () => j("language", tb, null, void 0, { hint: g("web.settings.language_hint") })) }),
+			ne()
 		],
-		aside: () => R(Hv, {
-			title: "权限边界",
-			eyebrow: "QUERY ACCESS"
+		aside: () => z(hy, {
+			title: g("web.settings.access_title"),
+			eyebrow: g("web.settings.access_eyebrow")
 		}, { default: () => [
-			R("p", "此页面仅供 AstrBot 管理员配置。查询权限不会授予管理页面访问权。"),
-			R("ul", { class: "quota-guidance" }, [
-				R("li", "管理员不需要加入私聊白名单。"),
-				R("li", "私聊白名单使用完整 平台名:用户ID。"),
-				R("li", "/yql 余额查询命令受管理员开关限制；预警命令按独立规则。"),
-				R("li", "群聊查询需开启允许群聊，并满足用户白名单限制。")
+			z("p", g("web.settings.admin_access")),
+			z("ul", { class: "quota-guidance" }, [
+				z("li", g("web.settings.admin_allowlist")),
+				z("li", g("web.settings.private_format")),
+				z("li", g("web.settings.command_access")),
+				z("li", g("web.settings.group_access"))
 			]),
-			R(Kv, {}, () => "各账户可单独开启预警。")
+			z(yy, {}, () => g("web.settings.account_alerts"))
 		] })
-	}), ue = () => R(Vv, {}, {
-		default: () => R(Wv, {
-			title: "旧配置迁移",
+	}), me = () => z(my, {}, {
+		default: () => z(_y, {
+			title: g("web.migration.title"),
 			number: "01"
 		}, { default: () => [
-			R("p", "将旧版插件配置中的普通设置、凭据和环境变量引用迁移到独立管理存储。凭据加密保存，不会在页面显示。"),
-			R(Kv, { tone: f.snapshot?.migration.pending || f.snapshot?.migration.cleanup_pending || f.snapshot?.migration.legacy_conflict ? "warning" : "success" }, () => f.snapshot?.migration.legacy_conflict ? "发现与当前加密存储不同的旧配置。不会自动覆盖现有存储，也不会清理这份新出现的旧配置。请人工核对来源。" : f.snapshot?.migration.cleanup_pending ? "迁移已保存，但宿主旧字段尚未清理完成。请重新预览后重试清理。" : f.snapshot?.migration.pending ? "检测到旧版配置，迁移完成前不能保存新设置。" : "没有待迁移的旧版配置。"),
-			p("读取迁移预览", {
-				disabled: !f.ready || f.busy || f.stale || d.dirty(),
-				onClick: () => void d.plan()
+			z("p", g("web.migration.overview")),
+			z(yy, { tone: h.snapshot?.migration.pending || h.snapshot?.migration.cleanup_pending || h.snapshot?.migration.legacy_conflict ? "warning" : "success" }, () => h.snapshot?.migration.legacy_conflict ? g("web.migration.conflict") : h.snapshot?.migration.cleanup_pending ? g("web.migration.cleanup_pending") : h.snapshot?.migration.pending ? g("web.migration.pending") : g("web.migration.no_pending")),
+			b(g("web.migration.preview"), {
+				disabled: !h.ready || h.busy || h.stale || m.dirty(),
+				onClick: () => void m.plan()
 			}),
-			f.plan ? R("div", { class: "quota-migration-plan" }, [
-				R("h3", "本次迁移范围"),
-				R("dl", [
-					R("dt", "账户"),
-					R("dd", String(f.plan.account_count)),
-					R("dt", "需要加密的凭据"),
-					R("dd", String(f.plan.plaintext_count)),
-					R("dt", "环境变量引用"),
-					R("dd", String(f.plan.environment_count))
+			h.plan ? z("div", { class: "quota-migration-plan" }, [
+				z("h3", g("web.migration.scope")),
+				z("dl", [
+					z("dt", g("web.migration.accounts")),
+					z("dd", String(h.plan.account_count)),
+					z("dt", g("web.migration.plaintext")),
+					z("dd", String(h.plan.plaintext_count)),
+					z("dt", g("web.migration.environment")),
+					z("dd", String(h.plan.environment_count))
 				]),
-				R("p", "仅在迁移成功后清理宿主中的旧配置。若源配置变化，将拒绝执行，请重新预览。"),
-				p(f.plan.cleanup_pending ? "重试清理旧字段" : "确认迁移旧配置", {
+				z("p", g("web.migration.cleanup_hint")),
+				b(h.plan.cleanup_pending ? g("web.migration.retry_cleanup") : g("web.migration.confirm"), {
 					type: "primary",
-					disabled: !f.plan.pending && !f.plan.cleanup_pending || f.plan.legacy_conflict || !f.snapshot?.encryption.ready || f.busy,
-					onClick: () => void g("legacy-config", "迁移旧配置？", "将迁移预览中的 " + f.plan.account_count + " 个账户；明文凭据加密后保存，并清理旧版插件字段。不会展示或发送凭据到其他服务。", "执行迁移", () => d.migrate())
+					disabled: !h.plan.pending && !h.plan.cleanup_pending || h.plan.legacy_conflict || !h.snapshot?.encryption.ready || h.busy,
+					onClick: () => void C("legacy-config", () => [
+						g("web.migration.confirm_title"),
+						g("web.migration.confirm_body", { count: h.plan.account_count }),
+						g("web.migration.execute")
+					], () => m.migrate())
 				})
 			]) : null
 		] }),
-		aside: () => R(Hv, {
-			title: "存储安全",
-			eyebrow: "LOCAL ENCRYPTION"
+		aside: () => z(hy, {
+			title: g("web.storage.title"),
+			eyebrow: g("web.storage.eyebrow")
 		}, { default: () => [
-			R("p", { class: "ui-badge" }, f.snapshot?.encryption.ready ? "加密存储就绪" : "加密存储不可用"),
-			R("p", "主密钥由运行环境管理，不在此页面输入、导出或恢复。"),
-			R(Kv, {}, () => "遇到存储故障请检查宿主日志中的安全错误代码。不要在公开日志或截图中粘贴密钥。")
+			z("p", { class: "ui-badge" }, h.snapshot?.encryption.ready ? g("web.storage.ready") : g("web.storage.unavailable")),
+			z("p", g("web.storage.key_handling")),
+			z(yy, {}, () => g("web.storage.troubleshooting"))
 		] })
-	}), k = () => {
+	}), he = () => {
 		let e = window.location.hash;
 		window.history.replaceState(null, "", window.location.pathname + window.location.search);
 		let t = /^#\/(accounts|global|maintenance)(?:\/([^/]+))?$/.exec(e);
-		t && _(t[1], t[2] ? decodeURIComponent(t[2]) : null);
-	}, de = () => d.close(), fe = (e) => {
-		(d.dirty() || f.secret || f.busy) && (e.preventDefault(), e.returnValue = "");
+		t && w(t[1], t[2] ? decodeURIComponent(t[2]) : null);
+	}, ge = () => m.close(), _e = (e) => {
+		(m.dirty() || h.secret || h.busy) && (e.preventDefault(), e.returnValue = "");
 	};
-	return xr(() => {
-		d.start(), window.addEventListener("pagehide", de), window.addEventListener("beforeunload", fe), window.addEventListener("hashchange", k);
-	}), Cr(() => {
-		s.dispose(), d.close(), window.removeEventListener("pagehide", de), window.removeEventListener("beforeunload", fe), window.removeEventListener("hashchange", k);
+	return Mr(() => {
+		m.start(), window.addEventListener("pagehide", ge), window.addEventListener("beforeunload", _e), window.addEventListener("hashchange", he);
+	}), Pr(() => {
+		s.dispose(), m.close(), window.removeEventListener("pagehide", ge), window.removeEventListener("beforeunload", _e), window.removeEventListener("hashchange", he);
 	}), () => {
-		e.value, document.documentElement.dataset.theme = f.theme, document.documentElement.lang = f.locale;
-		let r = f.draft?.providers.find((e) => e.id === f.selected), i = f.route === "global" ? "全局设置" : f.route === "maintenance" ? "配置维护" : r ? r.display_name : "账户管理";
-		return R(Bv, {
-			theme: f.theme,
-			locale: f.locale,
+		e.value, document.documentElement.dataset.theme = h.theme, document.documentElement.lang = h.locale, document.title = g("web.shell.page_title");
+		let r = h.draft?.providers.find((e) => e.id === h.selected), i = h.route === "global" ? g("web.navigation.global") : h.route === "maintenance" ? g("web.navigation.maintenance") : r ? r.display_name : g("web.navigation.accounts");
+		return z(py, {
+			theme: h.theme,
+			locale: h.locale,
 			styleMountTarget: document.head
-		}, { default: () => R("div", {
+		}, { default: () => z("div", {
 			ref: t,
 			class: "game-shell quota-shell",
-			"data-theme": f.theme
+			"data-theme": h.theme
 		}, [
-			R("button", {
+			z("button", {
 				class: "ui-button skip-button",
 				onClick: () => n.value?.focus()
-			}, "跳到主要内容"),
-			R("aside", { class: "shell-sidebar" }, [
-				x(),
-				R("p", { class: "shell-nav-label" }, "QUOTA LINK"),
-				R("nav", { "aria-label": "主导航" }, [b("账户管理", "accounts", "account"), b("全局设置", "global", "settings")]),
-				R("div", { class: "shell-settings-slot" }, [b("配置维护", "maintenance", "maintenance"), R("p", { class: "shell-note" }, [
-					"统一查询 · 独立凭据",
-					R("br"),
+			}, g("web.navigation.skip")),
+			z("aside", { class: "shell-sidebar" }, [
+				O(),
+				z("p", { class: "shell-nav-label" }, "QUOTA LINK"),
+				z("nav", { "aria-label": g("web.navigation.primary") }, [D(g("web.navigation.accounts"), "accounts", "account"), D(g("web.navigation.global"), "global", "settings")]),
+				z("div", { class: "shell-settings-slot" }, [D(g("web.navigation.maintenance"), "maintenance", "maintenance"), z("p", { class: "shell-note" }, [
+					g("web.shell.scope"),
+					z("br"),
 					"YOMIHIME SERIES"
 				])])
 			]),
-			R("div", { class: "shell-content" }, [
-				R("div", { class: "shell-mobile" }, [x(), R("nav", { "aria-label": "移动端导航" }, [
-					b("账户管理", "accounts", "account"),
-					b("全局设置", "global", "settings"),
-					b("配置维护", "maintenance", "maintenance")
+			z("div", { class: "shell-content" }, [
+				z("div", { class: "shell-mobile" }, [O(), z("nav", { "aria-label": g("web.navigation.mobile") }, [
+					D(g("web.navigation.accounts"), "accounts", "account"),
+					D(g("web.navigation.global"), "global", "settings"),
+					D(g("web.navigation.maintenance"), "maintenance", "maintenance")
 				])]),
-				R("div", { class: "shell-topbar" }, [
-					R("span", "额度连结"),
-					R("span", "/"),
-					R("span", i),
-					R("span", { class: "quota-revision" }, f.snapshot ? "配置版本 " + f.snapshot.revision : "等待管理会话")
+				z("div", { class: "shell-topbar" }, [
+					z("span", g("web.shell.brand_name")),
+					z("span", "/"),
+					z("span", i),
+					z("span", { class: "quota-revision" }, h.snapshot ? g("web.shell.revision", { revision: h.snapshot.revision }) : g("web.shell.waiting"))
 				]),
-				R("main", {
+				z("main", {
 					ref: n,
 					id: "main",
 					tabindex: -1
 				}, [
-					R(Uv, {
+					z(gy, {
 						class: "shell-heading",
 						title: i,
-						eyebrow: "YOMIHIME QUOTA LINK / ADMIN",
-						subtitle: f.route === "accounts" ? r ? "配置查询参数与来源凭据。" : "管理 AI 服务的余额、用量与额度查询账户。" : void 0
-					}, { default: () => R("div", { class: "quota-header-actions" }, [r ? p("返回账户", { onClick: () => void _("accounts") }) : null, p("重新读取状态", {
-						disabled: !f.ready || f.busy,
-						onClick: () => void v()
+						eyebrow: g("web.shell.eyebrow"),
+						subtitle: h.route === "accounts" ? g(r ? "web.account.editor_subtitle" : "web.account.list_subtitle") : void 0
+					}, { default: () => z("div", { class: "quota-header-actions" }, [r ? b(g("web.navigation.back_to_accounts"), { onClick: () => void w("accounts") }) : null, b(g("web.navigation.reload"), {
+						disabled: !h.ready || h.busy,
+						onClick: () => void T()
 					})]) }),
-					R(Kv, {
-						tone: f.tone,
-						role: f.tone === "error" ? "alert" : "status",
+					z(yy, {
+						tone: h.tone,
+						role: h.tone === "error" ? "alert" : "status",
 						class: "shell-status",
 						"data-testid": "status"
-					}, () => f.notice),
+					}, () => h.notice),
 					s.render(),
-					f.snapshot && !f.snapshot.encryption.ready ? R("div", {
+					h.snapshot && !h.snapshot.encryption.ready ? z("div", {
 						class: "quota-warning",
 						role: "status"
-					}, "加密存储不可用。新的明文凭据不能保存，请先检查运行环境；不会改用明文存储。") : null,
-					f.snapshot?.migration.pending && f.route !== "maintenance" ? R("div", { class: "quota-warning" }, [R("span", "有旧版配置等待迁移。普通设置与凭据操作暂时锁定。"), p("前往迁移", { onClick: () => void _("maintenance") })]) : null,
-					f.snapshot ? f.route === "global" ? le() : f.route === "maintenance" ? ue() : ce() : R("section", { class: "shell-empty" }, [R("h2", f.ready ? "正在读取配置" : "需要宿主管理授权"), R("p", "请先登录 AstrBot，再从插件详情页打开「额度查询」。")])
+					}, g("web.storage.unavailable_warning")) : null,
+					h.snapshot?.migration.pending && h.route !== "maintenance" ? z("div", { class: "quota-warning" }, [z("span", g("web.migration.lock_warning")), b(g("web.migration.open"), { onClick: () => void w("maintenance") })]) : null,
+					h.snapshot ? h.route === "global" ? pe() : h.route === "maintenance" ? me() : fe() : z("section", { class: "shell-empty" }, [z("h2", h.ready ? g("web.shell.loading_config") : g("web.shell.auth_required")), z("p", g("web.shell.open_from_host"))])
 				]),
-				R("footer", { class: "shell-footer" }, [R("a", {
+				z("footer", { class: "shell-footer" }, [z("a", {
 					class: "shell-project-link",
 					href: "https://github.com/yomihime/astrbot_plugin_yomihime_quota_link",
 					target: "_blank",
 					rel: "noopener noreferrer"
-				}, [R("span", "如月怜的额度连结"), R("span", { class: "shell-project-english" }, [" / Yomihime Quota Link ", R("span", {
+				}, [z("span", g("web.shell.project_name")), z("span", { class: "shell-project-english" }, [" / Yomihime Quota Link ", z("span", {
 					class: "shell-project-spark",
 					"aria-hidden": "true"
 				}, "✧")])])])
@@ -13391,5 +14674,5 @@ var Zy = Po(/* @__PURE__ */ P({ setup() {
 		]) });
 	};
 } }));
-Zy.mount("#app"), window.addEventListener("pagehide", () => Zy.unmount(), { once: !0 });
+Mb.mount("#app"), window.addEventListener("pagehide", () => Mb.unmount(), { once: !0 });
 //#endregion

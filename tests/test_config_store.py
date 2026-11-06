@@ -249,6 +249,20 @@ def test_ordinary_save_does_not_replace_or_return_credentials(fresh, secret_stor
     }
 
 
+def test_language_is_an_optional_revisioned_setting(fresh, secret_store):
+    original = dispatch(fresh)
+    assert "language" not in original["config"]
+    config = {**original["config"], "language": "zh-TW"}
+    saved = update(fresh, config)
+    assert saved["revision"] != original["revision"]
+    assert saved["config"]["language"] == "zh-TW"
+    assert fresh.runtime_config()["language"] == "zh-TW"
+    with pytest.raises(ConfigValidation):
+        update(fresh, {**config, "language": "fr-FR"})
+    assert dispatch(fresh) == saved
+    assert secret_store.read_config()["credentials"] == {}
+
+
 @pytest.mark.parametrize(
     "record_extra",
     [

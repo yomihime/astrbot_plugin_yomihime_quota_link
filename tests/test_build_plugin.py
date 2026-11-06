@@ -19,6 +19,8 @@ VERSION = next(
 EXPECTED_ROOT_FILES = {
     ".astrbot-plugin/i18n/zh-CN.json",
     ".astrbot-plugin/i18n/en-US.json",
+    ".astrbot-plugin/i18n/ja-JP.json",
+    ".astrbot-plugin/i18n/zh-TW.json",
     "metadata.yaml",
     "logo.png",
     "main.py",
@@ -35,6 +37,7 @@ EXPECTED_PACKAGE_FILES = {
     "quota_link/capabilities.py",
     "quota_link/formatter.py",
     "quota_link/http_client.py",
+    "quota_link/i18n.py",
     "quota_link/intent.py",
     "quota_link/models.py",
     "quota_link/service.py",
@@ -206,6 +209,11 @@ assert cards.__file__.startswith(archive)
 assert local_status.__file__.startswith(archive)
 assert cards.build_help_card(settings.load_settings({})).title == "YQL 使用帮助"
 assert cards.build_status_card(settings.load_settings({})).title == "本地配置状态"
+i18n = importlib.import_module("quota_link.i18n")
+assert i18n.__file__.startswith(archive)
+with i18n.use_locale("en-US"):
+    assert "YQL" in cards.build_help_card(settings.load_settings({})).title
+    assert cards.build_help_card(settings.load_settings({})).title != "YQL 使用帮助"
 assert capabilities.__file__.startswith(archive)
 assert tool_facts.__file__.startswith(archive)
 assert callable(capabilities.describe_capabilities)
@@ -311,7 +319,13 @@ def test_production_page_manifest_matches_packaged_bytes():
 
 
 @pytest.mark.parametrize(
-    "locale,title", [("zh-CN", "额度查询"), ("en-US", "Quota Query")]
+    "locale,title",
+    [
+        ("zh-CN", "额度查询"),
+        ("zh-TW", "額度查詢"),
+        ("ja-JP", "クォータ照会"),
+        ("en-US", "Quota Query"),
+    ],
 )
 def test_packaged_sidebar_locales_match_host_page_contract(tmp_path, locale, title):
     archive = build_plugin.build(VERSION, tmp_path)
@@ -325,7 +339,7 @@ def test_packaged_sidebar_locales_match_host_page_contract(tmp_path, locale, tit
     assert (ROOT / "pages/00-quota-link/index.html").is_file()
 
 
-@pytest.mark.parametrize("locale", ["zh-CN", "en-US"])
+@pytest.mark.parametrize("locale", ["zh-CN", "zh-TW", "ja-JP", "en-US"])
 def test_build_requires_sidebar_locale_files(tmp_path, locale):
     source = _fixture_source(tmp_path)
     (source / f".astrbot-plugin/i18n/{locale}.json").unlink()

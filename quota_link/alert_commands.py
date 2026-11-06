@@ -23,6 +23,7 @@ from .alert_cards import (
     format_alert_help,
 )
 from .config_store import ConfigValidation
+from .i18n import message, render_text, tr
 from .presentation.bitmap import CardSpec
 
 HELP = format_alert_help()
@@ -63,11 +64,11 @@ class AlertCommand:
 
 def parse_alert_command(argument: str) -> AlertCommand:
     if not isinstance(argument, str) or len(argument) > 4096:
-        raise ConfigValidation("预警命令过长。")
+        raise ConfigValidation(message("alert.command.too_long"))
     try:
         words = shlex.split(argument)
     except ValueError:
-        raise ConfigValidation("引号未配对；多词账户名请使用双引号。") from None
+        raise ConfigValidation(message("alert.command.unclosed_quote")) from None
     if not words:
         return AlertCommand("help")
     operation = words.pop(0).casefold()
@@ -87,26 +88,26 @@ def parse_alert_command(argument: str) -> AlertCommand:
         "admins",
         "llm",
     }:
-        raise ConfigValidation("未知预警命令；使用 /yql alert help 查看用法。")
+        raise ConfigValidation(message("alert.command.unknown"))
     if operation == "help" and words:
         if len(words) != 1 or words[0].casefold() not in {
             "account",
             "units",
             "targets",
         }:
-            raise ConfigValidation("用法：/yql alert help [account|units|targets]。")
+            raise ConfigValidation(message("alert.command.help_syntax"))
         words[0] = words[0].casefold()
     if operation == "status" and words:
-        raise ConfigValidation("该预警命令不接受附加参数。")
+        raise ConfigValidation(message("alert.command.extra_arguments"))
     return AlertCommand(operation, tuple(words))
 
 
 def _integer(text: str, minimum: int, maximum: int) -> int:
     if not re.fullmatch(r"[0-9]+", text) or len(text) > 4:
-        raise ConfigValidation("间隔必须是范围内的整数分钟。")
+        raise ConfigValidation(message("alert.command.interval_range"))
     value = int(text)
     if not minimum <= value <= maximum:
-        raise ConfigValidation("间隔必须是范围内的整数分钟。")
+        raise ConfigValidation(message("alert.command.interval_range"))
     return value
 
 
@@ -127,13 +128,13 @@ def _account(config, name):
         }
     ]
     if len(matches) != 1:
-        raise ConfigValidation("账户不存在或名称不唯一，请使用管理页中的账户 ID。")
+        raise ConfigValidation(message("alert.command.account_not_unique"))
     return matches[0]
 
 
 def _mentions(words):
     if any(not word.startswith("@") or len(word) < 2 for word in words):
-        raise ConfigValidation("提及必须写成 @QQ号；不支持昵称、@all 或 CQ 代码。")
+        raise ConfigValidation(message("alert.command.mention_syntax"))
     return [word[1:] for word in words]
 
 
@@ -182,9 +183,7 @@ class AlertCommands:
                         format_alert_help(topic), build_alert_help_card(topic)
                     )
                     if private
-                    else AlertCommandResult(
-                        "预警管理：请私聊机器人使用 /yql alert help 查看详细配置用法。"
-                    )
+                    else AlertCommandResult(tr("alert.command.private_help"))
                 )
             if (
                 command.operation in {"status", "targets", "admins", "units"}
@@ -194,16 +193,16 @@ class AlertCommands:
                 )
                 and not private
             ):
-                return AlertCommandResult(
-                    "预警详细状态和目标名单仅在私聊显示，请私聊机器人执行此命令。"
-                )
+                return AlertCommandResult(tr("alert.command.private_status"))
             dto = await self._dispatch("read", {}, authorize)
             authorize()
             config = copy.deepcopy(dto["config"])
             if command.operation in {"units", "bind"}:
                 args = list(command.arguments)
                 if not args or command.operation == "bind" and len(args) < 2:
-                    raise ConfigValidation("请指定账户与候选 ID。")
+                    raise ConfigValidation(
+                        message("alert.command.account_candidate_required")
+                    )
                 choice = args.pop() if command.operation == "bind" else None
                 refresh = (
                     command.operation == "units"
@@ -215,7 +214,9 @@ class AlertCommands:
                 account = _account(config, " ".join(args))
                 if choice is not None:
                     if not re.fullmatch(r"[0-9a-f]{64}", choice):
-                        raise ConfigValidation("请选择最新单位候选 ID。")
+                        raise ConfigValidation(
+                            message("alert.command.latest_candidate_required")
+                        )
                     await self._dispatch(
                         "alert-bind-unit",
                         {
@@ -226,7 +227,9 @@ class AlertCommands:
                         authorize,
                     )
                     authorize()
-                    return AlertCommandResult.receipt("单位已确认。", private=private)
+                    return AlertCommandResult.receipt(
+                        tr("alert.command.unit_confirmed"), private=private
+                    )
                 data = await self._dispatch(
                     "alert-refresh-units" if refresh else "alert-units",
                     {"revision": dto["revision"], "account_id": account["id"]}
@@ -267,12 +270,14 @@ class AlertCommands:
                 )
             if command.operation == "retry":
                 if not command.arguments:
-                    raise ConfigValidation("请指定账户。")
+                    raise ConfigValidation(message("alert.command.account_required"))
                 account = _account(config, " ".join(command.arguments))
                 authorize()
                 if self._retry is not None:
                     self._retry(account["id"])
-                return AlertCommandResult.receipt("已恢复检查。", private=private)
+                return AlertCommandResult.receipt(
+                    tr("alert.command.resumed"), private=private
+                )
             self._mutate(config, command, event)
             authorize()
             await self._dispatch(
@@ -280,24 +285,22 @@ class AlertCommands:
             )
             authorize()
             return AlertCommandResult.receipt(
-                "预警配置已保存。"
+                tr("alert.command.saved")
                 if private
-                else "预警配置已保存。详细状态请私聊查看。",
+                else tr("alert.command.saved_private"),
                 private=private,
             )
         except PermissionError:
-            return AlertCommandResult(
-                "无权管理额度预警；需要预警 QQ 白名单或 AstrBot 内置管理员权限。"
-            )
+            return AlertCommandResult(tr("alert.command.admin_required"))
         except ConfigValidation as exc:
             try:
                 private = event.is_private_chat() is True
             except Exception:
                 private = False
             return AlertCommandResult(
-                str(exc)
+                render_text(exc.args[0] if exc.args else "")
                 if private
-                else "预警配置未保存；请私聊查看用法或在管理页修正配置。"
+                else tr("alert.command.save_failed")
             )
 
     @staticmethod
@@ -306,16 +309,16 @@ class AlertCommands:
         op = command.operation
         if op in {"on", "off", "interval", "threshold", "recovery", "repeat"}:
             if not args:
-                raise ConfigValidation("请指定账户及必要参数。")
+                raise ConfigValidation(message("alert.command.parameters_required"))
             if op in {"on", "off"}:
                 name, values = " ".join(args), []
             elif op == "threshold":
                 if len(args) not in {2, 3}:
-                    raise ConfigValidation('用法：threshold "账户名" 金额 [指标ID]。')
+                    raise ConfigValidation(message("alert.command.threshold_syntax"))
                 name, values = args[0], args[1:]
             else:
                 if len(args) < 2:
-                    raise ConfigValidation("请指定账户及数值。")
+                    raise ConfigValidation(message("alert.command.value_required"))
                 name, values = " ".join(args[:-1]), args[-1:]
             account = _account(config, name)
             alert = account.setdefault(
@@ -336,23 +339,25 @@ class AlertCommands:
             return
         if op == "targets":
             if not args:
-                raise ConfigValidation("请使用 targets list/add/addhere/remove。")
+                raise ConfigValidation(message("alert.command.targets_syntax"))
             action = args.pop(0)
             targets = config.setdefault("balance_alert_targets", [])
             if action == "remove" and len(args) == 1:
                 matches = [t for t in targets if target_id(t["umo"]) == args[0]]
                 if len(matches) != 1:
-                    raise ConfigValidation("目标 ID 不存在；请私聊使用 targets list。")
+                    raise ConfigValidation(message("alert.command.target_missing"))
                 targets.remove(matches[0])
                 return
             if action == "addhere":
                 umo = getattr(event, "unified_msg_origin", None)
                 if not isinstance(umo, str) or not umo:
-                    raise ConfigValidation("宿主没有提供可信当前会话，未保存目标。")
+                    raise ConfigValidation(message("alert.command.untrusted_session"))
             elif action == "add" and args:
                 umo = args.pop(0)
             else:
-                raise ConfigValidation("目标命令参数无效。")
+                raise ConfigValidation(
+                    message("alert.command.invalid_target_arguments")
+                )
             targets.append({"umo": umo, "mentions": _mentions(args)})
             return
         if op == "admins" and len(args) == 2 and args[0] in {"add", "remove"}:
@@ -362,7 +367,7 @@ class AlertCommands:
             elif args[1] in admins:
                 admins.remove(args[1])
             else:
-                raise ConfigValidation("该 QQ 号不在预警管理白名单中。")
+                raise ConfigValidation(message("alert.command.qq_not_allowlisted"))
             return
         if op == "llm" and args:
             llm = config.setdefault(
@@ -372,4 +377,4 @@ class AlertCommands:
             if len(args) == 1 and args[0] in {"on", "off"}:
                 llm["enabled"] = args[0] == "on"
                 return
-        raise ConfigValidation("预警命令参数无效；请私聊使用 /yql alert help。")
+        raise ConfigValidation(message("alert.command.invalid_arguments"))

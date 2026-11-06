@@ -21,6 +21,7 @@ from ..http_client import (
     HttpStatusError,
     HttpTransportError,
 )
+from ..i18n import message as localized_message
 from ..models import (
     BalanceItem,
     BalanceItemKind,
@@ -33,11 +34,8 @@ from ..models import (
 from .base import AsyncProviderClient
 
 _BALANCE_URL = "https://business.aliyuncs.com/"
-_SOURCE = "阿里云账户余额与额度"
-_PERMISSION_ERROR_MESSAGE = (
-    "阿里云拒绝访问账户现金余额。请为查询当前 BSS 现金余额的 RAM 身份至少授予 "
-    "AliyunBSSReadOnlyAccess；DashScope 模型 API Key 不能替代此 RAM 授权。无需授予 BSS FullAccess。"
-)
+_SOURCE = localized_message("provider.alibaba_bailian.source")
+_PERMISSION_ERROR_MESSAGE = localized_message("provider.alibaba_bailian.permission")
 _CURRENCIES = frozenset({"CNY", "USD", "JPY"})
 _SAFE_CODE = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
 _BUSINESS_ERRORS: dict[str, tuple[ProviderErrorCategory, str]] = {
@@ -91,7 +89,7 @@ class AlibabaBailianAdapter:
                 *_safe_account_labels(account),
                 NormalizedProviderError(
                     ProviderErrorCategory.CONFIGURATION,
-                    "阿里云余额查询凭据配置无效",
+                    localized_message("provider.alibaba_bailian.invalid_credentials"),
                     "invalid_configuration",
                 ),
             )
@@ -116,9 +114,9 @@ class AlibabaBailianAdapter:
             )
         except HttpTransportError as exc:
             message = (
-                "阿里云现金余额查询超时"
+                localized_message("provider.alibaba_bailian.timeout")
                 if exc.kind == "timeout"
-                else "无法连接阿里云余额服务"
+                else localized_message("provider.alibaba_bailian.connection")
             )
             return _error_snapshot(
                 account_id,
@@ -135,7 +133,7 @@ class AlibabaBailianAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.PARSE,
-                    "阿里云返回的余额数据格式无法识别",
+                    localized_message("provider.alibaba_bailian.invalid_response"),
                     "invalid_json",
                 ),
             )
@@ -145,7 +143,7 @@ class AlibabaBailianAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.CONFIGURATION,
-                    "阿里云余额查询请求配置无效",
+                    localized_message("provider.alibaba_bailian.invalid_request"),
                     exc.kind,
                 ),
             )
@@ -175,7 +173,7 @@ class AlibabaBailianAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.PARSE,
-                    "阿里云返回的余额数据格式无法识别",
+                    localized_message("provider.alibaba_bailian.invalid_response"),
                     "invalid_json",
                 ),
             )
@@ -185,7 +183,7 @@ class AlibabaBailianAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.PARSE,
-                    "阿里云返回的余额数据格式无法识别",
+                    localized_message("provider.alibaba_bailian.invalid_response"),
                     "invalid_balance_response",
                 ),
             )
@@ -208,9 +206,21 @@ class AlibabaBailianAdapter:
                     metric=metric,
                 )
                 for metric, label, kind in (
-                    ("AvailableCashAmount", "现金余额", BalanceItemKind.CASH),
-                    ("AvailableAmount", "可用额度", BalanceItemKind.QUOTA),
-                    ("CreditAmount", "信用额度", BalanceItemKind.QUOTA),
+                    (
+                        "AvailableCashAmount",
+                        localized_message("provider.alibaba_bailian.cash_balance"),
+                        BalanceItemKind.CASH,
+                    ),
+                    (
+                        "AvailableAmount",
+                        localized_message("provider.alibaba_bailian.available_credit"),
+                        BalanceItemKind.QUOTA,
+                    ),
+                    (
+                        "CreditAmount",
+                        localized_message("provider.alibaba_bailian.credit_limit"),
+                        BalanceItemKind.QUOTA,
+                    ),
                 )
             ),
             source=_SOURCE,
@@ -311,16 +321,24 @@ def _business_error(code: str | None) -> NormalizedProviderError:
     if code in _BUSINESS_ERRORS:
         category, diagnostic = _BUSINESS_ERRORS[code]
         messages = {
-            ProviderErrorCategory.RATE_LIMITED: "阿里云余额查询被限流，请稍后重试",
+            ProviderErrorCategory.RATE_LIMITED: localized_message(
+                "provider.alibaba_bailian.rate_limited"
+            ),
             ProviderErrorCategory.PERMISSION: _PERMISSION_ERROR_MESSAGE,
-            ProviderErrorCategory.AUTHENTICATION: "阿里云访问密钥认证失败",
-            ProviderErrorCategory.ENDPOINT: "阿里云账户现金余额查询失败",
-            ProviderErrorCategory.TEMPORARILY_UNAVAILABLE: "阿里云余额服务暂时不可用",
+            ProviderErrorCategory.AUTHENTICATION: localized_message(
+                "provider.alibaba_bailian.authentication"
+            ),
+            ProviderErrorCategory.ENDPOINT: localized_message(
+                "provider.alibaba_bailian.query_failed"
+            ),
+            ProviderErrorCategory.TEMPORARILY_UNAVAILABLE: localized_message(
+                "provider.alibaba_bailian.unavailable"
+            ),
         }
         return NormalizedProviderError(category, messages[category], diagnostic)
     return NormalizedProviderError(
         ProviderErrorCategory.ENDPOINT,
-        "阿里云账户现金余额查询失败",
+        localized_message("provider.alibaba_bailian.query_failed"),
         "business_failure",
     )
 
@@ -329,7 +347,7 @@ def _status_error(status_code: int) -> NormalizedProviderError:
     if status_code == 401:
         category, message = (
             ProviderErrorCategory.AUTHENTICATION,
-            "阿里云访问密钥认证失败",
+            localized_message("provider.alibaba_bailian.authentication"),
         )
     elif status_code == 403:
         category, message = (
@@ -339,17 +357,17 @@ def _status_error(status_code: int) -> NormalizedProviderError:
     elif status_code == 429:
         category, message = (
             ProviderErrorCategory.RATE_LIMITED,
-            "阿里云余额查询过于频繁，请稍后重试",
+            localized_message("provider.alibaba_bailian.too_many_requests"),
         )
     elif status_code >= 500:
         category, message = (
             ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-            "阿里云余额服务暂时不可用",
+            localized_message("provider.alibaba_bailian.unavailable"),
         )
     else:
         category, message = (
             ProviderErrorCategory.ENDPOINT,
-            "阿里云拒绝了账户现金余额查询请求",
+            localized_message("provider.alibaba_bailian.request_denied"),
         )
     return NormalizedProviderError(category, message, f"http_{status_code}")
 
@@ -425,7 +443,7 @@ def _safe_account_labels(account: Any) -> tuple[str, str]:
     safe_name = (
         display_name.strip()
         if isinstance(display_name, str) and display_name.strip()
-        else "阿里云账户"
+        else localized_message("provider.alibaba_bailian.fallback_account")
     )
     return safe_id, safe_name
 
