@@ -1,6 +1,7 @@
 """Immutable, provider-independent request and balance models."""
 
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -12,12 +13,55 @@ class ProviderType(StrEnum):
 
     ALIBABA_BAILIAN = "alibaba_bailian"
     DEEPSEEK = "deepseek"
+    GLM_PLAN = "glm_plan"
     GRSAI = "grsai"
     MEINIANDA = "meinianda"
+    MINIMAX_PLAN = "minimax_plan"
+    MOONSHOT = "moonshot"
+    NEW_API = "new_api"
+    NOVITA = "novita"
+    OPENROUTER = "openrouter"
+    POLLINATIONS = "pollinations"
+    STEPFUN = "stepfun"
+    SUB2API = "sub2api"
+    VENICE = "venice"
+    VERCEL_GATEWAY = "vercel_gateway"
+    XAI = "xai"
     OPENAI_COMPATIBLE = "openai_compatible"
 
 
 SUPPORTED_PROVIDER_TYPES = frozenset(ProviderType)
+
+# Account balance presets share the API-key storage contract. Plan and token
+# presets use the same storage field but expose separate scopes and metrics.
+WALLET_NAMES = {
+    ProviderType.GLM_PLAN: "GLM Coding Plan",
+    ProviderType.MINIMAX_PLAN: "MiniMax Token Plan",
+    ProviderType.MOONSHOT: "Moonshot",
+    ProviderType.NEW_API: "New API",
+    ProviderType.NOVITA: "Novita AI",
+    ProviderType.OPENROUTER: "OpenRouter",
+    ProviderType.POLLINATIONS: "Pollinations",
+    ProviderType.STEPFUN: "StepFun",
+    ProviderType.SUB2API: "Sub2API",
+    ProviderType.VENICE: "Venice",
+    ProviderType.VERCEL_GATEWAY: "Vercel AI Gateway",
+    ProviderType.XAI: "xAI",
+}
+WALLET_REGION_PROVIDERS = frozenset(
+    {
+        ProviderType.MOONSHOT,
+        ProviderType.STEPFUN,
+        ProviderType.MINIMAX_PLAN,
+        ProviderType.GLM_PLAN,
+    }
+)
+WALLET_GATEWAY_PROVIDERS = frozenset({ProviderType.NEW_API, ProviderType.SUB2API})
+WALLET_PLAN_PROVIDERS = frozenset({ProviderType.GLM_PLAN, ProviderType.MINIMAX_PLAN})
+WALLET_ALERT_PROVIDERS = (
+    WALLET_NAMES.keys() - WALLET_GATEWAY_PROVIDERS - WALLET_PLAN_PROVIDERS
+)
+XAI_TEAM_ID = re.compile(r"[A-Za-z0-9_-]{1,128}\Z")
 
 
 class QueryRequestKind(StrEnum):

@@ -84,6 +84,46 @@ await test('Invalid global whitelist and over-budget numeric values do not submi
 await test('Pagehide removes all mounted controls and prevents late response revival',async h=>{await h.click('a[href="#/accounts/deepseek-main"]');await h.click('[data-action="credential-replace"]');await h.fill('#credential-new-value','FAKE_QA_CLOSE');h.mode('defer');await h.click('[data-action="credential-save"]');h.w.dispatchEvent(new h.w.Event('pagehide'));await flush();await h.release();assert.equal(h.q('#app').textContent,'');assert.equal(h.q('#credential-new-value'),null);assert.equal(h.calls.filter(c=>c.op==='admin/credential-replace').length,1)});
 for(const provider of ['deepseek','alibaba_bailian','grsai','meinianda','openai_compatible'])await test('Production provider form creates '+provider,async h=>{const select=h.q('#new-provider');select.value=provider;select.dispatchEvent(new h.w.Event('change',{bubbles:true}));await flush();await h.textClick('button','添加账户');assert.ok(h.q('#field-1-id'));await h.fill('#field-1-display_name','QA '+provider);await h.click('[data-action="save"]');assert.equal(h.snap().config.providers[1].type,provider);assert.equal(h.q('#field-1-id').disabled,true)});
 
+await test('A gateway preset saves a credential-free HTTPS origin and locks it after a key is saved',async h=>{
+ const select=h.q('#new-provider');
+ select.value='new_api';
+ select.dispatchEvent(new h.w.Event('change',{bubbles:true}));
+ await flush();
+ await h.textClick('button','添加账户');
+ assert.match(h.body(),/原始额度点/);
+ assert.equal(h.q('#field-1-balance_alert-enabled'),null);
+ await h.fill('#field-1-endpoint-base_url','http://invalid.example');
+ await h.click('[data-action="save"]');
+ assert.equal(h.calls.filter(call=>call.op==='admin/update').length,0);
+ await h.fill('#field-1-endpoint-base_url','https://gateway.example');
+ await h.click('[data-action="save"]');
+ const account=h.snap().config.providers[1];
+ assert.deepEqual(Object.entries(account.endpoint),[['base_url','https://gateway.example']]);
+ assert.equal(Object.hasOwn(account,'auth'),false);
+ await h.click('[data-action="credential-replace"]');
+ await h.fill('#credential-new-value','synthetic-gateway-key');
+ await h.click('[data-action="credential-save"]');
+ assert.equal(h.q('#field-1-endpoint-base_url').disabled,true);
+ assert.match(h.body(),/先清除该账户的查询凭据/);
+});
+
+await test('xAI exposes a localized management credential and requires a team ID',async h=>{
+ await h.context({locale:'en-US'});
+ const select=h.q('#new-provider');
+ select.value='xai';
+ select.dispatchEvent(new h.w.Event('change',{bubbles:true}));
+ await flush();
+ await h.textClick('button','Add account');
+ assert.match(h.body(),/xAI management key/i);
+ assert.match(h.body(),/Posted prepaid balance/);
+ await h.click('[data-action="save"]');
+ assert.equal(h.calls.filter(call=>call.op==='admin/update').length,0);
+ await h.fill('#field-1-team_id','team-synthetic');
+ await h.click('[data-action="save"]');
+ assert.equal(h.snap().config.providers[1].team_id,'team-synthetic');
+ assert.equal(h.q('#field-1-endpoint-base_url'),null);
+});
+
 await test('Localized credential and protocol copy preserves submitted machine values',async h=>{
  await h.click('a[href="#/accounts/deepseek-main"]');assert.match(h.body(),/凭据已保存，将在余额查询时验证有效性/);
  await h.click('[data-action="credential-replace"]');await h.textClick('button','引用环境变量');assert.match(h.body(),/仅填写环境变量名，例如 QUOTA_API_KEY；凭据值由运行环境提供/);await h.textClick('button','取消输入');

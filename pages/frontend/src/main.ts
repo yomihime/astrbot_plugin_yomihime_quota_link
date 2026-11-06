@@ -5,7 +5,7 @@ import {UiProvider,SettingsLayout,Surface} from './ui/shared-components';
 import {PageHeader,SettingsGroup,ActionBar,StatusHint,FormField,FormGrid,type FormFieldSlot} from './ui/components';
 import {createInlineConfirmation} from './confirmation';
 import {createController} from './controller.js';
-import {globals,globalGroups,globalLabels,fieldLabels,languageField,fieldHint,optionLabel,providerName,templates,providerOptions,newAccount,templateFor,credentialFields,clone} from './config.js';
+import {globals,globalGroups,globalLabels,fieldLabels,languageField,fieldHint,optionLabel,providerName,providerHelp,isGatewayProvider,templates,providerOptions,newAccount,templateFor,credentialFields,clone} from './config.js';
 import {alertDefaults,defaultMetric,metricOptions,normalizeAlert,normalizeIds,parseTargetsText,formatTargets,alertDraftErrors,fixedAlertUnit,unitLabel as localizedUnit,metricLabel as localizedMetric,localTime,alertDetailLabel} from './alert-config.js';
 import './ui/tokens.css';
 import './shell.css';
@@ -47,7 +47,7 @@ const App=defineComponent({setup(){
  };
  function field(key:string,descriptor:Dict,index:number|null,path:string[]=[key],extra:Dict={}){
   const account=index===null?s.draft:s.draft?.providers[index];if(!account)return null;
-  const controlId='field-'+(index===null?'global':index)+'-'+path.join('-'),value=readPath(account,path)??descriptor.default??'',label=t(key==='language'?'web.settings.language':((index===null?globalLabels:fieldLabels) as Record<string,string>)[key]);
+  const controlId='field-'+(index===null?'global':index)+'-'+path.join('-'),value=readPath(account,path)??descriptor.default??'',label=extra.label??t(key==='language'?'web.settings.language':((index===null?globalLabels:fieldLabels) as Record<string,string>)[key]);
   const locked=extra.locked||ordinaryDisabled();
   const setValue=(value:unknown)=>{delete errors.value[controlId];if(index!==null&&path.length===1&&key==='service_profile'){void changeProfile(index,String(value));return;}change(path,value,index);};
   let control:(attrs:FormFieldSlot['controlAttrs'])=>VNodeChild;
@@ -93,7 +93,7 @@ const App=defineComponent({setup(){
   ]);
  };
  const unitPanel=(account:Dict,index:number)=>{
-  const saved=savedAccount(account.id),keys=['type','service_profile','balance_scope','prefer_split_endpoint','response_mapping','endpoint','region'];
+  const saved=savedAccount(account.id),keys=['type','service_profile','balance_scope','prefer_split_endpoint','response_mapping','endpoint','region','team_id'];
   const current=!!saved&&keys.every(k=>JSON.stringify(account[k])===JSON.stringify(saved[k]))&&account.balance_alert?.metric===saved.balance_alert?.metric;
   const entry=current?s.units?.accounts.find(a=>a.account_id===account.id):undefined;
   const candidates=entry?.choices.filter(c=>c.metric===(account.balance_alert?.metric||defaultMetric(account)))||[];
@@ -153,6 +153,7 @@ const App=defineComponent({setup(){
   h(FormField,{controlId:'field-global-balance_alert_llm-enabled',label:t('web.alert.smart_hint'),hint:t('web.alert.smart_hint_help')},{default:({controlAttrs}:FormFieldSlot)=>h('label',{class:'ui-check-label'},[h('input',{...controlAttrs,type:'checkbox',checked:s.draft?.balance_alert_llm?.enabled!==false,disabled:ordinaryDisabled(),onChange:(e:Event)=>change(['balance_alert_llm','enabled'],(e.target as HTMLInputElement).checked,null)}),h('span',s.draft?.balance_alert_llm?.enabled!==false?t('web.common.on'):t('web.common.off'))])}),
  ]});
  function accountEditor(account:Dict,index:number){const descriptors=templateFor(account).items,isExisting=!!savedAccount(account.id),compatible=account.type==='openai_compatible',endpoint=descriptors.endpoint?.items||templates.provider_account.items.endpoint.items,mapping:Dict=templates.provider_account.items.response_mapping.items;
+  const gatewayCredential=s.snapshot?.credentials?.[account.id]?.api_key?.configured===true;
   return h(SettingsLayout,{}, {default:()=>[
    h(SettingsGroup,{title:t('web.account.settings'),number:'01'},{default:()=>h(FormGrid,{},()=>[
     field('id',descriptors.id,index,undefined,{locked:isExisting,hint:isExisting?t('web.account.id_locked'):t('web.account.id_hint')}),
@@ -161,14 +162,19 @@ const App=defineComponent({setup(){
     field('timeout_seconds',descriptors.timeout_seconds,index),field('cache_ttl_seconds',descriptors.cache_ttl_seconds,index),
    ])}),
    h(SettingsGroup,{title:t('web.account.provider_settings'),number:'02'},{default:()=>[
-    h(StatusHint,{},()=>account.type==='deepseek'?t('web.provider.deepseek_help'):account.type==='alibaba_bailian'?t('web.provider.alibaba_help'):account.type==='meinianda'?t('web.provider.meinianda_help'):account.type==='grsai'?t('web.provider.grsai_help'):t('web.provider.compatible_help')),
+    h(StatusHint,{},()=>t(providerHelp(account.type))),
     h(FormGrid,{},()=>[
      ...(descriptors.region?[field('region',descriptors.region,index)]:[]),
+     ...(descriptors.team_id?[field('team_id',descriptors.team_id,index,undefined,{label:t('web.field.team_id')})]:[]),
+     ...(isGatewayProvider(account.type)?[field('base_url',endpoint.base_url,index,['endpoint','base_url'],{
+      label:t('web.field.gateway_origin'),locked:gatewayCredential,
+      hint:t(gatewayCredential?'config.wallet_origin_credential':'web.hint.gateway_origin'),
+     })]:[]),
      ...(compatible?[field('service_profile',templates.openai_compatible.items.service_profile,index),...(account.service_profile==='grsai'?[field('balance_scope',templates.openai_compatible.items.balance_scope,index)]:[]),
       ...(account.endpoint?.url?[field('url',templates.provider_account.items.endpoint.items.url,index,['endpoint','url'])]:[]),field('base_url',endpoint.base_url,index,['endpoint','base_url']),field('path',endpoint.path,index,['endpoint','path'])]:[]),
     ]),
    ]}),
-   alertAccountPanel(account,index),
+   metricOptions(account).length?alertAccountPanel(account,index):h(StatusHint,{},()=>t('web.alert.query_only')),
    compatible?h(SettingsGroup,{title:t('web.account.advanced'),number:'04'},{default:()=>[
     field('advanced_options',templates.openai_compatible.items.advanced_options,index),
     account.advanced_options?h('div',{class:'quota-advanced'},[

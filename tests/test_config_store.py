@@ -263,6 +263,38 @@ def test_language_is_an_optional_revisioned_setting(fresh, secret_store):
     assert secret_store.read_config()["credentials"] == {}
 
 
+def test_gateway_address_cannot_reuse_a_saved_key_on_another_origin(fresh):
+    provider = {
+        "id": "main",
+        "type": "new_api",
+        "display_name": "Fixture gateway",
+        "endpoint": {"base_url": "https://first.example"},
+    }
+    update(fresh, {"providers": [provider]})
+    replace(fresh)
+    replace(fresh, value="synthetic-unused-token", field="token")
+    before = dispatch(fresh)
+    changed = {**provider, "endpoint": {"base_url": "https://other.example"}}
+    with pytest.raises(ConfigValidation):
+        update(fresh, {"providers": [changed]}, before["revision"])
+    assert dispatch(fresh) == before
+    equivalent = {**provider, "endpoint": {"base_url": "HTTPS://FIRST.example:443/"}}
+    saved = update(fresh, {"providers": [equivalent]}, before["revision"])
+    assert saved["credentials"]["main"]["api_key"]["configured"] is True
+    dispatch(
+        fresh,
+        "credential-clear",
+        {
+            "revision": saved["revision"],
+            "account_id": "main",
+            "field": "api_key",
+        },
+    )
+    moved = update(fresh, {"providers": [changed]})
+    assert moved["credentials"]["main"]["api_key"]["configured"] is False
+    assert moved["credentials"]["main"]["token"]["configured"] is True
+
+
 @pytest.mark.parametrize(
     "record_extra",
     [

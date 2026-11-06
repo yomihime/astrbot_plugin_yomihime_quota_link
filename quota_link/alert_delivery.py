@@ -169,6 +169,8 @@ _METRIC_LABELS = {
     "credit": message("alert.metric.credit"),
     "site_credit": message("alert.metric.site_credit"),
     "mapped_balance": message("alert.metric.mapped"),
+    "available_balance": message("provider.wallet.available_balance"),
+    "posted_prepaid_balance": message("provider.xai.posted_balance"),
 }
 
 

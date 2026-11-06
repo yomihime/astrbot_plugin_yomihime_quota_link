@@ -16,6 +16,7 @@ from decimal import Decimal, localcontext
 from typing import Any
 
 from .i18n import message
+from .models import WALLET_ALERT_PROVIDERS
 
 MAX_ALERT_TARGETS = 20
 MAX_ALERT_MENTIONS = 20
@@ -30,6 +31,8 @@ ALERT_METRICS = {
     "grsai": ("credit",),
     "meinianda": ("site_credit",),
     "openai_compatible": ("mapped_balance",),
+    **{provider.value: ("available_balance",) for provider in WALLET_ALERT_PROVIDERS},
+    "xai": ("posted_prepaid_balance",),
 }
 
 

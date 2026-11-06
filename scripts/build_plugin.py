@@ -49,6 +49,13 @@ PACKAGE_FILES = (
     "quota_link/providers/base.py",
     "quota_link/providers/deepseek.py",
     "quota_link/providers/meinianda.py",
+    "quota_link/wallet_transport.py",
+    "quota_link/providers/wallet_china.py",
+    "quota_link/providers/wallet_global.py",
+    "quota_link/providers/wallet_new_api.py",
+    "quota_link/providers/wallet_plan.py",
+    "quota_link/providers/wallet_pollinations.py",
+    "quota_link/providers/wallet_sub2api.py",
     "quota_link/providers/alibaba_bailian.py",
     "quota_link/providers/openai_compatible.py",
 )
@@ -125,6 +132,7 @@ PAGE_FILES = (
 )
 DOC_FILES = (
     "docs/SECURITY.md",
+    "docs/PROVIDER-SOURCES.md",
     "pages/frontend/PROVENANCE.md",
     "pages/frontend/provenance.json",
 )

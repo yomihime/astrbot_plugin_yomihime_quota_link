@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from .i18n import message as localized
-from .models import ProviderType
+from .models import WALLET_NAMES, ProviderType
 from .settings import AccountDirectory
 
 _PROVIDER_NAMES = {
+    **WALLET_NAMES,
     ProviderType.DEEPSEEK: "DeepSeek",
     ProviderType.ALIBABA_BAILIAN: localized("capability.alibaba"),
     ProviderType.GRSAI: "Grsai",
@@ -23,6 +24,9 @@ _BALANCE_KIND_NAMES = {
     "custom": localized("capability.custom"),
 }
 _SAFE_REASONS = {
+    "invalid_wallet_region": localized("config.wallet_region"),
+    "invalid_wallet_team": localized("config.wallet_team"),
+    "invalid_wallet_origin": localized("config.wallet_origin"),
     "missing_environment_variable": localized("capability.credential_missing"),
     "missing_credentials": localized("capability.credential_missing"),
     "missing_grsai_token": localized("capability.grsai_token_missing"),

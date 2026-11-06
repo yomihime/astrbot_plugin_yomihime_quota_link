@@ -1,6 +1,6 @@
 # 如月怜的额度连结
 
-AstrBot 插件，用于查询已配置 AI 服务账户的余额或用量，并按明确阈值发送额度预警。当前提供 DeepSeek、阿里云百炼（BSS 现金余额、可用额度、信用额度）、Grsai 账户积分、Meinianda 账户站内额度预设和 OpenAI 兼容服务 / 第三方服务配置。结果保留各接口的数据含义，不做货币换算。
+AstrBot 插件，用于查询已配置 AI 服务账户的余额或用量，并按明确阈值发送额度预警。预设覆盖账户余额、模型密钥额度及订阅使用窗口，也支持自定义 OpenAI 兼容接口。每项结果保留供应商的数据口径与单位。
 
 ## 安装
 
@@ -44,7 +44,9 @@ https://github.com/yomihime/astrbot_plugin_yomihime_quota_link
 
 ## 配置账户
 
-在插件页面的账户区添加 DeepSeek、阿里云百炼、Grsai、Meinianda 或其他兼容服务。每个账户有唯一 `id`、显示名称和可选别名。现有账户的 ID 与供应商类型不可重绑；需要更换供应商时请新建账户。普通设置保存与凭据替换/清除是不同操作，普通保存不会写入或回显凭据。
+在插件页面的账户区选择供应商预设。每个账户有唯一 `id`、显示名称和可选别名。需要更换供应商时请新建账户。先保存账户设置，再单独保存查询凭据。
+
+账户预设包括 DeepSeek、阿里云百炼、Grsai、Meinianda、Moonshot、StepFun、OpenRouter、Novita AI、xAI、Venice、Vercel AI Gateway 和 Pollinations。New API 与 Sub2API 使用所配置站点的模型 Key，MiniMax Token Plan 和 GLM Coding Plan 则显示套餐统计窗口。配置需要的凭据、结果口径与公开来源见 [余额与额度查询接口](docs/PROVIDER-SOURCES.md)。
 
 凭据区域只显示是否已配置、来源为加密存储或环境变量，不提供读取原值的接口。填写新值后单独确认替换，或选择环境变量并填写变量名称（不是变量的值）；原有 `${ENV_VAR}` 引用在迁移时保持为环境引用。不要把真实密钥写进普通字段、公开文件或聊天。账户页沿用 Game Link 的 Oil 明暗主题、组件与交互。
 

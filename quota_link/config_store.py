@@ -20,8 +20,9 @@ from typing import Any
 from .alert_config import AlertConfigError, normalize_alert_config
 from .i18n import LANGUAGE_OPTIONS
 from .i18n import message as localized
+from .models import WALLET_GATEWAY_PROVIDERS
 from .security import SecretStoreUnavailable
-from .settings import load_settings, migrate_account_templates
+from .settings import gateway_origin, load_settings, migrate_account_templates
 
 GLOBAL_FIELDS = frozenset(
     {
@@ -53,6 +54,7 @@ ACCOUNT_FIELDS = frozenset(
         "service_profile",
         "balance_scope",
         "region",
+        "team_id",
         "endpoint",
         "advanced_options",
         "response_mapping",
@@ -532,11 +534,23 @@ class ConfigStore:
                         raise ConfigValidation(localized("config.credential_in_field"))
                     old = {a["id"]: a for a in manifest["config"].get("providers", [])}
                     for account in config.get("providers", []):
-                        if account["id"] in old and account.get("type") != old[
-                            account["id"]
-                        ].get("type"):
+                        previous = old.get(account["id"])
+                        if previous is None:
+                            continue
+                        if account.get("type") != previous.get("type"):
                             raise ConfigValidation(
                                 localized("config.provider_immutable")
+                            )
+                        if (
+                            account.get("type") in WALLET_GATEWAY_PROVIDERS
+                            and manifest["credentials"]
+                            .get(account["id"], {})
+                            .get("api_key")
+                            and gateway_origin(account["endpoint"]["base_url"])
+                            != gateway_origin(previous["endpoint"]["base_url"])
+                        ):
+                            raise ConfigValidation(
+                                localized("config.wallet_origin_credential")
                             )
                     if self.before_update is not None:
                         candidate = _clone(config)

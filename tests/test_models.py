@@ -28,6 +28,18 @@ def test_provider_type_recognition_is_not_adapter_implementation():
         ProviderType.GRSAI,
         ProviderType.MEINIANDA,
         ProviderType.OPENAI_COMPATIBLE,
+        ProviderType.GLM_PLAN,
+        ProviderType.MINIMAX_PLAN,
+        ProviderType.MOONSHOT,
+        ProviderType.NEW_API,
+        ProviderType.NOVITA,
+        ProviderType.OPENROUTER,
+        ProviderType.POLLINATIONS,
+        ProviderType.STEPFUN,
+        ProviderType.SUB2API,
+        ProviderType.VENICE,
+        ProviderType.VERCEL_GATEWAY,
+        ProviderType.XAI,
     }
 
 
