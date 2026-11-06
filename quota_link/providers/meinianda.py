@@ -14,6 +14,7 @@ from ..http_client import (
     HttpStatusError,
     HttpTransportError,
 )
+from ..i18n import message as localized_message
 from ..models import (
     BalanceItem,
     BalanceItemKind,
@@ -28,7 +29,7 @@ from ..settings import AccountSettings
 from .base import AsyncProviderClient
 
 _BALANCE_URL = "https://meinianda.top/api/balance"
-_SOURCE = "Meinianda 余额 API"
+_SOURCE = localized_message("provider.meinianda.source")
 
 
 class MeiniandaAdapter:
@@ -42,7 +43,7 @@ class MeiniandaAdapter:
             return _failure(
                 account,
                 ProviderErrorCategory.CONFIGURATION,
-                "Meinianda 账户缺少有效 API Key",
+                localized_message("provider.meinianda.missing_key"),
                 "missing_api_key",
             )
         try:
@@ -64,9 +65,9 @@ class MeiniandaAdapter:
             return _failure(
                 account,
                 ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                "Meinianda 余额查询超时"
+                localized_message("provider.meinianda.timeout")
                 if exc.kind == "timeout"
-                else "无法连接 Meinianda 余额服务",
+                else localized_message("provider.meinianda.connection"),
                 exc.kind,
             )
         except HttpResponseParseError:
@@ -75,7 +76,7 @@ class MeiniandaAdapter:
             return _failure(
                 account,
                 ProviderErrorCategory.CONFIGURATION,
-                "Meinianda 余额查询请求配置无效",
+                localized_message("provider.meinianda.invalid_request"),
                 exc.kind,
             )
         if response.status_code != 200:
@@ -99,7 +100,7 @@ class MeiniandaAdapter:
                 return _failure(
                     account,
                     ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                    "Meinianda 未能完成余额查询",
+                    localized_message("provider.meinianda.query_failed"),
                     "business_failure",
                 )
             amount = _parse_balance(payload)
@@ -123,9 +124,11 @@ class MeiniandaAdapter:
                     kind=BalanceItemKind.CREDITS,
                     amount=amount,
                     unit="site_credit",
-                    label="账户站内额度",
+                    label=localized_message("provider.meinianda.site_credit"),
                     metric="site_credit",
-                    raw_semantics="账户站内额度，不是 API Key 限额；不换算为货币",
+                    raw_semantics=localized_message(
+                        "provider.meinianda.site_credit_note"
+                    ),
                 ),
             ),
             source=_SOURCE,
@@ -151,16 +154,25 @@ def _parse_balance(payload: Any) -> Decimal:
 
 def _http_failure(account: AccountSettings, status_code: int) -> BalanceSnapshot:
     category, message = {
-        401: (ProviderErrorCategory.AUTHENTICATION, "Meinianda API Key 认证失败"),
-        403: (ProviderErrorCategory.PERMISSION, "Meinianda 拒绝了余额查询"),
-        429: (ProviderErrorCategory.RATE_LIMITED, "Meinianda 请求过于频繁，请稍后重试"),
+        401: (
+            ProviderErrorCategory.AUTHENTICATION,
+            localized_message("provider.meinianda.authentication"),
+        ),
+        403: (
+            ProviderErrorCategory.PERMISSION,
+            localized_message("provider.meinianda.permission"),
+        ),
+        429: (
+            ProviderErrorCategory.RATE_LIMITED,
+            localized_message("provider.meinianda.rate_limited"),
+        ),
     }.get(
         status_code,
         (
             ProviderErrorCategory.ENDPOINT
             if 400 <= status_code < 500
             else ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-            "Meinianda 余额查询暂时失败",
+            localized_message("provider.meinianda.unavailable"),
         ),
     )
     return _failure(account, category, message, f"http_{status_code}")
@@ -170,7 +182,7 @@ def _parse_failure(account: AccountSettings, diagnostic: str) -> BalanceSnapshot
     return _failure(
         account,
         ProviderErrorCategory.PARSE,
-        "Meinianda 返回的余额数据格式无法识别",
+        localized_message("provider.meinianda.invalid_response"),
         diagnostic,
     )
 

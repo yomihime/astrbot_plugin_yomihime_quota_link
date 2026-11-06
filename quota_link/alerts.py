@@ -23,6 +23,7 @@ from typing import Any
 
 from .alert_delivery import BLOCKED_DETAILS, DELIVERY_DETAILS, AlertDelivery, AlertFact
 from .alert_units import observe_units, request_identity, transition, valid_unit
+from .i18n import message as localized
 from .models import (
     ProviderErrorCategory,
     QueryRequest,
@@ -32,24 +33,24 @@ from .models import (
 
 _BUDGET_SECONDS = 300
 _MESSAGES = {
-    "disabled": "预警已关闭",
-    "blocked": "预警配置不完整或目标不可用",
-    "waiting": "等待下一次检查",
-    "monitoring": "监测中，未触发预警",
-    "low": "额度低于阈值，等待发送预算或目标恢复",
-    "waiting_budget": "同一推送目标共用至少 300 秒发送间隔；等待后续有效检查",
-    "recovering": "额度已回升，尚未达到恢复阈值",
-    "recovered": "已达到恢复阈值，等待下一次低额事件",
-    "error": "查询失败；保留原预警状态，不将错误视为零余额",
-    "paused": "认证或权限校验失败；修正配置或手动重试后恢复检查",
-    "stale": "未获得新鲜且指标、单位一致的余额；保留原状态",
-    "submitted": "已提交平台；不代表最终送达",
-    "unknown": "发送结果未知；为避免重复不自动重发",
-    "failed": "平台未接受发送；冷却后可重试",
-    "storage_unavailable": "预警状态存储不可用；已停止检查和发送",
-    "unit_unidentified": "等待有效查询识别额度单位",
-    "units_ambiguous": "存在多个或重复单位，请确认实际候选单位",
-    "unit_changed": "监测项、单位或查询身份变化，请确认后继续",
+    "disabled": localized("alert.state.disabled"),
+    "blocked": localized("alert.state.blocked"),
+    "waiting": localized("alert.state.waiting"),
+    "monitoring": localized("alert.state.monitoring"),
+    "low": localized("alert.state.low"),
+    "waiting_budget": localized("alert.state.waiting_budget"),
+    "recovering": localized("alert.state.recovering"),
+    "recovered": localized("alert.state.recovered"),
+    "error": localized("alert.state.error"),
+    "paused": localized("alert.state.paused"),
+    "stale": localized("alert.state.stale"),
+    "submitted": localized("alert.state.submitted"),
+    "unknown": localized("alert.state.unknown"),
+    "failed": localized("alert.state.failed"),
+    "storage_unavailable": localized("alert.state.storage_unavailable"),
+    "unit_unidentified": localized("alert.state.unit_unidentified"),
+    "units_ambiguous": localized("alert.state.units_ambiguous"),
+    "unit_changed": localized("alert.state.unit_changed"),
 }
 
 
@@ -654,30 +655,26 @@ class AlertEngine:
         try:
             authorize()
             if not self._active():
-                raise ValueError("预警运行时已更新，请刷新后重试。")
+                raise ValueError(localized("alert.runtime_changed"))
             account = next(
                 (item for item in self.settings.accounts if item.id == account_id), None
             )
             if account is None or not account.enabled or not account.queryable:
-                raise ValueError("账户尚不可查询；请先核对账户启用状态和查询配置。")
+                raise ValueError(localized("alert.account_unqueryable"))
             identity = request_identity(account)
             result = await self.service.query(
                 QueryRequest(QueryRequestKind.ACCOUNT, account.id), max_age_seconds=0
             )
             authorize()
             if not self._active() or self._binding(account.id)["identity"] != identity:
-                raise ValueError("预警运行时已更新，请刷新后重试。")
+                raise ValueError(localized("alert.runtime_changed"))
             snapshots = result.snapshots
             if len(snapshots) != 1 or snapshots[0].error is not None:
-                raise ValueError(
-                    "本次未取得有效单位候选；请检查查询状态，稍后重新查询。"
-                )
+                raise ValueError(localized("alert.no_unit"))
             self._observe_units(account, snapshots[0])
             observation = self._peek_units(account)
             if observation is None or not observation.choices:
-                raise ValueError(
-                    "本次未取得当前监测项的有效单位候选；请检查查询结果与监测项后重试。"
-                )
+                raise ValueError(localized("alert.no_metric_unit"))
             # Even identical result contents from a new explicit refresh belong to
             # a new candidate version; another page's old confirmation must fail.
             with self._db:
@@ -695,12 +692,12 @@ class AlertEngine:
             or not isinstance(choice_id, str)
             or not re.fullmatch(r"[0-9a-f]{64}", choice_id)
         ):
-            raise ValueError("单位候选无效或预警运行时已更新，请刷新后重试。")
+            raise ValueError(localized("alert.invalid_unit"))
         account = next(
             (item for item in self.settings.accounts if item.id == account_id), None
         )
         if account is None:
-            raise ValueError("未找到该预警账户。")
+            raise ValueError(localized("alert.account_missing"))
         observation = self._peek_units(account)
         row = self._binding(account.id)
         choice = (
@@ -716,7 +713,7 @@ class AlertEngine:
             else None
         )
         if choice is None:
-            raise ValueError("候选已过期或不再匹配；请先查询余额，再刷新单位候选。")
+            raise ValueError(localized("alert.unit_expired"))
         reset = row["unit"] != choice.unit or bool(row["semantic_reset"])
         paused = self._db.execute(
             "SELECT 1 FROM auth_pauses WHERE auth_key=?", (_auth_key(account),)
@@ -893,9 +890,9 @@ class AlertEngine:
             row = self._binding(account_id)
             if row is not None:
                 message = {
-                    "metric_changed": "监测项已变更，请确认阈值和单位",
-                    "query_identity_changed": "账户查询配置已变更，请重新确认阈值和单位",
-                    "unit_changed": "查询单位已变更，请重新确认阈值和单位",
+                    "metric_changed": localized("alert.metric_changed"),
+                    "query_identity_changed": localized("alert.query_identity_changed"),
+                    "unit_changed": localized("alert.unit_changed"),
                 }.get(row["change_reason"])
                 if message:
                     return message

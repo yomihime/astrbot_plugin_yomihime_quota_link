@@ -1,3 +1,4 @@
+import {MessageError,errorText,translate} from './i18n.js';
 /** Alert configuration has no transport capability. QQ IDs remain strings. */
 const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)&&[Object.prototype,null].includes(Object.getPrototypeOf(value));
 const controls=/[\p{Cc}\p{Cf}\p{Cs}]/u;
@@ -6,17 +7,17 @@ export const alertDefaults=()=>({enabled:false,check_interval_minutes:15,metric:
 export const llmDefaults=()=>({enabled:true});
 export function defaultMetric(account){return account.type==='alibaba_bailian'?'AvailableAmount':account.type==='deepseek'?'total_balance':account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?'credit':account.type==='meinianda'?'site_credit':account.type==='openai_compatible'?'mapped_balance':'';}
 export function metricOptions(account){return account.type==='alibaba_bailian'?['AvailableAmount','AvailableCashAmount','CreditAmount']:account.type==='deepseek'?['total_balance','granted_balance','topped_up_balance']:account.type==='grsai'||account.type==='openai_compatible'&&account.service_profile==='grsai'?['credit']:account.type==='meinianda'?['site_credit']:account.type==='openai_compatible'?['mapped_balance']:[];}
-export const metricLabels={AvailableAmount:'可用额度',AvailableCashAmount:'现金余额',CreditAmount:'信用额度',total_balance:'总余额',granted_balance:'赠送余额',topped_up_balance:'充值余额',credit:'积分',site_credit:'站内额度',mapped_balance:'已配置映射余额'};
-const unitLabels={credit:'积分',site_credit:'站内额度'};
-export const unitLabel=unit=>Object.hasOwn(unitLabels,unit)?unitLabels[unit]:unit;
-export const metricLabel=metric=>Object.hasOwn(metricLabels,metric)?metricLabels[metric]:'监测余额';
+export const metricLabels={AvailableAmount:'web.metric.AvailableAmount',AvailableCashAmount:'web.metric.AvailableCashAmount',CreditAmount:'web.metric.CreditAmount',total_balance:'web.metric.total_balance',granted_balance:'web.metric.granted_balance',topped_up_balance:'web.metric.topped_up_balance',credit:'web.metric.credit',site_credit:'web.metric.site_credit',mapped_balance:'web.metric.mapped_balance'};
+const unitLabels={credit:'web.metric.credit',site_credit:'web.metric.site_credit'};
+export const unitLabel=(unit,locale)=>Object.hasOwn(unitLabels,unit)?translate(unitLabels[unit],locale):unit;
+export const metricLabel=(metric,locale)=>translate(Object.hasOwn(metricLabels,metric)?metricLabels[metric]:'web.metric.monitored',locale);
 export function localTime(value,locale='zh-CN'){
- const date=new Date(value);if(!Number.isFinite(date.getTime()))return '时间不可用';
+ const date=new Date(value);if(!Number.isFinite(date.getTime()))return translate('web.common.time_unavailable',locale);
  const options={year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',timeZoneName:'short'};
  try{return new Intl.DateTimeFormat(locale,options).format(date);}catch{return new Intl.DateTimeFormat('zh-CN',options).format(date);}
 }
-export const alertDetailLabels={session_disabled:'目标会话已停用，请在 AstrBot 中启用会话。',session_check_failed:'无法核对目标会话状态，请检查 AstrBot 会话设置与日志。',fixed_hint:'已使用固定提示。',target_invalid:'推送目标格式无效，请在全局设置中核对 UMO。',platform_not_found:'未找到目标平台实例，请核对 UMO 的平台实例 ID。',platform_unavailable:'目标平台实例暂不可用，请检查连接状态与宿主日志。',platform_unsupported:'目标平台不支持此主动发送方式，请改用支持的推送目标。',mention_unsupported:'目标不支持 QQ 提及，请移除 @ 后缀或使用支持的 QQ 群目标。',mention_invalid:'QQ 提及格式无效，请核对群会话与 @QQ 号。',transport_unavailable:'宿主主动发送接口不可用，请检查 AstrBot 版本与日志。',message_components_unavailable:'消息组件无法构造，请检查宿主组件与日志。'};
-export const alertDetailLabel=code=>Object.hasOwn(alertDetailLabels,code)?alertDetailLabels[code]:'暂无明确阻止原因，请核对全局推送目标、平台连接与宿主预警日志。';
+export const alertDetailLabels={session_disabled:'web.detail.session_disabled',session_check_failed:'web.detail.session_check_failed',fixed_hint:'web.detail.fixed_hint',target_invalid:'web.detail.target_invalid',platform_not_found:'web.detail.platform_not_found',platform_unavailable:'web.detail.platform_unavailable',platform_unsupported:'web.detail.platform_unsupported',mention_unsupported:'web.detail.mention_unsupported',mention_invalid:'web.detail.mention_invalid',transport_unavailable:'web.detail.transport_unavailable',message_components_unavailable:'web.detail.message_components_unavailable'};
+export const alertDetailLabel=(code,locale)=>translate(Object.hasOwn(alertDetailLabels,code)?alertDetailLabels[code]:'web.detail.unknown',locale);
 export function fixedAlertUnit(account){const metric=defaultMetric(account);return metric==='credit'?'credit':metric==='site_credit'?'site_credit':null;}
 export function validateAlertUnits(value){
  const text=(v,max)=>typeof v==='string'&&v.length>0&&[...v].length<=max&&!controls.test(v);
@@ -35,46 +36,46 @@ export function validateAlertUnits(value){
  })};
 }
 export function parseUmo(value){
- if(typeof value!=='string'||controls.test(value))throw Error('UMO 不允许控制字符或不可见字符。');
+ if(typeof value!=='string'||controls.test(value))throw new MessageError('web.validation.umo_invisible');
  const umo=value.trim(),first=umo.indexOf(':'),second=umo.indexOf(':',first+1);
- if([...umo].length>512||/\s/u.test(umo)||first<=0||second<=first+1||second===umo.length-1)throw Error('请填写完整 UMO：平台实例:消息类型:会话 ID。');
+ if([...umo].length>512||/\s/u.test(umo)||first<=0||second<=first+1||second===umo.length-1)throw new MessageError('web.validation.umo_format');
  const type=umo.slice(first+1,second),session=umo.slice(second+1);
- if(!['FriendMessage','GroupMessage','OtherMessage'].includes(type))throw Error('消息类型需为 FriendMessage、GroupMessage 或 OtherMessage。');
+ if(!['FriendMessage','GroupMessage','OtherMessage'].includes(type))throw new MessageError('web.validation.umo_type');
  return {umo,type,session};
 }
 export function normalizeIds(value,limit=100){
- if(!Array.isArray(value)||value.length>limit)throw Error(`QQ 号最多 ${limit} 项。`);
- const output=[];for(const item of value){if(typeof item!=='string'||controls.test(item)||!positiveId.test(item.trim()))throw Error('QQ 号须为 1 至 20 位 ASCII 正整数字串；不支持 @all、昵称或 CQ 码。');const id=item.trim();if(!output.includes(id))output.push(id);}return output;
+ if(!Array.isArray(value)||value.length>limit)throw new MessageError('web.validation.id_limit',{limit});
+ const output=[];for(const item of value){if(typeof item!=='string'||controls.test(item)||!positiveId.test(item.trim()))throw new MessageError('web.validation.qq_id');const id=item.trim();if(!output.includes(id))output.push(id);}return output;
 }
 export function normalizeTargets(value){
- if(!Array.isArray(value)||value.length>20)throw Error('推送目标最多 20 个。');
+ if(!Array.isArray(value)||value.length>20)throw new MessageError('web.validation.target_limit');
  const seen=new Set();return value.map(target=>{
-  if(!record(target)||Object.keys(target).some(k=>!['umo','mentions'].includes(k))||!Object.hasOwn(target,'umo')||!Object.hasOwn(target,'mentions'))throw Error('每个目标须包含 UMO 和提及列表。');
+  if(!record(target)||Object.keys(target).some(k=>!['umo','mentions'].includes(k))||!Object.hasOwn(target,'umo')||!Object.hasOwn(target,'mentions'))throw new MessageError('web.validation.target_fields');
   const parsed=parseUmo(target.umo),mentions=normalizeIds(target.mentions,20);
-  if(mentions.length&&(parsed.type!=='GroupMessage'||!positiveId.test(parsed.session.split('_').at(-1))))throw Error('仅数字 QQ 群会话可附加 @QQ 号；私聊或其他会话请删除 @ 后缀。');
-  if(seen.has(parsed.umo))throw Error('UMO 重复，请合并为一行。');seen.add(parsed.umo);return {umo:parsed.umo,mentions};
+  if(mentions.length&&(parsed.type!=='GroupMessage'||!positiveId.test(parsed.session.split('_').at(-1))))throw new MessageError('web.validation.group_mentions');
+  if(seen.has(parsed.umo))throw new MessageError('web.validation.duplicate_umo');seen.add(parsed.umo);return {umo:parsed.umo,mentions};
  });
 }
 export function parseTargetsText(value){
- if(typeof value!=='string')throw Error('请输入推送目标。');const targets=[],seen=new Set();
+ if(typeof value!=='string')throw new MessageError('web.validation.targets_text');const targets=[],seen=new Set();
  for(const [index,line]of value.split(/\r\n|\r|\n/).entries()){
   try{
-   if(/[\p{Cc}\p{Cf}\p{Cs}]/u.test(line.replaceAll('\t','')))throw Error('不允许控制字符或不可见字符。');
+   if(/[\p{Cc}\p{Cf}\p{Cs}]/u.test(line.replaceAll('\t','')))throw new MessageError('web.validation.invisible_chars');
    if(!line.trim())continue;
    const [umo,...suffix]=line.trim().split(/\s+/u);
-   if(suffix.some(item=>!item.startsWith('@')))throw Error('UMO 后请使用空格分隔的 @QQ号。');
+   if(suffix.some(item=>!item.startsWith('@')))throw new MessageError('web.validation.mentions_suffix');
    const target=normalizeTargets([{umo,mentions:suffix.map(item=>item.slice(1))}])[0];
-   if(seen.has(target.umo))throw Error('UMO 重复，请合并为一行。');seen.add(target.umo);targets.push(target);
-   if(targets.length>20)throw Error('推送目标最多 20 个。');
-  }catch(error){throw Error(`第 ${index+1} 行：${error.message}`);}
+   if(seen.has(target.umo))throw new MessageError('web.validation.duplicate_umo');seen.add(target.umo);targets.push(target);
+   if(targets.length>20)throw new MessageError('web.validation.target_limit');
+  }catch(error){throw new MessageError('web.validation.target_line',{line:index+1,message:error instanceof MessageError?error:new MessageError('web.validation.invalid_input')});}
  }
  return targets;
 }
 export function formatTargets(value){return Array.isArray(value)?value.map(t=>[t.umo,...t.mentions.map(id=>'@'+id)].join(' ')).join('\n'):'';}
 // Compare exact decimal strings without routing thresholds through Number.
 export function normalizeDecimal(value){
- if(typeof value!=='string'||controls.test(value))throw Error('阈值须为不含指数的有限十进制字符串。');
- const text=value.trim();if(text.length>50||!(/^-?(?:0|[1-9][0-9]{0,29})(?:\.[0-9]{1,18})?$/).test(text))throw Error('阈值最多 30 位整数、18 位小数，不支持指数形式。');
+ if(typeof value!=='string'||controls.test(value))throw new MessageError('web.validation.finite_decimal');
+ const text=value.trim();if(text.length>50||!(/^-?(?:0|[1-9][0-9]{0,29})(?:\.[0-9]{1,18})?$/).test(text))throw new MessageError('web.validation.decimal_length');
  return /^-?0(?:\.0+)?$/.test(text)?'0':text;
 }
 export function decimalParts(value){
@@ -83,29 +84,29 @@ export function decimalParts(value){
 export function compareDecimals(a,b){const x=decimalParts(a),y=decimalParts(b),scale=Math.max(x.scale,y.scale);return x.n*10n**BigInt(scale-x.scale)-y.n*10n**BigInt(scale-y.scale);}
 export function normalizeAlert(value,account){
  if(value===undefined)return {...alertDefaults(),metric:defaultMetric(account)};
- if(!record(value)||Object.keys(value).some(k=>!Object.hasOwn(alertDefaults(),k)))throw Error('预警配置字段无效。');
+ if(!record(value)||Object.keys(value).some(k=>!Object.hasOwn(alertDefaults(),k)))throw new MessageError('web.validation.alert_fields');
  const alert={...alertDefaults(),...value};
- if(typeof alert.enabled!=='boolean'||!Number.isInteger(alert.check_interval_minutes)||alert.check_interval_minutes<1||alert.check_interval_minutes>4320)throw Error('检查间隔须为 1 至 4320 的整数分钟。');
- if(!Number.isInteger(alert.repeat_minutes)||alert.repeat_minutes<0||alert.repeat_minutes>4320)throw Error('重复提醒须为 0 至 4320 的整数分钟；0 表示不重复。');
- if(typeof alert.metric!=='string'||controls.test(alert.metric)||alert.metric.trim()&&!metricOptions(account).includes(alert.metric.trim()))throw Error('请选择该供应商支持的预警指标。');
+ if(typeof alert.enabled!=='boolean'||!Number.isInteger(alert.check_interval_minutes)||alert.check_interval_minutes<1||alert.check_interval_minutes>4320)throw new MessageError('web.validation.interval_range');
+ if(!Number.isInteger(alert.repeat_minutes)||alert.repeat_minutes<0||alert.repeat_minutes>4320)throw new MessageError('web.validation.repeat_range');
+ if(typeof alert.metric!=='string'||controls.test(alert.metric)||alert.metric.trim()&&!metricOptions(account).includes(alert.metric.trim()))throw new MessageError('web.validation.metric');
  alert.metric=alert.metric.trim()||defaultMetric(account);
- if(typeof alert.unit!=='string'||[...alert.unit.trim()].length>32||controls.test(alert.unit)||/\s/u.test(alert.unit.trim()))throw Error('单位须为不超过 32 字的明确文本。');
+ if(typeof alert.unit!=='string'||[...alert.unit.trim()].length>32||controls.test(alert.unit)||/\s/u.test(alert.unit.trim()))throw new MessageError('web.validation.unit');
  alert.unit=alert.unit.trim();for(const key of ['threshold','recovery_threshold'])if(alert[key]!==null)alert[key]=normalizeDecimal(alert[key]);
- if(alert.recovery_threshold!==null&&(alert.threshold===null||compareDecimals(alert.recovery_threshold,alert.threshold)<=0n))throw Error('恢复阈值须严格大于触发阈值。');
+ if(alert.recovery_threshold!==null&&(alert.threshold===null||compareDecimals(alert.recovery_threshold,alert.threshold)<=0n))throw new MessageError('web.validation.recovery_order');
  return alert;
 }
 export function normalizeLlm(value){
  if(value===undefined)return llmDefaults();
- if(!record(value)||Object.keys(value).some(k=>!['enabled','provider_id','persona_id'].includes(k)))throw Error('提示模型配置无效。');
- const output={...llmDefaults(),...value};if(typeof output.enabled!=='boolean')throw Error('提示模型开关无效。');
- for(const key of ['provider_id','persona_id']){if(!Object.hasOwn(output,key))continue;if(typeof output[key]!=='string'||[...output[key].trim()].length>128||controls.test(output[key]))throw Error('模型与人格 ID 须为不超过 128 字的文本。');output[key]=output[key].trim();}return output;
+ if(!record(value)||Object.keys(value).some(k=>!['enabled','provider_id','persona_id'].includes(k)))throw new MessageError('web.validation.llm_fields');
+ const output={...llmDefaults(),...value};if(typeof output.enabled!=='boolean')throw new MessageError('web.validation.llm_switch');
+ for(const key of ['provider_id','persona_id']){if(!Object.hasOwn(output,key))continue;if(typeof output[key]!=='string'||[...output[key].trim()].length>128||controls.test(output[key]))throw new MessageError('web.validation.llm_ids');output[key]=output[key].trim();}return output;
 }
-export function alertDraftErrors(config){
+export function alertDraftErrors(config,locale){
  const errors=[];let targets=[];
- try{targets=normalizeTargets(config.balance_alert_targets===undefined?[]:config.balance_alert_targets);}catch(error){errors.push(error.message);}
- try{normalizeIds(config.balance_alert_admin_qq_ids===undefined?[]:config.balance_alert_admin_qq_ids);}catch(error){errors.push(error.message);}
- try{normalizeLlm(config.balance_alert_llm);}catch(error){errors.push(error.message);}
- for(const account of config.providers||[]){try{const a=normalizeAlert(account.balance_alert,account);if(a.enabled&&((account.enabled!==undefined&&account.enabled!==true)||a.threshold===null||!a.metric||targets.length===0))throw Error('启用预警前，请启用账户并填写阈值和至少一个全局推送目标。');}catch(error){errors.push(`${account.display_name||account.id}：${error.message}`);}}
+ try{targets=normalizeTargets(config.balance_alert_targets===undefined?[]:config.balance_alert_targets);}catch(error){errors.push(errorText(error,locale));}
+ try{normalizeIds(config.balance_alert_admin_qq_ids===undefined?[]:config.balance_alert_admin_qq_ids);}catch(error){errors.push(errorText(error,locale));}
+ try{normalizeLlm(config.balance_alert_llm);}catch(error){errors.push(errorText(error,locale));}
+ for(const account of config.providers||[]){try{const a=normalizeAlert(account.balance_alert,account);if(a.enabled&&((account.enabled!==undefined&&account.enabled!==true)||a.threshold===null||!a.metric||targets.length===0))throw new MessageError('web.validation.alert_prerequisites');}catch(error){errors.push(translate('web.validation.account_alert',locale,{account:account.display_name||account.id,message:errorText(error,locale)}));}}
  return errors;
 }
 export function validateAlertStatus(value){

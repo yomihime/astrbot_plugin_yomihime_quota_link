@@ -257,6 +257,85 @@ def test_permission_gate_precedes_local_account_disclosure(entrypoint):
     assert "DeepSeek Work" not in event.replies[0]
 
 
+@pytest.mark.parametrize(
+    ("setting", "host", "expected"),
+    [
+        ("auto", "en-GB", "This conversation is not allowed to query balances."),
+        ("auto", "zh-Hant-HK", "目前的對話沒有查詢額度的權限。"),
+        ("auto", "ko-KR", "当前会话无权查询额度信息。"),
+        ("auto", None, "当前会话无权查询额度信息。"),
+        ("ja-JP", "en-US", "この会話には残高を照会する権限がありません。"),
+    ],
+)
+def test_command_and_tool_share_language_resolution(
+    entrypoint, setting, host, expected
+):
+    plugin = entrypoint(None, {**_config(), "language": setting})
+    event = FakeEvent("/yql status", private=False)
+    if host is not None:
+        event.set_extra("locale", host)
+
+    async def scenario():
+        assert await _collect(plugin.quota_link(event)) == [expected]
+        facts = json.loads(await plugin.query_balance_tool(event, "list"))
+        assert facts["error"]["category"] == "permission"
+        assert facts["error"]["message"] == expected
+
+    asyncio.run(scenario())
+    assert FakeHttpClient.instances[-1].requests == []
+
+
+def test_dashboard_language_save_preserves_query_and_alert_runtime(
+    entrypoint, monkeypatch, tmp_path
+):
+    star_module = sys.modules["astrbot.api.star"]
+    monkeypatch.setattr(
+        star_module,
+        "StarTools",
+        types.SimpleNamespace(get_data_dir=lambda name: tmp_path),
+        raising=False,
+    )
+    plugin = entrypoint(object(), {"enable_admin_page": False})
+
+    def authorize():
+        pass
+
+    async def scenario():
+        await plugin.initialize()
+        try:
+            before = await plugin._admin_dispatch("read", {}, authorize)
+            service, client, engine = (
+                plugin.service,
+                plugin.http_client,
+                plugin._alert_engine,
+            )
+            assert engine is not None
+            # The Dashboard materializes ordinary defaults even for a sparse snapshot.
+            config = {"providers": [], "timeout_seconds": 8, "language": "ja-JP"}
+            saved = await plugin._admin_dispatch(
+                "update", {"revision": before["revision"], "config": config}, authorize
+            )
+            assert saved["revision"] > before["revision"]
+            assert plugin.service is service and not client.closed
+            assert plugin._alert_engine is engine
+            assert plugin.settings.language == "ja-JP"
+            # A simultaneous functional edit still replaces the service and scheduler.
+            await plugin._admin_dispatch(
+                "update",
+                {
+                    "revision": saved["revision"],
+                    "config": {**config, "timeout_seconds": 20},
+                },
+                authorize,
+            )
+            assert plugin.service is not service and client.closed
+            assert plugin._alert_engine is not engine
+        finally:
+            await plugin.terminate()
+
+    asyncio.run(scenario())
+
+
 def test_private_defaults_to_admin_only_for_command_and_tool(entrypoint):
     plugin = entrypoint(None, _config())
     event = FakeEvent("/yql status")
@@ -337,6 +416,7 @@ def test_permission_denial_happens_before_directory_access(entrypoint, monkeypat
 
     class DeniedSettings:
         allow_group_queries = False
+        language = "auto"
 
         @property
         def directory(self):

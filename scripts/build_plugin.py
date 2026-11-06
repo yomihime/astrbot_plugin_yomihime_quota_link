@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parent.parent
 ROOT_FILES = (
     ".astrbot-plugin/i18n/zh-CN.json",
     ".astrbot-plugin/i18n/en-US.json",
+    ".astrbot-plugin/i18n/ja-JP.json",
+    ".astrbot-plugin/i18n/zh-TW.json",
     "metadata.yaml",
     "logo.png",
     "main.py",
@@ -37,6 +39,7 @@ PACKAGE_FILES = (
     "quota_link/capabilities.py",
     "quota_link/formatter.py",
     "quota_link/http_client.py",
+    "quota_link/i18n.py",
     "quota_link/intent.py",
     "quota_link/models.py",
     "quota_link/service.py",

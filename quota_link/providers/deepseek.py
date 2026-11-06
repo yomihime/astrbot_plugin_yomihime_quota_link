@@ -13,6 +13,7 @@ from ..http_client import (
     HttpStatusError,
     HttpTransportError,
 )
+from ..i18n import message as localized_message
 from ..models import (
     BalanceItem,
     BalanceItemKind,
@@ -26,23 +27,27 @@ from ..provider_retry import explicit_throttling
 from .base import AsyncProviderClient
 
 _BALANCE_URL = "https://api.deepseek.com/user/balance"
-_SOURCE = "DeepSeek API"
+_SOURCE = localized_message("provider.deepseek.source")
 _CURRENCIES = frozenset({"CNY", "USD"})
 _HTTP_ERRORS: dict[int, tuple[ProviderErrorCategory, str, str]] = {
     401: (
         ProviderErrorCategory.AUTHENTICATION,
-        "DeepSeek API 密钥认证失败",
+        localized_message("provider.deepseek.authentication"),
         "http_401",
     ),
     402: (
         ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-        "DeepSeek 账户余额不足，当前无法调用 API",
+        localized_message("provider.deepseek.insufficient_balance"),
         "http_402",
     ),
-    403: (ProviderErrorCategory.PERMISSION, "DeepSeek 拒绝了余额查询", "http_403"),
+    403: (
+        ProviderErrorCategory.PERMISSION,
+        localized_message("provider.deepseek.permission"),
+        "http_403",
+    ),
     429: (
         ProviderErrorCategory.RATE_LIMITED,
-        "DeepSeek 请求过于频繁，请稍后重试",
+        localized_message("provider.deepseek.rate_limited"),
         "http_429",
     ),
 }
@@ -62,7 +67,7 @@ class DeepSeekAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.CONFIGURATION,
-                    "DeepSeek 账户缺少有效 API 密钥",
+                    localized_message("provider.deepseek.missing_key"),
                     "missing_api_key",
                 ),
             )
@@ -84,9 +89,9 @@ class DeepSeekAdapter:
             )
         except HttpTransportError as exc:
             message = (
-                "DeepSeek 余额查询超时"
+                localized_message("provider.deepseek.timeout")
                 if exc.kind == "timeout"
-                else "无法连接 DeepSeek 余额服务"
+                else localized_message("provider.deepseek.connection")
             )
             return _error_snapshot(
                 account_id,
@@ -103,7 +108,7 @@ class DeepSeekAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.PARSE,
-                    "DeepSeek 返回的余额数据格式无法识别",
+                    localized_message("provider.deepseek.invalid_response"),
                     "invalid_json",
                 ),
             )
@@ -113,7 +118,7 @@ class DeepSeekAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.CONFIGURATION,
-                    "DeepSeek 余额查询请求配置无效",
+                    localized_message("provider.deepseek.invalid_request"),
                     exc.kind,
                 ),
             )
@@ -140,7 +145,7 @@ class DeepSeekAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.PARSE,
-                    "DeepSeek 返回的余额数据格式无法识别",
+                    localized_message("provider.deepseek.invalid_response"),
                     "invalid_balance_response",
                 ),
             )
@@ -215,9 +220,24 @@ def _parse_payload(payload: Any) -> tuple[tuple[BalanceItem, ...], bool]:
         topped_up = _decimal(info.get("topped_up_balance"))
         items.extend(
             (
-                _balance_item(currency, total, "总可用余额", "total_balance"),
-                _balance_item(currency, granted, "未过期赠金余额", "granted_balance"),
-                _balance_item(currency, topped_up, "充值余额", "topped_up_balance"),
+                _balance_item(
+                    currency,
+                    total,
+                    localized_message("provider.deepseek.total_balance"),
+                    "total_balance",
+                ),
+                _balance_item(
+                    currency,
+                    granted,
+                    localized_message("provider.deepseek.granted_balance"),
+                    "granted_balance",
+                ),
+                _balance_item(
+                    currency,
+                    topped_up,
+                    localized_message("provider.deepseek.topped_up_balance"),
+                    "topped_up_balance",
+                ),
             )
         )
     return tuple(items), available
@@ -253,13 +273,13 @@ def _status_error(status_code: int) -> NormalizedProviderError:
     elif 400 <= status_code <= 499:
         category, message, diagnostic = (
             ProviderErrorCategory.ENDPOINT,
-            "DeepSeek 拒绝了余额查询请求",
+            localized_message("provider.deepseek.request_denied"),
             f"http_{status_code}",
         )
     else:
         category, message, diagnostic = (
             ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-            "DeepSeek 余额查询暂时失败",
+            localized_message("provider.deepseek.unavailable"),
             f"http_{status_code}" if 400 <= status_code <= 599 else "http_error",
         )
     return NormalizedProviderError(category, message, diagnostic)

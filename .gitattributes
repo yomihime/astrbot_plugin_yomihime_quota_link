@@ -1,6 +1,12 @@
 # Preserve audited upstream bytes and license notices, including original CRLF.
 pages/frontend/src/shell.css -text whitespace=cr-at-eol
 pages/frontend/src/ui/tokens.css -text whitespace=cr-at-eol
+pages/frontend/src/ui/components.ts text eol=lf
+pages/frontend/src/ui/shared-components.ts text eol=lf
+pages/frontend/src/confirmation.ts text eol=lf
+pages/00-quota-link/app.js text eol=lf
+pages/00-quota-link/index.html text eol=lf
+pages/00-quota-link/styles.css text eol=lf
 pages/frontend/legal/css-render.txt -text whitespace=cr-at-eol
 pages/00-quota-link/THIRD_PARTY_NOTICES.txt -text whitespace=cr-at-eol
 pages/00-quota-link/licenses/@css-render_plugin-bem.txt -text whitespace=cr-at-eol

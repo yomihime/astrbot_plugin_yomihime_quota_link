@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from .i18n import message
 from .models import (
     QueryParseError,
     QueryParseErrorCode,
@@ -59,7 +60,7 @@ def parse_command(
     command = normalize_name(parts[0]).lstrip("/")
     if command in _COMMANDS:
         if len(parts) > 1:
-            return _invalid("该命令不接受目标参数")
+            return _invalid(message("error.query.invalid_arguments"))
         return QueryParseResult(request=QueryRequest(_COMMANDS[command]))
 
     # Explicit target kinds avoid provider/account ambiguity. Plain targets
@@ -102,7 +103,7 @@ def parse_natural_language(
         return QueryParseResult(
             error=QueryParseError(
                 QueryParseErrorCode.AMBIGUOUS,
-                "检测到多个账户或供应商，请指定一个目标",
+                message("error.query.multiple_targets"),
                 candidates,
             )
         )
@@ -145,7 +146,7 @@ def _invalid(message: str) -> QueryParseResult:
 def _unknown_target() -> QueryParseResult:
     return QueryParseResult(
         error=QueryParseError(
-            QueryParseErrorCode.UNKNOWN_TARGET, "未找到匹配的账户或供应商"
+            QueryParseErrorCode.UNKNOWN_TARGET, message("error.query.unknown_target")
         )
     )
 

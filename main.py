@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import re
 from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ from .quota_link.formatter import (
     format_status,
 )
 from .quota_link.http_client import HttpProviderClient
+from .quota_link.i18n import event_locale, render_text, resolve_locale, tr, use_locale
 from .quota_link.intent import (
     PermissionContext,
     can_query,
@@ -149,7 +151,10 @@ class YomihimeQuotaLink(Star):
             try:
                 root = StarTools.get_data_dir("astrbot_plugin_yomihime_quota_link")
                 self._config_store = ConfigStore(
-                    SecretStore(root), self.config, self._replace_runtime
+                    SecretStore(root),
+                    self.config,
+                    self._replace_runtime,
+                    before_update=self._prepare_config_update,
                 )
                 raw = self._config_store.runtime_config()
                 self._storage_failed = False
@@ -250,6 +255,7 @@ class YomihimeQuotaLink(Star):
                 component_factory=_alert_message_chain,
                 session_enabled=_alert_session_enabled,
                 session_llm_enabled=_alert_session_llm_enabled,
+                locale=lambda: resolve_locale(self.settings.language),
             ),
             is_current=lambda: self._alert_engine is engine and not self._terminated,
         )
@@ -328,7 +334,7 @@ class YomihimeQuotaLink(Star):
                 "credential-clear",
                 "legacy-config-execute",
             }
-            if mutation:
+            if mutation and operation != "update":
                 await self._stop_alerts()
             try:
                 result = await self._config_store.dispatch(operation, body, authorize)
@@ -341,13 +347,37 @@ class YomihimeQuotaLink(Star):
                 self._storage_failed = True
                 await self._replace_runtime({})
                 raise
+            except ConfigValidation:
+                if operation == "update":
+                    # Preserve the watcher restart on rejected saves. The
+                    # language shortcut only applies to a validated transaction.
+                    await self._stop_alerts()
+                raise
             finally:
                 # Validation/CAS failures keep the previous config and episode;
                 # they must not leave a formerly working watcher silently stopped.
                 if mutation:
                     self._start_alerts()
 
+    def _language_only_settings(self, raw):
+        if (
+            not self._storage_failed
+            and raw.get("language", "auto") != self.settings.language
+        ):
+            updated = load_settings(raw)
+            if replace(updated, language=self.settings.language) == self.settings:
+                return updated
+        return None
+
+    async def _prepare_config_update(self, candidate) -> None:
+        if self._language_only_settings(candidate) is None:
+            await self._stop_alerts()
+
     async def _replace_runtime(self, raw) -> None:
+        if (updated := self._language_only_settings(raw)) is not None:
+            # A presentation-only save leaves the scheduler and shared queries active.
+            self.settings = updated
+            return
         await self._stop_alerts()
         old_service, old_client = self.service, self.http_client
         self._build_runtime(raw)
@@ -392,6 +422,11 @@ class YomihimeQuotaLink(Star):
     @filter.command("yql")
     async def quota_link(self, event: AstrMessageEvent):
         """Run one full-argument /yql request."""
+        with use_locale(resolve_locale(self.settings.language, event_locale(event))):
+            reply = await self._quota_reply(event)
+        yield reply
+
+    async def _quota_reply(self, event: AstrMessageEvent):
         message = event.get_message_str()
         match = _COMMAND_START.match(message)
         argument = match.group(1) if match else ""
@@ -407,21 +442,17 @@ class YomihimeQuotaLink(Star):
             )
             result = await commands.execute_result(event, alert_match.group(1))
             if result.card is None:
-                yield event.plain_result(result.text)
-            else:
-                yield await self._card_reply(
-                    event, result.card, render_local_card, result.text
-                )
-            return
+                return event.plain_result(result.text)
+            return await self._card_reply(
+                event, result.card, render_local_card, result.text
+            )
         context = self._permission_context(event)
         if not can_query(context, self.settings, is_command=True):
-            yield event.plain_result("当前会话无权查询额度信息。")
-            return
+            return event.plain_result(tr("query.permission_denied"))
 
         parsed = parse_command(argument, self.settings.directory)
         if parsed.error is not None or parsed.request is None:
-            yield event.plain_result(await self._render(parsed))
-            return
+            return event.plain_result(await self._render(parsed))
 
         # Help/status stay local. Query results are fetched once; every route
         # then shares image preparation and complete text fallback below.
@@ -435,8 +466,7 @@ class YomihimeQuotaLink(Star):
             try:
                 storage = await self._local_storage_status(context)
             except PermissionError:
-                yield event.plain_result("当前会话无权查询额度信息。")
-                return
+                return event.plain_result(tr("query.permission_denied"))
             settings = self.settings
             payload = build_status_card(settings, storage)
             renderer = render_local_card
@@ -446,7 +476,7 @@ class YomihimeQuotaLink(Star):
             renderer = render_result_card
             render_options = {"directory": settings.directory}
             fallback = format_result(payload)
-        yield await self._card_reply(
+        return await self._card_reply(
             event, payload, renderer, fallback, **render_options
         )
 
@@ -505,6 +535,10 @@ class YomihimeQuotaLink(Star):
             operation(string): 操作类型，query 查询余额，list 列出可查询账户。
             target(string): query 操作的账户或供应商名称；查询全部时填 all，list 忽略此项。
         """
+        with use_locale(resolve_locale(self.settings.language, event_locale(event))):
+            return await self._query_balance_tool(event, operation, target)
+
+    async def _query_balance_tool(self, event, operation, target):
         context = self._permission_context(event)
         if not can_query(context, self.settings):
             safe_operation = (
@@ -518,7 +552,7 @@ class YomihimeQuotaLink(Star):
                     "operation": safe_operation,
                     "error": {
                         "category": "permission",
-                        "message": "当前会话无权查询额度信息。",
+                        "message": tr("query.permission_denied"),
                     },
                 }
             )
@@ -530,7 +564,7 @@ class YomihimeQuotaLink(Star):
                     "operation": "query",
                     "error": {
                         "category": "invalid_operation",
-                        "message": "操作类型必须为 query 或 list。",
+                        "message": tr("query.invalid_operation"),
                     },
                 }
             )
@@ -547,7 +581,7 @@ class YomihimeQuotaLink(Star):
                     "operation": "query",
                     "error": {
                         "category": "invalid_target",
-                        "message": "查询目标必须是账户、供应商名称或 all。",
+                        "message": tr("query.invalid_target"),
                     },
                 }
             )
@@ -566,7 +600,7 @@ class YomihimeQuotaLink(Star):
                     "operation": "query",
                     "error": {
                         "category": "invalid_target",
-                        "message": "查询目标必须是账户、供应商名称或 all。",
+                        "message": tr("query.invalid_target"),
                     },
                 }
             )
@@ -577,7 +611,7 @@ class YomihimeQuotaLink(Star):
         balance_metadata = {
             str(account["id"]): {
                 "balance_scope": str(account["balance_scope"]),
-                "balance_kind": str(account["balance_kind"]),
+                "balance_kind": render_text(account["balance_kind"]),
             }
             for account in accounts
             if "id" in account
@@ -592,7 +626,7 @@ class YomihimeQuotaLink(Star):
             return format_parse_error(parsed.error)
         request = parsed.request
         if request is None:
-            return "无法识别查询请求。"
+            return tr("query.invalid_request")
         if request.kind.value == "help":
             return format_help(self.settings)
         if request.kind.value == "status":

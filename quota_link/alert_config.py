@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from decimal import Decimal, localcontext
 from typing import Any
 
+from .i18n import message
+
 MAX_ALERT_TARGETS = 20
 MAX_ALERT_MENTIONS = 20
 MAX_ALERT_ADMIN_QQ_IDS = 100
@@ -41,26 +43,34 @@ def _has_control(value: str) -> bool:
 
 def _text(value: Any, label: str, limit: int, *, token: bool = False) -> str:
     if not isinstance(value, str) or _has_control(value):
-        raise AlertConfigError(f"{label}必须为不含控制字符的文本。")
+        raise AlertConfigError(message("error.alert_config.invalid_text", label=label))
     result = value.strip()
     if len(result) > limit or (token and any(c.isspace() for c in result)):
-        raise AlertConfigError(f"{label}长度或格式无效。")
+        raise AlertConfigError(
+            message("error.alert_config.invalid_text_format", label=label)
+        )
     return result
 
 
 def _integer(value: Any, label: str, low: int, high: int) -> int:
     if type(value) is not int or not low <= value <= high:
-        raise AlertConfigError(f"{label}必须为 {low}–{high} 的整数。")
+        raise AlertConfigError(
+            message("error.alert_config.integer_range", label=label, low=low, high=high)
+        )
     return value
 
 
-def parse_alert_decimal(value: Any, label: str = "额度阈值") -> Decimal | None:
+def parse_alert_decimal(
+    value: Any, label: str = message("error.alert_config.label.threshold")
+) -> Decimal | None:
     """Only bounded plain-decimal strings are accepted; JSON floats lose precision."""
     if value is None:
         return None
     text = _text(value, label, 50, token=True)
     if not DECIMAL_TEXT.fullmatch(text):
-        raise AlertConfigError(f"{label}须为普通十进制文本，不支持科学计数法。")
+        raise AlertConfigError(
+            message("error.alert_config.decimal_format", label=label)
+        )
     number = Decimal(text)
     return Decimal(0) if number.is_zero() else number
 
@@ -139,7 +149,7 @@ def parse_balance_alert(
     value: Any, provider_type: str, service_profile: str = ""
 ) -> BalanceAlertSettings:
     if not isinstance(value, Mapping):
-        raise AlertConfigError("账户预警配置必须为对象。")
+        raise AlertConfigError(message("error.alert_config.invalid_object"))
     allowed = {
         "enabled",
         "check_interval_minutes",
@@ -150,34 +160,50 @@ def parse_balance_alert(
         "repeat_minutes",
     }
     if set(value) - allowed:
-        raise AlertConfigError("账户预警配置含未知字段。")
+        raise AlertConfigError(message("error.alert_config.unknown_fields"))
     enabled = value.get("enabled", False)
     if type(enabled) is not bool:
-        raise AlertConfigError("预警开关必须为布尔值。")
+        raise AlertConfigError(message("error.alert_config.invalid_enabled"))
     interval = _integer(
-        value.get("check_interval_minutes", 15), "检查间隔（分钟）", 1, 4320
+        value.get("check_interval_minutes", 15),
+        message("error.alert_config.label.check_interval"),
+        1,
+        4320,
     )
     repeat = _integer(
         value.get("repeat_minutes", 0),
-        "持续低额重复间隔（分钟，0 表示不重复）",
+        message("error.alert_config.label.repeat_interval"),
         0,
         4320,
     )
     choices = metric_choices(provider_type, service_profile)
-    metric = _text(value.get("metric", ""), "预警指标", 64, token=True)
+    metric = _text(
+        value.get("metric", ""),
+        message("error.alert_config.label.metric"),
+        64,
+        token=True,
+    )
     if not metric:
         metric = choices[0] if choices else ""
     if metric and metric not in choices:
-        raise AlertConfigError("预警指标不受该供应商支持。")
+        raise AlertConfigError(message("error.alert_config.unsupported_metric"))
     threshold = parse_alert_decimal(value.get("threshold"))
-    recovery = parse_alert_decimal(value.get("recovery_threshold"), "恢复阈值")
+    recovery = parse_alert_decimal(
+        value.get("recovery_threshold"),
+        message("error.alert_config.label.recovery_threshold"),
+    )
     if recovery is not None and (threshold is None or recovery <= threshold):
-        raise AlertConfigError("恢复阈值必须大于额度阈值。")
+        raise AlertConfigError(message("error.alert_config.recovery_threshold_order"))
     return BalanceAlertSettings(
         enabled=enabled,
         check_interval_minutes=interval,
         metric=metric,
-        unit=_text(value.get("unit", ""), "预警单位", 32, token=True),
+        unit=_text(
+            value.get("unit", ""),
+            message("error.alert_config.label.unit"),
+            32,
+            token=True,
+        ),
         threshold=threshold,
         recovery_threshold=recovery,
         repeat_minutes=repeat,
@@ -188,18 +214,22 @@ def parse_umo(value: Any) -> tuple[str, str, str]:
     umo = _text(value, "UMO", MAX_UMO_LENGTH, token=True)
     parts = umo.split(":", 2)
     if len(parts) != 3 or not all(parts) or parts[1] not in MESSAGE_TYPES:
-        raise AlertConfigError("UMO 须为 平台实例:消息类型:会话ID。")
+        raise AlertConfigError(message("error.alert_config.invalid_umo"))
     return tuple(parts)
 
 
 def _qq_ids(value: Any, limit: int, label: str) -> tuple[str, ...]:
     if type(value) is not list or len(value) > limit:
-        raise AlertConfigError(f"{label}须为最多 {limit} 项的列表。")
+        raise AlertConfigError(
+            message("error.alert_config.list_limit", label=label, limit=limit)
+        )
     normalized = []
     for item in value:
         qq = _text(item, label, 20, token=True)
         if not QQ_ID.fullmatch(qq):
-            raise AlertConfigError(f"{label}仅支持 ASCII 正整数 QQ 号，不能 @全体。")
+            raise AlertConfigError(
+                message("error.alert_config.invalid_qq_id", label=label)
+            )
         if qq not in normalized:
             normalized.append(qq)
     return tuple(normalized)
@@ -207,29 +237,37 @@ def _qq_ids(value: Any, limit: int, label: str) -> tuple[str, ...]:
 
 def parse_alert_targets(value: Any) -> tuple[BalanceAlertTarget, ...]:
     if type(value) is not list or len(value) > MAX_ALERT_TARGETS:
-        raise AlertConfigError(f"预警推送目标须为最多 {MAX_ALERT_TARGETS} 项的列表。")
+        raise AlertConfigError(
+            message("error.alert_config.target_limit", limit=MAX_ALERT_TARGETS)
+        )
     result = []
     seen = set()
     for item in value:
         if type(item) is not dict or set(item) != {"umo", "mentions"}:
-            raise AlertConfigError("每个预警目标必须仅包含 umo 和 mentions。")
+            raise AlertConfigError(message("error.alert_config.invalid_target_fields"))
         platform, message_type, session = parse_umo(item["umo"])
         umo = ":".join((platform, message_type, session))
         if umo in seen:
-            raise AlertConfigError("预警目标 UMO 重复，请合并为同一行。")
+            raise AlertConfigError(message("error.alert_config.duplicate_target"))
         seen.add(umo)
-        mentions = _qq_ids(item["mentions"], MAX_ALERT_MENTIONS, "群内提及")
+        mentions = _qq_ids(
+            item["mentions"],
+            MAX_ALERT_MENTIONS,
+            message("error.alert_config.label.mentions"),
+        )
         if mentions and (
             message_type != "GroupMessage"
             or not QQ_ID.fullmatch(session.split("_")[-1])
         ):
-            raise AlertConfigError("仅数字 QQ 群会话可配置 @QQ号；私聊请删除提及。")
+            raise AlertConfigError(message("error.alert_config.group_mention_only"))
         result.append(BalanceAlertTarget(umo, mentions))
     return tuple(result)
 
 
 def parse_alert_admin_qq_ids(value: Any) -> tuple[str, ...]:
-    return _qq_ids(value, MAX_ALERT_ADMIN_QQ_IDS, "预警管理 QQ 白名单")
+    return _qq_ids(
+        value, MAX_ALERT_ADMIN_QQ_IDS, message("error.alert_config.label.admin_qq")
+    )
 
 
 def parse_alert_llm(value: Any) -> BalanceAlertLLM:
@@ -238,14 +276,20 @@ def parse_alert_llm(value: Any) -> BalanceAlertLLM:
         "provider_id",
         "persona_id",
     }:
-        raise AlertConfigError("预警模型配置结构无效。")
+        raise AlertConfigError(message("error.alert_config.invalid_model_object"))
     enabled = value.get("enabled", True)
     if type(enabled) is not bool:
-        raise AlertConfigError("预警模型开关必须为布尔值。")
+        raise AlertConfigError(message("error.alert_config.invalid_model_enabled"))
     return BalanceAlertLLM(
         enabled,
-        _text(value.get("provider_id", ""), "模型 ID", 128),
-        _text(value.get("persona_id", ""), "人格 ID", 128),
+        _text(
+            value.get("provider_id", ""), message("error.alert_config.label.model"), 128
+        ),
+        _text(
+            value.get("persona_id", ""),
+            message("error.alert_config.label.persona"),
+            128,
+        ),
     )
 
 
@@ -258,11 +302,11 @@ def alert_configuration_error(
     if not alert.enabled:
         return None
     if not account_enabled:
-        return "启用预警前须先启用账户。"
+        return message("error.alert_config.account_disabled")
     if alert.threshold is None or not alert.metric:
-        return "请设置阈值和指标。"
+        return message("error.alert_config.missing_threshold_or_metric")
     if not targets:
-        return "启用预警前须设置至少一个推送目标。"
+        return message("error.alert_config.missing_targets")
     return None
 
 

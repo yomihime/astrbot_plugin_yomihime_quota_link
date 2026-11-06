@@ -3,39 +3,49 @@
 from datetime import UTC, datetime
 
 from .formatter import _single_line
+from .i18n import message, render_text, tr
 from .presentation.bitmap import CardSpec, Row, Section
 
 HELP_GROUPS = (
     (
-        "帮助与状态",
+        message("help.status_heading"),
         (
-            ("使用帮助", "/yql alert help"),
-            ("预警状态", "/yql alert status"),
-            ("单位候选（只读）", '/yql alert units "账户名"'),
-            ("刷新单位候选", '/yql alert units "账户名" refresh'),
+            (message("help.usage"), "/yql alert help"),
+            (message("alert.help.status"), "/yql alert status"),
+            (
+                message("alert.help.units_read"),
+                message("alert.help.units_read_command"),
+            ),
+            (
+                message("alert.help.units_refresh"),
+                message("alert.help.units_refresh_command"),
+            ),
         ),
     ),
     (
-        "账户预警",
+        message("alert.help.account_heading"),
         (
-            ("启用或关闭", '/yql alert on|off "账户名"'),
-            ("检查间隔（分钟）", '/yql alert interval "账户名" 15'),
-            ("触发阈值", '/yql alert threshold "账户名" 10 [指标ID]'),
-            ("确认单位", '/yql alert bind "账户名" 候选ID'),
-            ("恢复阈值", '/yql alert recovery "账户名" 12|auto'),
-            ("重复间隔（0 为不重复）", '/yql alert repeat "账户名" 0'),
-            ("解除认证暂停", '/yql alert retry "账户名"'),
+            (message("alert.help.toggle"), message("alert.help.toggle_command")),
+            (message("alert.help.interval"), message("alert.help.interval_command")),
+            (message("alert.help.trigger"), message("alert.help.threshold_command")),
+            (message("alert.help.bind"), message("alert.help.bind_command")),
+            (message("alert.help.recovery"), message("alert.help.recovery_command")),
+            (message("alert.help.repeat"), message("alert.help.repeat_command")),
+            (message("alert.help.retry"), message("alert.help.retry_command")),
         ),
     ),
     (
-        "目标与管理权限",
+        message("alert.help.targets_heading"),
         (
-            ("查看目标", "/yql alert targets list"),
-            ("添加当前会话", "/yql alert targets addhere @123"),
-            ("添加指定会话", "/yql alert targets add UMO @123"),
-            ("移除目标", "/yql alert targets remove 目标ID"),
-            ("预警 QQ 白名单", "/yql alert admins list|add QQ号|remove QQ号"),
-            ("智能提示", "/yql alert llm on|off"),
+            (message("alert.help.targets_list"), "/yql alert targets list"),
+            (message("alert.help.targets_here"), "/yql alert targets addhere @123"),
+            (message("alert.help.targets_add"), "/yql alert targets add UMO @123"),
+            (
+                message("alert.help.targets_remove"),
+                message("alert.help.targets_remove_command"),
+            ),
+            (message("alert.help.admins"), message("alert.help.admins_command")),
+            (message("alert.help.llm"), "/yql alert llm on|off"),
         ),
     ),
 )
@@ -47,7 +57,8 @@ def format_alert_card(spec: CardSpec) -> str:
     for section in spec.sections:
         lines.append(section.heading)
         lines.extend(
-            "：".join(cell for cell in row.cells if cell) for row in section.rows
+            tr("common.field_separator").join(cell for cell in row.cells if cell)
+            for row in section.rows
         )
         lines.extend(section.paragraphs)
     lines.extend((*spec.sources, *spec.limitations))
@@ -56,8 +67,8 @@ def format_alert_card(spec: CardSpec) -> str:
 
 HELP_TOPICS = ("account", "units", "targets")
 _HELP_NOTES = (
-    "单位自动识别，阈值按当前单位判定；提示人格跟随目标会话。",
-    "管理权限：预警 QQ 白名单或 AstrBot 内置管理员。详细状态和名单请私聊查看。",
+    message("alert.help.unit_note"),
+    message("alert.help.admin_note"),
 )
 
 
@@ -82,9 +93,16 @@ def format_alert_help(topic: str = "") -> str:
     commands = _help_commands(topic)
     return "\n".join(
         (
-            "额度预警管理",
-            *(f"{label}：{command}" for label, command in commands),
-            *_HELP_NOTES,
+            tr("alert.help.title"),
+            *(
+                tr(
+                    "common.label_value",
+                    label=render_text(label),
+                    value=render_text(command),
+                )
+                for label, command in commands
+            ),
+            *map(render_text, _HELP_NOTES),
         )
     )
 
@@ -93,80 +111,98 @@ def build_alert_help_card(topic: str = "") -> CardSpec:
     commands = _help_commands(topic)
     if not topic:
         return _card(
-            title="额度预警管理",
-            subtitle="表内命令前缀：/yql alert",
+            title=tr("alert.help.title"),
+            subtitle=tr("alert.help.prefix"),
             sections=(
                 Section(
-                    heading="常用操作",
+                    heading=tr("alert.help.common_actions"),
                     rows=(
-                        Row(("查看状态", "status"), role="command"),
-                        Row(("开启 / 关闭", 'on|off "账户名"'), role="command"),
-                        Row(("设置阈值", 'threshold "账户名" 10'), role="command"),
+                        Row((tr("alert.help.view_status"), "status"), role="command"),
+                        Row(
+                            (
+                                tr("alert.help.toggle_short"),
+                                tr("alert.help.toggle_quick_command"),
+                            ),
+                            role="command",
+                        ),
+                        Row(
+                            (
+                                tr("alert.help.set_threshold"),
+                                tr("alert.help.threshold_quick_command"),
+                            ),
+                            role="command",
+                        ),
                     ),
                 ),
                 Section(
-                    heading="更多设置",
+                    heading=tr("alert.help.more_settings"),
                     rows=(
-                        Row(("账户规则", "help account"), role="command"),
-                        Row(("单位确认", "help units"), role="command"),
-                        Row(("推送与权限", "help targets"), role="command"),
+                        Row(
+                            (tr("alert.help.account_rules"), "help account"),
+                            role="command",
+                        ),
+                        Row(
+                            (tr("alert.help.unit_confirmation"), "help units"),
+                            role="command",
+                        ),
+                        Row(
+                            (tr("alert.help.delivery_permissions"), "help targets"),
+                            role="command",
+                        ),
                     ),
                 ),
             ),
-            limitations=("仅管理员可用 · 详细信息请私聊查看",),
+            limitations=(tr("alert.help.private_notice"),),
         )
     titles = {
-        "account": "账户预警规则",
-        "units": "识别与确认单位",
-        "targets": "推送与管理权限",
+        "account": tr("alert.help.account_title"),
+        "units": tr("alert.help.units_title"),
+        "targets": tr("alert.help.targets_title"),
     }
     labels = {
-        "启用或关闭": "开启 / 关闭",
-        "检查间隔（分钟）": "检查间隔",
-        "触发阈值": "触发阈值",
-        "恢复阈值": "恢复阈值",
-        "重复间隔（0 为不重复）": "重复间隔",
-        "解除认证暂停": "恢复检查",
-        "单位候选（只读）": "查看候选",
-        "刷新单位候选": "刷新候选",
-        "确认单位": "确认单位",
-        "查看目标": "查看目标",
-        "添加当前会话": "当前会话",
-        "添加指定会话": "指定会话",
-        "移除目标": "移除目标",
-        "预警 QQ 白名单": "管理白名单",
-        "智能提示": "智能提示",
+        message("alert.help.toggle"): tr("alert.help.toggle_short"),
+        message("alert.help.interval"): tr("alert.help.interval_short"),
+        message("alert.help.repeat"): tr("alert.help.repeat_short"),
+        message("alert.help.retry"): tr("alert.help.retry_short"),
+        message("alert.help.units_read"): tr("alert.help.units_read_short"),
+        message("alert.help.units_refresh"): tr("alert.help.units_refresh_short"),
+        message("alert.help.targets_here"): tr("alert.help.targets_here_short"),
+        message("alert.help.targets_add"): tr("alert.help.targets_add_short"),
+        message("alert.help.admins"): tr("alert.help.admins_short"),
     }
     notes = {
         "account": (
-            "间隔单位为分钟；重复间隔 0 表示不重复。",
-            "阈值按当前单位判定；确认单位见 help units。",
+            tr("alert.help.interval_note"),
+            tr("alert.help.threshold_note"),
         ),
         "units": (
-            "查看候选只读；refresh 会重新查询余额。",
-            "确认前核对单位，确认后阈值数值不变。",
+            tr("alert.help.refresh_note"),
+            tr("alert.help.confirm_note"),
         ),
         "targets": (
-            "先确认收件人与群成员；保存不会立即推送。",
-            "预警 QQ 白名单或 AstrBot 内置管理员可管理。",
-            "智能提示的人格跟随目标会话。",
+            tr("alert.help.recipients_note"),
+            tr("alert.help.manage_note"),
+            tr("alert.help.persona_note"),
         ),
     }
     return _card(
         title=titles[topic],
-        subtitle="表内命令前缀：/yql alert",
+        subtitle=tr("alert.help.prefix"),
         sections=(
             Section(
                 rows=tuple(
                     Row(
-                        (labels[label], command.removeprefix("/yql alert ")),
+                        (
+                            labels.get(label, render_text(label)),
+                            render_text(command).removeprefix("/yql alert "),
+                        ),
                         role="command",
                     )
                     for label, command in commands
                 ),
             ),
         ),
-        limitations=(*notes[topic], "返回总览：/yql alert help"),
+        limitations=(*notes[topic], tr("alert.help.return")),
     )
 
 
@@ -184,7 +220,7 @@ def _account_icon(account: dict) -> str:
 
 def _timestamp(value: str | None) -> str:
     if value is None:
-        return "暂无记录"
+        return tr("alert.status.no_record")
     try:
         parsed = datetime.fromisoformat(value)
         if parsed.tzinfo is not None:
@@ -195,24 +231,24 @@ def _timestamp(value: str | None) -> str:
 
 
 _STATUS_LABELS = {
-    "disabled": "已关闭",
-    "blocked": "需要检查配置",
-    "waiting": "等待检查",
-    "monitoring": "监测中",
-    "low": "额度偏低",
-    "waiting_budget": "等待发送间隔",
-    "recovering": "额度回升中",
-    "recovered": "已恢复",
-    "error": "查询失败",
-    "paused": "检查已暂停",
-    "stale": "等待有效余额",
-    "submitted": "已提交平台",
-    "unknown": "发送结果未知",
-    "failed": "发送未被接受",
-    "storage_unavailable": "存储不可用",
-    "unit_unidentified": "等待识别单位",
-    "units_ambiguous": "待确认单位",
-    "unit_changed": "需要重新确认",
+    "disabled": message("status.off"),
+    "blocked": message("alert.status.blocked"),
+    "waiting": message("alert.status.waiting"),
+    "monitoring": message("alert.status.monitoring"),
+    "low": message("alert.status.low"),
+    "waiting_budget": message("alert.status.waiting_budget"),
+    "recovering": message("alert.status.recovering"),
+    "recovered": message("alert.status.recovered"),
+    "error": message("query.failed"),
+    "paused": message("alert.status.paused"),
+    "stale": message("alert.status.stale"),
+    "submitted": message("alert.status.submitted"),
+    "unknown": message("alert.status.unknown"),
+    "failed": message("alert.status.failed"),
+    "storage_unavailable": message("alert.status.storage_unavailable"),
+    "unit_unidentified": message("alert.status.unit_unidentified"),
+    "units_ambiguous": message("alert.status.units_ambiguous"),
+    "unit_changed": message("alert.status.unit_changed"),
 }
 
 
@@ -225,9 +261,19 @@ def build_alert_status_card(config: dict, status: dict) -> CardSpec:
                 Row(
                     (
                         "",
-                        ("检查任务已启动" if status["running"] else "检查任务未运行")
-                        + " · 状态存储"
-                        + ("可用" if status.get("storage_available") else "不可用"),
+                        tr(
+                            "alert.status.scheduler",
+                            task=tr(
+                                "alert.status.running"
+                                if status["running"]
+                                else "alert.status.stopped"
+                            ),
+                            storage=tr(
+                                "query.available"
+                                if status.get("storage_available")
+                                else "query.status_unavailable"
+                            ),
+                        ),
                     ),
                     role="note",
                 ),
@@ -238,7 +284,7 @@ def build_alert_status_card(config: dict, status: dict) -> CardSpec:
         account = accounts.get(row["account_id"], {"id": row["account_id"]})
         # Short states already read well as a single line; do not repeat them.
         label = (
-            _STATUS_LABELS.get(row.get("status"))
+            render_text(_STATUS_LABELS.get(row.get("status"), ""))
             if len(_single_line(row["message"])) > 22
             else None
         )
@@ -249,9 +295,21 @@ def build_alert_status_card(config: dict, status: dict) -> CardSpec:
             details.append(Row(("", _single_line(row["detail"])), role="error"))
         details.extend(
             (
-                Row(("账户 ID", _single_line(row["account_id"])), role="note"),
-                Row(("最近检查", _timestamp(row.get("last_checked_at"))), role="note"),
-                Row(("最近提交平台", _timestamp(row.get("last_sent_at"))), role="note"),
+                Row(
+                    (tr("alert.status.account_id"), _single_line(row["account_id"])),
+                    role="note",
+                ),
+                Row(
+                    (
+                        tr("alert.status.last_checked"),
+                        _timestamp(row.get("last_checked_at")),
+                    ),
+                    role="note",
+                ),
+                Row(
+                    (tr("alert.status.last_sent"), _timestamp(row.get("last_sent_at"))),
+                    role="note",
+                ),
             )
         )
         sections.append(
@@ -264,14 +322,15 @@ def build_alert_status_card(config: dict, status: dict) -> CardSpec:
     if not rows:
         sections.append(
             Section(
-                heading="暂无账户状态", paragraphs=("当前没有可显示的预警检查记录。",)
+                heading=tr("alert.status.empty_heading"),
+                paragraphs=(tr("alert.status.empty"),),
             )
         )
     return _card(
-        title="额度预警状态",
-        subtitle=f"{len(rows)} 个账户 · 本地运行记录",
+        title=tr("alert.status.title"),
+        subtitle=tr("alert.status.account_count", count=len(rows)),
         sections=tuple(sections),
-        limitations=("本地记录 · 实际送达请查看平台记录。",),
+        limitations=(tr("alert.status.delivery_note"),),
     )
 
 
@@ -279,55 +338,72 @@ def build_alert_targets_card(
     targets: tuple[tuple[str, str, tuple[str, ...]], ...],
 ) -> CardSpec:
     return _card(
-        title="预警推送目标",
-        subtitle=f"{len(targets)} 个目标 · 仅私聊显示",
+        title=tr("alert.targets.title"),
+        subtitle=tr("alert.targets.count", count=len(targets)),
         sections=tuple(
             Section(
-                heading=f"目标 {index} · {key}",
+                heading=tr("alert.targets.item", index=index, key=key),
                 rows=(
-                    Row(("会话 UMO", _single_line(umo)), role="note"),
+                    Row((tr("alert.targets.umo"), _single_line(umo)), role="note"),
                     Row(
-                        ("群内提及", " ".join(f"@{qq}" for qq in mentions) or "无"),
+                        (
+                            tr("alert.targets.mentions"),
+                            " ".join(f"@{qq}" for qq in mentions) or tr("common.none"),
+                        ),
                         role="note",
                     ),
-                    Row(("移除命令", f"/yql alert targets remove {key}"), role="note"),
+                    Row(
+                        (
+                            tr("alert.targets.remove_command"),
+                            f"/yql alert targets remove {key}",
+                        ),
+                        role="note",
+                    ),
                 ),
             )
             for index, (key, umo, mentions) in enumerate(targets, 1)
         )
         or (
             Section(
-                heading="尚未配置预警目标",
-                paragraphs=("使用 targets add 或 targets addhere 添加已确认的目标。",),
+                heading=tr("alert.targets.empty"),
+                paragraphs=(tr("alert.targets.add_note"),),
             ),
         ),
-        limitations=("管理员确认收件人和群成员后配置；保存仅更新本地目标。",),
+        limitations=(tr("alert.targets.save_note"),),
     )
 
 
 def build_alert_admins_card(admins: tuple[str, ...]) -> CardSpec:
     return _card(
-        title="预警 QQ 管理白名单",
-        subtitle=f"{len(admins)} 位 QQ 用户 · 仅私聊显示",
+        title=tr("alert.admins.title"),
+        subtitle=tr("alert.admins.count", count=len(admins)),
         sections=(
             Section(
-                heading="管理权限",
-                rows=(Row(("QQ 白名单", "、".join(admins) or "空")),),
+                heading=tr("alert.admins.permissions"),
+                rows=(
+                    Row(
+                        (
+                            tr("alert.admins.qq_list"),
+                            tr("common.list_separator").join(admins)
+                            or tr("common.empty"),
+                        )
+                    ),
+                ),
             ),
         ),
         limitations=(
-            "AstrBot 内置管理员也可管理。",
-            "额度查询与推送收件权限分别配置。",
+            tr("alert.admins.host_admin_note"),
+            tr("alert.admins.separate_permissions"),
         ),
     )
 
 
 _UNIT_STATES = {
-    "unidentified": "等待识别单位",
-    "verified": "单位已验证",
-    "ambiguous": "多个单位待确认",
-    "changed": "需要重新确认",
-    "stale": "单位验证已过期",
+    "unidentified": message("alert.status.unit_unidentified"),
+    "verified": message("alert.units.verified"),
+    "ambiguous": message("alert.units.ambiguous"),
+    "changed": message("alert.status.unit_changed"),
+    "stale": message("alert.units.stale"),
 }
 
 
@@ -336,15 +412,17 @@ def build_alert_units_card(
 ) -> CardSpec:
     choices = row.get("choices", [])
     metric = (
-        row.get("metric") or account.get("balance_alert", {}).get("metric") or "待识别"
+        row.get("metric")
+        or account.get("balance_alert", {}).get("metric")
+        or tr("alert.units.metric_unknown")
     )
-    binding_metric = row.get("binding_metric") or "尚未绑定"
+    binding_metric = row.get("binding_metric") or tr("alert.units.not_bound")
     metric_rows = (
-        (Row(("当前 / 已绑定指标", metric), role="note"),)
+        (Row((tr("alert.units.current_and_bound"), metric), role="note"),)
         if metric == binding_metric
         else (
-            Row(("当前指标", metric), role="note"),
-            Row(("已绑定指标", binding_metric), role="note"),
+            Row((tr("alert.units.current_metric"), metric), role="note"),
+            Row((tr("alert.units.bound_metric"), binding_metric), role="note"),
         )
     )
     sections = [
@@ -355,26 +433,51 @@ def build_alert_units_card(
                 Row(
                     (
                         "",
-                        _UNIT_STATES.get(row.get("unit_state"), "等待识别单位"),
+                        render_text(
+                            _UNIT_STATES.get(
+                                row.get("unit_state"),
+                                tr("alert.status.unit_unidentified"),
+                            )
+                        ),
                     )
                 ),
-                Row(("当前单位", row.get("unit") or "待获取"), role="note"),
-                *metric_rows,
                 Row(
                     (
-                        "变更原因",
-                        {
-                            "metric_changed": "指标已变化，请重新确认",
-                            "query_identity_changed": "查询身份已变化，请重新确认",
-                            "unit_changed": "单位已变化，请重新确认",
-                        }.get(row.get("change_reason"), "无"),
+                        tr("alert.units.current_unit"),
+                        row.get("unit") or tr("alert.units.pending_query"),
                     ),
                     role="note",
                 ),
-                Row(("账户 ID", _single_line(account["id"])), role="note"),
-                Row(("最近验证", _timestamp(row.get("observed_at"))), role="note"),
+                *metric_rows,
                 Row(
-                    ("候选更新时间", _timestamp(row.get("choices_observed_at"))),
+                    (
+                        tr("alert.units.change_reason"),
+                        {
+                            "metric_changed": tr("alert.units.metric_changed"),
+                            "query_identity_changed": tr(
+                                "alert.units.identity_changed"
+                            ),
+                            "unit_changed": tr("alert.units.unit_changed"),
+                        }.get(row.get("change_reason"), tr("common.none")),
+                    ),
+                    role="note",
+                ),
+                Row(
+                    (tr("alert.status.account_id"), _single_line(account["id"])),
+                    role="note",
+                ),
+                Row(
+                    (
+                        tr("alert.units.last_verified"),
+                        _timestamp(row.get("observed_at")),
+                    ),
+                    role="note",
+                ),
+                Row(
+                    (
+                        tr("alert.units.candidate_updated"),
+                        _timestamp(row.get("choices_observed_at")),
+                    ),
                     role="note",
                 ),
             ),
@@ -383,45 +486,50 @@ def build_alert_units_card(
     for index, choice in enumerate(choices, 1):
         sections.append(
             Section(
-                heading=f"候选 {index} · {choice['unit']}",
+                heading=tr("alert.units.candidate", index=index, unit=choice["unit"]),
                 rows=(
-                    Row(("指标", choice["metric"]), role="note"),
-                    Row(("候选 ID", choice["id"]), role="note"),
+                    Row((tr("alert.units.metric"), choice["metric"]), role="note"),
+                    Row((tr("alert.units.candidate_id"), choice["id"]), role="note"),
                 ),
             )
         )
     if not choices:
         sections.append(
             Section(
-                heading="候选已过期"
+                heading=tr("alert.units.candidates_expired")
                 if row.get("choices_state") == "expired"
-                else "暂无可确认候选",
+                else tr("alert.units.candidates_empty"),
                 paragraphs=(
-                    "已有有效绑定不会因候选过期而失效。"
+                    tr("alert.units.binding_valid_note")
                     if row.get("choices_state") == "expired"
-                    else "查询余额后自动识别。",
-                    '使用 /yql alert units "账户名" refresh 显式刷新候选。',
+                    else tr("alert.units.auto_detect_note"),
+                    tr("alert.units.refresh_command"),
                 ),
             )
         )
     return _card(
-        title="预警单位与候选",
-        subtitle="已请求刷新 · 最新本地状态"
+        title=tr("alert.units.title"),
+        subtitle=tr("alert.units.refreshed")
         if refreshed
-        else "已有查询结果 · 只读状态",
+        else tr("alert.units.readonly"),
         sections=tuple(sections),
         limitations=(
-            '确认命令：/yql alert bind "账户名" 候选ID',
-            "确认前核对阈值含义；确认后保留阈值原值。",
-            "本次按请求刷新账户余额。"
+            tr("alert.units.bind_command"),
+            tr("alert.units.threshold_note"),
+            tr("alert.units.refreshed_note")
             if refreshed
-            else "列表读取现有查询结果；候选过期时可显式刷新。",
+            else tr("alert.units.readonly_note"),
         ),
     )
 
 
 def build_alert_receipt_card(message: str) -> CardSpec:
     return _card(
-        title="额度预警管理",
-        sections=(Section(heading="操作完成", rows=(Row(("处理结果", message)),)),),
+        title=tr("alert.help.title"),
+        sections=(
+            Section(
+                heading=tr("alert.receipt.title"),
+                rows=(Row((tr("alert.receipt.result"), message)),),
+            ),
+        ),
     )

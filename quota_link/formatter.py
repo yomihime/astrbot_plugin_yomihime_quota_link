@@ -1,10 +1,11 @@
-"""Chinese text presentation for provider-independent query results."""
+"""Localized text presentation for provider-independent query results."""
 
 from datetime import UTC, datetime
 from decimal import Decimal
 from unicodedata import category
 
 from .capabilities import _PROVIDER_NAMES
+from .i18n import message, render_text, tr
 from .local_status import LocalStorageStatus, credential_label, storage_summary
 from .models import (
     BalanceItem,
@@ -20,44 +21,55 @@ from .models import (
 from .settings import AccountDirectoryEntry, PluginSettings
 
 _KIND_LABELS = {
-    BalanceItemKind.CASH: "现金余额",
-    BalanceItemKind.QUOTA: "额度",
-    BalanceItemKind.FREE_QUOTA: "免费额度",
-    BalanceItemKind.SUBSCRIPTION: "套餐",
-    BalanceItemKind.CREDITS: "积分",
-    BalanceItemKind.USAGE: "用量",
-    BalanceItemKind.CUSTOM: "自定义项目",
+    BalanceItemKind.CASH: message("balance.kind.cash"),
+    BalanceItemKind.QUOTA: message("balance.kind.quota"),
+    BalanceItemKind.FREE_QUOTA: message("balance.kind.free_quota"),
+    BalanceItemKind.SUBSCRIPTION: message("balance.kind.subscription"),
+    BalanceItemKind.CREDITS: message("balance.kind.credits"),
+    BalanceItemKind.USAGE: message("balance.kind.usage"),
+    BalanceItemKind.CUSTOM: message("balance.kind.custom"),
 }
 
 _UNAVAILABLE_REASONS = {
-    "missing_environment_variable": "凭据环境变量未设置",
-    "missing_credentials": "缺少可用凭据",
-    "missing_grsai_token": "请配置 Grsai 账户请求令牌",
-    "invalid_grsai_region": "请选择有效的 Grsai 节点",
-    "invalid_service_profile": "请检查服务类型",
-    "invalid_balance_scope": "请检查余额查询范围",
-    "invalid_balance_kind": "Grsai 积分类别应配置为 credits",
-    "grsai_method_must_post": "Grsai 积分接口使用 POST",
-    "grsai_account_path_mismatch": "请使用 Grsai 账户积分接口",
-    "grsai_balance_scope_mismatch": "请按 Grsai 接口选择对应余额范围",
-    "missing_endpoint": "配置不全：请按服务商文档补齐服务地址与接口路径",
-    "missing_base_url": "配置不全：请填写 HTTPS 服务根地址",
-    "missing_api_path": "配置不全：请填写以 / 开头的接口路径",
-    "invalid_endpoint": "服务地址或接口路径配置无效；服务地址填 HTTPS 服务根地址，接口路径以 / 开头",
-    "invalid_base_url": "服务地址配置无效；请填写不含路径、参数或凭据的 HTTPS 服务根地址",
-    "invalid_api_path": "接口路径配置无效；请填写以 / 开头且不含参数的相对路径",
-    "invalid_response_mapping": "配置不全：请在高级设置中按服务商响应文档填写余额映射",
+    "missing_environment_variable": message(
+        "status.reason.missing_environment_variable"
+    ),
+    "missing_credentials": message("status.reason.missing_credentials"),
+    "missing_grsai_token": message("status.reason.missing_grsai_token"),
+    "invalid_grsai_region": message("status.reason.invalid_grsai_region"),
+    "invalid_service_profile": message("status.reason.invalid_service_profile"),
+    "invalid_balance_scope": message("status.reason.invalid_balance_scope"),
+    "invalid_balance_kind": message("status.reason.invalid_balance_kind"),
+    "grsai_method_must_post": message("status.reason.grsai_method_must_post"),
+    "grsai_account_path_mismatch": message("status.reason.grsai_account_path_mismatch"),
+    "grsai_balance_scope_mismatch": message(
+        "status.reason.grsai_balance_scope_mismatch"
+    ),
+    "invalid_endpoint": message("status.reason.invalid_endpoint"),
+    "invalid_base_url": message("status.reason.invalid_base_url"),
+    "invalid_api_path": message("status.reason.invalid_api_path"),
 }
+
+
+_INCOMPLETE_REASONS = frozenset(
+    {
+        "missing_endpoint",
+        "missing_base_url",
+        "missing_api_path",
+        "invalid_response_mapping",
+    }
+)
 
 
 def _amount(value: Decimal | None, unit: str) -> str:
     if value is None:
-        return "未知"
+        return tr("common.unknown")
     return f"{value} {unit}"
 
 
 def _single_line(value: str) -> str:
     """Normalize free text so control characters cannot forge reply structure."""
+    value = render_text(value)
     cleaned = "".join(" " if category(char) in {"Cc", "Cf"} else char for char in value)
     return " ".join(cleaned.split())
 
@@ -75,7 +87,7 @@ def display_semantics(
         and item.unit == "site_credit"
         and item.raw_semantics == "账户站内额度，不是 API Key 限额；不换算为货币"
     ):
-        return "账户站内额度以 site_credit 计量。"
+        return tr("balance.site_credit_meaning")
     return _single_line(item.raw_semantics or "")
 
 
@@ -84,7 +96,7 @@ def display_target(result: QueryResult) -> str:
     target = result.request.target or ""
     if result.request.kind is QueryRequestKind.PROVIDER:
         try:
-            return _PROVIDER_NAMES[ProviderType(target)]
+            return render_text(_PROVIDER_NAMES[ProviderType(target)])
         except ValueError:
             pass
     elif result.request.kind is QueryRequestKind.ACCOUNT:
@@ -99,62 +111,79 @@ def _display_time(value: datetime) -> str:
 
 
 def _item_text(item: BalanceItem, provider_type: ProviderType | None = None) -> str:
-    label = _single_line(item.label) or _KIND_LABELS[item.kind]
-    unit = _single_line(item.unit) or "未知单位"
+    label = _single_line(item.label) or render_text(_KIND_LABELS[item.kind])
+    unit = _single_line(item.unit) or tr("balance.unknown_unit")
     values: list[str] = []
     if item.amount is not None:
         values.append(_amount(item.amount, unit))
     if item.total is not None:
-        values.append(f"总量 {_amount(item.total, unit)}")
+        values.append(tr("balance.total_amount", amount=_amount(item.total, unit)))
     if item.remaining is not None:
-        values.append(f"剩余 {_amount(item.remaining, unit)}")
+        values.append(
+            tr("balance.remaining_amount", amount=_amount(item.remaining, unit))
+        )
     if item.used is not None:
-        values.append(f"已用 {_amount(item.used, unit)}")
+        values.append(tr("balance.used_amount", amount=_amount(item.used, unit)))
     if not values:
         values.append(
-            f"未提供（单位：{unit}）"
+            tr("balance.unreported", unit=unit)
             if provider_type is ProviderType.ALIBABA_BAILIAN
-            else f"数值未知（单位：{unit}）"
+            else tr("balance.unknown_amount", unit=unit)
         )
     if item.expires_at is not None:
-        values.append(f"到期 {_display_time(item.expires_at)}")
+        values.append(tr("balance.expiry_date", time=_display_time(item.expires_at)))
     semantics = display_semantics(item, provider_type)
     if semantics:
-        values.append(f"语义说明 {semantics}")
-    return f"{label}：" + "；".join(values)
+        values.append(tr("balance.semantics", meaning=semantics))
+    return tr(
+        "common.label_value",
+        label=label,
+        value=tr("balance.value_separator").join(values),
+    )
 
 
 def display_snapshot_status(snapshot: BalanceSnapshot) -> str:
     """BSS success is a successful query, not proof of spendable credit."""
     if snapshot.provider_type is ProviderType.ALIBABA_BAILIAN:
         if snapshot.error is not None:
-            return "查询失败"
+            return tr("query.failed")
         if snapshot.status is SnapshotStatus.AVAILABLE:
-            return "查询成功"
+            return tr("query.success")
         if snapshot.status is SnapshotStatus.PARTIAL:
-            return "部分数据已获取"
+            return tr("query.partial_data")
     return {
-        SnapshotStatus.AVAILABLE: "可用",
-        SnapshotStatus.PARTIAL: "部分可用",
-        SnapshotStatus.UNAVAILABLE: "不可用",
-        SnapshotStatus.UNKNOWN: "状态未知",
+        SnapshotStatus.AVAILABLE: tr("query.available"),
+        SnapshotStatus.PARTIAL: tr("query.partial"),
+        SnapshotStatus.UNAVAILABLE: tr("query.status_unavailable"),
+        SnapshotStatus.UNKNOWN: tr("query.unknown_status"),
     }[snapshot.status]
 
 
 def _snapshot_text(snapshot: BalanceSnapshot) -> list[str]:
     status = display_snapshot_status(snapshot)
-    cache_mark = "（缓存）" if snapshot.cached else ""
-    lines = [f"{_single_line(snapshot.display_name)}：{status}{cache_mark}"]
+    cache_mark = tr("query.cached") if snapshot.cached else ""
+    lines = [
+        tr(
+            "common.label_value",
+            label=_single_line(snapshot.display_name),
+            value=status + cache_mark,
+        )
+    ]
     lines.extend(
         f"  {_item_text(item, snapshot.provider_type)}" for item in snapshot.balances
     )
     if not snapshot.balances and snapshot.error is None:
-        lines.append("  没有可显示的余额或用量项目")
+        lines.append("  " + tr("query.no_items"))
     if snapshot.error is not None:
-        lines.append(f"  查询失败：{_single_line(snapshot.error.safe_message)}")
+        lines.append(
+            tr("query.error_detail", message=_single_line(snapshot.error.safe_message))
+        )
     lines.append(
-        f"  获取时间：{_display_time(snapshot.fetched_at)}"
-        f" · 来源：{_single_line(snapshot.source)}"
+        tr(
+            "query.source_time",
+            time=_display_time(snapshot.fetched_at),
+            source=_single_line(snapshot.source),
+        )
     )
     return lines
 
@@ -162,20 +191,20 @@ def _snapshot_text(snapshot: BalanceSnapshot) -> list[str]:
 def format_result(result: QueryResult) -> str:
     """Render an aggregate result without interpreting provider-specific fields."""
     request = result.request
-    lines = [f"查询时间：{_display_time(result.queried_at)}"]
+    lines = [tr("query.time", time=_display_time(result.queried_at))]
     if not result.snapshots:
         if request.kind is QueryRequestKind.ALL:
-            lines.append("当前没有配置可查询的账户。")
+            lines.append(tr("query.no_accounts"))
         else:
-            lines.append("没有可显示的查询结果。")
+            lines.append(tr("query.no_results"))
         return "\n".join(lines)
 
     if request.kind is QueryRequestKind.ACCOUNT:
-        title = f"账户查询：{display_target(result)}"
+        title = tr("query.account_title", target=display_target(result))
     elif request.kind is QueryRequestKind.PROVIDER:
-        title = f"供应商查询：{display_target(result)}"
+        title = tr("query.provider_title", target=display_target(result))
     else:
-        title = "额度与用量查询"
+        title = tr("query.all_title")
 
     lines.insert(0, title)
     for snapshot in result.snapshots:
@@ -191,69 +220,82 @@ def format_result(result: QueryResult) -> str:
         for snapshot in result.snapshots
     )
     failures = len(result.snapshots) - successes - partial
-    summary = "，".join(
-        f"{label} {count}"
+    summary = tr("query.summary_separator").join(
+        tr("query.outcome_count", label=label, count=count)
         for label, count in (
-            ("成功", successes),
-            ("部分成功", partial),
-            ("失败", failures),
+            (tr("query.success_short"), successes),
+            (tr("query.partial_success"), partial),
+            (tr("query.failed_short"), failures),
         )
         if count
     )
-    lines.extend(("", f"查询汇总：{summary}。"))
+    lines.extend(("", tr("query.summary", summary=summary)))
     return "\n".join(lines)
 
 
 HELP_NOTES = (
-    "在启用函数工具的 AI 对话中，也可用自然语言让模型调用 yql_query_balance。",
-    "OpenAI 兼容服务的余额查询使用服务商专属接口；请按余额文档填写服务地址、接口路径和高级认证/响应映射。配置完整后即可查询。",
-    "阿里云 BSS 查询现金余额、可用额度、信用额度；RAM 身份至少需要 AliyunBSSReadOnlyAccess。",
+    message("help.tool_note"),
+    message("help.compatible_note"),
+    message("help.aliyun_note"),
 )
 
 
 def display_provider(entry: AccountDirectoryEntry) -> str:
     if entry.service_profile == "grsai":
         return "Grsai"
-    return _PROVIDER_NAMES[entry.provider_type]
+    return render_text(_PROVIDER_NAMES[entry.provider_type])
 
 
-def local_account_state(entry: AccountDirectoryEntry) -> str:
+def local_account_state(entry: AccountDirectoryEntry, *, card: bool = False) -> str:
     if not entry.enabled:
-        return "已禁用"
+        return tr("status.disabled")
     if entry.queryable:
-        return "已配置，可查询"
-    reason = _UNAVAILABLE_REASONS.get(
-        entry.unavailable_reason or "", "配置不全或暂不可查询"
+        return tr("status.queryable")
+    reason = _local_account_reason(entry, card=card)
+    return reason if card else tr("status.not_queryable", reason=reason)
+
+
+def _local_account_reason(entry: AccountDirectoryEntry, *, card: bool) -> str:
+    code = entry.unavailable_reason or ""
+    if code in _INCOMPLETE_REASONS:
+        reason = tr(f"status.reason.{code}")
+        return tr(
+            "status.card_incomplete" if card else "status.incomplete", reason=reason
+        )
+    reason = render_text(_UNAVAILABLE_REASONS.get(code, tr("status.unknown_reason")))
+    if not card:
+        return reason
+    key = (
+        "status.card_needs_setup"
+        if code
+        in {
+            "missing_environment_variable",
+            "missing_credentials",
+            "missing_grsai_token",
+        }
+        else "status.card_needs_check"
     )
-    return f"不可查询：{reason}"
+    return tr(key, reason=reason)
 
 
 def display_diagnostic(message: str) -> str:
     """Localize known command copy without changing stored diagnostic facts."""
     if message == "请填写以 / 开头的相对 API Path":
-        message = "请填写以 / 开头的相对接口路径"
+        message = tr("status.api_path")
     return _single_line(message)
 
 
 def format_help(settings: PluginSettings) -> str:
     """Render local command help using the credential-free account directory."""
-    lines = [
-        "如月怜的额度连结\n"
-        "用法：\n"
-        "  /yql                 查询所有账户\n"
-        "  /yql help            查看帮助\n"
-        "  /yql status          查看本地配置状态\n"
-        "  /yql all             查询所有账户\n"
-        "  /yql <名称>          查询指定账户或供应商\n"
-        "  /yql account <名称>  查询指定账户\n"
-        "  /yql provider <名称> 查询指定供应商\n" + "\n".join(HELP_NOTES)
-    ]
+    lines = [tr("help.command_body") + "\n".join(map(render_text, HELP_NOTES))]
     entries = [entry for entry in settings.directory.entries if entry.enabled]
     if entries:
-        names = "、".join(_single_line(entry.display_name) for entry in entries)
-        lines.append(f"已配置账户：{names}")
+        names = tr("common.list_separator").join(
+            _single_line(entry.display_name) for entry in entries
+        )
+        lines.append(tr("help.configured_accounts", names=names))
     else:
-        lines.append("当前没有配置账户。")
+        lines.append(tr("help.no_accounts"))
     return "\n".join(lines)
 
 
@@ -265,26 +307,48 @@ def format_status(
     enabled = [entry for entry in accounts if entry.enabled]
     queryable = [entry for entry in enabled if entry.queryable]
     lines = [
-        "如月怜的额度连结状态",
-        "数据来源：本地配置与凭据保存记录；连通性和余额可通过 /yql 查询。",
-        f"账户：共 {len(accounts)} 个，启用 {len(enabled)} 个，可查询 {len(queryable)} 个",
-        f"群聊查询：{'已开启' if settings.allow_group_queries else '已关闭'}",
-        f"命令权限：{'仅管理员' if settings.command_admin_only else '按会话授权'}",
-        f"凭据存储：{storage_summary(storage)}",
+        tr("status.title"),
+        tr("status.source"),
+        tr(
+            "status.accounts_count",
+            total=len(accounts),
+            enabled=len(enabled),
+            ready=len(queryable),
+        ),
+        tr(
+            "status.group_queries_state",
+            state=tr(
+                "status.enabled" if settings.allow_group_queries else "status.off"
+            ),
+        ),
+        tr(
+            "status.permissions_state",
+            state=tr(
+                "status.admin_only"
+                if settings.command_admin_only
+                else "status.session_permissions"
+            ),
+        ),
+        tr("status.credential_storage_state", state=storage_summary(storage)),
     ]
     if not accounts:
-        lines.append("尚未配置账户。")
+        lines.append(tr("status.no_accounts"))
     else:
-        lines.append("账户列表：")
+        lines.append(tr("status.account_list"))
         for index, entry in enumerate(accounts):
             lines.append(
-                f"  {_single_line(entry.display_name)}：{local_account_state(entry)}"
+                "  "
+                + tr(
+                    "common.label_value",
+                    label=_single_line(entry.display_name),
+                    value=local_account_state(entry),
+                )
             )
             lines.append(
                 f"    {display_provider(entry)} · {credential_label(storage, index)}"
             )
     if settings.errors:
-        lines.append(f"配置问题：{len(settings.errors)} 项")
+        lines.append(tr("status.issue_count", count=len(settings.errors)))
         lines.extend(
             f"  {display_diagnostic(diagnostic.safe_message)}"
             for diagnostic in settings.errors
@@ -295,8 +359,12 @@ def format_status(
 def format_parse_error(error: QueryParseError) -> str:
     """Render a safe parse error and, when present, its safe candidate names."""
     if error.code is QueryParseErrorCode.AMBIGUOUS and error.candidates:
-        candidates = "、".join(
+        candidates = tr("common.list_separator").join(
             _single_line(candidate) for candidate in error.candidates
         )
-        return f"{_single_line(error.safe_message)}\n匹配项：{candidates}"
+        return tr(
+            "query.matches",
+            message=_single_line(error.safe_message),
+            candidates=candidates,
+        )
     return _single_line(error.safe_message)

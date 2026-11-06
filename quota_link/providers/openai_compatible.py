@@ -16,6 +16,7 @@ from ..http_client import (
     HttpStatusError,
     HttpTransportError,
 )
+from ..i18n import message as localized_message
 from ..models import (
     BalanceItem,
     BalanceItemKind,
@@ -29,8 +30,8 @@ from ..provider_retry import explicit_throttling
 from ..settings import GRSAI_REGION_HOSTS
 from .base import AsyncProviderClient
 
-_SOURCE = "OpenAI-compatible 余额接口"
-_GRSAI_SOURCE = "Grsai 账户积分接口"
+_SOURCE = localized_message("provider.openai_compatible.source")
+_GRSAI_SOURCE = localized_message("provider.openai_compatible.grsai_source")
 _GRSAI_ACCOUNT_PATH = "/client/openapi/getCredits"
 _SEGMENT_ESCAPE = re.compile(r"~(?![01])")
 _SAFE_HEADER = re.compile(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
@@ -38,14 +39,22 @@ _SAFE_DYNAMIC_KINDS = frozenset(kind.value for kind in BalanceItemKind)
 _HTTP_ERRORS: dict[int, tuple[ProviderErrorCategory, str, str]] = {
     401: (
         ProviderErrorCategory.AUTHENTICATION,
-        "余额接口认证失败",
+        localized_message("provider.openai_compatible.authentication"),
         "http_401",
     ),
-    403: (ProviderErrorCategory.PERMISSION, "余额接口拒绝访问", "http_403"),
-    404: (ProviderErrorCategory.ENDPOINT, "余额接口路径或版本不存在", "http_404"),
+    403: (
+        ProviderErrorCategory.PERMISSION,
+        localized_message("provider.openai_compatible.permission"),
+        "http_403",
+    ),
+    404: (
+        ProviderErrorCategory.ENDPOINT,
+        localized_message("provider.openai_compatible.not_found"),
+        "http_404",
+    ),
     429: (
         ProviderErrorCategory.RATE_LIMITED,
-        "余额接口请求过于频繁，请稍后重试",
+        localized_message("provider.openai_compatible.rate_limited"),
         "http_429",
     ),
 }
@@ -77,7 +86,9 @@ class OpenAICompatibleAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.CONFIGURATION,
-                    "兼容平台余额查询配置无效",
+                    localized_message(
+                        "provider.openai_compatible.invalid_configuration"
+                    ),
                     "invalid_configuration",
                 ),
                 provider_type=provider_type,
@@ -106,7 +117,9 @@ class OpenAICompatibleAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.CONFIGURATION,
-                    "兼容平台余额查询配置无效",
+                    localized_message(
+                        "provider.openai_compatible.invalid_configuration"
+                    ),
                     "invalid_configuration",
                 ),
                 source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
@@ -152,7 +165,7 @@ class OpenAICompatibleAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                    "余额接口请求暂时失败",
+                    localized_message("provider.openai_compatible.unavailable"),
                     "request_error",
                 ),
                 source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
@@ -173,7 +186,7 @@ class OpenAICompatibleAdapter:
                 status_code,
                 (
                     ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                    "余额接口请求暂时失败",
+                    localized_message("provider.openai_compatible.unavailable"),
                     f"http_{status_code}"
                     if 400 <= status_code <= 599
                     else "http_error",
@@ -206,7 +219,7 @@ class OpenAICompatibleAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.ENDPOINT,
-                    "余额服务报告查询失败",
+                    localized_message("provider.openai_compatible.business_failure"),
                     "business_failure",
                 ),
                 source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
@@ -218,7 +231,7 @@ class OpenAICompatibleAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.PARSE,
-                    "余额接口返回的数据格式无法识别",
+                    localized_message("provider.openai_compatible.invalid_response"),
                     "invalid_json",
                 ),
                 source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
@@ -230,7 +243,7 @@ class OpenAICompatibleAdapter:
                 display_name,
                 NormalizedProviderError(
                     ProviderErrorCategory.PARSE,
-                    "余额接口返回的数据格式无法识别",
+                    localized_message("provider.openai_compatible.invalid_response"),
                     "invalid_balance_response",
                 ),
                 source=_GRSAI_SOURCE if service_profile == "grsai" else _SOURCE,
@@ -748,7 +761,7 @@ def _transport_error(exc: Exception) -> NormalizedProviderError:
             status,
             (
                 ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                "余额接口请求暂时失败",
+                localized_message("provider.openai_compatible.unavailable"),
                 f"http_{status}" if 400 <= status <= 599 else "http_error",
             ),
         )
@@ -757,35 +770,35 @@ def _transport_error(exc: Exception) -> NormalizedProviderError:
         if exc.kind == "timeout":
             return NormalizedProviderError(
                 ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                "余额接口查询超时",
+                localized_message("provider.openai_compatible.timeout"),
                 "timeout",
             )
         return NormalizedProviderError(
             ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-            "余额接口连接失败",
+            localized_message("provider.openai_compatible.connection"),
             "connection_error",
         )
     if isinstance(exc, HttpResponseParseError):
         return NormalizedProviderError(
             ProviderErrorCategory.PARSE,
-            "余额接口返回的数据格式无法识别",
+            localized_message("provider.openai_compatible.invalid_response"),
             "invalid_json",
         )
     if isinstance(exc, HttpRequestError):
         if exc.kind == "insecure_scheme":
             return NormalizedProviderError(
                 ProviderErrorCategory.CONFIGURATION,
-                "余额接口必须使用 HTTPS",
+                localized_message("provider.openai_compatible.https_required"),
                 "insecure_endpoint",
             )
         return NormalizedProviderError(
             ProviderErrorCategory.CONFIGURATION,
-            "余额接口请求配置无效",
+            localized_message("provider.openai_compatible.invalid_request"),
             "invalid_request",
         )
     return NormalizedProviderError(
         ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-        "余额接口请求暂时失败",
+        localized_message("provider.openai_compatible.unavailable"),
         "request_error",
     )
 
@@ -797,18 +810,22 @@ def _grsai_http_error(status: int) -> NormalizedProviderError:
     category, message = {
         401: (
             ProviderErrorCategory.AUTHENTICATION,
-            "账户积分接口返回 HTTP 401，需核对认证配置",
+            localized_message("provider.openai_compatible.grsai_authentication"),
         ),
         403: (
             ProviderErrorCategory.PERMISSION,
-            "账户积分接口返回 HTTP 403，需核对访问配置",
+            localized_message("provider.openai_compatible.grsai_permission"),
         ),
         429: (
             ProviderErrorCategory.RATE_LIMITED,
-            "账户积分接口返回 HTTP 429，请稍后重试",
+            localized_message("provider.openai_compatible.grsai_rate_limited"),
         ),
     }.get(
-        status, (ProviderErrorCategory.TEMPORARILY_UNAVAILABLE, "账户积分接口请求失败")
+        status,
+        (
+            ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
+            localized_message("provider.openai_compatible.grsai_query_failed"),
+        ),
     )
     return NormalizedProviderError(category, message, diagnostic)
 

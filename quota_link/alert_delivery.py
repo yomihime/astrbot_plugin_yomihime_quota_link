@@ -11,23 +11,27 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
+from .i18n import current_locale, message, render_text, tr, use_locale
+
 _QQ = re.compile(r"[1-9][0-9]{0,19}\Z")
 # Insertion order is the deterministic primary-reason priority for multiple targets.
 BLOCKED_DETAILS = {
-    "session_disabled": "目标会话已停用；请在 AstrBot 中启用该会话后等待下次检查",
-    "session_check_failed": "无法确认目标会话状态；请检查 AstrBot 会话状态接口",
-    "target_invalid": "目标 UMO 格式无效；请重新选择或填写完整会话标识",
-    "platform_not_found": "目标平台实例未找到；请核对 UMO 中的平台实例 ID",
-    "platform_unavailable": "目标平台实例状态不可用；请检查适配器是否正常运行",
-    "platform_unsupported": "目标平台不支持此主动发送接口；请更换支持的目标平台",
-    "mention_unsupported": "目标适配器或会话类型不支持 QQ 提及；请移除 @ 或使用 aiocqhttp 群目标",
-    "mention_invalid": "群目标或提及 QQ 号格式无效；请核对群会话标识和数字 QQ 号",
-    "transport_unavailable": "宿主主动发送接口不可用；请检查 AstrBot 版本及平台适配器",
-    "message_components_unavailable": "消息组件构造失败；请检查 AstrBot 消息组件接口",
+    "session_disabled": message("alert.delivery.session_disabled"),
+    "session_check_failed": message("alert.delivery.session_check_failed"),
+    "target_invalid": message("alert.delivery.target_invalid"),
+    "platform_not_found": message("alert.delivery.platform_not_found"),
+    "platform_unavailable": message("alert.delivery.platform_unavailable"),
+    "platform_unsupported": message("alert.delivery.platform_unsupported"),
+    "mention_unsupported": message("alert.delivery.mention_unsupported"),
+    "mention_invalid": message("alert.delivery.mention_invalid"),
+    "transport_unavailable": message("alert.delivery.transport_unavailable"),
+    "message_components_unavailable": message(
+        "alert.delivery.message_components_unavailable"
+    ),
 }
 DELIVERY_DETAILS = {
     **BLOCKED_DETAILS,
-    "fixed_hint": "会话 AI 不可用或输出未通过检查；已使用固定提示和精确事实",
+    "fixed_hint": message("alert.delivery.fixed_hint"),
 }
 
 # These checks reduce factual/action leakage from the short introduction, rather
@@ -35,63 +39,77 @@ DELIVERY_DETAILS = {
 _LINK_OR_PAYLOAD = re.compile(
     r"(?:[a-z][a-z0-9+.-]*://|www\.|(?:https?|mailto|javascript|data):"
     r"|\b(?:[a-z0-9-]+\.)+[a-z]{2,63}\b|\[[^\]]*\]\s*\("
-    r"|\[\s*cq\s*:|@(?:all|everyone|here|全体成员|\d+)\b"
+    r"|\[\s*cq\s*:|@(?:all|everyone|here|全体成员|全體成員|全員|\d+)\b"
     r"|<\s*/?\s*(?:tool_call|function_call|script)\b"
     r'|["\'](?:tool_calls?|function_call|tools_call_name)["\']\s*:)',
     re.IGNORECASE,
 )
-_NUMBER = r"(?:[+-]?\d[\d.,]*(?:e[+-]?\d+)?|[零〇一二两三四五六七八九十百千万亿]+)"
+_NUMBER = (
+    r"(?:[+-]?\d[\d.,]*(?:e[+-]?\d+)?|[零〇一二两兩三四五六七八九十百千万萬亿億]+)"
+)
 _VALUE = re.compile(
     _NUMBER + r"|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten"
     r"|hundred|thousand|million|billion)\b",
     re.IGNORECASE,
 )
 _MONEY = re.compile(
-    r"[¥￥$€£]|人民币|美元|欧元|日元|英镑|港币|新台币"
+    r"[¥￥$€£]|人民币|人民幣|美元|米ドル|欧元|歐元|ユーロ|日元|日圓|英镑|英鎊|港币|港幣|新台币|新臺幣"
     r"|\b(?:dollars?|yuan|yen|euros?|pounds?|credits?)\b"
     r"|(?<![a-z])(?:cny|usd|eur|jpy|gbp|hkd|cad|aud|twd|(?-i:[A-Z]{3}))(?![a-z])",
     re.IGNORECASE,
 )
 _SHORT_AMOUNT = re.compile(
-    rf"{_NUMBER}\s*(?:元|块钱|毛钱|分钱|积分|点额度|(?:块|毛|分)(?=$|[\s，。！？!?;；]|啦|了|哦))"
+    rf"{_NUMBER}\s*(?:元|円|ドル|块钱|塊錢|毛钱|毛錢|分钱|分錢|积分|積分|點數|ポイント|クレジット"
+    r"|点额度|(?:块|塊|毛|分)(?=$|[\s，。！？!?;；]|啦|了|哦))"
 )
-_FINANCE = re.compile(
-    r"余额|额度|积分|阈值|\b(?:balance|quota|credit|threshold)\b", re.I
-)
+_FINANCE_TERM = r"余额|餘額|残高|额度|額度|积分|積分|點數|阈值|門檻|しきい値|クォータ|クレジット|ポイント"
+_FINANCE = re.compile(rf"{_FINANCE_TERM}|\b(?:balance|quota|credit|threshold)\b", re.I)
 _FINANCE_STATE = re.compile(
-    r"为负|负数|负值|归零|为零|小于零|等于零|零余额|见底|耗[光尽]|用[光尽完]|欠费|已空|透支"
+    r"为负|為負|负数|負數|负值|負值|归零|歸零|为零|為零|小于零|等于零|零余额|零餘額|见底|見底"
+    r"|耗[光尽盡]|用[光尽盡完]|欠费|欠費|已空|透支|マイナス|ゼロ|使い切|底をつ"
     r"|\b(?:negative|zero|empty|depleted|exhausted|overdrawn)\b",
     re.I,
 )
-_SERVICE = re.compile(r"服务|接口|账户|账号|\b(?:service|account|api)\b", re.I)
+_SERVICE = re.compile(
+    r"服务|服務|接口|账户|帳戶|账号|帳號|アカウント|サービス|\b(?:service|account|api)\b",
+    re.I,
+)
 _SERVICE_STATE = re.compile(
-    r"停[服用止]|禁用|封禁|中断|不可用|已恢复"
+    r"停[服用止]|禁用|封禁|中断|中斷|不可用|已恢复|已恢復|利用でき|利用不可|無効|再開|復旧"
     r"|\b(?:unavailable|disabled|suspended|blocked|closed|restored|stopped)\b",
     re.I,
 )
 _PAYMENT = re.compile(
-    r"充值|付款|支付|缴费|转账|汇款|\b(?:pay(?:ment|ing|s)?|paid|recharg(?:e|ed|ing)"
+    r"充值|儲值|付款|支付|缴费|繳費|转账|轉帳|汇款|匯款|入金|支払い|振込|課金|チャージ"
+    r"|\b(?:pay(?:ment|ing|s)?|paid|recharg(?:e|ed|ing)"
     r"|top[ -]?up|topp(?:ed|ing)\s+up|transfer\s+(?:money|funds))\b",
     re.I,
 )
 _UNIT_CLAIM = re.compile(
-    r"(?:单位|币种)\s*(?:为|是|[:：=])|\b(?:currency|unit)\s*(?:is\b|[:=])", re.I
+    r"(?:单位|單位|币种|幣別|単位|通貨)\s*(?:为|為|是|は|[:：=])|\b(?:currency|unit)\s*(?:is\b|[:=])",
+    re.I,
 )
 _CONVERSATIONAL_NUMBER = re.compile(
     rf"(?:{_NUMBER}|\b(?:one|two|three)\b)\s*(?:分钟|秒钟|小时|次|眼|minutes?\b|seconds?\b|moments?\b)",
     re.I,
 )
 _WRITTEN_CLAIM = re.compile(
-    rf"(?:余额|额度|积分|阈值)\s*(?:还剩|还有|仅剩|只剩|剩余|现有|为|是|只有|仅有|约|[:：=])+\s*{_NUMBER}"
-    r"|(?:余额|额度|积分|阈值)\s*[零〇一二两三四五六七八九]*[十百千万亿][零〇一二两三四五六七八九十百千万亿]*"
+    rf"(?:{_FINANCE_TERM})\s*(?:还剩|還剩|还有|還有|仅剩|僅剩|只剩|剩余|剩餘|现有|現有|为|為|是|只有|仅有|僅有|约|約|は|[:：=])+\s*{_NUMBER}"
+    rf"|(?:{_FINANCE_TERM})\s*[零〇一二两兩三四五六七八九]*[十百千万萬亿億][零〇一二两兩三四五六七八九十百千万萬亿億]*"
     r"|\b(?:is|equals|has|have|remaining|left)\s+(?:(?:now|just|only|about|approximately)\s+)*"
     r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand)\b",
     re.I,
 )
 
 
+_DEPLETION = re.compile(
+    rf"(?:没有|沒有|已無|已无)(?:任何|剩餘|剩余)?(?:{_FINANCE_TERM})"
+    rf"|(?:{_FINANCE_TERM})(?:が|は)\s*(?:残ってい(?:ない|ません)|な(?:い|くな)|ありません)"
+)
+
+
 def _has_financial_claim(text: str) -> bool:
-    """Conservative zh/en domain checks, not a general semantic correctness proof.
+    """Conservative checks for the supported languages, not a semantic proof.
 
     The model's job is a social introduction, not financial/payment advice. Check
     categories within clauses so intervening qualifiers cannot hide an amount or
@@ -115,6 +133,7 @@ def _has_financial_claim(text: str) -> bool:
             if (
                 re.search(r"\d", values)
                 or _WRITTEN_CLAIM.search(values)
+                or _DEPLETION.search(values)
                 or _FINANCE_STATE.search(clause)
             ):
                 return True
@@ -141,15 +160,15 @@ def _safe_introduction(content: Any) -> str:
 
 
 _METRIC_LABELS = {
-    "AvailableCashAmount": "现金余额",
-    "AvailableAmount": "可用额度",
-    "CreditAmount": "信用额度",
-    "total_balance": "总余额",
-    "granted_balance": "赠送余额",
-    "topped_up_balance": "充值余额",
-    "credit": "积分余额",
-    "site_credit": "站内额度",
-    "mapped_balance": "映射余额",
+    "AvailableCashAmount": message("alert.metric.available_cash"),
+    "AvailableAmount": message("alert.metric.available"),
+    "CreditAmount": message("alert.metric.credit_amount"),
+    "total_balance": message("alert.metric.total"),
+    "granted_balance": message("alert.metric.granted"),
+    "topped_up_balance": message("alert.metric.topped_up"),
+    "credit": message("alert.metric.credit"),
+    "site_credit": message("alert.metric.site_credit"),
+    "mapped_balance": message("alert.metric.mapped"),
 }
 
 
@@ -190,18 +209,24 @@ def _exact_decimal(value: Decimal) -> str:
 
 def format_alert_facts(facts: tuple[AlertFact, ...], hint: str = "") -> str:
     """Build the authoritative fact block exclusively from program data."""
-    lines = ["【额度预警】"]
+    lines = [tr("alert.fact.title")]
     if introduction := _safe_introduction(hint):
         lines.append(introduction)
     for fact in facts:
         # Names remain Plain text, never CQ/At markup or a model instruction.
         name = " ".join(fact.display_name.split())[:128]
-        label = _METRIC_LABELS.get(fact.metric, fact.metric)
+        label = render_text(_METRIC_LABELS.get(fact.metric, fact.metric))
         lines.append(
-            f"{name} · {label}：{_exact_decimal(fact.amount)} {fact.unit}"
-            f" ≤ {_exact_decimal(fact.threshold)} {fact.unit}（预警阈值）"
+            tr(
+                "alert.fact.line",
+                name=name,
+                metric=label,
+                amount=_exact_decimal(fact.amount),
+                unit=fact.unit,
+                threshold=_exact_decimal(fact.threshold),
+            )
         )
-    lines.append("数据来自本次有效查询；请以供应商控制台为准。")
+    lines.append(tr("alert.fact.source"))
     return "\n".join(lines)
 
 
@@ -218,6 +243,7 @@ class AlertDelivery:
         session_enabled: Callable[[str], Awaitable[bool | None]] | None = None,
         session_llm_enabled: Callable[[str], Awaitable[bool]] | None = None,
         session_check_timeout: float = 3.0,
+        locale: Callable[[], str] | None = None,
     ) -> None:
         self.context = context
         self.component_factory = component_factory
@@ -226,6 +252,7 @@ class AlertDelivery:
         self.session_enabled = session_enabled
         self.session_llm_enabled = session_llm_enabled
         self.session_check_timeout = session_check_timeout
+        self._locale = locale
 
     def validate_target(self, target: Any) -> bool:
         """Resolve the actual instance; names such as 'NapCat' prove nothing."""
@@ -315,16 +342,16 @@ class AlertDelivery:
     def _target_llm_settings(self, umo: str) -> tuple[Mapping, str]:
         config = self.context.get_config(umo=umo)
         if not isinstance(config, Mapping):
-            return {}, "会话 AI 配置不可用，已用固定提醒"
+            return {}, tr("alert.delivery.llm_config_unavailable")
         provider_settings = config.get("provider_settings", {})
         runner = config.get("agent_runner", {})
         if (
             not isinstance(provider_settings, Mapping)
             or provider_settings.get("enable", True) is not True
         ):
-            return {}, "会话 AI 已关闭，已用固定提醒"
+            return {}, tr("alert.delivery.llm_off")
         if not isinstance(runner, Mapping) or runner.get("runner_type") != "local":
-            return {}, "当前会话非本地 Agent，已用固定提醒"
+            return {}, tr("alert.delivery.llm_nonlocal")
         return provider_settings, ""
 
     async def _resolve_target_llm(
@@ -340,16 +367,16 @@ class AlertDelivery:
         if final and not await self._session_allows(
             self.session_enabled, target.umo, active
         ):
-            return None, "", "目标会话已停用或状态不可用，未使用 AI 引言"
+            return None, "", tr("alert.delivery.llm_session_unavailable")
         if not await self._session_allows(self.session_llm_enabled, target.umo, active):
-            return None, "", "会话 AI 已关闭或状态不可用，已用固定提醒"
+            return None, "", tr("alert.delivery.llm_unavailable")
         if not self._alive(active):
             return None, "", ""
         provider_id = await self.context.get_current_chat_provider_id(target.umo)
         if not self._alive(active):
             return None, "", ""
         if not isinstance(provider_id, str) or not provider_id.strip():
-            return None, "", "会话模型不可用，已用固定提醒"
+            return None, "", tr("alert.delivery.llm_model_unavailable")
         manager = self.context.conversation_manager
         conversation_id = await manager.get_curr_conversation_id(target.umo)
         if not self._alive(active):
@@ -381,15 +408,15 @@ class AlertDelivery:
         if not self._alive(active):
             return None, "", ""
         if webchat_special:
-            return None, "", "会话使用专用 WebChat 人格，已用固定提醒"
+            return None, "", tr("alert.delivery.llm_webchat_persona")
         if persona is None:
             if selected_id not in (None, "[%None]"):
-                return None, "", "会话人格不可用，已用固定提醒"
+                return None, "", tr("alert.delivery.llm_persona_unavailable")
             full_prompt = ""
         elif isinstance(persona, Mapping) and isinstance(persona.get("prompt"), str):
             full_prompt = persona["prompt"]
         else:
-            return None, "", "会话人格不可用，已用固定提醒"
+            return None, "", tr("alert.delivery.llm_persona_unavailable")
         _, note = self._target_llm_settings(target.umo)
         if note:
             return None, "", note
@@ -397,11 +424,11 @@ class AlertDelivery:
             if not await self._session_allows(
                 self.session_llm_enabled, target.umo, active
             ):
-                return None, "", "会话 AI 已关闭或状态不可用，已用固定提醒"
+                return None, "", tr("alert.delivery.llm_unavailable")
             if not self._alive(active):
                 return None, "", ""
             if not await self._session_allows(self.session_enabled, target.umo, active):
-                return None, "", "目标会话已停用或状态不可用，未调用 AI"
+                return None, "", tr("alert.delivery.llm_not_called")
         if not self._alive(active):
             return None, "", ""
         # Fingerprint contains no account credentials, history or raw persona
@@ -447,7 +474,9 @@ class AlertDelivery:
                     "账户及服务可用性；也不要把付款作为继续使用的先决条件。"
                     "不要提供充值链接、支付操作、@提及、CQ代码或工具调用，"
                     "不要声称已经充值、付款或执行其他操作。"
-                ),
+                )
+                + "\n"
+                + tr("alert.delivery.llm_language"),
                 contexts=[],
                 tools=None,
             )
@@ -457,18 +486,18 @@ class AlertDelivery:
             if not self._alive(active):
                 return "", "", None
             if current != signature:
-                return "", note or "会话模型或人格已变更，已用固定提醒", None
+                return "", note or tr("alert.delivery.llm_changed"), None
             if getattr(response, "role", "assistant") != "assistant" or any(
                 getattr(response, key, None)
                 for key in ("tools_call_name", "tools_call_args", "tool_calls")
             ):
-                return "", "AI 润色不可用，已用固定提醒", None
+                return "", tr("alert.delivery.llm_failed"), None
             content = getattr(response, "completion_text", "")
             hint = _safe_introduction(content)
             return (
                 (hint, "", signature)
                 if hint
-                else ("", "AI 润色不可用，已用固定提醒", None)
+                else ("", tr("alert.delivery.llm_failed"), None)
             )
 
         try:
@@ -476,7 +505,7 @@ class AlertDelivery:
         except asyncio.CancelledError:
             raise
         except Exception:
-            return "", "AI 润色不可用，已用固定提醒", None
+            return "", tr("alert.delivery.llm_failed"), None
 
     async def deliver(
         self,
@@ -488,19 +517,21 @@ class AlertDelivery:
         reserve: Callable[[], bool],
     ) -> DeliveryResult:
         if not self._alive(active):
-            return DeliveryResult("cancelled", "配置已变更或预警已停止")
+            return DeliveryResult("cancelled", tr("alert.delivery.cancelled"))
         if reason := self._target_reason(target):
             return self._blocked(reason)
         allowed = await self._session_state(self.session_enabled, target.umo, active)
         if not self._alive(active):
-            return DeliveryResult("cancelled", "配置已变更或预警已停止")
+            return DeliveryResult("cancelled", tr("alert.delivery.cancelled"))
         if allowed is not True:
             return self._blocked(
                 "session_disabled" if allowed is False else "session_check_failed"
             )
-        hint, note, signature = await self._hint(target, llm, active)
+        hint_locale = self._locale() if self._locale is not None else current_locale()
+        with use_locale(hint_locale):
+            hint, note, signature = await self._hint(target, llm, active)
         if not self._alive(active):
-            return DeliveryResult("cancelled", "配置已变更或预警已停止")
+            return DeliveryResult("cancelled", tr("alert.delivery.cancelled"))
         if reason := self._target_reason(target):
             return self._blocked(reason)
         cancelled = object()
@@ -532,12 +563,12 @@ class AlertDelivery:
                 except asyncio.CancelledError:
                     raise
                 except Exception:
-                    current, latest_note = None, "AI 润色不可用，已用固定提醒"
+                    current, latest_note = None, tr("alert.delivery.llm_failed")
                 if not self._alive(active):
                     return cancelled
                 if current != signature:
                     hint = ""
-                    note = latest_note or "会话模型或人格已变更，已用固定提醒"
+                    note = latest_note or tr("alert.delivery.llm_changed")
                 # Sending permission wins over tone consistency. A session may
                 # have been disabled during the read-only routing awaits above.
                 # This is one final hard gate, not an unbounded recheck loop.
@@ -556,7 +587,7 @@ class AlertDelivery:
                     try:
                         _, latest_note = self._target_llm_settings(target.umo)
                     except Exception:
-                        latest_note = "会话 AI 配置不可用，已用固定提醒"
+                        latest_note = tr("alert.delivery.llm_config_unavailable")
                     if latest_note:
                         hint, note = "", latest_note
                 # Host routing/persona/session-AI have no atomic public snapshot.
@@ -567,9 +598,12 @@ class AlertDelivery:
             if reason := self._target_reason(target):
                 return self._blocked(reason)
             try:
-                message = self.component_factory(
-                    target.mentions, format_alert_facts(facts, hint)
-                )
+                locale = self._locale() if self._locale is not None else hint_locale
+                with use_locale(locale):
+                    if hint and locale != hint_locale:
+                        hint, note = "", tr("alert.delivery.llm_locale_changed")
+                    text = format_alert_facts(facts, hint)
+                outbound = self.component_factory(target.mentions, text)
             except Exception:
                 return self._blocked("message_components_unavailable")
             # Durable reservation remains the final synchronous operation before
@@ -577,7 +611,7 @@ class AlertDelivery:
             if not reserve():
                 return cancelled
             transport_started = True
-            return await self.context.send_message(target.umo, message)
+            return await self.context.send_message(target.umo, outbound)
 
         try:
             result = await self._bounded(send(), self.send_timeout)
@@ -586,18 +620,18 @@ class AlertDelivery:
         except Exception:
             if not transport_started:
                 return self._blocked("session_check_failed")
-            return DeliveryResult("unknown", "发送结果未知；为避免重复不自动重发")
+            return DeliveryResult("unknown", tr("alert.delivery.unknown"))
         if isinstance(result, DeliveryResult):
             return result
         if result is cancelled:
-            return DeliveryResult("cancelled", "配置已变更或发送预算暂不可用")
+            return DeliveryResult("cancelled", tr("alert.delivery.budget"))
         if result is True:
-            suffix = f"；{note}" if note else ""
+            suffix = tr("alert.delivery.note_suffix", note=note) if note else ""
             return DeliveryResult(
                 "submitted",
-                "已提交平台；不代表最终送达" + suffix,
+                tr("alert.delivery.submitted") + suffix,
                 "fixed_hint" if note else "",
             )
         if result is False:
-            return DeliveryResult("failed", "平台未接受发送；冷却后可重试")
-        return DeliveryResult("unknown", "发送结果未知；为避免重复不自动重发")
+            return DeliveryResult("failed", tr("alert.delivery.failed"))
+        return DeliveryResult("unknown", tr("alert.delivery.unknown"))

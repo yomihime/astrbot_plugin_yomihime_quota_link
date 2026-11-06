@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+from .i18n import render_text
 from .models import QueryParseResult, QueryResult
 
 
@@ -22,7 +23,10 @@ def serialize_parse_error(operation: str, parsed: QueryParseResult) -> str:
     result: dict[str, Any] = {
         "schema_version": 1,
         "operation": operation,
-        "error": {"category": error.code.value, "message": error.safe_message},
+        "error": {
+            "category": error.code.value,
+            "message": render_text(error.safe_message),
+        },
     }
     if error.candidates:
         result["error"]["candidates"] = list(error.candidates)
@@ -45,9 +49,12 @@ def serialize_capabilities(accounts: list[dict[str, object]]) -> str:
             )
             if key in account
         }
+        for key in ("provider", "balance_kind"):
+            if key in item:
+                item[key] = render_text(item[key])
         reason = account.get("unavailable_reason", account.get("reason"))
         if reason is not None:
-            item["unavailable_reason"] = reason
+            item["unavailable_reason"] = render_text(reason)
         safe_accounts.append(item)
     return encode_tool_result(
         {"schema_version": 1, "operation": "list", "accounts": safe_accounts}
@@ -76,7 +83,9 @@ def serialize_query_result(
             "provider": snapshot.provider_type.value,
             "status": snapshot.status.value,
             "cached": snapshot.cached,
-            "source": snapshot.source,
+            "source": render_text(snapshot.source)
+            if snapshot.source is not None
+            else None,
             "fetched_at": _datetime(snapshot.fetched_at),
             "balances": [],
         }
@@ -85,7 +94,7 @@ def serialize_query_result(
         if snapshot.error is not None:
             account["error"] = {
                 "category": snapshot.error.category.value,
-                "message": snapshot.error.safe_message,
+                "message": render_text(snapshot.error.safe_message),
             }
         for balance in snapshot.balances:
             item: dict[str, Any] = {
@@ -100,7 +109,7 @@ def serialize_query_result(
             if balance.metric is not None:
                 item["metric"] = balance.metric
             if balance.label:
-                item["label"] = balance.label
+                item["label"] = render_text(balance.label)
             if balance.expires_at is not None:
                 item["expires_at"] = _datetime(balance.expires_at)
             account["balances"].append(item)

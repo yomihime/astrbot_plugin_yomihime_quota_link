@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from typing import Any
 
+from .i18n import message
 from .models import NormalizedProviderError, ProviderErrorCategory
 
 _CODES = frozenset(
@@ -33,7 +34,7 @@ def explicit_throttling(payload: Any, response: Any) -> NormalizedProviderError 
     ):
         return NormalizedProviderError(
             ProviderErrorCategory.RATE_LIMITED,
-            "余额服务明确返回限流，请稍后重试",
+            message("provider.retry.explicit_throttling"),
             "business_throttling",
             getattr(response, "retry_after_seconds", None),
         )

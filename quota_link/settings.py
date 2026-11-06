@@ -24,6 +24,8 @@ from .alert_config import (
     parse_alert_targets,
     parse_balance_alert,
 )
+from .i18n import LANGUAGE_OPTIONS
+from .i18n import message as localized
 from .models import (
     ProviderType,
     QueryParseError,
@@ -104,7 +106,8 @@ class AccountDirectory:
         if not normalized:
             return QueryParseResult(
                 error=QueryParseError(
-                    QueryParseErrorCode.INVALID_INPUT, "目标名称不能为空"
+                    QueryParseErrorCode.INVALID_INPUT,
+                    localized("error.query.empty_target"),
                 )
             )
         account = self._account_index.get(normalized)
@@ -119,7 +122,8 @@ class AccountDirectory:
             )
         return QueryParseResult(
             error=QueryParseError(
-                QueryParseErrorCode.UNKNOWN_TARGET, "未找到匹配的账户或供应商"
+                QueryParseErrorCode.UNKNOWN_TARGET,
+                localized("error.query.unknown_target"),
             )
         )
 
@@ -174,6 +178,7 @@ class PluginSettings:
     balance_alert_llm: BalanceAlertLLM = field(
         default_factory=BalanceAlertLLM, repr=False
     )
+    language: str = "auto"
 
     @property
     def enabled_accounts(self) -> tuple[AccountSettings, ...]:
@@ -208,7 +213,7 @@ def _positive_number(
             ConfigDiagnostic(
                 "invalid_positive_number",
                 path,
-                f"{path} 必须为正数；已使用默认值",
+                localized("config.positive_number", path=path),
                 account_id,
             )
         )
@@ -220,7 +225,7 @@ def _positive_number(
             ConfigDiagnostic(
                 "invalid_positive_number",
                 path,
-                f"{path} 必须为正数；已使用默认值",
+                localized("config.positive_number", path=path),
                 account_id,
             )
         )
@@ -230,7 +235,7 @@ def _positive_number(
             ConfigDiagnostic(
                 "invalid_positive_number",
                 path,
-                f"{path} 必须为正数；已使用默认值",
+                localized("config.positive_number", path=path),
                 account_id,
             )
         )
@@ -249,7 +254,7 @@ def _positive_integer(
             ConfigDiagnostic(
                 "invalid_positive_integer",
                 path,
-                f"{path} 必须为正整数；已使用默认值",
+                localized("config.positive_integer", path=path),
             )
         )
         return default
@@ -705,7 +710,7 @@ def _provider_aliases() -> dict[str, ProviderType]:
             "alibaba bailian",
             "百炼",
             "阿里百炼",
-            "阿里云百炼",
+            localized("capability.alibaba"),
             "dashscope",
         ),
         "deepseek": ("deepseek", "ds", "深度求索"),
@@ -817,7 +822,9 @@ def load_settings(
     errors: list[ConfigDiagnostic] = []
     raw = {} if raw is None else raw
     if not isinstance(raw, Mapping):
-        errors.append(ConfigDiagnostic("invalid_root", "$", "配置根节点必须是映射"))
+        errors.append(
+            ConfigDiagnostic("invalid_root", "$", localized("config.invalid_root"))
+        )
         raw = {}
 
     alert_values = {}
@@ -830,7 +837,7 @@ def load_settings(
             alert_values[key] = parser(raw.get(key, default))
         except AlertConfigError as error:
             alert_values[key] = fallback
-            errors.append(ConfigDiagnostic("invalid_balance_alert", key, str(error)))
+            errors.append(ConfigDiagnostic("invalid_balance_alert", key, error.args[0]))
 
     timeout = _positive_number(
         raw.get("timeout_seconds", _DEFAULT_TIMEOUT),
@@ -862,7 +869,7 @@ def load_settings(
             ConfigDiagnostic(
                 "invalid_boolean",
                 "command_admin_only",
-                "command_admin_only 必须为布尔值；已使用默认值",
+                localized("config.admin_boolean"),
             )
         )
         command_admin_only = True
@@ -872,7 +879,7 @@ def load_settings(
             ConfigDiagnostic(
                 "invalid_boolean",
                 "allow_group_queries",
-                "allow_group_queries 必须为布尔值；已使用默认值",
+                localized("config.group_boolean"),
             )
         )
         allow_group_queries = False
@@ -884,7 +891,7 @@ def load_settings(
             ConfigDiagnostic(
                 "invalid_user_ids",
                 "group_allowed_user_ids",
-                "group_allowed_user_ids 必须为非空文本列表；已使用空列表",
+                localized("config.group_list"),
             )
         )
         group_allowed_user_ids: tuple[str, ...] = ()
@@ -906,7 +913,7 @@ def load_settings(
             ConfigDiagnostic(
                 "invalid_private_user_ids",
                 "private_allowed_user_ids",
-                "private_allowed_user_ids 必须为 平台名:用户ID 文本列表；已使用空列表",
+                localized("config.private_list"),
             )
         )
         private_allowed_user_ids: tuple[str, ...] = ()
@@ -917,7 +924,9 @@ def load_settings(
     records = raw.get("providers", ())
     if not isinstance(records, (list, tuple)):
         errors.append(
-            ConfigDiagnostic("invalid_providers", "providers", "providers 必须为列表")
+            ConfigDiagnostic(
+                "invalid_providers", "providers", localized("config.providers_list")
+            )
         )
         records = ()
     all_secrets = {
@@ -935,7 +944,9 @@ def load_settings(
         path = f"providers[{index}]"
         if not isinstance(record, Mapping):
             errors.append(
-                ConfigDiagnostic("invalid_account", path, "账户配置必须为映射")
+                ConfigDiagnostic(
+                    "invalid_account", path, localized("config.account_mapping")
+                )
             )
             continue
         account_id = record.get("id")
@@ -950,7 +961,9 @@ def load_settings(
         provider_raw = record.get("type", template_type)
         if not isinstance(account_id, str) or not account_id.strip():
             errors.append(
-                ConfigDiagnostic("invalid_id", f"{path}.id", "账户 id 必须为非空文本")
+                ConfigDiagnostic(
+                    "invalid_id", f"{path}.id", localized("config.account_id")
+                )
             )
             continue
         account_id = account_id.strip()
@@ -959,7 +972,10 @@ def load_settings(
         if not isinstance(provider_raw, str):
             errors.append(
                 ConfigDiagnostic(
-                    "unknown_type", f"{path}.type", "未知供应商类型", safe_account_id
+                    "unknown_type",
+                    f"{path}.type",
+                    localized("config.provider_type"),
+                    safe_account_id,
                 )
             )
             continue
@@ -968,7 +984,10 @@ def load_settings(
         except ValueError:
             errors.append(
                 ConfigDiagnostic(
-                    "unknown_type", f"{path}.type", "未知供应商类型", safe_account_id
+                    "unknown_type",
+                    f"{path}.type",
+                    localized("config.provider_type"),
+                    safe_account_id,
                 )
             )
             continue
@@ -977,7 +996,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "template_type_mismatch",
                     f"{path}.type",
-                    "账户模板与供应商类型不一致",
+                    localized("config.template_mismatch"),
                     safe_account_id,
                 )
             )
@@ -987,7 +1006,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "invalid_display_name",
                     f"{path}.display_name",
-                    "display_name 必须为非空文本",
+                    localized("config.display_name"),
                     safe_account_id,
                 )
             )
@@ -1001,7 +1020,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "invalid_aliases",
                     f"{path}.aliases",
-                    "aliases 必须为非空文本列表",
+                    localized("config.aliases"),
                     safe_account_id,
                 )
             )
@@ -1009,7 +1028,10 @@ def load_settings(
         if normalized_id in ids:
             errors.append(
                 ConfigDiagnostic(
-                    "duplicate_id", f"{path}.id", "账户 id 重复", safe_account_id
+                    "duplicate_id",
+                    f"{path}.id",
+                    localized("config.duplicate_id"),
+                    safe_account_id,
                 )
             )
             continue
@@ -1031,7 +1053,10 @@ def load_settings(
             auth_raw = {}
             errors.append(
                 ConfigDiagnostic(
-                    "invalid_auth", f"{path}.auth", "auth 必须为映射", safe_account_id
+                    "invalid_auth",
+                    f"{path}.auth",
+                    localized("config.auth_mapping"),
+                    safe_account_id,
                 )
             )
         missing_env: list[str] = []
@@ -1064,7 +1089,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "invalid_endpoint",
                     f"{path}.endpoint",
-                    "endpoint 必须为映射",
+                    localized("config.endpoint_mapping"),
                     safe_account_id,
                 )
             )
@@ -1075,7 +1100,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "invalid_response_mapping",
                     f"{path}.response_mapping",
-                    "response_mapping 必须为映射；已使用空映射",
+                    localized("config.response_mapping"),
                     safe_account_id,
                 )
             )
@@ -1146,14 +1171,14 @@ def load_settings(
             else:
                 capability_issue = (
                     "invalid_grsai_region",
-                    "Grsai 节点只能选择国内直连或海外",
+                    localized("config.grsai_region"),
                 )
             raw_scope = record.get("balance_scope", "account")
             if raw_scope != "account":
                 balance_scope = raw_scope if isinstance(raw_scope, str) else "generic"
                 capability_issue = (
                     "invalid_balance_scope",
-                    "Grsai 当前仅支持账户积分，API Key 积分预设尚未实现",
+                    localized("config.grsai_account_only"),
                 )
         if provider_type is ProviderType.OPENAI_COMPATIBLE:
             raw_profile = record.get("service_profile", "generic")
@@ -1164,7 +1189,7 @@ def load_settings(
             }:
                 capability_issue = (
                     "invalid_service_profile",
-                    "兼容服务类型只能是 generic 或 grsai",
+                    localized("config.service_profile"),
                 )
             elif not isinstance(raw_scope, str) or raw_scope not in {
                 "generic",
@@ -1173,24 +1198,24 @@ def load_settings(
             }:
                 capability_issue = (
                     "invalid_balance_scope",
-                    "余额范围只能是 generic、account 或 api_key",
+                    localized("config.balance_scope"),
                 )
             elif raw_profile == "grsai" and raw_scope == "generic":
                 capability_issue = (
                     "invalid_balance_scope",
-                    "Grsai 当前仅支持账户积分预设",
+                    localized("config.grsai_scope"),
                 )
             elif raw_profile == "grsai" and raw_scope == "api_key":
                 service_profile = raw_profile
                 balance_scope = raw_scope
                 capability_issue = (
                     "invalid_balance_scope",
-                    "Grsai API Key 积分预设尚未实现，请选择账户积分",
+                    localized("config.grsai_api_key_scope"),
                 )
             elif raw_profile != "grsai" and raw_scope != "generic":
                 capability_issue = (
                     "invalid_balance_scope",
-                    "账户余额或 API Key 余额范围仅适用于已选择的 Grsai 服务",
+                    localized("config.grsai_required"),
                 )
             else:
                 service_profile = raw_profile
@@ -1214,7 +1239,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "invalid_enabled",
                     f"{path}.enabled",
-                    "enabled 必须为布尔值；已禁用账户",
+                    localized("config.enabled_boolean"),
                     safe_account_id,
                 )
             )
@@ -1260,7 +1285,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "missing_environment_variable",
                     f"{path}.auth",
-                    "引用的凭据环境变量未设置",
+                    localized("config.missing_env"),
                     safe_account_id,
                 )
             )
@@ -1273,7 +1298,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "missing_credentials",
                     f"{path}.auth",
-                    "缺少可用凭据",
+                    localized("config.missing_auth"),
                     safe_account_id,
                 )
             )
@@ -1285,7 +1310,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "missing_credentials",
                     f"{path}.auth",
-                    "阿里云 BSS 查询需要独立 AccessKey ID 和 AccessKey Secret",
+                    localized("config.bss_auth"),
                     safe_account_id,
                 )
             )
@@ -1324,19 +1349,25 @@ def load_settings(
                     "invalid_response_mapping": f"{path}.response_mapping",
                 }.get(code, f"{path}.endpoint")
                 messages = {
-                    "missing_credentials": "兼容接口需要配置 API 密钥",
-                    "missing_grsai_token": "Grsai 账户积分需要用户信息中的请求令牌 token",
-                    "missing_endpoint": "缺少余额查询端点",
-                    "missing_base_url": "请填写 HTTPS 服务根地址 Host",
-                    "missing_api_path": "请填写以 / 开头的相对 API Path",
-                    "invalid_endpoint": "余额端点必须是安全的 HTTPS GET 或 POST 配置",
-                    "grsai_method_must_post": "该 Grsai 积分端点要求使用 POST",
-                    "grsai_account_path_mismatch": "Grsai 账户积分仅支持 /client/openapi/getCredits",
-                    "grsai_balance_scope_mismatch": "Grsai getCredits 端点应选择 account；getAPIKeyCredits 端点应选择 api_key",
-                    "invalid_balance_kind": "Grsai 积分查询必须将 kind 固定映射为 credits",
-                    "invalid_base_url": "Host 必须是没有路径、查询参数或片段的 HTTPS 服务根地址",
-                    "invalid_api_path": "API Path 必须以单个 / 开头，且不能包含完整 URL、查询参数或片段",
-                    "invalid_response_mapping": "兼容接口必须配置有效的 amount_path 映射",
+                    "missing_credentials": localized("config.compatible_auth"),
+                    "missing_grsai_token": localized("config.grsai_token"),
+                    "missing_endpoint": localized("config.missing_endpoint"),
+                    "missing_base_url": localized("config.missing_host"),
+                    "missing_api_path": localized("config.missing_path"),
+                    "invalid_endpoint": localized("config.invalid_endpoint"),
+                    "grsai_method_must_post": localized("config.grsai_post"),
+                    "grsai_account_path_mismatch": localized(
+                        "config.grsai_account_path"
+                    ),
+                    "grsai_balance_scope_mismatch": localized(
+                        "config.grsai_path_scope"
+                    ),
+                    "invalid_balance_kind": localized("config.grsai_credits"),
+                    "invalid_base_url": localized("config.invalid_host"),
+                    "invalid_api_path": localized("config.invalid_path"),
+                    "invalid_response_mapping": localized(
+                        "config.invalid_amount_mapping"
+                    ),
                 }
                 errors.append(
                     ConfigDiagnostic(code, field_path, messages[code], safe_account_id)
@@ -1348,7 +1379,10 @@ def load_settings(
         ):
             errors.append(
                 ConfigDiagnostic(
-                    "secret_in_name", path, "账户名称不得包含凭据", safe_account_id
+                    "secret_in_name",
+                    path,
+                    localized("config.secret_in_name"),
+                    safe_account_id,
                 )
             )
             continue
@@ -1391,7 +1425,7 @@ def load_settings(
                 ConfigDiagnostic(
                     "invalid_balance_alert",
                     f"{path}.balance_alert",
-                    str(error),
+                    error.args[0],
                     account_id,
                 )
             )
@@ -1435,7 +1469,7 @@ def load_settings(
             ConfigDiagnostic(
                 "name_conflict",
                 parsed_paths[owner],
-                "账户名称与其他账户冲突",
+                localized("config.conflicting_account"),
                 parsed[owner].id,
             )
         )
@@ -1468,6 +1502,7 @@ def load_settings(
         _account_index=MappingProxyType(account_index),
         _provider_index=MappingProxyType(_provider_aliases()),
     )
+    language = raw.get("language")
     return PluginSettings(
         accounts=accounts,
         directory=directory,
@@ -1480,5 +1515,6 @@ def load_settings(
         allow_group_queries=allow_group_queries,
         group_allowed_user_ids=group_allowed_user_ids,
         private_allowed_user_ids=private_allowed_user_ids,
+        language=language if language in LANGUAGE_OPTIONS else "auto",
         **alert_values,
     )

@@ -21,6 +21,7 @@ from quota_link.models import (
     QueryRequestKind,
     SnapshotStatus,
 )
+from quota_link.providers import IMPLEMENTED_ADAPTERS
 from quota_link.service import QueryService
 
 
@@ -212,7 +213,17 @@ def test_old_fetched_at_is_not_renewed_by_cache_insertion_time():
     asyncio.run(run())
 
 
-def test_provider_budget_honors_retry_after_across_distinct_credentials():
+@pytest.mark.parametrize(
+    "category,code,delay",
+    [
+        (ProviderErrorCategory.RATE_LIMITED, "business_throttled", None),
+        (ProviderErrorCategory.RATE_LIMITED, "http_429", 300),
+        (ProviderErrorCategory.TEMPORARILY_UNAVAILABLE, "http_503", 7200),
+    ],
+)
+def test_provider_budget_honors_retry_after_across_distinct_credentials(
+    category, code, delay
+):
     async def run():
         settings = make_settings(
             providers=[
@@ -234,7 +245,7 @@ def test_provider_budget_honors_retry_after_across_distinct_credentials():
                 return replace(
                     success(account),
                     error=NormalizedProviderError(
-                        ProviderErrorCategory.RATE_LIMITED, "限流", "http_429", 300
+                        category, "供应商要求等待", code, delay
                     ),
                 )
 
@@ -247,12 +258,18 @@ def test_provider_budget_honors_retry_after_across_distinct_credentials():
             wall_clock=clock.wall,
             jitter=lambda: 0,
         )
-        await service.query(REQUEST)
         other = QueryRequest(QueryRequestKind.ACCOUNT, "second")
-        blocked = (await service.query(other)).snapshots[0]
-        assert blocked.error.retry_after_seconds == 300 and calls == ["first"]
+        first, second = await asyncio.gather(
+            service.query(REQUEST), service.query(other)
+        )
+        assert first.snapshots[0].error.diagnostic_code == code
+        blocked = second.snapshots[0]
+        assert blocked.error.category is category
+        assert blocked.error.diagnostic_code == "provider_cooldown"
+        wait = delay if delay is not None else 60
+        assert blocked.error.retry_after_seconds == wait and calls == ["first"]
         service.retry_account("second")  # Explicit retry cannot bypass rate budgets.
-        clock.advance(299)
+        clock.advance(wait - 1)
         assert (await service.query(other)).snapshots[0].error.retry_after_seconds == 1
         clock.advance(1)
         await service.query(other)
@@ -314,16 +331,182 @@ def test_exponential_budget_uses_injected_clock_and_jitter():
             wall_clock=clock.wall,
             jitter=lambda: 0.5,
         )
-        await service.query(REQUEST)
-        first = (await service.query(REQUEST)).snapshots[0]
-        assert first.error.retry_after_seconds == pytest.approx(2.2)
-        clock.advance(2.2)
-        await service.query(REQUEST)
-        second = (await service.query(REQUEST)).snapshots[0]
-        assert second.error.retry_after_seconds == pytest.approx(4.4)
-        assert len(adapter.calls) == 2
-        assert "secret" not in repr(first)
+        for attempt in range(1, 14):
+            await service.query(REQUEST)
+            blocked = (await service.query(REQUEST)).snapshots[0]
+            delay = min(2**attempt * 1.1, 3600)
+            assert blocked.error.retry_after_seconds == pytest.approx(delay)
+            assert len(adapter.calls) == attempt
+            assert "secret" not in repr(blocked)
+            clock.advance(delay + 0.01)
         await service.close()
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("early_timeout", [False, True])
+def test_connection_keeps_account_deadline_and_retries_early_timeout(early_timeout):
+    async def run():
+        settings = replace(one_account(), total_timeout_seconds=2)
+        account = replace(settings.accounts[0], timeout_seconds=0.4)
+        settings = replace(settings, accounts=(account,))
+        calls = []
+
+        async def connect(request):
+            calls.append(request.extensions["timeout"])
+            if len(calls) == 1:
+                if early_timeout:
+                    raise httpx.ConnectTimeout(
+                        "synthetic proxy handshake", request=request
+                    )
+                assert calls[0]["connect"] > 0.25  # A healthy but slow connection.
+                await asyncio.sleep(0.25)
+            return httpx.Response(
+                200,
+                json={
+                    "is_available": True,
+                    "balance_infos": [
+                        {
+                            "currency": "CNY",
+                            "total_balance": "10",
+                            "granted_balance": "0",
+                            "topped_up_balance": "10",
+                        }
+                    ],
+                },
+            )
+
+        client = HttpProviderClient(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(connect)),
+            retry_delay=0.01,
+            jitter=lambda: 0,
+        )
+        service = QueryService(settings, IMPLEMENTED_ADAPTERS, client, BalanceCache())
+        try:
+            snapshot = (await service.query(REQUEST)).snapshots[0]
+            assert snapshot.error is None
+            assert snapshot.balances[0].amount == 10
+            assert len(calls) == (2 if early_timeout else 1)
+            assert all(
+                timeouts["connect"] == timeouts["read"] == 0.4 for timeouts in calls
+            )
+        finally:
+            await service.close()
+            await client.close()
+
+    asyncio.run(run())
+
+
+def test_account_timeout_isolated_and_blocked_queries_do_not_extend_cooldown():
+    async def run():
+        providers = [
+            {
+                "id": name,
+                "type": provider.value,
+                "display_name": name,
+                "auth": auth,
+            }
+            for name, provider, auth in (
+                ("first", ProviderType.DEEPSEEK, {"api_key": "synthetic-key"}),
+                ("second", ProviderType.DEEPSEEK, {"api_key": "synthetic-other"}),
+                ("third", ProviderType.MEINIANDA, {"api_key": "synthetic-key"}),
+            )
+        ]
+        settings = make_settings(providers=providers)
+        first, *other = settings.accounts
+        settings = replace(
+            settings, accounts=(replace(first, timeout_seconds=0.05), *other)
+        )
+        clock = Clock()
+        calls = []
+        failing = True
+
+        class Adapter:
+            async def fetch_balance(self, account, client):
+                calls.append(account.id)
+                if account.id == "first" and failing:
+                    await asyncio.Event().wait()
+                return replace(success(account), fetched_at=clock.now)
+
+        adapter = Adapter()
+        service = QueryService(
+            settings,
+            {ProviderType.DEEPSEEK: adapter, ProviderType.MEINIANDA: adapter},
+            FakeClient(),
+            BalanceCache(clock.monotonic),
+            monotonic=clock.monotonic,
+            wall_clock=clock.wall,
+            jitter=lambda: 0,
+        )
+
+        async def query(name):
+            request = QueryRequest(QueryRequestKind.ACCOUNT, name)
+            return (await service.query(request, max_age_seconds=0)).snapshots[0]
+
+        try:
+            first_failure = await query("first")
+            assert "超过时限" in first_failure.error.safe_message
+            assert not first_failure.balances
+            for name in ("second", "third"):
+                assert (await query(name)).error is None
+            assert first_failure.error.diagnostic_code == "account_timeout"
+
+            for elapsed, remaining in ((0, 2), (0.5, 1.5), (1, 0.5)):
+                clock.advance(elapsed)
+                blocked = await query("first")
+                assert blocked.error.diagnostic_code == "account_cooldown"
+                assert blocked.error.retry_after_seconds == remaining
+                assert "冷却" in blocked.error.safe_message
+                assert "超过时限" not in blocked.error.safe_message
+            assert calls == ["first", "second", "third"]
+
+            clock.advance(0.5)
+            assert (await query("first")).error.diagnostic_code == "account_timeout"
+            assert (await query("first")).error.retry_after_seconds == 4
+            clock.advance(4)
+            failing = False
+            assert (await query("first")).error is None
+            clock.advance(1)
+            failing = True
+            assert (await query("first")).error.diagnostic_code == "account_timeout"
+            assert (await query("first")).error.retry_after_seconds == 2
+            assert calls == ["first", "second", "third", "first", "first", "first"]
+        finally:
+            await service.close()
+
+    asyncio.run(run())
+
+
+def test_queue_timeout_does_not_start_an_account_cooldown():
+    async def run():
+        settings = make_settings(max_concurrency=1)
+        first, second = settings.accounts
+        settings = replace(
+            settings, accounts=(first, replace(second, timeout_seconds=0.05))
+        )
+        gate = GateAdapter()
+        other = RecordingAdapter()
+        service = QueryService(
+            settings,
+            {ProviderType.DEEPSEEK: gate, ProviderType.ALIBABA_BAILIAN: other},
+            FakeClient(),
+            BalanceCache(),
+        )
+        queued = QueryRequest(QueryRequestKind.ACCOUNT, "second")
+        running = asyncio.create_task(service.query(REQUEST))
+        try:
+            await gate.entered.wait()
+            snapshot = (await service.query(queued)).snapshots[0]
+            assert snapshot.error.diagnostic_code == "queue_timeout"
+            assert not other.calls
+            gate.release.set()
+            assert (await running).snapshots[0].error is None
+            assert (await service.query(queued)).snapshots[0].error is None
+            assert other.calls == ["second"]
+        finally:
+            gate.release.set()
+            await service.close()
+            await asyncio.gather(running, return_exceptions=True)
 
     asyncio.run(run())
 

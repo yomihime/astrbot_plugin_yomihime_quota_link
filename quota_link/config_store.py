@@ -18,6 +18,8 @@ from collections.abc import Mapping, MutableMapping
 from typing import Any
 
 from .alert_config import AlertConfigError, normalize_alert_config
+from .i18n import LANGUAGE_OPTIONS
+from .i18n import message as localized
 from .security import SecretStoreUnavailable
 from .settings import load_settings, migrate_account_templates
 
@@ -35,6 +37,7 @@ GLOBAL_FIELDS = frozenset(
         "balance_alert_targets",
         "balance_alert_admin_qq_ids",
         "balance_alert_llm",
+        "language",
     }
 )
 ACCOUNT_FIELDS = frozenset(
@@ -80,6 +83,7 @@ LEGACY_DEFAULTS = {
     "balance_alert_targets": [],
     "balance_alert_admin_qq_ids": [],
     "balance_alert_llm": {"enabled": True, "provider_id": "", "persona_id": ""},
+    "language": "auto",
 }
 ENV = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
 ENV_REF = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}\Z")
@@ -112,7 +116,7 @@ class ConfigValidation(ValueError):
     code = "invalid_config"
     status = 400
 
-    def __init__(self, message="配置无效；请检查字段和数据类型。"):
+    def __init__(self, message=localized("config.invalid")):
         super().__init__(message)
 
 
@@ -121,7 +125,7 @@ class ConfigConflict(ConfigValidation):
     status = 409
 
     def __init__(self):
-        super().__init__("配置已改变，请刷新后重新确认。")
+        super().__init__(localized("config.conflict"))
 
 
 class ConfigUnavailable(ConfigValidation):
@@ -129,7 +133,7 @@ class ConfigUnavailable(ConfigValidation):
     status = 503
 
     def __init__(self):
-        super().__init__("安全存储暂不可用；未回退到明文，请检查密钥与存储状态。")
+        super().__init__(localized("config.storage_unavailable"))
 
 
 def _clone(value):
@@ -154,10 +158,13 @@ def _empty():
 
 
 class ConfigStore:
-    def __init__(self, secrets, legacy: Mapping[str, Any], on_change=None):
+    def __init__(
+        self, secrets, legacy: Mapping[str, Any], on_change=None, *, before_update=None
+    ):
         self.secrets = secrets
         self.legacy = legacy
         self.on_change = on_change
+        self.before_update = before_update
         self._lock = asyncio.Lock()
         self._plan_key = random_secrets.token_bytes(32)
         self._fresh_observed = False
@@ -341,8 +348,10 @@ class ConfigStore:
         config = _clone(config)
         if type(config) is not dict or set(config) - GLOBAL_FIELDS:
             raise ConfigValidation()
+        if "language" in config and config["language"] not in LANGUAGE_OPTIONS:
+            raise ConfigValidation()
         if self._has_secret_fields(config):
-            raise ConfigValidation("凭据只能通过独立凭据操作保存。")
+            raise ConfigValidation(localized("config.credential_operation"))
         records = config.get("providers", [])
         if type(records) is not list or len(records) > 100:
             raise ConfigValidation()
@@ -389,7 +398,7 @@ class ConfigStore:
         try:
             config = normalize_alert_config(config, require_ready=require_alert_ready)
         except AlertConfigError as error:
-            raise ConfigValidation(str(error)) from None
+            raise ConfigValidation(error.args[0]) from None
         records = config.get("providers", [])
         # Missing credentials are expected on an ordinary-config-only DTO.
         probe = _clone(config)
@@ -503,7 +512,7 @@ class ConfigStore:
                 result = self._migrate(manifest, body, authorize)
             else:
                 if self._pending(manifest):
-                    raise ConfigValidation("请先确认并迁移旧配置，再修改设置。")
+                    raise ConfigValidation(localized("config.migrate_first"))
                 if operation == "update":
                     config = self._validate(body.get("config"))
                     runtime = self._runtime(manifest)
@@ -520,15 +529,24 @@ class ConfigStore:
                         and os.environ.get(match[1])
                     }
                     if self._contains_value(config, values):
-                        raise ConfigValidation("普通配置字段不得包含凭据。")
+                        raise ConfigValidation(localized("config.credential_in_field"))
                     old = {a["id"]: a for a in manifest["config"].get("providers", [])}
                     for account in config.get("providers", []):
                         if account["id"] in old and account.get("type") != old[
                             account["id"]
                         ].get("type"):
                             raise ConfigValidation(
-                                "现有账户的供应商类型不可更改；请新建账户。"
+                                localized("config.provider_immutable")
                             )
+                    if self.before_update is not None:
+                        candidate = _clone(config)
+                        auth_by_id = {
+                            account["id"]: account["auth"]
+                            for account in runtime.get("providers", [])
+                        }
+                        for account in candidate.get("providers", []):
+                            account["auth"] = auth_by_id.get(account["id"], {})
+                        await self.before_update(candidate)
                     manifest["config"] = config
                     kept = {a["id"] for a in config.get("providers", [])}
                     manifest["credentials"] = {
@@ -591,7 +609,7 @@ class ConfigStore:
             ):
                 raise ConfigValidation()
             if self._contains_value(manifest["config"], {value}):
-                raise ConfigValidation("凭据不得与普通配置字段重复。")
+                raise ConfigValidation(localized("config.duplicate_credential"))
             try:
                 ref = self.secrets.put(value.encode())
             except SecretStoreUnavailable:
@@ -622,12 +640,12 @@ class ConfigStore:
                 and os.environ.get(match[1])
             }
             if self._contains_value(ordinary, values):
-                raise ConfigValidation("旧配置的普通字段包含凭据，原配置未删除。")
+                raise ConfigValidation(localized("config.legacy_credential_in_field"))
             credentials = {}
             for account in source.get("providers", []):
                 auth = account.get("auth", {})
                 if type(auth) is not dict or set(auth) - SECRET_FIELDS:
-                    raise ConfigValidation("旧凭据结构无法安全迁移，原配置未删除。")
+                    raise ConfigValidation(localized("config.legacy_credential_shape"))
                 entries = {}
                 for field, value in auth.items():
                     if value in (None, ""):
@@ -671,7 +689,8 @@ class ConfigStore:
             authorize()
             try:
                 for key in GLOBAL_FIELDS:
-                    self.legacy[key] = copy.deepcopy(LEGACY_DEFAULTS[key])
+                    if key != "language" or key in self.legacy:
+                        self.legacy[key] = copy.deepcopy(LEGACY_DEFAULTS[key])
                 saver()
             except Exception:
                 self.legacy.clear()

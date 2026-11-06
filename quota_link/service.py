@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from typing import Mapping
 
 from .cache import BalanceCache
+from .i18n import message as localized
 from .models import (
     BalanceSnapshot,
     NormalizedProviderError,
@@ -24,6 +25,8 @@ from .models import (
 )
 from .providers.base import AsyncProviderClient, ProviderAdapter
 from .settings import AccountSettings, PluginSettings
+
+_CooldownKey = ProviderType | tuple[str, str]
 
 
 class QueryService:
@@ -58,8 +61,8 @@ class QueryService:
         self._inflight: dict[tuple[str, str], asyncio.Task] = {}
         self._waiters: dict[tuple[str, str], int] = {}
         self._provider_locks: dict[ProviderType, asyncio.Lock] = {}
-        self._cooldowns: dict[ProviderType, tuple[float, NormalizedProviderError]] = {}
-        self._failures: dict[ProviderType, int] = {}
+        self._cooldowns: dict[_CooldownKey, tuple[float, NormalizedProviderError]] = {}
+        self._failures: dict[_CooldownKey, int] = {}
         self._auth_paused: dict[str, NormalizedProviderError] = {}
         self._closed = False
         self._auth_pause_observer: Callable[[str], None] | None = None
@@ -115,7 +118,7 @@ class QueryService:
                         self._failure(
                             account,
                             ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                            "查询暂时不可用",
+                            localized("query.unavailable"),
                         )
                     )
             else:
@@ -123,7 +126,8 @@ class QueryService:
                     self._failure(
                         account,
                         ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                        "查询超过总时限",
+                        localized("query.total_timeout"),
+                        diagnostic_code="total_timeout",
                     )
                 )
         return self._result(request, tuple(snapshots))
@@ -204,7 +208,7 @@ class QueryService:
         if account is not None:
             self._auth_paused[account.config_fingerprint] = NormalizedProviderError(
                 ProviderErrorCategory.AUTHENTICATION,
-                "认证或权限失败，已暂停；更新配置或明确重试后恢复",
+                localized("query.authentication_paused"),
                 "restored_auth_pause",
             )
 
@@ -253,22 +257,37 @@ class QueryService:
                 self._failure(
                     account,
                     error.category,
-                    "认证或权限失败，已暂停；更新配置或明确重试后恢复",
+                    localized("query.authentication_paused"),
                 ),
                 error=replace(
                     error,
-                    safe_message="认证或权限失败，已暂停；更新配置或明确重试后恢复",
+                    safe_message=localized("query.authentication_paused"),
                 ),
             )
-        cooldown = self._cooldowns.get(self._provider(account))
-        if cooldown and cooldown[0] > self._clock():
-            error = replace(
-                cooldown[1], retry_after_seconds=cooldown[0] - self._clock()
-            )
-            return replace(
-                self._failure(account, error.category, error.safe_message), error=error
-            )
-        return None
+        provider = self._cooldowns.get(self._provider(account))
+        local = self._cooldowns.get((account.id, account.config_fingerprint))
+        provider_blocked = provider is not None and (
+            local is None or provider[0] >= local[0]
+        )
+        cooldown = provider if provider_blocked else local
+        if cooldown is None:
+            return None
+        remaining = cooldown[0] - self._clock()
+        if remaining <= 0:
+            return None
+        message = localized(
+            "query.cooldown_provider" if provider_blocked else "query.cooldown_account",
+            seconds=math.ceil(remaining),
+        )
+        error = replace(
+            cooldown[1],
+            safe_message=message,
+            diagnostic_code="provider_cooldown"
+            if provider_blocked
+            else "account_cooldown",
+            retry_after_seconds=remaining,
+        )
+        return replace(self._failure(account, error.category, message), error=error)
 
     async def _query_account(
         self, account: AccountSettings, max_age_seconds: float | None = None
@@ -277,11 +296,13 @@ class QueryService:
             return self._failure(
                 account,
                 ProviderErrorCategory.CONFIGURATION,
-                "账户配置不完整，暂时无法查询",
+                localized("query.account_incomplete"),
             )
         if self._closed:
             return self._failure(
-                account, ProviderErrorCategory.TEMPORARILY_UNAVAILABLE, "查询服务已关闭"
+                account,
+                ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
+                localized("query.service_closed"),
             )
         if account.config_fingerprint in self._auth_paused:
             return self._blocked(account)
@@ -298,15 +319,20 @@ class QueryService:
             return self._failure(
                 account,
                 ProviderErrorCategory.NOT_IMPLEMENTED,
-                "该供应商的余额查询尚未实现",
+                localized("query.provider_unsupported"),
             )
         if self._client is None:
             return self._failure(
-                account, ProviderErrorCategory.CONFIGURATION, "查询客户端未配置"
+                account,
+                ProviderErrorCategory.CONFIGURATION,
+                localized("query.client_unconfigured"),
             )
         key = (account.id, account.config_fingerprint)
         task = self._inflight.get(key)
         if task is None or task.done():
+            blocked = self._blocked(account)
+            if blocked is not None:
+                return blocked
             task = asyncio.create_task(self._run_account(adapter, account))
             self._inflight[key] = task
             task.add_done_callback(self._observe_task)
@@ -341,20 +367,27 @@ class QueryService:
             raise
         if pending:
             adapter_task.cancel()
+            if not started.is_set():
+                return self._failure(
+                    account,
+                    ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
+                    localized("query.queue_timeout"),
+                    diagnostic_code="queue_timeout",
+                )
             snapshot = self._failure(
                 account,
                 ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                "账户查询超过时限",
+                localized("query.account_timeout"),
+                diagnostic_code="account_timeout",
             )
-            # Queue wait is not a provider failure. A request that actually
-            # started and exhausted its deadline consumes the failure budget.
-            if started.is_set() and not self._closed:
-                self._record_outcome(account, snapshot.error)
+            self._record_outcome(account, snapshot.error)
             return snapshot
         snapshot = adapter_task.result()
         if self._closed:
             return self._failure(
-                account, ProviderErrorCategory.TEMPORARILY_UNAVAILABLE, "查询服务已关闭"
+                account,
+                ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
+                localized("query.service_closed"),
             )
         if snapshot.error is None and snapshot.status in (
             SnapshotStatus.AVAILABLE,
@@ -384,7 +417,7 @@ class QueryService:
                 snapshot = self._failure(
                     account,
                     ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
-                    "查询暂时不可用",
+                    localized("query.unavailable"),
                 )
             # An uncooperative adapter may catch cancellation. Its late result is
             # revoked and cannot reset budget, update cache or trigger alerts.
@@ -396,7 +429,9 @@ class QueryService:
                 or snapshot.provider_type is not account.provider_type
             ):
                 snapshot = self._failure(
-                    account, ProviderErrorCategory.PARSE, "供应商返回的账户结果无效"
+                    account,
+                    ProviderErrorCategory.PARSE,
+                    localized("query.invalid_provider_result"),
                 )
             self._record_outcome(account, snapshot.error)
             if self._snapshot_observer is not None and self._fresh_facts(snapshot):
@@ -414,9 +449,11 @@ class QueryService:
         if self._closed:
             return
         provider = self._provider(account)
+        account_key = (account.id, account.config_fingerprint)
         if error is None:
-            self._failures.pop(provider, None)
-            self._cooldowns.pop(provider, None)
+            for key in (provider, account_key):
+                self._failures.pop(key, None)
+                self._cooldowns.pop(key, None)
         elif error.category in (
             ProviderErrorCategory.AUTHENTICATION,
             ProviderErrorCategory.PERMISSION,
@@ -435,12 +472,20 @@ class QueryService:
             ProviderErrorCategory.TEMPORARILY_UNAVAILABLE,
             ProviderErrorCategory.PARSE,
         ):
-            count = min(self._failures.get(provider, 0) + 1, 12)
-            self._failures[provider] = count
-            base = 60.0 if error.category is ProviderErrorCategory.RATE_LIMITED else 2.0
-            delay = min(base * (2 ** (count - 1)), 3600.0) * (1 + 0.2 * self._jitter())
+            rate_limited = error.category is ProviderErrorCategory.RATE_LIMITED
+            # Explicit upstream budgets stay shared across keys. A local
+            # transport or response failure only backs off the queried account.
+            key = (
+                provider
+                if rate_limited or error.retry_after_seconds is not None
+                else account_key
+            )
+            count = min(self._failures.get(key, 0) + 1, 12)
+            self._failures[key] = count
+            base = 60.0 if rate_limited else 2.0
+            delay = min(base * (2 ** (count - 1)) * (1 + 0.2 * self._jitter()), 3600.0)
             delay = max(delay, error.retry_after_seconds or 0)
-            self._cooldowns[provider] = (self._clock() + delay, error)
+            self._cooldowns[key] = (self._clock() + delay, error)
 
     def _observe_task(self, task: asyncio.Task) -> None:
         self._tasks.discard(task)
@@ -489,6 +534,8 @@ class QueryService:
         account: AccountSettings,
         category: ProviderErrorCategory,
         message: str,
+        *,
+        diagnostic_code: str | None = None,
     ) -> BalanceSnapshot:
         return BalanceSnapshot(
             account_id=account.id,
@@ -498,7 +545,7 @@ class QueryService:
             balances=(),
             source="query service",
             fetched_at=datetime.now(UTC),
-            error=NormalizedProviderError(category, message),
+            error=NormalizedProviderError(category, message, diagnostic_code),
         )
 
     @staticmethod
