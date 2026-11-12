@@ -278,8 +278,22 @@ class AlertDelivery:
             meta = instance.meta()
             if meta.id != platform_id:
                 return "platform_unavailable"
-            if meta.name == "qq_official":
-                return "platform_unsupported"
+            if meta.name in {"qq_official", "qq_official_webhook"}:
+                if kind not in {"FriendMessage", "GroupMessage"}:
+                    return "platform_unsupported"
+                if target.mentions:
+                    return "mention_unsupported"
+                # SDK Route interpolates IDs into paths: reject delimiters and
+                # control characters instead of permitting path/query injection.
+                if not re.fullmatch(r"[A-Za-z0-9_-]{1,257}", session):
+                    return "target_invalid"
+                if kind == "GroupMessage" and not session.rsplit("_", 1)[-1]:
+                    return "target_invalid"
+                # Use the resolved instance's SDK, not Context.send_message:
+                # AstrBot can silently skip a group send yet return True.
+                if self._official_sender(instance, kind) is None:
+                    return "transport_unavailable"
+                return ""
             if target.mentions:
                 if meta.name != "aiocqhttp" or kind != "GroupMessage":
                     return "mention_unsupported"
@@ -295,6 +309,40 @@ class AlertDelivery:
             )
         except Exception:
             return "platform_unavailable"
+
+    @staticmethod
+    def _official_sender(instance: Any, kind: str):
+        client = (
+            instance.get_client()
+            if callable(getattr(instance, "get_client", None))
+            else None
+        )
+        api = getattr(client, "api", None)
+        name = "post_c2c_message" if kind == "FriendMessage" else "post_group_message"
+        sender = getattr(api, name, None)
+        return sender if callable(sender) else None
+
+    async def _send_official(self, target: Any, text: str) -> bool | None:
+        platform_id, kind, session = target.umo.split(":", 2)
+        instance = self.context.get_platform_inst(platform_id)
+        sender = self._official_sender(instance, kind)
+        if sender is None:
+            return False
+        # AstrBot's official group UMO is either group_openid or, with
+        # unique_session, sender_openid_group_openid. Mirror its adapter routing.
+        # Private OpenIDs are never split or converted into group recipients.
+        if kind == "GroupMessage":
+            session = session.rsplit("_", 1)[-1]
+        recipient = "openid" if kind == "FriendMessage" else "group_openid"
+        result = await sender(**{recipient: session}, msg_type=0, content=text)
+        # API acceptance, NOT proof of delivery/read. No retry or fallback send:
+        # a timeout/missing receipt can follow a successful remote submission.
+        receipt = (
+            result.get("id")
+            if isinstance(result, Mapping)
+            else getattr(result, "id", None)
+        )
+        return True if isinstance(receipt, str) and receipt.strip() else None
 
     @staticmethod
     def _blocked(reason: str) -> DeliveryResult:
@@ -613,6 +661,9 @@ class AlertDelivery:
             if not reserve():
                 return cancelled
             transport_started = True
+            instance = self.context.get_platform_inst(target.umo.split(":", 2)[0])
+            if instance.meta().name in {"qq_official", "qq_official_webhook"}:
+                return await self._send_official(target, text)
             return await self.context.send_message(target.umo, outbound)
 
         try:

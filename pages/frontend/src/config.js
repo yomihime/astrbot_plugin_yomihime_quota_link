@@ -1,6 +1,6 @@
 import {isLanguage,locales,translate} from './i18n.js';
 /** Legacy descriptors and additional presets for the managed account page. */
-import {normalizeAlert,normalizeTargets,normalizeIds,normalizeLlm,alertDraftErrors} from './alert-config.js';
+import {normalizeAlert,normalizeTargets,normalizeAdminIds,normalizeLlm,alertDraftErrors} from './alert-config.js';
 import schema from './legacy-schema.json' with {type: 'json'};
 /** @type {Record<string, any>} */
 const legacyTemplates = schema.providers.templates;
@@ -99,7 +99,7 @@ export function validateConfig(config){
  jsonSafe(config);config=clone({...defaults(globals),...config,providers:config.providers||[]});
  if(config.language!==undefined&&!isLanguage(config.language))config.language='auto';
  for(const account of config.providers){if(record(account)&&account.type===undefined&&providerOptions.includes(account.__template_key))account.type=account.__template_key;if(!record(account)||typeof account.id!=='string'||typeof account.type!=='string'||Object.keys(account).some(k=>!accountKeys.has(k)))throw Error('invalid_response');if(account.endpoint&&(!record(account.endpoint)||Object.keys(account.endpoint).some(k=>!endpointKeys.has(k))))throw Error('invalid_response');if(account.response_mapping&&(!record(account.response_mapping)||Object.keys(account.response_mapping).some(k=>!mappingKeys.has(k))))throw Error('invalid_response');}
- config.balance_alert_targets=normalizeTargets(config.balance_alert_targets);config.balance_alert_admin_qq_ids=normalizeIds(config.balance_alert_admin_qq_ids);config.balance_alert_llm=normalizeLlm(config.balance_alert_llm);for(const account of config.providers)account.balance_alert=normalizeAlert(account.balance_alert,account);
+ config.balance_alert_targets=normalizeTargets(config.balance_alert_targets);config.balance_alert_admin_qq_ids=normalizeAdminIds(config.balance_alert_admin_qq_ids);config.balance_alert_llm=normalizeLlm(config.balance_alert_llm);for(const account of config.providers)account.balance_alert=normalizeAlert(account.balance_alert,account);
  return clone(config);
 }
 export function validateSnapshot(value){

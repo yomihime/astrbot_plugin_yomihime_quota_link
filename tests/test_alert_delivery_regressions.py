@@ -197,6 +197,7 @@ async def test_each_blocked_reason_is_specific_safe_and_never_reserves(code):
         context.get_platform_inst = fail
     elif code == "platform_unsupported":
         context.adapter = "qq_official"
+        target = BalanceAlertTarget("custom:OtherMessage:synthetic")
     elif code == "mention_unsupported":
         context.adapter = "telegram"
     elif code == "mention_invalid":

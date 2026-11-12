@@ -52,6 +52,10 @@ export function normalizeIds(value,limit=100){
  if(!Array.isArray(value)||value.length>limit)throw new MessageError('web.validation.id_limit',{limit});
  const output=[];for(const item of value){if(typeof item!=='string'||controls.test(item)||!positiveId.test(item.trim()))throw new MessageError('web.validation.qq_id');const id=item.trim();if(!output.includes(id))output.push(id);}return output;
 }
+export function normalizeAdminIds(value){
+ if(!Array.isArray(value)||value.length>100)throw new MessageError('web.validation.id_limit',{limit:100});
+ const output=[];for(const item of value){if(typeof item!=='string'||controls.test(item)||!(positiveId.test(item.trim())||/^qq_official(?:_webhook)?:[A-Za-z0-9_-]{1,128}$/.test(item.trim())))throw new MessageError('error.alert_config.invalid_admin_id',{label:''});const id=item.trim();if(!output.includes(id))output.push(id);}return output;
+}
 export function normalizeTargets(value){
  if(!Array.isArray(value)||value.length>20)throw new MessageError('web.validation.target_limit');
  const seen=new Set();return value.map(target=>{
@@ -109,7 +113,7 @@ export function normalizeLlm(value){
 export function alertDraftErrors(config,locale){
  const errors=[];let targets=[];
  try{targets=normalizeTargets(config.balance_alert_targets===undefined?[]:config.balance_alert_targets);}catch(error){errors.push(errorText(error,locale));}
- try{normalizeIds(config.balance_alert_admin_qq_ids===undefined?[]:config.balance_alert_admin_qq_ids);}catch(error){errors.push(errorText(error,locale));}
+ try{normalizeAdminIds(config.balance_alert_admin_qq_ids===undefined?[]:config.balance_alert_admin_qq_ids);}catch(error){errors.push(errorText(error,locale));}
  try{normalizeLlm(config.balance_alert_llm);}catch(error){errors.push(errorText(error,locale));}
  for(const account of config.providers||[]){try{const a=normalizeAlert(account.balance_alert,account);if(a.enabled&&((account.enabled!==undefined&&account.enabled!==true)||a.threshold===null||!a.metric||targets.length===0))throw new MessageError('web.validation.alert_prerequisites');}catch(error){errors.push(translate('web.validation.account_alert',locale,{account:account.display_name||account.id,message:errorText(error,locale)}));}}
  return errors;

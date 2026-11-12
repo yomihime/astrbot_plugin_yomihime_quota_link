@@ -268,9 +268,27 @@ def parse_alert_targets(value: Any) -> tuple[BalanceAlertTarget, ...]:
 
 
 def parse_alert_admin_qq_ids(value: Any) -> tuple[str, ...]:
-    return _qq_ids(
-        value, MAX_ALERT_ADMIN_QQ_IDS, message("error.alert_config.label.admin_qq")
-    )
+    label = message("error.alert_config.label.admin_qq")
+    if type(value) is not list or len(value) > MAX_ALERT_ADMIN_QQ_IDS:
+        raise AlertConfigError(
+            message(
+                "error.alert_config.list_limit",
+                label=label,
+                limit=MAX_ALERT_ADMIN_QQ_IDS,
+            )
+        )
+    result = []
+    for item in value:
+        identity = _text(item, label, 160, token=True)
+        if not QQ_ID.fullmatch(identity) and not re.fullmatch(
+            r"qq_official(?:_webhook)?:[A-Za-z0-9_-]{1,128}", identity
+        ):
+            raise AlertConfigError(
+                message("error.alert_config.invalid_admin_id", label=label)
+            )
+        if identity not in result:
+            result.append(identity)
+    return tuple(result)
 
 
 def parse_alert_llm(value: Any) -> BalanceAlertLLM:

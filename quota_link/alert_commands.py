@@ -39,9 +39,16 @@ def can_manage_alert(event, settings) -> bool:
     try:
         # This adapter exposes actual numeric QQ IDs. qq_official openids are
         # not QQ numbers and must not be guessed into this number whitelist.
-        if event.get_platform_name() != "aiocqhttp":
-            return False
+        platform = event.get_platform_name()
         sender = event.get_sender_id()
+        if platform in {"qq_official", "qq_official_webhook"}:
+            return (
+                isinstance(sender, str)
+                and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", sender) is not None
+                and f"{platform}:{sender}" in settings.balance_alert_admin_qq_ids
+            )
+        if platform != "aiocqhttp":
+            return False
         return (
             isinstance(sender, str)
             and re.fullmatch(r"[1-9][0-9]{0,19}", sender) is not None
