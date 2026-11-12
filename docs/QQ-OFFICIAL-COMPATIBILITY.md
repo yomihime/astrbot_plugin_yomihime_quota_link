@@ -1,31 +1,32 @@
 # QQ 官方机器人兼容性
 
-## 身份与权限
+## 身份与目标
 
-- 查询私聊名单：`qq_official:UID`；Webhook 使用 `qq_official_webhook:UID`。
-- 查询群聊名单：发送者 UID，仍须开启群查询；命令管理员限制不变。
-- 预警管理名单：平台前缀加 UID。原有数字项仍仅匹配 OneBot QQ，名单不自动授予跨平台权限。
-- 推送：完整 UMO，第一段匹配实际平台实例 ID。私聊保留 UID；群隔离会话按 AstrBot 的 `sender_openid_group_openid` 取群段。推送目标不授予权限。
+- 查询私聊名单使用 `qq_official:UID`，Webhook 使用 `qq_official_webhook:UID`。
+- 查询群聊名单使用发送者 UID，仍须开启群查询。预警管理名单可使用平台前缀加 UID。原有数字项仍匹配 OneBot QQ。
+- 预警目标使用完整 UMO，第一段是实际平台实例 ID。目标配置不会授予管理权限。原有 OneBot 目标写法继续适用。
 
-## 发送边界
+在 QQ 群或 QQ 个人私聊中运行 `/yql alert targets addhere` 时，插件从 QQ SDK 的消息对象识别场景。QQ 频道和频道私信无法通过此命令添加。
 
-只实现官方私聊和群聊纯文本预警，无 @、图片或频道回退。调用实际实例 `get_client().api.post_c2c_message` / `post_group_message`，保留插件会话检查、持久预算预留与超时限制。官方 SDK 方法缺失时阻止发送。只接受非空消息 ID 回执为 `submitted`，不代表用户已收到或读过；异常、空响应或布尔值返回均不能作为成功。
+手填时在 UMO 后明确指定场景。使用对应的 QQ 群或 QQ 个人私聊 OpenID，并保留大小写。
 
-QQ 主动消息权限、次数、关系及内容审核仍由官方 API 决定，不能通过改 UMO 绕过。插件不追加重试，也不在失败时改发其他目标或通道。qq-botpy 1.2.1 的 HTTP 层自身在连接异常时可能重试；因此这里不承诺网络严格发送一次。其递归结果缺失时可能出现已提交但无回执，保持 `unknown`。
+```text
+OfficialQQ:GroupMessage:GroupOpenID scene=qq_group
+OfficialQQ:FriendMessage:UserOpenID scene=qq_c2c
+```
 
-## 依据与验证
+可将同样的参数用于 `/yql alert targets add`。手填场景由管理员确认。AstrBot 的 `GroupMessage` 和 `FriendMessage` 也用于频道消息和频道私信，单凭 UMO 无法区分。已有官方目标须在管理页补填场景，或移除旧目标后重新运行 `addhere`。QQ 官方目标只发送纯文本。
 
-核对 AstrBot v4.29.1、v4.29.4 的官方 WebSocket/Webhook 实例客户端接口与群会话规则；核对 qq-botpy 1.2.1 的公开 API、路径及返回值。使用合成消息 ID 和发送替身，无真实 QQ 账号发送。
+## 发送与去重
 
-- Python 最终全量：1967 通过、5 跳过、17 个 subtests。
-- 前端：205 项通过；TypeScript 类型检查和生产构建通过。
-- 修改的 Python 文件 Ruff 检查/格式、Git diff 空白检查通过。
-- 全量使用固定 AstrBot 4.29.1 源码夹具与固定 Noto 字体；首次缺少夹具导致的打包测试失败已补齐并重跑通过。
-- 未做真实 QQ 官方网络验收；SDK 默认 null 可选字段是否被具体账号/API 接受仍需该环境验证。未启动用户本地环境。
+发送前按原始 UMO 检查插件和会话权限。QQ 群隔离 UMO 按 AstrBot 的规则取末尾群段。指向同一平台实例、同一场景和同一收件方的目标共享发送预算和低余额去重记录。
 
-参考：
-- https://github.com/AstrBotDevs/AstrBot/blob/v4.29.1/astrbot/core/platform/sources/qqofficial/qqofficial_platform_adapter.py
-- https://github.com/AstrBotDevs/AstrBot/blob/v4.29.1/astrbot/core/platform/sources/qqofficial_webhook/qo_webhook_adapter.py
-- https://github.com/AstrBotDevs/AstrBot/blob/v4.29.1/astrbot/core/event_bus.py
-- https://github.com/tencent-connect/botpy/blob/master/botpy/api.py
-- https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/overview.html
+升级时按现有目标迁移能对应的旧记录。若旧目标已删除，其哈希无法还原收件方。账户在本次低余额期间有这类发送结果未知的记录时，暂停其 QQ 官方目标发送，直到余额恢复并进入下一次低余额。当前配置中的 OneBot 目标仍按各自的 UMO 发送。
+
+使用所选实例的 qq-botpy 1.2.1 HTTP 客户端发送单次请求。其他 SDK 版本需要适配后才能启用官方预警。QQ 决定主动消息权限、频次和内容审核。非空消息 ID 表示请求已获接受，实际送达与已读状态仍未知。SDK 明确识别的 HTTP 401、403、404、405 和 429 可在预算窗口后重试。超时、连接异常、回执缺失及 SDK 无法区分的服务端错误记为未知，本次低余额期间不再向同一收件方发送。
+
+离线测试覆盖 AstrBot 4.29.1 的 WebSocket 和 Webhook 场景、qq-botpy 1.2.1 的单次请求和旧状态迁移。真实 QQ 账号的主动消息权限与送达仍需在对应环境验证。
+
+- [AstrBot WebSocket 适配器](https://github.com/AstrBotDevs/AstrBot/blob/v4.29.1/astrbot/core/platform/sources/qqofficial/qqofficial_platform_adapter.py)
+- [AstrBot Webhook 适配器](https://github.com/AstrBotDevs/AstrBot/blob/v4.29.1/astrbot/core/platform/sources/qqofficial_webhook/qo_webhook_adapter.py)
+- [QQ 机器人消息发送接口](https://github.com/tencent-connect/bot-docs/blob/main/docs/develop/api-v2/server-inter/message/send-receive/send.md)

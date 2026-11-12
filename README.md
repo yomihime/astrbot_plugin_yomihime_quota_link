@@ -101,7 +101,7 @@ my-qq:FriendMessage:10001
 my-qq:GroupMessage:20001 @10001 @10002
 ```
 
-UMO 第一段是实际平台实例 ID，不必叫 NapCat。私聊行不可带 @；群内提及只支持明确数字 QQ 号，不支持昵称、全体、CQ 代码。群发送前再次验证实际实例是支持 QQ 提及的 `aiocqhttp` 适配器；普通群目标也必须有可用实例。`qq_official` 支持官方私聊和群聊的纯文本预警，使用所选实例的 QQ SDK 发送。官方目标不支持 @；请填写 `/sid` 的完整 UMO，保留 OpenID 原样，不要填普通 QQ 号或把用户 UID 当成群 OpenID。官方主动消息仍受 QQ 权限、频次和内容限制；只有收到消息 ID 才记为已提交，不代表用户已收到。超时或缺少回执记为未知，插件不追加重试。目标和 QQ 成员须由管理员自己确认；保存配置、addhere 都不会测试发送。
+UMO 第一段是实际平台实例 ID。私聊行不可带 @。群内提及支持 `aiocqhttp` 的数字 QQ 号。QQ 官方 WebSocket 和 Webhook 支持 QQ 群与 QQ 个人私聊的纯文本预警。手填时在完整 UMO 后加 `scene=qq_group` 或 `scene=qq_c2c`，使用对应场景的 OpenID。官方目标不支持 @、QQ 频道及频道私信。请勿填写普通 QQ 号。既有 QQ 官方目标需要补填场景，或移除旧目标后在对应 QQ 群或私聊中重新运行 `/yql alert targets addhere`。保存与添加目标均不发送测试消息。
 
 “预警 QQ 管理白名单”独立于查询权限和收件名单。`/yql alert` **整棵命令树**仅允许：可信 `aiocqhttp` 事件的实际 QQ 号命中该名单，**或** AstrBot 内置管理员。空名单仍允许宿主管理员；普通群管理员、昵称、参数中的 QQ 号和被 @ 的人不因此获得权限。其他平台可使用宿主内置管理员身份。网页继续只接受原 Dashboard 管理授权。
 
@@ -121,6 +121,8 @@ UMO 第一段是实际平台实例 ID，不必叫 NapCat。私聊行不可带 @�
 /yql alert repeat "账户名" 0
 /yql alert targets list
 /yql alert targets addhere @10001
+/yql alert targets add OfficialQQ:GroupMessage:GroupOpenID scene=qq_group
+/yql alert targets add OfficialQQ:FriendMessage:UserOpenID scene=qq_c2c
 /yql alert targets add my-qq:GroupMessage:20001 @10001 @10002
 /yql alert targets remove <稳定目标ID>
 /yql alert admins list
@@ -259,7 +261,7 @@ python scripts/build_plugin.py --tag v0.4.0 --output-dir dist
 
 私聊查询白名单填写 `qq_official:<UID>`，群聊查询白名单填写发送者 UID，并开启群聊查询。UID 来自 `/sid`，不是 Bot ID、群 OpenID 或完整 UMO。预警管理白名单支持 `qq_official:<UID>`；原有纯数字项仍只授权 OneBot QQ 身份。AstrBot 内置管理员权限保持不变。推送目标必须填写完整 UMO，目标本身不授予查询或管理权限。
 
-官方预警通过实例 `get_client().api.post_c2c_message` / `post_group_message` 提交纯文本，不依赖 AstrBot 群消息缓存，也不绕过官方 API 权限。只支持 FriendMessage 和 GroupMessage，不自动降级到频道或其它实例。宿主缺少对应 SDK 方法时阻止发送。代码核对范围：AstrBot 4.29.1 与 4.29.4 的客户端接口；离线测试不代表真实 QQ 官方发送验收。
+官方预警通过所选实例的 QQ SDK 提交。QQ 仍校验主动消息权限、频次和内容。收到消息 ID 表示 QQ 已接受请求。明确拒绝可在预算窗口后重试。超时或缺少回执时记为未知，同一次低余额期间停止向该收件方发送。场景、旧记录迁移与 SDK 支持范围见 [QQ 官方机器人兼容性](docs/QQ-OFFICIAL-COMPATIBILITY.md)。
 
 Webhook 官方适配器使用同样的发送路径；权限白名单前缀为 `qq_official_webhook:`，不与 WebSocket 实例的 `qq_official:` 权限混用。群隔离会话按 AstrBot 的 `sender_openid_group_openid` 规则取群段；私聊 UID 不做拆分。
 

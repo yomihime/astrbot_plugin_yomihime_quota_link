@@ -161,6 +161,7 @@ EXPECTED_DOC_FILES = {
     "docs/SECURITY.md",
     "docs/PROVIDER-SOURCES.md",
     "docs/PROVIDER-LOGOS.md",
+    "docs/QQ-OFFICIAL-COMPATIBILITY.md",
     "pages/frontend/PROVENANCE.md",
     "pages/frontend/provenance.json",
 }

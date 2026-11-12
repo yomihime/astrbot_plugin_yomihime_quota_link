@@ -156,7 +156,12 @@ const App=defineComponent({setup(){
   ]});
  };
  const targetSettings=()=>h(SettingsGroup,{title:t('web.alert.targets_title'),number:'03'},{default:()=>[
-  h(FormField,{controlId:'field-global-balance_alert_targets',label:t('web.alert.targets'),hint:t('web.alert.targets_hint'),error:fieldError('field-global-balance_alert_targets')},{default:({controlAttrs}:FormFieldSlot)=>h('textarea',{...controlAttrs,class:'ui-control quota-targets',rows:5,spellcheck:false,autocomplete:'off',value:raw.value['field-global-balance_alert_targets']??formatTargets(s.draft?.balance_alert_targets),placeholder:'Synthetic-QQ:FriendMessage:10001\nSynthetic-QQ:GroupMessage:10002 @10003 @10004',disabled:ordinaryDisabled(),onInput:(e:Event)=>{const text=(e.target as HTMLTextAreaElement).value;raw.value['field-global-balance_alert_targets']=text;try{change(['balance_alert_targets'],parseTargetsText(text),null);delete errors.value['field-global-balance_alert_targets'];}catch(error){change(['balance_alert_targets'],text,null);errors.value['field-global-balance_alert_targets']=error;}}})}),
+  h(FormField,{controlId:'field-global-balance_alert_targets',label:t('web.alert.targets'),hint:t('web.alert.targets_hint'),error:fieldError('field-global-balance_alert_targets')},{default:({controlAttrs}:FormFieldSlot)=>h('textarea',{...controlAttrs,class:'ui-control quota-targets',rows:5,spellcheck:false,autocomplete:'off',value:raw.value['field-global-balance_alert_targets']??formatTargets(s.draft?.balance_alert_targets),placeholder:[
+   'Synthetic-QQ:FriendMessage:10001',
+   'Synthetic-QQ:GroupMessage:10002 @10003 @10004',
+   'Official-QQ:GroupMessage:ExampleGroupOpenID scene=qq_group',
+   'Official-QQ:FriendMessage:ExampleUserOpenID scene=qq_c2c',
+  ].join('\n'),disabled:ordinaryDisabled(),onInput:(e:Event)=>{const text=(e.target as HTMLTextAreaElement).value;raw.value['field-global-balance_alert_targets']=text;try{change(['balance_alert_targets'],parseTargetsText(text),null);delete errors.value['field-global-balance_alert_targets'];}catch(error){change(['balance_alert_targets'],text,null);errors.value['field-global-balance_alert_targets']=error;}}})}),
   runtimeStatus(),
  ]});
  const alertAdministration=()=>h(SettingsGroup,{title:t('web.alert.permissions'),number:'04'},{default:()=>[

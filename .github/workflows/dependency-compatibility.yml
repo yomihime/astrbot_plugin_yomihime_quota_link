@@ -65,7 +65,7 @@ jobs:
           python-version: '3.12'
       - name: Resolve plugin requirements with tested runtime constraints
         run: |
-          python -m pip install -r requirements.txt ${{ matrix.dependencies }} ${{ matrix.constraints }} pytest pytest-subtests PyJWT==2.10.1 FastAPI==0.135.2 Starlette==0.52.1 Quart==0.20.0
+          python -m pip install -r requirements.txt ${{ matrix.dependencies }} ${{ matrix.constraints }} pytest pytest-subtests PyJWT==2.10.1 FastAPI==0.135.2 Starlette==0.52.1 Quart==0.20.0 qq-botpy==1.2.1
           python -m pip check
       - name: Prepare independently pinned official SDK fixture
         run: |

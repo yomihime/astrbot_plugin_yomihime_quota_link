@@ -9,11 +9,18 @@ import unicodedata
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
+from importlib.metadata import version
 from typing import Any
 
+from .alert_config import (
+    OFFICIAL_ADAPTERS,
+    OFFICIAL_TARGET_SCENES,
+    official_recipient,
+)
 from .i18n import current_locale, message, render_text, tr, use_locale
 
 _QQ = re.compile(r"[1-9][0-9]{0,19}\Z")
+_OFFICIAL_SESSION = re.compile(r"[A-Za-z0-9_-]{1,257}\Z")
 # Insertion order is the deterministic primary-reason priority for multiple targets.
 BLOCKED_DETAILS = {
     "session_disabled": message("alert.delivery.session_disabled"),
@@ -22,6 +29,7 @@ BLOCKED_DETAILS = {
     "platform_not_found": message("alert.delivery.platform_not_found"),
     "platform_unavailable": message("alert.delivery.platform_unavailable"),
     "platform_unsupported": message("alert.delivery.platform_unsupported"),
+    "target_scene_required": message("alert.delivery.target_scene_required"),
     "mention_unsupported": message("alert.delivery.mention_unsupported"),
     "mention_invalid": message("alert.delivery.mention_invalid"),
     "transport_unavailable": message("alert.delivery.transport_unavailable"),
@@ -32,6 +40,7 @@ BLOCKED_DETAILS = {
 DELIVERY_DETAILS = {
     **BLOCKED_DETAILS,
     "fixed_hint": message("alert.delivery.fixed_hint"),
+    "legacy_target_unknown": message("alert.delivery.legacy_target_unknown"),
 }
 
 # These checks reduce factual/action leakage from the short introduction, rather
@@ -261,6 +270,9 @@ class AlertDelivery:
         return not self._target_reason(target)
 
     def _target_reason(self, target: Any) -> str:
+        return self._resolve_target(target)[0]
+
+    def _resolve_target(self, target: Any) -> tuple[str, Any]:
         try:
             platform_id, kind, session = target.umo.split(":", 2)
             if (
@@ -268,73 +280,117 @@ class AlertDelivery:
                 or not session
                 or kind not in {"FriendMessage", "GroupMessage", "OtherMessage"}
             ):
-                return "target_invalid"
+                return "target_invalid", None
         except (AttributeError, TypeError, ValueError):
-            return "target_invalid"
+            return "target_invalid", None
         try:
             instance = self.context.get_platform_inst(platform_id)
             if instance is None:
-                return "platform_not_found"
+                return "platform_not_found", None
             meta = instance.meta()
             if meta.id != platform_id:
-                return "platform_unavailable"
-            if meta.name in {"qq_official", "qq_official_webhook"}:
+                return "platform_unavailable", None
+            if meta.name in OFFICIAL_ADAPTERS:
                 if kind not in {"FriendMessage", "GroupMessage"}:
-                    return "platform_unsupported"
+                    return "platform_unsupported", None
                 if target.mentions:
-                    return "mention_unsupported"
+                    return "mention_unsupported", None
                 # SDK Route interpolates IDs into paths: reject delimiters and
                 # control characters instead of permitting path/query injection.
-                if not re.fullmatch(r"[A-Za-z0-9_-]{1,257}", session):
-                    return "target_invalid"
-                if kind == "GroupMessage" and not session.rsplit("_", 1)[-1]:
-                    return "target_invalid"
-                # Use the resolved instance's SDK, not Context.send_message:
-                # AstrBot can silently skip a group send yet return True.
-                if self._official_sender(instance, kind) is None:
-                    return "transport_unavailable"
-                return ""
+                recipient = official_recipient(kind, session)
+                if not _OFFICIAL_SESSION.fullmatch(session) or not recipient:
+                    return "target_invalid", None
+                scene = target.scene
+                if scene is None:
+                    return "target_scene_required", None
+                if OFFICIAL_TARGET_SCENES.get(scene) != kind:
+                    return "platform_unsupported", None
+                scenes = getattr(instance, "_session_scene", {})
+                if any(
+                    scenes.get(value) == "channel" for value in (session, recipient)
+                ):
+                    return "platform_unsupported", None
+                transport = self._official_transport(instance)
+                if transport is None:
+                    return "transport_unavailable", None
+                return "", (transport, kind, recipient)
+            if target.scene is not None:
+                return "platform_unsupported", None
             if target.mentions:
                 if meta.name != "aiocqhttp" or kind != "GroupMessage":
-                    return "mention_unsupported"
+                    return "mention_unsupported", None
                 if not _QQ.fullmatch(session.split("_")[-1]) or any(
                     not isinstance(qq, str) or not _QQ.fullmatch(qq)
                     for qq in target.mentions
                 ):
-                    return "mention_invalid"
+                    return "mention_invalid", None
             return (
                 ""
                 if callable(getattr(self.context, "send_message", None))
-                else "transport_unavailable"
+                else "transport_unavailable",
+                None,
             )
         except Exception:
-            return "platform_unavailable"
+            return "platform_unavailable", None
+
+    def official_target_identity(self, target: Any) -> tuple[str, str, str, str] | None:
+        """The recipient of both current and legacy official group UMOs."""
+        try:
+            platform_id, kind, session = target.umo.split(":", 2)
+            if kind not in OFFICIAL_TARGET_SCENES.values():
+                return None
+            recipient = official_recipient(kind, session)
+            if not _OFFICIAL_SESSION.fullmatch(session) or not recipient:
+                return None
+            meta = self.context.get_platform_inst(platform_id).meta()
+            if meta.id == platform_id and meta.name in OFFICIAL_ADAPTERS:
+                return meta.name, platform_id, kind, recipient
+        except Exception:
+            pass
+        return None
 
     @staticmethod
-    def _official_sender(instance: Any, kind: str):
-        client = (
-            instance.get_client()
-            if callable(getattr(instance, "get_client", None))
-            else None
-        )
-        api = getattr(client, "api", None)
-        name = "post_c2c_message" if kind == "FriendMessage" else "post_group_message"
-        sender = getattr(api, name, None)
-        return sender if callable(sender) else None
+    def _official_transport(instance: Any):
+        try:
+            from botpy.http import BotHttp
 
-    async def _send_official(self, target: Any, text: str) -> bool | None:
-        platform_id, kind, session = target.umo.split(":", 2)
-        instance = self.context.get_platform_inst(platform_id)
-        sender = self._official_sender(instance, kind)
-        if sender is None:
+            # This SDK version's request contract is used to suppress replay.
+            if version("qq-botpy") != "1.2.1":
+                return None
+            transport = instance.get_client().http
+        except (AttributeError, ImportError):
+            return None
+        return transport if isinstance(transport, BotHttp) else None
+
+    @staticmethod
+    async def _send_official(transport: Any, kind: str, recipient: str, text: str):
+        from botpy.errors import (
+            AuthenticationFailedError,
+            ForbiddenError,
+            MethodNotAllowedError,
+            NotFoundError,
+            SequenceNumberError,
+        )
+        from botpy.http import Route
+
+        path = "/v2/users" if kind == "FriendMessage" else "/v2/groups"
+        try:
+            # AstrBot's botpy 1.2.1 retries a connection reset until retry_time
+            # exceeds 2. Start at that limit and prevent redirect POST replay.
+            result = await transport.request(
+                Route("POST", f"{path}/{recipient}/messages"),
+                retry_time=2,
+                allow_redirects=False,
+                json={"msg_type": 0, "content": text},
+            )
+        except (
+            AuthenticationFailedError,
+            ForbiddenError,
+            MethodNotAllowedError,
+            NotFoundError,
+            SequenceNumberError,
+        ):
             return False
-        # AstrBot's official group UMO is either group_openid or, with
-        # unique_session, sender_openid_group_openid. Mirror its adapter routing.
-        # Private OpenIDs are never split or converted into group recipients.
-        if kind == "GroupMessage":
-            session = session.rsplit("_", 1)[-1]
-        recipient = "openid" if kind == "FriendMessage" else "group_openid"
-        result = await sender(**{recipient: session}, msg_type=0, content=text)
         # API acceptance, NOT proof of delivery/read. No retry or fallback send:
         # a timeout/missing receipt can follow a successful remote submission.
         receipt = (
@@ -645,7 +701,8 @@ class AlertDelivery:
                 # config read remain a host TOCTOU limit; never retry a send.
             if not self._alive(active):
                 return cancelled
-            if reason := self._target_reason(target):
+            reason, official = self._resolve_target(target)
+            if reason:
                 return self._blocked(reason)
             try:
                 locale = self._locale() if self._locale is not None else hint_locale
@@ -653,7 +710,8 @@ class AlertDelivery:
                     if hint and locale != hint_locale:
                         hint, note = "", tr("alert.delivery.llm_locale_changed")
                     text = format_alert_facts(facts, hint)
-                outbound = self.component_factory(target.mentions, text)
+                if official is None:
+                    outbound = self.component_factory(target.mentions, text)
             except Exception:
                 return self._blocked("message_components_unavailable")
             # Durable reservation remains the final synchronous operation before
@@ -661,9 +719,8 @@ class AlertDelivery:
             if not reserve():
                 return cancelled
             transport_started = True
-            instance = self.context.get_platform_inst(target.umo.split(":", 2)[0])
-            if instance.meta().name in {"qq_official", "qq_official_webhook"}:
-                return await self._send_official(target, text)
+            if official is not None:
+                return await self._send_official(*official, text)
             return await self.context.send_message(target.umo, outbound)
 
         try:
