@@ -22,6 +22,7 @@ from .alert_cards import (
     format_alert_card,
     format_alert_help,
 )
+from .alert_config import OFFICIAL_ADAPTERS, official_recipient
 from .config_store import ConfigValidation
 from .i18n import message, render_text, tr
 from .presentation.bitmap import CardSpec
@@ -39,9 +40,16 @@ def can_manage_alert(event, settings) -> bool:
     try:
         # This adapter exposes actual numeric QQ IDs. qq_official openids are
         # not QQ numbers and must not be guessed into this number whitelist.
-        if event.get_platform_name() != "aiocqhttp":
-            return False
+        platform = event.get_platform_name()
         sender = event.get_sender_id()
+        if platform in OFFICIAL_ADAPTERS:
+            return (
+                isinstance(sender, str)
+                and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", sender) is not None
+                and f"{platform}:{sender}" in settings.balance_alert_admin_qq_ids
+            )
+        if platform != "aiocqhttp":
+            return False
         return (
             isinstance(sender, str)
             and re.fullmatch(r"[1-9][0-9]{0,19}", sender) is not None
@@ -136,6 +144,38 @@ def _mentions(words):
     if any(not word.startswith("@") or len(word) < 2 for word in words):
         raise ConfigValidation(message("alert.command.mention_syntax"))
     return [word[1:] for word in words]
+
+
+def _official_event_scene(event, umo: str) -> str | None:
+    try:
+        platform = event.get_platform_name()
+    except AttributeError:
+        return None
+    if platform not in OFFICIAL_ADAPTERS:
+        return None
+    try:
+        from botpy.message import C2CMessage, GroupMessage
+
+        _, kind, session = umo.split(":", 2)
+        raw = event.message_obj.raw_message
+        recipient = official_recipient(kind, session)
+        if (
+            kind == "GroupMessage"
+            and isinstance(raw, GroupMessage)
+            and recipient
+            and raw.group_openid == recipient
+        ):
+            return "qq_group"
+        if (
+            kind == "FriendMessage"
+            and isinstance(raw, C2CMessage)
+            and recipient
+            and raw.author.user_openid == recipient
+        ):
+            return "qq_c2c"
+    except (ImportError, AttributeError, TypeError, ValueError):
+        pass
+    raise ConfigValidation(message("alert.command.unsupported_official_scene"))
 
 
 @dataclass(frozen=True)
@@ -352,13 +392,22 @@ class AlertCommands:
                 umo = getattr(event, "unified_msg_origin", None)
                 if not isinstance(umo, str) or not umo:
                     raise ConfigValidation(message("alert.command.untrusted_session"))
+                scene = _official_event_scene(event, umo)
             elif action == "add" and args:
                 umo = args.pop(0)
+                scene = (
+                    args.pop(0).removeprefix("scene=")
+                    if args and args[0].startswith("scene=")
+                    else None
+                )
             else:
                 raise ConfigValidation(
                     message("alert.command.invalid_target_arguments")
                 )
-            targets.append({"umo": umo, "mentions": _mentions(args)})
+            target = {"umo": umo, "mentions": _mentions(args)}
+            if scene is not None:
+                target["scene"] = scene
+            targets.append(target)
             return
         if op == "admins" and len(args) == 2 and args[0] in {"add", "remove"}:
             admins = config.setdefault("balance_alert_admin_qq_ids", [])

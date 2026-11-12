@@ -32,6 +32,12 @@ from .models import (
 )
 
 _BUDGET_SECONDS = 300
+_DELIVERY_MIGRATION_PRIORITY = {
+    "failed": 0,
+    "submitted": 1,
+    "reserved": 2,
+    "unknown": 2,
+}
 _MESSAGES = {
     "disabled": localized("alert.state.disabled"),
     "blocked": localized("alert.state.blocked"),
@@ -145,10 +151,14 @@ class AlertEngine:
         self._times: dict[str, tuple[float | None, float | None]] = {}
         self._detail_codes: dict[tuple[str, int, str], str] = {}
         self._observation_tokens: dict[str, tuple] = {}
+        self._transport_keys: dict[str, tuple[tuple[str, str, str, str], str]] = {}
+        self._migrated_keys: set[tuple[str, str]] = set()
+        self._configured_umo_keys: tuple[str, ...] = ()
         try:
             self._open_state(Path(state_path))
             self._initialize_accounts()
             self._initialize_units()
+            self._refresh_transport_keys()
             self.storage_available = True
             observer = getattr(self.service, "set_auth_pause_observer", None)
             if callable(observer):
@@ -208,6 +218,11 @@ class AlertEngine:
             CREATE TABLE IF NOT EXISTS budgets (
                 target_key TEXT PRIMARY KEY, attempted REAL NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS legacy_uncertain_deliveries AS
+                SELECT account_id, episode, target_key FROM deliveries
+                WHERE status IN ('unknown','reserved');
+            CREATE UNIQUE INDEX IF NOT EXISTS legacy_uncertain_delivery_identity
+                ON legacy_uncertain_deliveries(account_id, episode, target_key);
             CREATE TABLE IF NOT EXISTS auth_pauses (
                 auth_key TEXT PRIMARY KEY
             );
@@ -861,14 +876,21 @@ class AlertEngine:
                 await asyncio.gather(sleeper, waiter, return_exceptions=True)
 
     def _detail_code(self, account_id: str, status: str) -> str:
-        if status not in {"blocked", "submitted"} or self._db is None:
+        if status not in {"blocked", "submitted", "unknown"} or self._db is None:
             return ""
         account = self._row(account_id)
         if account is None or not account["low"]:
             return ""
         episode = account["episode"]
+        if status == "unknown":
+            return (
+                "legacy_target_unknown"
+                if self._transport_keys and self._legacy_uncertain(account_id, episode)
+                else ""
+            )
         current_targets = {
-            _target_key(target) for target in self.settings.balance_alert_targets
+            _target_key(target) if status == "blocked" else self._transport_key(target)
+            for target in self.settings.balance_alert_targets
         }
         # A target's previous episode or a superseded outcome is not evidence
         # for today's reason. In particular, a budget-delayed target was not
@@ -975,11 +997,106 @@ class AlertEngine:
             snapshot.fetched_at.timestamp(),
         ), ""
 
-    def _eligible(self, account: Any, episode: int, target: Any, now: float) -> bool:
-        row = self._db.execute(
-            "SELECT attempted,status FROM deliveries WHERE account_id=? AND episode=? AND target_key=?",
-            (account.id, episode, _target_key(target)),
+    def _official_target_identity(self, target: Any):
+        resolve = getattr(self.delivery, "official_target_identity", None)
+        return resolve(target) if resolve is not None else None
+
+    def _refresh_transport_keys(self) -> None:
+        self._transport_keys.clear()
+        self._configured_umo_keys = tuple(
+            _target_key(target) for target in self.settings.balance_alert_targets
+        )
+        for target in self.settings.balance_alert_targets:
+            identity = self._official_target_identity(target)
+            if identity is None:
+                continue
+            _, platform_id, kind, recipient = identity
+            key = "official:" + hashlib.sha256("\0".join(identity).encode()).hexdigest()
+            self._transport_keys[target.umo] = (identity, key)
+            # Legacy records hashed the configured UMO. The raw group UMO is
+            # recoverable from an isolated UMO, including when no longer listed.
+            raw_key = hashlib.sha256(
+                f"{platform_id}:{kind}:{recipient}".encode()
+            ).hexdigest()
+            for old_key in {_target_key(target), raw_key}:
+                if (old_key, key) not in self._migrated_keys:
+                    self._migrate_transport_key(old_key, key)
+                    self._migrated_keys.add((old_key, key))
+
+    def _migrate_transport_key(self, old_key: str, key: str) -> None:
+        with self._db:
+            rows = self._db.execute(
+                "SELECT account_id,episode,attempted,status FROM deliveries "
+                "WHERE target_key=? AND status!='blocked'",
+                (old_key,),
+            ).fetchall()
+            for row in rows:
+                account_id, episode, attempted, status = row
+                current = self._db.execute(
+                    "SELECT attempted,status FROM deliveries "
+                    "WHERE account_id=? AND episode=? AND target_key=?",
+                    (account_id, episode, key),
+                ).fetchone()
+                if current is None or (
+                    _DELIVERY_MIGRATION_PRIORITY[status],
+                    attempted,
+                ) > (
+                    _DELIVERY_MIGRATION_PRIORITY[current["status"]],
+                    current["attempted"],
+                ):
+                    self._db.execute(
+                        "INSERT OR REPLACE INTO deliveries VALUES(?,?,?,?,?)",
+                        (account_id, episode, key, attempted, status),
+                    )
+            self._db.execute(
+                "DELETE FROM deliveries WHERE target_key=? AND status!='blocked'",
+                (old_key,),
+            )
+            self._db.execute(
+                "DELETE FROM legacy_uncertain_deliveries WHERE target_key=?", (old_key,)
+            )
+            budget = self._db.execute(
+                "SELECT attempted FROM budgets WHERE target_key=?", (old_key,)
+            ).fetchone()
+            if budget is not None:
+                self._db.execute(
+                    "INSERT INTO budgets VALUES(?,?) "
+                    "ON CONFLICT(target_key) DO UPDATE SET attempted=max(attempted,excluded.attempted)",
+                    (key, budget["attempted"]),
+                )
+                self._db.execute("DELETE FROM budgets WHERE target_key=?", (old_key,))
+
+    def _transport_key(self, target: Any) -> str:
+        route = self._transport_keys.get(target.umo)
+        return route[1] if route is not None else _target_key(target)
+
+    def _legacy_uncertain(self, account_id: str, episode: int):
+        # A legacy UMO hash cannot reveal a deleted sender alias. An unmapped
+        # uncertain outcome might have reached the same official recipient.
+        known = ",".join("?" for _ in self._configured_umo_keys)
+        return self._db.execute(
+            "SELECT attempted,status FROM deliveries "
+            "JOIN legacy_uncertain_deliveries USING (account_id,episode,target_key) "
+            "WHERE account_id=? AND episode=? AND status IN ('unknown','reserved') "
+            f"AND target_key NOT LIKE 'official:%' AND target_key NOT IN ({known}) "
+            "LIMIT 1",
+            (account_id, episode, *self._configured_umo_keys),
         ).fetchone()
+
+    def _delivery_row(self, account: Any, episode: int, target: Any):
+        query = "SELECT attempted,status FROM deliveries WHERE account_id=? AND episode=? AND target_key=?"
+        key = self._transport_key(target)
+        if target.umo in self._transport_keys:
+            legacy = self._legacy_uncertain(account.id, episode)
+            if legacy is not None:
+                return legacy
+        row = self._db.execute(query, (account.id, episode, key)).fetchone()
+        if row is None and key != (raw_key := _target_key(target)):
+            row = self._db.execute(query, (account.id, episode, raw_key)).fetchone()
+        return row
+
+    def _eligible(self, account: Any, episode: int, target: Any, now: float) -> bool:
+        row = self._delivery_row(account, episode, target)
         if row is None:
             return True
         if row["status"] in {"unknown", "reserved"}:
@@ -993,15 +1110,13 @@ class AlertEngine:
 
     def _budget_ready(self, target: Any, now: float) -> bool:
         row = self._db.execute(
-            "SELECT attempted FROM budgets WHERE target_key=?", (_target_key(target),)
+            "SELECT attempted FROM budgets WHERE target_key=?",
+            (self._transport_key(target),),
         ).fetchone()
         return row is None or now - row["attempted"] >= _BUDGET_SECONDS
 
     def _priority(self, account: Any, episode: int, target: Any) -> tuple:
-        row = self._db.execute(
-            "SELECT attempted,status FROM deliveries WHERE account_id=? AND episode=? AND target_key=?",
-            (account.id, episode, _target_key(target)),
-        ).fetchone()
+        row = self._delivery_row(account, episode, target)
         # First alerts precede repeat reminders; the oldest attempts win ties.
         return (
             (0, 0, account.id)
@@ -1013,11 +1128,8 @@ class AlertEngine:
         present = []
         now = self.clock()
         for target in self.settings.balance_alert_targets:
-            row = self._db.execute(
-                "SELECT status FROM deliveries WHERE account_id=? AND episode=? AND target_key=?",
-                (account.id, episode, _target_key(target)),
-            ).fetchone()
-            status = row[0] if row else "low"
+            row = self._delivery_row(account, episode, target)
+            status = row["status"] if row else "low"
             if (
                 status in {"low", "submitted"}
                 and self._eligible(account, episode, target, now)
@@ -1046,6 +1158,7 @@ class AlertEngine:
             async with self._lock:
                 if not self._active():
                     return
+                self._refresh_transport_keys()
                 candidates: list[tuple[Any, AlertFact, int]] = []
                 binding_revisions = {}
                 observation_tokens = {}
@@ -1156,6 +1269,7 @@ class AlertEngine:
                         observation_tokens[account.id] = self._observation_tokens.get(
                             account.id
                         )
+                self._refresh_transport_keys()
                 targets = sorted(
                     self.settings.balance_alert_targets,
                     key=lambda target: min(
@@ -1170,6 +1284,10 @@ class AlertEngine:
                 for target in targets:
                     if not self._active():
                         return
+                    route = self._transport_keys.get(target.umo)
+                    identity = route[0] if route is not None else None
+                    transport_key = self._transport_key(target)
+                    raw_key = _target_key(target)
                     now = self.clock()
                     chosen = [
                         (account, fact, episode)
@@ -1206,7 +1324,10 @@ class AlertEngine:
                         )
 
                     def reserve():
-                        if not active():
+                        if (
+                            not active()
+                            or self._official_target_identity(target) != identity
+                        ):
                             return False
                         reserved_at = self.clock()
                         with self._db:
@@ -1214,7 +1335,7 @@ class AlertEngine:
                                 return False
                             self._db.execute(
                                 "INSERT OR REPLACE INTO budgets VALUES(?,?)",
-                                (_target_key(target), reserved_at),
+                                (transport_key, reserved_at),
                             )
                             for account, _fact, episode in chosen:
                                 self._db.execute(
@@ -1222,7 +1343,7 @@ class AlertEngine:
                                     (
                                         account.id,
                                         episode,
-                                        _target_key(target),
+                                        transport_key,
                                         reserved_at,
                                         "reserved",
                                     ),
@@ -1241,9 +1362,14 @@ class AlertEngine:
                     with self._db:
                         for account, _, episode in chosen:
                             code = getattr(outcome, "reason_code", "")
-                            self._detail_codes[
-                                (account.id, episode, _target_key(target))
-                            ] = code if code in DELIVERY_DETAILS else ""
+                            key = (
+                                raw_key
+                                if outcome.status == "blocked"
+                                else transport_key
+                            )
+                            self._detail_codes[(account.id, episode, key)] = (
+                                code if code in DELIVERY_DETAILS else ""
+                            )
                             if outcome.status in {"submitted", "failed", "unknown"}:
                                 self._db.execute(
                                     "UPDATE deliveries SET status=? WHERE account_id=? AND episode=? AND target_key=?",
@@ -1251,7 +1377,7 @@ class AlertEngine:
                                         outcome.status,
                                         account.id,
                                         episode,
-                                        _target_key(target),
+                                        transport_key,
                                     ),
                                 )
                             elif outcome.status == "blocked":
@@ -1260,7 +1386,7 @@ class AlertEngine:
                                     (
                                         account.id,
                                         episode,
-                                        _target_key(target),
+                                        raw_key,
                                         self.clock(),
                                         "blocked",
                                     ),

@@ -21,7 +21,7 @@ export function localTime(value,locale='zh-CN'){
  const options={year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',timeZoneName:'short'};
  try{return new Intl.DateTimeFormat(locale,options).format(date);}catch{return new Intl.DateTimeFormat('zh-CN',options).format(date);}
 }
-export const alertDetailLabels={session_disabled:'web.detail.session_disabled',session_check_failed:'web.detail.session_check_failed',fixed_hint:'web.detail.fixed_hint',target_invalid:'web.detail.target_invalid',platform_not_found:'web.detail.platform_not_found',platform_unavailable:'web.detail.platform_unavailable',platform_unsupported:'web.detail.platform_unsupported',mention_unsupported:'web.detail.mention_unsupported',mention_invalid:'web.detail.mention_invalid',transport_unavailable:'web.detail.transport_unavailable',message_components_unavailable:'web.detail.message_components_unavailable'};
+export const alertDetailLabels={session_disabled:'web.detail.session_disabled',session_check_failed:'web.detail.session_check_failed',fixed_hint:'web.detail.fixed_hint',legacy_target_unknown:'web.detail.legacy_target_unknown',target_invalid:'web.detail.target_invalid',target_scene_required:'web.detail.target_scene_required',platform_not_found:'web.detail.platform_not_found',platform_unavailable:'web.detail.platform_unavailable',platform_unsupported:'web.detail.platform_unsupported',mention_unsupported:'web.detail.mention_unsupported',mention_invalid:'web.detail.mention_invalid',transport_unavailable:'web.detail.transport_unavailable',message_components_unavailable:'web.detail.message_components_unavailable'};
 export const alertDetailLabel=(code,locale)=>translate(Object.hasOwn(alertDetailLabels,code)?alertDetailLabels[code]:'web.detail.unknown',locale);
 export function fixedAlertUnit(account){const metric=defaultMetric(account);return metric==='credit'?'credit':metric==='site_credit'?'site_credit':null;}
 export function validateAlertUnits(value){
@@ -52,13 +52,26 @@ export function normalizeIds(value,limit=100){
  if(!Array.isArray(value)||value.length>limit)throw new MessageError('web.validation.id_limit',{limit});
  const output=[];for(const item of value){if(typeof item!=='string'||controls.test(item)||!positiveId.test(item.trim()))throw new MessageError('web.validation.qq_id');const id=item.trim();if(!output.includes(id))output.push(id);}return output;
 }
+export function normalizeAdminIds(value){
+ if(!Array.isArray(value)||value.length>100)throw new MessageError('web.validation.id_limit',{limit:100});
+ const output=[];for(const item of value){if(typeof item!=='string'||controls.test(item)||!(positiveId.test(item.trim())||/^qq_official(?:_webhook)?:[A-Za-z0-9_-]{1,128}$/.test(item.trim())))throw new MessageError('error.alert_config.invalid_admin_id',{label:''});const id=item.trim();if(!output.includes(id))output.push(id);}return output;
+}
 export function normalizeTargets(value){
  if(!Array.isArray(value)||value.length>20)throw new MessageError('web.validation.target_limit');
  const seen=new Set();return value.map(target=>{
-  if(!record(target)||Object.keys(target).some(k=>!['umo','mentions'].includes(k))||!Object.hasOwn(target,'umo')||!Object.hasOwn(target,'mentions'))throw new MessageError('web.validation.target_fields');
+  if(!record(target)||Object.keys(target).some(k=>!['umo','mentions','scene'].includes(k))||!Object.hasOwn(target,'umo')||!Object.hasOwn(target,'mentions'))throw new MessageError('web.validation.target_fields');
   const parsed=parseUmo(target.umo),mentions=normalizeIds(target.mentions,20);
-  if(mentions.length&&(parsed.type!=='GroupMessage'||!positiveId.test(parsed.session.split('_').at(-1))))throw new MessageError('web.validation.group_mentions');
-  if(seen.has(parsed.umo))throw new MessageError('web.validation.duplicate_umo');seen.add(parsed.umo);return {umo:parsed.umo,mentions};
+  const hasScene=Object.hasOwn(target,'scene'),scene=target.scene;
+  if(hasScene){
+   const group=scene==='qq_group'&&parsed.type==='GroupMessage';
+   const privateChat=scene==='qq_c2c'&&parsed.type==='FriendMessage';
+   if(!(group||privateChat)||mentions.length)throw new MessageError('error.alert_config.invalid_target_scene');
+  }else if(mentions.length&&(parsed.type!=='GroupMessage'||!positiveId.test(parsed.session.split('_').at(-1)))){
+   throw new MessageError('web.validation.group_mentions');
+  }
+  if(seen.has(parsed.umo))throw new MessageError('web.validation.duplicate_umo');
+  seen.add(parsed.umo);
+  return {umo:parsed.umo,mentions,...(hasScene?{scene}:{})};
  });
 }
 export function parseTargetsText(value){
@@ -68,15 +81,29 @@ export function parseTargetsText(value){
    if(/[\p{Cc}\p{Cf}\p{Cs}]/u.test(line.replaceAll('\t','')))throw new MessageError('web.validation.invisible_chars');
    if(!line.trim())continue;
    const [umo,...suffix]=line.trim().split(/\s+/u);
-   if(suffix.some(item=>!item.startsWith('@')))throw new MessageError('web.validation.mentions_suffix');
-   const target=normalizeTargets([{umo,mentions:suffix.map(item=>item.slice(1))}])[0];
+   const [qualifier]=suffix;
+   let draft;
+   if(qualifier?.startsWith('scene=')){
+    if(suffix.length!==1)throw new MessageError('error.alert_config.invalid_target_scene');
+    draft={umo,mentions:[],scene:qualifier.slice('scene='.length)};
+   }else{
+    if(suffix.some(item=>!item.startsWith('@')))throw new MessageError('web.validation.mentions_suffix');
+    draft={umo,mentions:suffix.map(item=>item.slice(1))};
+   }
+   const target=normalizeTargets([draft])[0];
    if(seen.has(target.umo))throw new MessageError('web.validation.duplicate_umo');seen.add(target.umo);targets.push(target);
    if(targets.length>20)throw new MessageError('web.validation.target_limit');
   }catch(error){throw new MessageError('web.validation.target_line',{line:index+1,message:error instanceof MessageError?error:new MessageError('web.validation.invalid_input')});}
  }
  return targets;
 }
-export function formatTargets(value){return Array.isArray(value)?value.map(t=>[t.umo,...t.mentions.map(id=>'@'+id)].join(' ')).join('\n'):'';}
+export function formatTargets(value){
+ if(!Array.isArray(value))return '';
+ return value.map(target=>{
+  const suffix=target.scene?['scene='+target.scene]:target.mentions.map(id=>'@'+id);
+  return [target.umo,...suffix].join(' ');
+ }).join('\n');
+}
 // Compare exact decimal strings without routing thresholds through Number.
 export function normalizeDecimal(value){
  if(typeof value!=='string'||controls.test(value))throw new MessageError('web.validation.finite_decimal');
@@ -109,7 +136,7 @@ export function normalizeLlm(value){
 export function alertDraftErrors(config,locale){
  const errors=[];let targets=[];
  try{targets=normalizeTargets(config.balance_alert_targets===undefined?[]:config.balance_alert_targets);}catch(error){errors.push(errorText(error,locale));}
- try{normalizeIds(config.balance_alert_admin_qq_ids===undefined?[]:config.balance_alert_admin_qq_ids);}catch(error){errors.push(errorText(error,locale));}
+ try{normalizeAdminIds(config.balance_alert_admin_qq_ids===undefined?[]:config.balance_alert_admin_qq_ids);}catch(error){errors.push(errorText(error,locale));}
  try{normalizeLlm(config.balance_alert_llm);}catch(error){errors.push(errorText(error,locale));}
  for(const account of config.providers||[]){try{const a=normalizeAlert(account.balance_alert,account);if(a.enabled&&((account.enabled!==undefined&&account.enabled!==true)||a.threshold===null||!a.metric||targets.length===0))throw new MessageError('web.validation.alert_prerequisites');}catch(error){errors.push(translate('web.validation.account_alert',locale,{account:account.display_name||account.id,message:errorText(error,locale)}));}}
  return errors;

@@ -25,6 +25,8 @@ MAX_UMO_LENGTH = 512
 QQ_ID = re.compile(r"[1-9][0-9]{0,19}\Z")
 DECIMAL_TEXT = re.compile(r"-?(?:0|[1-9][0-9]{0,29})(?:\.[0-9]{1,18})?\Z")
 MESSAGE_TYPES = frozenset({"FriendMessage", "GroupMessage", "OtherMessage"})
+OFFICIAL_ADAPTERS = frozenset({"qq_official", "qq_official_webhook"})
+OFFICIAL_TARGET_SCENES = {"qq_group": "GroupMessage", "qq_c2c": "FriendMessage"}
 ALERT_METRICS = {
     "alibaba_bailian": ("AvailableAmount", "AvailableCashAmount", "CreditAmount"),
     "deepseek": ("total_balance", "granted_balance", "topped_up_balance"),
@@ -125,13 +127,17 @@ class BalanceAlertSettings:
 class BalanceAlertTarget:
     umo: str = field(repr=False)
     mentions: tuple[str, ...] = field(default=(), repr=False)
+    scene: str | None = None
 
     @property
     def id(self) -> str:
         return hashlib.sha256(self.umo.encode("utf-8")).hexdigest()[:12]
 
     def as_dict(self) -> dict[str, Any]:
-        return {"umo": self.umo, "mentions": list(self.mentions)}
+        result = {"umo": self.umo, "mentions": list(self.mentions)}
+        if self.scene is not None:
+            result["scene"] = self.scene
+        return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,6 +227,11 @@ def parse_umo(value: Any) -> tuple[str, str, str]:
     return tuple(parts)
 
 
+def official_recipient(kind: str, session: str) -> str:
+    # AstrBot strips the optional sender prefix from official group UMOs.
+    return session.rsplit("_", 1)[-1] if kind == "GroupMessage" else session
+
+
 def _qq_ids(value: Any, limit: int, label: str) -> tuple[str, ...]:
     if type(value) is not list or len(value) > limit:
         raise AlertConfigError(
@@ -246,7 +257,10 @@ def parse_alert_targets(value: Any) -> tuple[BalanceAlertTarget, ...]:
     result = []
     seen = set()
     for item in value:
-        if type(item) is not dict or set(item) != {"umo", "mentions"}:
+        if type(item) is not dict or set(item) not in (
+            {"umo", "mentions"},
+            {"umo", "mentions", "scene"},
+        ):
             raise AlertConfigError(message("error.alert_config.invalid_target_fields"))
         platform, message_type, session = parse_umo(item["umo"])
         umo = ":".join((platform, message_type, session))
@@ -258,19 +272,44 @@ def parse_alert_targets(value: Any) -> tuple[BalanceAlertTarget, ...]:
             MAX_ALERT_MENTIONS,
             message("error.alert_config.label.mentions"),
         )
+        scene = item.get("scene")
+        if "scene" in item and (
+            not isinstance(scene, str)
+            or OFFICIAL_TARGET_SCENES.get(scene) != message_type
+            or mentions
+        ):
+            raise AlertConfigError(message("error.alert_config.invalid_target_scene"))
         if mentions and (
             message_type != "GroupMessage"
             or not QQ_ID.fullmatch(session.split("_")[-1])
         ):
             raise AlertConfigError(message("error.alert_config.group_mention_only"))
-        result.append(BalanceAlertTarget(umo, mentions))
+        result.append(BalanceAlertTarget(umo, mentions, scene))
     return tuple(result)
 
 
 def parse_alert_admin_qq_ids(value: Any) -> tuple[str, ...]:
-    return _qq_ids(
-        value, MAX_ALERT_ADMIN_QQ_IDS, message("error.alert_config.label.admin_qq")
-    )
+    label = message("error.alert_config.label.admin_qq")
+    if type(value) is not list or len(value) > MAX_ALERT_ADMIN_QQ_IDS:
+        raise AlertConfigError(
+            message(
+                "error.alert_config.list_limit",
+                label=label,
+                limit=MAX_ALERT_ADMIN_QQ_IDS,
+            )
+        )
+    result = []
+    for item in value:
+        identity = _text(item, label, 160, token=True)
+        if not QQ_ID.fullmatch(identity) and not re.fullmatch(
+            r"qq_official(?:_webhook)?:[A-Za-z0-9_-]{1,128}", identity
+        ):
+            raise AlertConfigError(
+                message("error.alert_config.invalid_admin_id", label=label)
+            )
+        if identity not in result:
+            result.append(identity)
+    return tuple(result)
 
 
 def parse_alert_llm(value: Any) -> BalanceAlertLLM:
