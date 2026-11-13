@@ -1,4 +1,4 @@
-"""Untrusted model introductions; program-owned fact blocks and bounded delivery."""
+"""Validated persona notices, program-owned facts and bounded delivery."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import asyncio
 import hashlib
 import json
 import re
-import unicodedata
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
@@ -19,6 +18,7 @@ from .alert_config import (
     OFFICIAL_TARGET_SCENES,
     official_recipient,
 )
+from .alert_notice import render_notice, template_prompt
 from .i18n import current_locale, message, render_text, tr, use_locale
 
 _QQ = re.compile(r"[1-9][0-9]{0,19}\Z")
@@ -44,131 +44,6 @@ DELIVERY_DETAILS = {
     "fixed_hint": message("alert.delivery.fixed_hint"),
     "legacy_target_unknown": message("alert.delivery.legacy_target_unknown"),
 }
-
-# These checks reduce factual/action leakage from the short introduction, rather
-# than proving its semantics. Ordinary counts, nicknames, emoji and prose remain.
-_LINK_OR_PAYLOAD = re.compile(
-    r"(?:[a-z][a-z0-9+.-]*://|www\.|(?:https?|mailto|javascript|data):"
-    r"|\b(?:[a-z0-9-]+\.)+[a-z]{2,63}\b|\[[^\]]*\]\s*\("
-    r"|\[\s*cq\s*:|@(?:all|everyone|here|全体成员|全體成員|全員|\d+)\b"
-    r"|<\s*/?\s*(?:tool_call|function_call|script)\b"
-    r'|["\'](?:tool_calls?|function_call|tools_call_name)["\']\s*:)',
-    re.IGNORECASE,
-)
-_NUMBER = (
-    r"(?:[+-]?\d[\d.,]*(?:e[+-]?\d+)?|[零〇一二两兩三四五六七八九十百千万萬亿億]+)"
-)
-_VALUE = re.compile(
-    _NUMBER + r"|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten"
-    r"|hundred|thousand|million|billion)\b",
-    re.IGNORECASE,
-)
-_MONEY = re.compile(
-    r"[¥￥$€£]|人民币|人民幣|美元|米ドル|欧元|歐元|ユーロ|日元|日圓|英镑|英鎊|港币|港幣|新台币|新臺幣"
-    r"|\b(?:dollars?|yuan|yen|euros?|pounds?|credits?)\b"
-    r"|(?<![a-z])(?:cny|usd|eur|jpy|gbp|hkd|cad|aud|twd|(?-i:[A-Z]{3}))(?![a-z])",
-    re.IGNORECASE,
-)
-_SHORT_AMOUNT = re.compile(
-    rf"{_NUMBER}\s*(?:元|円|ドル|块钱|塊錢|毛钱|毛錢|分钱|分錢|积分|積分|點數|ポイント|クレジット"
-    r"|点额度|(?:块|塊|毛|分)(?=$|[\s，。！？!?;；]|啦|了|哦))"
-)
-_FINANCE_TERM = r"余额|餘額|残高|额度|額度|积分|積分|點數|阈值|門檻|しきい値|クォータ|クレジット|ポイント"
-_FINANCE = re.compile(rf"{_FINANCE_TERM}|\b(?:balance|quota|credit|threshold)\b", re.I)
-_FINANCE_STATE = re.compile(
-    r"为负|為負|负数|負數|负值|負值|归零|歸零|为零|為零|小于零|等于零|零余额|零餘額|见底|見底"
-    r"|耗[光尽盡]|用[光尽盡完]|欠费|欠費|已空|透支|マイナス|ゼロ|使い切|底をつ"
-    r"|\b(?:negative|zero|empty|depleted|exhausted|overdrawn)\b",
-    re.I,
-)
-_SERVICE = re.compile(
-    r"服务|服務|接口|账户|帳戶|账号|帳號|アカウント|サービス|\b(?:service|account|api)\b",
-    re.I,
-)
-_SERVICE_STATE = re.compile(
-    r"停[服用止]|禁用|封禁|中断|中斷|不可用|已恢复|已恢復|利用でき|利用不可|無効|再開|復旧"
-    r"|\b(?:unavailable|disabled|suspended|blocked|closed|restored|stopped)\b",
-    re.I,
-)
-_PAYMENT = re.compile(
-    r"充值|儲值|付款|支付|缴费|繳費|转账|轉帳|汇款|匯款|入金|支払い|振込|課金|チャージ"
-    r"|\b(?:pay(?:ment|ing|s)?|paid|recharg(?:e|ed|ing)"
-    r"|top[ -]?up|topp(?:ed|ing)\s+up|transfer\s+(?:money|funds))\b",
-    re.I,
-)
-_UNIT_CLAIM = re.compile(
-    r"(?:单位|單位|币种|幣別|単位|通貨)\s*(?:为|為|是|は|[:：=])|\b(?:currency|unit)\s*(?:is\b|[:=])",
-    re.I,
-)
-_CONVERSATIONAL_NUMBER = re.compile(
-    rf"(?:{_NUMBER}|\b(?:one|two|three)\b)\s*(?:分钟|秒钟|小时|次|眼|minutes?\b|seconds?\b|moments?\b)",
-    re.I,
-)
-_WRITTEN_CLAIM = re.compile(
-    rf"(?:{_FINANCE_TERM})\s*(?:还剩|還剩|还有|還有|仅剩|僅剩|只剩|剩余|剩餘|现有|現有|为|為|是|只有|仅有|僅有|约|約|は|[:：=])+\s*{_NUMBER}"
-    rf"|(?:{_FINANCE_TERM})\s*[零〇一二两兩三四五六七八九]*[十百千万萬亿億][零〇一二两兩三四五六七八九十百千万萬亿億]*"
-    r"|\b(?:is|equals|has|have|remaining|left)\s+(?:(?:now|just|only|about|approximately)\s+)*"
-    r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand)\b",
-    re.I,
-)
-
-
-_DEPLETION = re.compile(
-    rf"(?:没有|沒有|已無|已无)(?:任何|剩餘|剩余)?(?:{_FINANCE_TERM})"
-    rf"|(?:{_FINANCE_TERM})(?:が|は)\s*(?:残ってい(?:ない|ません)|な(?:い|くな)|ありません)"
-)
-
-
-def _has_financial_claim(text: str) -> bool:
-    """Conservative checks for the supported languages, not a semantic proof.
-
-    The model's job is a social introduction, not financial/payment advice. Check
-    categories within clauses so intervening qualifiers cannot hide an amount or
-    status, while ordinary conversational counts and conditional '额度一低' survive.
-    """
-    # 'Pay attention' is an ordinary invitation, not a financial operation.
-    without_attention = re.sub(
-        r"\b(?:pay(?:ing)?|paid)\s+attention\b", "", text, flags=re.I
-    )
-    if _PAYMENT.search(without_attention) or _UNIT_CLAIM.search(text):
-        return True
-    for clause in re.split(r"[。!?！？;；\n]|(?<!\d)[,.，](?!\d)", text):
-        if _SHORT_AMOUNT.search(clause):
-            return True
-        values = _CONVERSATIONAL_NUMBER.sub("", clause)
-        if _VALUE.search(values) and _MONEY.search(values):
-            return True
-        if _FINANCE.search(clause):
-            # Chinese numeral glyphs are also ordinary prose ('一定', '一栏').
-            # Require a value construction, rather than treating every 一 as money.
-            if (
-                re.search(r"\d", values)
-                or _WRITTEN_CLAIM.search(values)
-                or _DEPLETION.search(values)
-                or _FINANCE_STATE.search(clause)
-            ):
-                return True
-        if _SERVICE.search(clause) and (
-            _SERVICE_STATE.search(clause) or _FINANCE_STATE.search(clause)
-        ):
-            return True
-    return False
-
-
-def _safe_introduction(content: Any) -> str:
-    """Accept bounded plain prose without interpreting markup or model actions."""
-    if not isinstance(content, str) or not content.strip() or len(content) > 160:
-        return ""
-    if any(
-        unicodedata.category(char) in {"Cc", "Cs", "Cf"} and char not in "\n\r\t\u200d"
-        for char in content
-    ):
-        return ""
-    checked = unicodedata.normalize("NFKC", content)
-    if _LINK_OR_PAYLOAD.search(checked) or _has_financial_claim(checked):
-        return ""
-    return " ".join(content.split())
-
 
 _METRIC_LABELS = {
     "AvailableCashAmount": message("alert.metric.available_cash"),
@@ -220,11 +95,9 @@ def _exact_decimal(value: Decimal) -> str:
     return format(value, "f") if len(digits) + abs(exponent) <= 128 else str(value)
 
 
-def format_alert_facts(facts: tuple[AlertFact, ...], hint: str = "") -> str:
+def format_alert_facts(facts: tuple[AlertFact, ...]) -> str:
     """Build the authoritative fact block exclusively from program data."""
     lines = [tr("alert.fact.title")]
-    if introduction := _safe_introduction(hint):
-        lines.append(introduction)
     for fact in facts:
         # Names remain Plain text, never CQ/At markup or a model instruction.
         name = " ".join(fact.display_name.split())[:128]
@@ -241,6 +114,19 @@ def format_alert_facts(facts: tuple[AlertFact, ...], hint: str = "") -> str:
         )
     lines.append(tr("alert.fact.source"))
     return "\n".join(lines)
+
+
+def _notice_rows(facts: tuple[AlertFact, ...]) -> tuple[dict[str, str], ...]:
+    """Keep actual account data local, including the original exact units."""
+    return tuple(
+        {
+            "account": " ".join(fact.display_name.split())[:128],
+            "metric": render_text(_METRIC_LABELS.get(fact.metric, fact.metric)),
+            "balance": f"{_exact_decimal(fact.amount)} {fact.unit}",
+            "threshold": f"{_exact_decimal(fact.threshold)} {fact.unit}",
+        }
+        for fact in facts
+    )
 
 
 class AlertDelivery:
@@ -656,11 +542,18 @@ class AlertDelivery:
         )
         return signature, full_prompt[:4000], ""
 
-    async def _hint(
-        self, target: Any, llm: Any, active: Callable[[], bool]
+    async def _notice(
+        self,
+        target: Any,
+        facts: tuple[AlertFact, ...],
+        llm: Any,
+        active: Callable[[], bool],
     ) -> tuple[str, str, tuple | None]:
         if not llm.enabled or not self._alive(active):
             return "", "", None
+        prompt = template_prompt(len(facts))
+        if not prompt:
+            return "", tr("alert.delivery.llm_failed"), None
 
         async def generate():
             signature, persona_prompt, note = await self._resolve_target_llm(
@@ -669,20 +562,19 @@ class AlertDelivery:
             if signature is None or not self._alive(active):
                 return "", note, None
             # No balances, names, endpoints, recipients, credentials, history or
-            # tools enter this request. The model writes only the introduction.
+            # tools enter this request. Only anonymous placeholder count/schema
+            # accompanies the target persona; substitution is entirely local.
             response = await self.context.llm_generate(
                 chat_provider_id=signature[0],
-                prompt=(
-                    "请按当前人格的语气，主动写一段简短自然的招呼或提醒引言。"
-                    "可以使用符合人格的称呼、情绪和表情，不必套用固定句式。"
-                    "提醒对方留意下方的额度明细、按需安排使用即可。"
-                    "仅返回一至两句纯文本，最多160字；不要解释创作过程。"
-                ),
+                prompt=prompt,
                 system_prompt=persona_prompt
                 + (
-                    "\n你正在撰写通知引言，不是执行对话任务。"
-                    "账户、余额、单位、阈值由程序在下方独立补充，以该事实块为准；"
-                    "仅作自然引言，不得断言财务数值、币种、正负或零余额、额度耗尽、"
+                    "\n你正在组织整条额度提醒，不是执行对话任务。"
+                    "账户、指标、余额及阈值必须使用给定占位符融入自然语句，"
+                    "余额和阈值占位符已包含正确单位，由程序校验后原样填入；"
+                    "不要另写固定事实块或猜测、换算数值和单位。"
+                    "已知的事实仅为各账户的指定指标小于或等于所设提醒阈值。"
+                    "不得断言正负或零余额、额度耗尽、"
                     "账户及服务可用性；也不要把付款作为继续使用的先决条件。"
                     "不要提供充值链接、支付操作、@提及、CQ代码或工具调用，"
                     "不要声称已经充值、付款或执行其他操作。"
@@ -705,10 +597,10 @@ class AlertDelivery:
             ):
                 return "", tr("alert.delivery.llm_failed"), None
             content = getattr(response, "completion_text", "")
-            hint = _safe_introduction(content)
+            notice = render_notice(content, _notice_rows(facts))
             return (
-                (hint, "", signature)
-                if hint
+                (notice, "", signature)
+                if notice
                 else ("", tr("alert.delivery.llm_failed"), None)
             )
 
@@ -739,9 +631,9 @@ class AlertDelivery:
             return self._blocked(
                 "session_disabled" if allowed is False else "session_check_failed"
             )
-        hint_locale = self._locale() if self._locale is not None else current_locale()
-        with use_locale(hint_locale):
-            hint, note, signature = await self._hint(target, llm, active)
+        notice_locale = self._locale() if self._locale is not None else current_locale()
+        with use_locale(notice_locale):
+            notice, note, signature = await self._notice(target, facts, llm, active)
         if not self._alive(active):
             return DeliveryResult("cancelled", tr("alert.delivery.cancelled"))
         if reason := self._target_reason(target):
@@ -750,7 +642,7 @@ class AlertDelivery:
         transport_started = False
 
         async def send():
-            nonlocal transport_started, hint, note
+            nonlocal transport_started, notice, note
             if not self._alive(active):
                 return cancelled
             allowed = await self._session_state(
@@ -788,7 +680,7 @@ class AlertDelivery:
                         if allowed is False
                         else "session_check_failed"
                     )
-            if hint:
+            if notice:
                 # Re-read after the preceding permission await. Rebuilding below is
                 # synchronous; no extra model call or automatic resend occurs.
                 try:
@@ -803,7 +695,7 @@ class AlertDelivery:
                 if not self._alive(active):
                     return cancelled
                 if current != signature:
-                    hint = ""
+                    notice = ""
                     note = latest_note or tr("alert.delivery.llm_changed")
                 # Sending permission wins over tone consistency. A session may
                 # have been disabled during the read-only routing awaits above.
@@ -819,13 +711,13 @@ class AlertDelivery:
                         if allowed is False
                         else "session_check_failed"
                     )
-                if hint:
+                if notice:
                     try:
                         _, latest_note = self._target_llm_settings(target.umo)
                     except Exception:
                         latest_note = tr("alert.delivery.llm_config_unavailable")
                     if latest_note:
-                        hint, note = "", latest_note
+                        notice, note = "", latest_note
                 # Host routing/persona/session-AI have no atomic public snapshot.
                 # Concurrent changes not observable through this final sync
                 # config read remain a host TOCTOU limit; never retry a send.
@@ -844,11 +736,11 @@ class AlertDelivery:
             ):
                 return self._blocked("platform_unavailable")
             try:
-                locale = self._locale() if self._locale is not None else hint_locale
+                locale = self._locale() if self._locale is not None else notice_locale
                 with use_locale(locale):
-                    if hint and locale != hint_locale:
-                        hint, note = "", tr("alert.delivery.llm_locale_changed")
-                    text = format_alert_facts(facts, hint)
+                    if notice and locale != notice_locale:
+                        notice, note = "", tr("alert.delivery.llm_locale_changed")
+                    text = notice or format_alert_facts(facts)
                 if official is None:
                     outbound = self.component_factory(target.mentions, text)
             except Exception:

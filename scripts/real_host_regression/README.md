@@ -26,7 +26,7 @@ Keep all three Python files and the shell wrapper together. The work root **must
 - 62 real seconds: candidate expiry without revoking verified binding, old candidate rejection, 60-second scheduled recheck.
 - Shared target send-budget waiting, missing-platform specific reason, disabled-session block and re-enable recovery.
 - Alert help/status/targets PNG replies, including budget-wait and blocked-reason status cards. Temporarily rename only the disposable cached font to cause real renderer failure and assert complete text fallback for all three commands; restore it immediately.
-- Official model routing and persona storage/resolver; natural free-form introduction not limited to three fixed phrases; no facts, recipients, history or tools passed to the model. A synthetic unsafe model reply must fall back without changing exact code-owned facts.
+- Official model routing and persona storage/resolver; the model composes the whole notice with anonymous account-scoped placeholders, then the program substitutes exact facts and units. No actual facts, recipients, history or tools pass to the model. A synthetic unsafe model reply must fall back without changing exact code-owned facts.
 - `Context.send_message` → real `AiocqhttpAdapter` → real OneBot `At`/`Plain` serialization.
 
 ## Explicit test boundaries

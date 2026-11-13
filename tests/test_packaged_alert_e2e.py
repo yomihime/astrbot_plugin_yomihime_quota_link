@@ -385,7 +385,12 @@ class _Context:
                 await self.llm_release.wait()
             finally:
                 self.llm_finished.set()
-        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+        return SimpleNamespace(
+            completion_text=(
+                "温馨提醒，<yql.account>的<yql.metric>是<yql.balance>，"
+                "已到提醒阈值<yql.threshold>，请抽空看看吧。"
+            )
+        )
 
     async def send_message(self, umo, message_chain):
         assert umo == TARGET
@@ -644,7 +649,11 @@ async def _scenario(unpacked, state, host, font):
         await _eventually(
             lambda: account_status()["status"] == "submitted", "persisted submission"
         )
-        assert "温馨提醒" in context.sent[0][1][1]["data"]["text"]
+        assert account_status()["detail_code"] == ""
+        assert context.sent[0][1][1]["data"]["text"] == (
+            "温馨提醒，Package Account的总余额是5 CNY，"
+            "已到提醒阈值10 CNY，请抽空看看吧。"
+        )
         assert {name for name, _ in context.host_calls} >= {
             "config",
             "model",

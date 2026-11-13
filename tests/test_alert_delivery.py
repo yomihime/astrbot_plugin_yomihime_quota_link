@@ -13,6 +13,11 @@ from quota_link.alert_delivery import (
     format_alert_facts,
 )
 
+PERSONA_TEMPLATE = (
+    "温馨提醒，<yql.account>的<yql.metric>是<yql.balance>，"
+    "已到提醒阈值<yql.threshold>，请抽空看看吧。"
+)
+
 
 def run_async(function):
     @wraps(function)
@@ -197,7 +202,7 @@ async def test_mentions_use_actual_adapter_and_message_type(
         "[CQ:at,qq=all]",
         "https://evil.test",
         "充值成功",
-        "x" * 500,
+        "x" * 4097,
         RuntimeError("model-secret"),
     ],
 )
@@ -210,7 +215,8 @@ async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted"
+    assert result.status == "submitted" and result.reason_code == "fixed_hint"
+    assert len(context.prompts) == len(context.sent) == 1
     sent = context.sent[0][1][1]
     assert sent == format_alert_facts((fact(),))
     assert "-8.25 CNY" in sent and "10 CNY" in sent
@@ -226,7 +232,10 @@ async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
 async def test_notification_uses_current_language_when_model_completes(change_language):
     context = FakeContext()
     language = "en-US"
-    generated = "Please check the details below."
+    generated = (
+        "Captain, <yql.account> has <yql.balance> in <yql.metric>, "
+        "at or below the reminder threshold of <yql.threshold>."
+    )
 
     async def generate(**kwargs):
         nonlocal language
@@ -244,17 +253,26 @@ async def test_notification_uses_current_language_when_model_completes(change_la
         reserve=lambda: True,
     )
     assert result.status == "submitted"
-    assert "Write the introduction in English." in context.prompts[0]["system_prompt"]
+    assert (
+        "Write the complete notice in English." in context.prompts[0]["system_prompt"]
+    )
     assert len(context.prompts) == 1 and len(context.sent) == 1
     sent = context.sent[0][1][1]
-    assert (generated in sent) is not change_language
-    assert ("クォータアラート" in sent) is change_language
-    assert "-8.25 CNY ≤ 10 CNY" in sent
+    if change_language:
+        assert result.reason_code == "fixed_hint"
+        assert "Captain" not in sent and "クォータアラート" in sent
+        assert "-8.25 CNY ≤ 10 CNY" in sent
+    else:
+        assert result.reason_code == ""
+        assert sent == (
+            "Captain, Synthetic account has -8.25 CNY in Available quota, "
+            "at or below the reminder threshold of 10 CNY."
+        )
 
 
 @run_async
 async def test_target_host_model_and_resolved_persona_never_attach_history():
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     result = await delivery(context).deliver(
         BalanceAlertTarget("custom:FriendMessage:123"),
         (fact(),),
@@ -262,7 +280,7 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted"
+    assert result.status == "submitted" and result.reason_code == ""
     assert context.resolved == ["custom:FriendMessage:123"] * 3
     assert context.prompts[0]["chat_provider_id"] == "fake-model"
     assert (
@@ -287,7 +305,10 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
     )
     assert "PRIVATE HISTORY" not in repr(context.prompts)
     assert "Speak gently." in context.prompts[0]["system_prompt"]
-    assert "温馨提醒" in context.sent[0][1][1]
+    assert context.sent[0][1][1] == (
+        "温馨提醒，Synthetic account的可用额度是-8.25 CNY，"
+        "已到提醒阈值10 CNY，请抽空看看吧。"
+    )
 
 
 @run_async
@@ -297,7 +318,7 @@ async def test_revocation_during_model_generation_never_reaches_transport():
 
     async def generate(**kwargs):
         active[0] = False
-        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
 
     context.llm_generate = generate
     result = await delivery(context).deliver(
@@ -456,7 +477,7 @@ async def test_full_session_switch_rechecked_after_llm_before_reservation():
 
     async def generate(**kwargs):
         context.session_on = False
-        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
 
     context.llm_generate = generate
     result = await delivery(context).deliver(
@@ -501,7 +522,7 @@ async def test_missing_or_failing_session_callbacks_do_not_allow_hidden_bypass()
 
 @run_async
 async def test_no_current_conversation_never_creates_or_reads_one():
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     context.current_id = None
     await delivery(context).deliver(
         BalanceAlertTarget("custom:FriendMessage:123"),
@@ -527,7 +548,7 @@ async def test_no_current_conversation_never_creates_or_reads_one():
 async def test_resolver_none_persona_and_webchat_special_are_respected(
     selected, expected_llm
 ):
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     context.selected_persona = selected
     context.conversation_persona_id = "[%None]"
     result = await delivery(context).deliver(
@@ -555,7 +576,7 @@ async def test_resolver_none_persona_and_webchat_special_are_respected(
     ],
 )
 async def test_revocation_after_each_host_await_never_sends(stage):
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     active = [True]
     original = getattr(context, stage)
 
@@ -617,7 +638,7 @@ async def test_sdk_suppressing_cancellation_cannot_continue_to_late_model_call()
 
 @run_async
 async def test_model_and_persona_are_resolved_independently_for_each_exact_target():
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
 
     async def provider(umo):
         context.resolved.append(umo)
@@ -666,8 +687,8 @@ async def test_model_and_persona_are_resolved_independently_for_each_exact_targe
     "change",
     ["model", "persona_id", "persona_prompt", "ai_off", "runner", "full_session"],
 )
-async def test_host_settings_changed_during_generation_never_send_stale_hint(change):
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+async def test_host_settings_changed_during_generation_never_send_stale_notice(change):
+    context = FakeContext(text=PERSONA_TEMPLATE)
     old_generate = context.llm_generate
 
     async def generate(**kwargs):
@@ -772,11 +793,11 @@ async def test_controlled_reason_codes_preserve_status_and_never_expose_free_tex
     )
     assert disabled.status == "submitted" and disabled.reason_code == ""
     context.session_ai_on = True
-    context.text = "温馨提醒：请及时检查账户额度。"
-    hinted = await delivery(context).deliver(
+    context.text = PERSONA_TEMPLATE
+    personalized = await delivery(context).deliver(
         target, (fact(),), BalanceAlertLLM(), active=lambda: True, reserve=lambda: True
     )
-    assert hinted.status == "submitted" and hinted.reason_code == ""
+    assert personalized.status == "submitted" and personalized.reason_code == ""
     context.config["agent_runner"]["runner_type"] = "dify"
     external = await delivery(context).deliver(
         target, (fact(),), BalanceAlertLLM(), active=lambda: True, reserve=lambda: True
