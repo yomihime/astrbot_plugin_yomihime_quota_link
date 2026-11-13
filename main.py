@@ -221,7 +221,17 @@ class YomihimeQuotaLink(Star):
 
     def _alert_status(self):
         if self._alert_engine is not None:
-            return self._alert_engine.status()
+            result = self._alert_engine.status()
+            diagnose = getattr(
+                getattr(self._alert_engine, "delivery", None),
+                "official_diagnostics",
+                None,
+            )
+            if callable(diagnose):
+                diagnostics = diagnose(self.settings.balance_alert_targets)
+                if diagnostics is not None:
+                    result["official_qq"] = diagnostics
+            return result
         return {
             "running": False,
             "storage_available": False,

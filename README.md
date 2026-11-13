@@ -261,8 +261,8 @@ python scripts/build_plugin.py --tag v0.4.0 --output-dir dist
 
 私聊查询白名单填写 `qq_official:<UID>`，群聊查询白名单填写发送者 UID，并开启群聊查询。UID 来自 `/sid`，不是 Bot ID、群 OpenID 或完整 UMO。预警管理白名单支持 `qq_official:<UID>`；原有纯数字项仍只授权 OneBot QQ 身份。AstrBot 内置管理员权限保持不变。推送目标必须填写完整 UMO，目标本身不授予查询或管理权限。
 
-官方预警通过所选实例的 QQ SDK 提交。QQ 仍校验主动消息权限、频次和内容。收到消息 ID 表示 QQ 已接受请求。明确拒绝可在预算窗口后重试。超时或缺少回执时记为未知，同一次低余额期间停止向该收件方发送。场景、旧记录迁移与 SDK 支持范围见 [QQ 官方机器人兼容性](docs/QQ-OFFICIAL-COMPATIBILITY.md)。
+官方预警复用所选实例的认证，由 YQL 自己提交消息请求，不锁定宿主 qq-botpy 版本。收到消息 ID 只表示 QQ 已接受请求。明确拒绝可在预算窗口后重试；超时或缺少回执时记为未知，同一次低余额期间停止向该收件方发送。实际主动消息权限由 QQ 决定，须与用户触发的查询回复分别验证。场景、旧记录迁移与平台限制见 [QQ 官方机器人兼容性](docs/QQ-OFFICIAL-COMPATIBILITY.md)。
 
 Webhook 官方适配器使用同样的发送路径；权限白名单前缀为 `qq_official_webhook:`，不与 WebSocket 实例的 `qq_official:` 权限混用。群隔离会话按 AstrBot 的 `sender_openid_group_openid` 规则取群段；私聊 UID 不做拆分。
 
-传输边界：宿主使用的 qq-botpy 1.2.1 底层连接异常处理可能自行重试，插件不修改宿主 SDK，也不保证网络严格只发送一次；SDK 未返回回执时保持未知，不据此宣称送达或补发。
+传输边界：YQL 每次发送尝试最多发起一个消息 POST，不进入 SDK 消息重试路径、不跟随重定向或自动换路径补发。网络中断可能发生在平台已接受消息之后，因此仍按结果未知处理，不宣称送达或盲目重试。

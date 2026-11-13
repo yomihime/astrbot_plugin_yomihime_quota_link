@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import re
 import unicodedata
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
-from importlib.metadata import version
 from typing import Any
+
+import httpx
 
 from .alert_config import (
     OFFICIAL_ADAPTERS,
@@ -352,52 +354,156 @@ class AlertDelivery:
     @staticmethod
     def _official_transport(instance: Any):
         try:
-            from botpy.http import BotHttp
-
-            # This SDK version's request contract is used to suppress replay.
-            if version("qq-botpy") != "1.2.1":
-                return None
             transport = instance.get_client().http
-        except (AttributeError, ImportError):
+            # Reuse the selected adapter's live authentication, not a package
+            # version or its message-request retry implementation.
+            if not callable(getattr(transport, "check_session", None)):
+                return None
+            if type(getattr(transport, "is_sandbox", None)) is not bool:
+                return None
+        except Exception:
             return None
-        return transport if isinstance(transport, BotHttp) else None
+        return transport
 
     @staticmethod
-    async def _send_official(transport: Any, kind: str, recipient: str, text: str):
-        from botpy.errors import (
-            AuthenticationFailedError,
-            ForbiddenError,
-            MethodNotAllowedError,
-            NotFoundError,
-            SequenceNumberError,
-        )
-        from botpy.http import Route
-
-        path = "/v2/users" if kind == "FriendMessage" else "/v2/groups"
-        try:
-            # AstrBot's botpy 1.2.1 retries a connection reset until retry_time
-            # exceeds 2. Start at that limit and prevent redirect POST replay.
-            result = await transport.request(
-                Route("POST", f"{path}/{recipient}/messages"),
-                retry_time=2,
-                allow_redirects=False,
-                json={"msg_type": 0, "content": text},
-            )
-        except (
-            AuthenticationFailedError,
-            ForbiddenError,
-            MethodNotAllowedError,
-            NotFoundError,
-            SequenceNumberError,
+    def _official_headers(transport: Any) -> dict[str, str]:
+        raw_headers = transport._headers
+        if not isinstance(raw_headers, Mapping):
+            raise ValueError
+        headers = {}
+        for key, value in raw_headers.items():
+            if not isinstance(key, str):
+                continue
+            name = key.lower()
+            if name not in {"authorization", "x-union-appid"}:
+                continue
+            if (
+                name in headers
+                or not isinstance(value, str)
+                or not value.strip()
+                or len(value) > 8192
+                or any(not 32 <= ord(char) < 127 for char in value)
+            ):
+                raise ValueError
+            headers[name] = value
+        if set(headers) != {"authorization", "x-union-appid"}:
+            raise ValueError
+        authorization = headers["authorization"]
+        scheme, separator, credential = authorization.partition(" ")
+        if (
+            scheme not in {"QQBot", "Bot"}
+            or not separator
+            or not credential
+            or credential.lower() in {"none", "null", "undefined"}
+            or any(char.isspace() for char in credential)
+            or any(char.isspace() for char in headers["x-union-appid"])
         ):
-            return False
+            raise ValueError
+        return headers
+
+    @staticmethod
+    async def _prepare_official(transport: Any):
+        # Authentication may refresh a token, but must never submit a message.
+        # A missing/changed auth interface is detected locally, without probing
+        # a recipient or asking the user to inspect the Host's dependencies.
+        await transport.check_session()
+        sandbox = transport.is_sandbox
+        if type(sandbox) is not bool:
+            raise ValueError
+        return sandbox, AlertDelivery._official_headers(transport)
+
+    def official_diagnostics(self, targets: tuple) -> dict[str, Any] | None:
+        """Read current capabilities without refreshing auth or sending anything."""
+        rows = []
+        for target in targets:
+            if self.official_target_identity(target) is None:
+                continue
+            reason, _ = self._resolve_target(target)
+            transport = None
+            authenticated = False
+            try:
+                platform_id = target.umo.split(":", 1)[0]
+                transport = self._official_transport(
+                    self.context.get_platform_inst(platform_id)
+                )
+                if transport is not None:
+                    self._official_headers(transport)
+                    authenticated = True
+            except Exception:
+                pass
+            rows.append(
+                {
+                    "target_id": target.id,
+                    "transport_available": transport is not None,
+                    "cached_auth_headers_available": authenticated,
+                    "detail_code": reason,
+                }
+            )
+        if not rows:
+            return None
+        try:
+            from importlib.metadata import version
+
+            sdk_version = version("qq-botpy")
+        except Exception:
+            sdk_version = None
+        # Version is informational only; it is never a compatibility gate.
+        return {"sdk_version": sdk_version, "targets": rows}
+
+    @staticmethod
+    async def _send_official(kind: str, recipient: str, text: str, *, auth: tuple):
+        sandbox, headers = auth
+        headers = {**headers, "accept-encoding": "identity"}
+        path = "/v2/users" if kind == "FriendMessage" else "/v2/groups"
+        host = "sandbox.api.sgroup.qq.com" if sandbox else "api.bot.qq.com"
+        # The plugin owns the complete message POST boundary. No SDK retry
+        # options, shared-session mutation, redirects, proxy env or fallback.
+        # Use the transport directly: AsyncClient logs full recipient URLs at
+        # INFO. No global logger settings or shared Host clients are changed.
+        async with httpx.AsyncHTTPTransport(retries=0, trust_env=False) as outbound:
+            request = httpx.Request(
+                "POST",
+                f"https://{host}{path}/{recipient}/messages",
+                headers=headers,
+                json={"msg_type": 0, "content": text},
+                extensions={
+                    "timeout": {
+                        "connect": 10.0,
+                        "read": 10.0,
+                        "write": 10.0,
+                        "pool": 10.0,
+                    }
+                },
+            )
+            response = await outbound.handle_async_request(request)
+            try:
+                if response.status_code in {401, 403, 404, 405, 429}:
+                    return False
+                if response.status_code not in {200, 201, 202}:
+                    return None
+                if response.headers.get("content-encoding", "identity").lower() not in {
+                    "identity",
+                    "",
+                }:
+                    return None
+                body = bytearray()
+                async for chunk in response.aiter_raw():
+                    if len(body) + len(chunk) > 65536:
+                        return None
+                    body.extend(chunk)
+                try:
+                    result = json.loads(body)
+                except (ValueError, UnicodeError):
+                    return None
+            finally:
+                await response.aclose()
         # API acceptance, NOT proof of delivery/read. No retry or fallback send:
         # a timeout/missing receipt can follow a successful remote submission.
-        receipt = (
-            result.get("id")
-            if isinstance(result, Mapping)
-            else getattr(result, "id", None)
-        )
+        if not isinstance(result, Mapping) or any(
+            result.get(key) not in (None, 0, "0") for key in ("code", "err_code")
+        ):
+            return None
+        receipt = result.get("id")
         return True if isinstance(receipt, str) and receipt.strip() else None
 
     @staticmethod
@@ -652,12 +758,36 @@ class AlertDelivery:
             )
             if not self._alive(active):
                 return cancelled
-            if reason := self._target_reason(target):
+            reason, prepared_official = self._resolve_target(target)
+            if reason:
                 return self._blocked(reason)
             if allowed is not True:
                 return self._blocked(
                     "session_disabled" if allowed is False else "session_check_failed"
                 )
+            official_auth = None
+            if prepared_official is not None:
+                try:
+                    official_auth = await self._prepare_official(prepared_official[0])
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    return self._blocked("transport_unavailable")
+                # Authentication is prepared before the durable reservation.
+                # It may await or even suppress cancellation inside the SDK.
+                if not self._alive(active):
+                    return cancelled
+                allowed = await self._session_state(
+                    self.session_enabled, target.umo, active
+                )
+                if not self._alive(active):
+                    return cancelled
+                if allowed is not True:
+                    return self._blocked(
+                        "session_disabled"
+                        if allowed is False
+                        else "session_check_failed"
+                    )
             if hint:
                 # Re-read after the preceding permission await. Rebuilding below is
                 # synchronous; no extra model call or automatic resend occurs.
@@ -704,6 +834,15 @@ class AlertDelivery:
             reason, official = self._resolve_target(target)
             if reason:
                 return self._blocked(reason)
+            if (official is None) != (prepared_official is None) or (
+                official is not None
+                and (
+                    official[0] is not prepared_official[0]
+                    or official[1:] != prepared_official[1:]
+                    or official[0].is_sandbox != official_auth[0]
+                )
+            ):
+                return self._blocked("platform_unavailable")
             try:
                 locale = self._locale() if self._locale is not None else hint_locale
                 with use_locale(locale):
@@ -720,7 +859,9 @@ class AlertDelivery:
                 return cancelled
             transport_started = True
             if official is not None:
-                return await self._send_official(*official, text)
+                return await self._send_official(
+                    *official[1:], text, auth=official_auth
+                )
             return await self.context.send_message(target.umo, outbound)
 
         try:
