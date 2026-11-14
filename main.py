@@ -83,7 +83,7 @@ def _alert_message_chain(mentions, text):
     "astrbot_plugin_yomihime_quota_link",
     "yomihime",
     "如月怜的额度连结：多平台 AI API 余额 / 用量监控。",
-    "0.4.0",
+    "0.4.1",
 )
 class YomihimeQuotaLink(Star):
     """Monitor balances and usage across AI API providers."""

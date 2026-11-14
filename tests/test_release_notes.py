@@ -108,6 +108,13 @@ def test_release_versions_and_current_changelog_stay_aligned() -> None:
     notes = extract_release_notes(
         (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), tag
     )
+    assert "## 未发布" not in notes
+
+
+def test_v040_release_preserves_security_and_migration_notes() -> None:
+    notes = extract_release_notes(
+        (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), "v0.4.0"
+    )
     assert "4.29.1" in notes
     assert "Windows" in notes and "失败关闭" in notes
     assert "真实 Host" in notes and "真实供应商凭据" in notes
