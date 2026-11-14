@@ -374,7 +374,8 @@ class _Context:
     ):
         assert chat_provider_id == "synthetic-target-model"
         assert contexts == [] and tools is None
-        assert "Speak gently." in system_prompt
+        assert system_prompt == "Speak gently."
+        assert "threshold" not in prompt and "metric" not in prompt
         for sensitive in (SECRET, TARGET, "Package Account", "5 CNY"):
             assert sensitive not in prompt + system_prompt
         self.llm_calls.append(chat_provider_id)
@@ -391,8 +392,7 @@ class _Context:
                 self.llm_finished.set()
         return SimpleNamespace(
             completion_text=(
-                "温馨提醒，<yql.account>的<yql.metric>是<yql.balance>，"
-                "已到提醒阈值<yql.threshold>，请抽空看看吧。"
+                "温馨提醒，<yql.1.name>的余额是<yql.1.balance>，请抽空看看吧。"
             )
         )
 
@@ -407,7 +407,9 @@ class _Context:
         assert segments[0] == {"type": "at", "data": {"qq": "456"}}
         assert segments[1]["type"] == "text"
         assert "5 CNY" in segments[1]["data"]["text"]
-        assert "10 CNY" in segments[1]["data"]["text"]
+        assert "10 CNY" not in segments[1]["data"]["text"]
+        assert "总余额" not in segments[1]["data"]["text"]
+        assert "阈值" not in segments[1]["data"]["text"]
         assert SECRET not in repr(segments)
         self.sent.append((umo, segments))
         return True  # Submission only, not proof of delivery to QQ.
@@ -655,8 +657,7 @@ async def _scenario(unpacked, state, host, font):
         )
         assert account_status()["detail_code"] == ""
         assert context.sent[0][1][1]["data"]["text"] == (
-            "温馨提醒，Package Account的总余额是5 CNY，"
-            "已到提醒阈值10 CNY，请抽空看看吧。"
+            "温馨提醒，Package Account的余额是5 CNY，请抽空看看吧。"
         )
         assert {name for name, _ in context.host_calls} >= {
             "config",

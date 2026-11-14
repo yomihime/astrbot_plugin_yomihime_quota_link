@@ -14,12 +14,7 @@ from quota_link.alert_config import BalanceAlertLLM
 from quota_link.alert_delivery import AlertFact, format_alert_facts
 from quota_link.models import BalanceItemKind, ProviderType
 
-ROWS = (
-    "<yql.1.account>的<yql.1.metric>是<yql.1.balance>，提醒阈值是<yql.1.threshold>。"
-    "\n\n"
-    "还有<yql.2.account>，<yql.2.metric>是<yql.2.balance>，"
-    "提醒阈值是<yql.2.threshold>。"
-)
+ROWS = "<yql.1.name>的余额是<yql.1.balance>；还有<yql.2.name>，余额是<yql.2.balance>。"
 
 
 class MixedUnitService(Service):
@@ -84,7 +79,7 @@ async def test_same_tick_sends_one_combined_notice_per_target(tmp_path, mode):
         if mode == "timeout":
             await asyncio.Future()
         if mode == "missing_token":
-            text = text.replace("<yql.2.threshold>", "")
+            text = text.replace("<yql.2.balance>", "")
         return SimpleNamespace(completion_text=text)
 
     context.get_current_chat_provider_id = provider
@@ -120,10 +115,10 @@ async def test_same_tick_sends_one_combined_notice_per_target(tmp_path, mode):
         ):
             name = names[target.umo]
             assert request["chat_provider_id"] == f"model-{name}"
-            assert f"Tone for {name}." in request["system_prompt"]
+            assert request["system_prompt"] == f"Tone for {name}."
             assert request["contexts"] == [] and request["tools"] is None
             assert (
-                "<yql.1.account>" in request["prompt"]
+                "<yql.1.name>" in request["prompt"]
                 and "<yql.2.balance>" in request["prompt"]
             )
             for private in (
@@ -140,11 +135,14 @@ async def test_same_tick_sends_one_combined_notice_per_target(tmp_path, mode):
             ):
                 assert private not in repr(request)
             assert mentions == target.mentions
+            assert "threshold" not in repr(request) and "metric" not in repr(request)
+            assert "10 CNY" not in text and "8.75 credit" not in text
+            assert "总余额" not in text and "积分余额" not in text
             if mode == "valid":
                 assert text == (
                     salutations[name]
-                    + "Synthetic cash account的总余额是-1.000000000000000001 CNY，提醒阈值是10 CNY。"
-                    "\n\n还有Synthetic credit account，积分余额是0 credit，提醒阈值是8.75 credit。"
+                    + "Synthetic cash account的余额是-1.000000000000000001 CNY；"
+                    "还有Synthetic credit account，余额是0 credit。"
                 )
             else:
                 assert text == format_alert_facts(facts)

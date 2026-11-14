@@ -20,7 +20,7 @@ from .alert_config import (
     official_recipient,
 )
 from .alert_notice import render_notice, template_prompt
-from .i18n import current_locale, message, render_text, tr, use_locale
+from .i18n import current_locale, message, tr, use_locale
 
 _QQ = re.compile(r"[1-9][0-9]{0,19}\Z")
 _OFFICIAL_SESSION = re.compile(r"[A-Za-z0-9_-]{1,257}\Z")
@@ -44,20 +44,6 @@ DELIVERY_DETAILS = {
     **BLOCKED_DETAILS,
     "fixed_hint": message("alert.delivery.fixed_hint"),
     "legacy_target_unknown": message("alert.delivery.legacy_target_unknown"),
-}
-
-_METRIC_LABELS = {
-    "AvailableCashAmount": message("alert.metric.available_cash"),
-    "AvailableAmount": message("alert.metric.available"),
-    "CreditAmount": message("alert.metric.credit_amount"),
-    "total_balance": message("alert.metric.total"),
-    "granted_balance": message("alert.metric.granted"),
-    "topped_up_balance": message("alert.metric.topped_up"),
-    "credit": message("alert.metric.credit"),
-    "site_credit": message("alert.metric.site_credit"),
-    "mapped_balance": message("alert.metric.mapped"),
-    "available_balance": message("provider.wallet.available_balance"),
-    "posted_prepaid_balance": message("provider.xai.posted_balance"),
 }
 
 
@@ -103,23 +89,9 @@ def _exact_decimal(value: Decimal) -> str:
 
 
 def format_alert_facts(facts: tuple[AlertFact, ...]) -> str:
-    """Build the authoritative fact block exclusively from program data."""
+    """Build one merged fallback with only account names and balances."""
     lines = [tr("alert.fact.title")]
-    for fact in facts:
-        # Names remain Plain text, never CQ/At markup or a model instruction.
-        name = " ".join(fact.display_name.split())
-        label = render_text(_METRIC_LABELS.get(fact.metric, fact.metric))
-        lines.append(
-            tr(
-                "alert.fact.line",
-                name=name,
-                metric=label,
-                amount=_exact_decimal(fact.amount),
-                unit=fact.unit,
-                threshold=_exact_decimal(fact.threshold),
-            )
-        )
-    lines.append(tr("alert.fact.source"))
+    lines.extend(tr("alert.fact.line", **row) for row in _notice_rows(facts))
     return "\n".join(lines)
 
 
@@ -127,10 +99,8 @@ def _notice_rows(facts: tuple[AlertFact, ...]) -> tuple[dict[str, str], ...]:
     """Keep actual account data local, including the original exact units."""
     return tuple(
         {
-            "account": " ".join(fact.display_name.split()),
-            "metric": render_text(_METRIC_LABELS.get(fact.metric, fact.metric)),
+            "name": " ".join(fact.display_name.split()),
             "balance": f"{_exact_decimal(fact.amount)} {fact.unit}",
-            "threshold": f"{_exact_decimal(fact.threshold)} {fact.unit}",
         }
         for fact in facts
     )
@@ -635,23 +605,7 @@ class AlertDelivery:
             response = await self.context.llm_generate(
                 chat_provider_id=signature[0],
                 prompt=prompt,
-                system_prompt=persona_input.prompt
-                + (
-                    "\n你正在组织整条额度提醒，不是执行对话任务。"
-                    "账户、指标、余额及阈值必须使用给定占位符融入自然语句，"
-                    "余额和阈值占位符已包含正确单位，由程序校验后原样填入；"
-                    "不要另写固定事实块或猜测、换算数值和单位。"
-                    "已知的事实仅为各账户的指定指标小于或等于所设提醒阈值。"
-                    "可提及本次账户数量，也可以按人格自然表达可选建议，"
-                    "例如有空记得充值；不要把建议写成已知事实或必需操作。"
-                    "不得断言正负或零余额、额度耗尽、"
-                    "账户及服务可用性；也不要把付款作为继续使用的先决条件。"
-                    "不要提供充值链接、支付操作、@提及、CQ代码或工具调用，"
-                    "不要声称已经充值、付款或执行其他操作。"
-                    "根据人格、人格样例和本次提供的信息自行选择语言和表达。"
-                    "本次未提供当前聊天消息、真实聊天历史或成员资料；"
-                    "可沿用人格及人格样例中的称呼，不要虚构本次聊天事件。"
-                ),
+                system_prompt=persona_input.prompt,
                 contexts=persona_input.contexts,
                 tools=None,
             )

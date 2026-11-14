@@ -13,10 +13,7 @@ from quota_link.alert_delivery import (
     format_alert_facts,
 )
 
-PERSONA_TEMPLATE = (
-    "温馨提醒，<yql.account>的<yql.metric>是<yql.balance>，"
-    "已到提醒阈值<yql.threshold>，请抽空看看吧。"
-)
+PERSONA_TEMPLATE = "温馨提醒，<yql.1.name>的余额是<yql.1.balance>，请抽空看看吧。"
 
 
 def run_async(function):
@@ -195,22 +192,16 @@ async def test_mentions_use_actual_adapter_and_message_type(
     "text",
     [
         "",
-        "余额还有9999元",
-        "このアカウントの残高はゼロです。",
-        "このアカウントには残高がありません。",
-        "もうクレジットがありません。",
-        "帳戶餘額已經歸零。",
-        "目前這個帳戶已經沒有餘額了。",
-        "請儲值才能繼續使用。",
-        "@all",
-        "[CQ:at,qq=all]",
-        "https://evil.test",
-        "充值成功",
-        "x" * 4097,
+        "This response contains no required slots.",
+        "<yql.1.name>",
+        "<yql.1.balance>",
+        "<yql.1.name> <yql.1.balance> <yql.1.balance>",
+        "<yql.1.name> <yql.1.balance> <yql.2.name>",
+        "<yql.1.name> <yql.1.balance> <yql.1.name",
         RuntimeError("model-secret"),
     ],
 )
-async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
+async def test_output_missing_required_slots_or_failed_model_falls_back_once(text):
     context = FakeContext(text=text)
     result = await delivery(context).deliver(
         BalanceAlertTarget("custom:FriendMessage:123"),
@@ -223,7 +214,8 @@ async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
     assert len(context.prompts) == len(context.sent) == 1
     sent = context.sent[0][1][1]
     assert sent == format_alert_facts((fact(),))
-    assert "-8.25 CNY" in sent and "10 CNY" in sent
+    assert "-8.25 CNY" in sent and "10 CNY" not in sent
+    assert "可用额度" not in sent and "阈值" not in sent
     prompt = repr(context.prompts)
     assert "-8.25" not in prompt and "Synthetic account" not in prompt
     assert "custom:FriendMessage" not in prompt and "model-secret" not in prompt
@@ -236,10 +228,7 @@ async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
 async def test_notification_uses_current_language_when_model_completes(change_language):
     context = FakeContext()
     language = "en-US"
-    generated = (
-        "Captain, <yql.account> has <yql.balance> in <yql.metric>, "
-        "at or below the reminder threshold of <yql.threshold>."
-    )
+    generated = "Captain, <yql.1.name> has <yql.1.balance>."
 
     async def generate(**kwargs):
         nonlocal language
@@ -266,13 +255,10 @@ async def test_notification_uses_current_language_when_model_completes(change_la
     if change_language:
         assert result.reason_code == "fixed_hint"
         assert "Captain" not in sent and "クォータアラート" in sent
-        assert "-8.25 CNY ≤ 10 CNY" in sent
+        assert "-8.25 CNY" in sent and "10 CNY" not in sent
     else:
         assert result.reason_code == ""
-        assert sent == (
-            "Captain, Synthetic account has -8.25 CNY in Available quota, "
-            "at or below the reminder threshold of 10 CNY."
-        )
+        assert sent == "Captain, Synthetic account has -8.25 CNY."
 
 
 @run_async
@@ -309,10 +295,13 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
         * 3
     )
     assert "PRIVATE HISTORY" not in repr(context.prompts)
-    assert "Speak gently." in context.prompts[0]["system_prompt"]
+    assert context.prompts[0]["system_prompt"] == "Speak gently."
+    assert "<yql.1.name>" in context.prompts[0]["prompt"]
+    assert "<yql.1.balance>" in context.prompts[0]["prompt"]
+    assert "threshold" not in repr(context.prompts)
+    assert "metric" not in repr(context.prompts)
     assert context.sent[0][1][1] == (
-        "温馨提醒，Synthetic account的可用额度是-8.25 CNY，"
-        "已到提醒阈值10 CNY，请抽空看看吧。"
+        "温馨提醒，Synthetic account的余额是-8.25 CNY，请抽空看看吧。"
     )
 
 
@@ -344,7 +333,7 @@ async def test_full_long_persona_and_host_processed_examples_reach_model(languag
     )
     assert result.status == "submitted" and result.reason_code == ""
     request = context.prompts[0]
-    assert request["system_prompt"].startswith(prompt)
+    assert request["system_prompt"] == prompt
     assert request["contexts"] == examples
     assert request["contexts"] is not examples
     assert request["contexts"][0] is not examples[0]
@@ -483,7 +472,7 @@ def test_long_account_names_are_preserved_in_normal_and_persona_reminders():
     name = "Account" * 100 + "-distinctive-final-suffix"
     item = replace(fact(), display_name=name)
     assert name in format_alert_facts((item,))
-    assert _notice_rows((item,))[0]["account"] == name
+    assert _notice_rows((item,)) == ({"name": name, "balance": "-8.25 CNY"},)
 
 
 @run_async

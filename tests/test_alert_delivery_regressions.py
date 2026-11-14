@@ -44,10 +44,8 @@ async def test_free_personality_prose_integrates_exact_program_owned_facts(
 ):
     context = FakeContext(
         text=(
-            f"{persona_prose} <yql.1.account>的<yql.1.metric>为<yql.1.balance>，"
-            "提醒阈值是<yql.1.threshold>。\n\n"
-            "再瞧瞧<yql.2.account>，<yql.2.metric>为<yql.2.balance>，"
-            "提醒阈值是<yql.2.threshold>。"
+            f"{persona_prose} <yql.1.name>的余额为<yql.1.balance>；"
+            "再瞧瞧<yql.2.name>，余额为<yql.2.balance>。"
         )
     )
     facts = (
@@ -73,17 +71,16 @@ async def test_free_personality_prose_integrates_exact_program_owned_facts(
     mentions, text = context.sent[0][1]
     assert mentions == ("456",)
     assert text == (
-        f"{persona_prose} Synthetic account的可用额度为-0.000000000000000001 CNY，"
-        "提醒阈值是10 CNY。\n\n"
-        "再瞧瞧Other synthetic account，积分余额为0 credit，"
-        "提醒阈值是2.000000000000000001 credit。"
+        f"{persona_prose} Synthetic account的余额为-0.000000000000000001 CNY；"
+        "再瞧瞧Other synthetic account，余额为0 credit。"
     )
     request = context.prompts[0]
     assert request["contexts"] == [] and request["tools"] is None
     assert request["chat_provider_id"] == "fake-model"
-    assert "Speak gently." in request["system_prompt"]
-    assert "<yql.1.account>" in request["prompt"]
-    assert "<yql.2.threshold>" in request["prompt"]
+    assert request["system_prompt"] == "Speak gently."
+    assert "<yql.1.name>" in request["prompt"]
+    assert "<yql.2.balance>" in request["prompt"]
+    assert "threshold" not in repr(request) and "metric" not in repr(request)
     for private in (
         "Other synthetic account",
         "-0.000000000000000001",
@@ -96,7 +93,7 @@ async def test_free_personality_prose_integrates_exact_program_owned_facts(
 
 @run_async
 @pytest.mark.parametrize(
-    "unsafe_prose",
+    "unrestricted_prose",
     [
         "余额还有９９９９元，放心用吧。",
         "账户余额只有一百元啦。",
@@ -150,10 +147,10 @@ async def test_free_personality_prose_integrates_exact_program_owned_facts(
         "请看额度\u202e反向覆盖",
     ],
 )
-async def test_model_cannot_supply_financial_claims_links_or_active_payloads(
-    unsafe_prose,
+async def test_prose_is_not_filtered_by_keywords_and_remains_plain_text(
+    unrestricted_prose,
 ):
-    context = FakeContext(text=f"{unsafe_prose} {PERSONA_TEMPLATE}")
+    context = FakeContext(text=f"{unrestricted_prose} {PERSONA_TEMPLATE}")
     result = await delivery(context).deliver(
         BalanceAlertTarget("custom:GroupMessage:123", ("456",)),
         (fact(),),
@@ -161,9 +158,12 @@ async def test_model_cannot_supply_financial_claims_links_or_active_payloads(
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted" and result.reason_code == "fixed_hint"
-    assert context.sent[0][1] == (("456",), format_alert_facts((fact(),)))
-    assert unsafe_prose not in repr(result)
+    assert result.status == "submitted" and result.reason_code == ""
+    expected = f"{unrestricted_prose} {PERSONA_TEMPLATE}".replace(
+        "<yql.1.name>", "Synthetic account"
+    ).replace("<yql.1.balance>", "-8.25 CNY")
+    assert context.sent[0][1] == (("456",), expected)
+    assert unrestricted_prose not in repr(result)
     assert len(context.prompts) == len(context.sent) == 1
 
 
@@ -416,12 +416,13 @@ async def test_runtime_preserves_only_controlled_reason_codes_and_detail(
     await monitor.close()
 
 
-def test_site_credit_uses_readable_label_without_duplicate_internal_metric():
+def test_fallback_keeps_unit_without_adding_metric_or_threshold():
     text = format_alert_facts(
         (replace(fact(), metric="site_credit", unit="site_credit"),)
     )
-    assert "站内额度：-8.25 site_credit" in text
-    assert "（site_credit）" not in text and "站点积分" not in text
+    assert "Synthetic account" in text and "-8.25 site_credit" in text
+    assert "站内额度" not in text and "站点积分" not in text
+    assert "10 site_credit" not in text and "阈值" not in text
 
 
 @run_async
