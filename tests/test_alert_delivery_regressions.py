@@ -5,7 +5,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
-from test_alert_delivery import FakeContext, delivery, fact, run_async
+from test_alert_delivery import PERSONA_TEMPLATE, FakeContext, delivery, fact, run_async
 from test_alert_runtime import engine, settings
 
 from quota_link.alert_config import BalanceAlertLLM, BalanceAlertTarget
@@ -19,29 +19,35 @@ from quota_link.alert_delivery import (
 
 @run_async
 @pytest.mark.parametrize(
-    "introduction",
+    "persona_prose",
     [
-        "主人，额度的小铃铛响啦～抽空看看下面的明细，我替你惦记着呢 🐟",
-        "舰长，补给观察员来报到。请留意下方额度，接下来的航程咱们从容安排。",
-        "再提醒你 1 次：忙归忙，也别忘了照看额度呀！",
-        "给你提个醒，先花1分钟看一眼账户吧",
-        "给你一个轻轻的提醒 👩‍💻：额度的事别忘啦。\n有空看看下方明细吧。",
-        "Heads-up, captain! Let's keep an eye on the details below. 💙",
-        "I've paid attention, captain! Please keep an eye on the details below.",
-        "额度一低，我就赶来提醒你啦～请看看下面的明细。",
-        "关于额度一事，记得看看下方明细哦～",
+        "主人，额度的小铃铛响啦～我替你惦记着呢 🐟",
+        "舰长，补给观察员来报到。接下来的航程咱们从容安排。",
+        "再提醒你一次：忙归忙，也别忘了照看额度呀！",
+        "给你提个醒，先花一点时间看一眼账户吧",
+        "给你一个轻轻的提醒 👩‍💻：额度的事别忘啦。",
+        "Heads-up, captain! Let's keep an eye on the quota. 💙",
+        "I've paid attention, captain! Keep an eye on the quota.",
+        "额度一低，我就赶来提醒你啦～",
+        "关于额度一事，记得留意哦～",
         "主人，额度一定要多留意呀。",
         "把额度一栏瞄一眼就好，别太劳累啦。",
         "主人，可查看控制台，按需处理额度就好～",
-        "Take one minute to check the balance details, captain!",
-        "主人，咱们一块看看下方明细吧。",
+        "Take a moment to check the balance details, captain!",
+        "主人，咱们一块看看额度吧。",
         "十分感谢你抽空看下额度，别太劳累啦。",
+        pytest.param("提醒你慢慢查看，不用着急。" * 420, id="long-persona-prose"),
     ],
 )
-async def test_free_personality_prose_preserves_the_exact_program_owned_fact_block(
-    introduction,
+async def test_free_personality_prose_integrates_exact_program_owned_facts(
+    persona_prose,
 ):
-    context = FakeContext(text=introduction)
+    context = FakeContext(
+        text=(
+            f"{persona_prose} <yql.1.name>的余额为<yql.1.balance>；"
+            "再瞧瞧<yql.2.name>，余额为<yql.2.balance>。"
+        )
+    )
     facts = (
         replace(fact(), amount=Decimal("-0.000000000000000001")),
         replace(
@@ -64,20 +70,30 @@ async def test_free_personality_prose_preserves_the_exact_program_owned_fact_blo
     assert result.status == "submitted" and result.reason_code == ""
     mentions, text = context.sent[0][1]
     assert mentions == ("456",)
-    assert text.splitlines()[1] == " ".join(introduction.split())
-    assert text.splitlines()[2:] == format_alert_facts(facts).splitlines()[1:]
+    assert text == (
+        f"{persona_prose} Synthetic account的余额为-0.000000000000000001 CNY；"
+        "再瞧瞧Other synthetic account，余额为0 credit。"
+    )
     request = context.prompts[0]
     assert request["contexts"] == [] and request["tools"] is None
     assert request["chat_provider_id"] == "fake-model"
-    assert "Speak gently." in request["system_prompt"]
-    assert "只能原样" not in request["prompt"]
-    for private in ("Other synthetic account", "-0.000000000000000001", "456"):
+    assert request["system_prompt"] == "Speak gently."
+    assert "<yql.1.name>" in request["prompt"]
+    assert "<yql.2.balance>" in request["prompt"]
+    assert "threshold" not in repr(request) and "metric" not in repr(request)
+    for private in (
+        "Other synthetic account",
+        "-0.000000000000000001",
+        "2.000000000000000001",
+        "CNY",
+        "456",
+    ):
         assert private not in repr(request)
 
 
 @run_async
 @pytest.mark.parametrize(
-    "introduction",
+    "unrestricted_prose",
     [
         "余额还有９９９９元，放心用吧。",
         "账户余额只有一百元啦。",
@@ -129,13 +145,12 @@ async def test_free_personality_prose_preserves_the_exact_program_owned_fact_blo
         "@everyone 请看这里",
         "先看下额度\x00秘密内容",
         "请看额度\u202e反向覆盖",
-        "额" * 161,
     ],
 )
-async def test_model_cannot_supply_financial_claims_links_or_active_payloads(
-    introduction,
+async def test_prose_is_not_filtered_by_keywords_and_remains_plain_text(
+    unrestricted_prose,
 ):
-    context = FakeContext(text=introduction)
+    context = FakeContext(text=f"{unrestricted_prose} {PERSONA_TEMPLATE}")
     result = await delivery(context).deliver(
         BalanceAlertTarget("custom:GroupMessage:123", ("456",)),
         (fact(),),
@@ -143,9 +158,13 @@ async def test_model_cannot_supply_financial_claims_links_or_active_payloads(
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted" and result.reason_code == "fixed_hint"
-    assert context.sent[0][1] == (("456",), format_alert_facts((fact(),)))
-    assert introduction not in repr(result)
+    assert result.status == "submitted" and result.reason_code == ""
+    expected = f"{unrestricted_prose} {PERSONA_TEMPLATE}".replace(
+        "<yql.1.name>", "Synthetic account"
+    ).replace("<yql.1.balance>", "-8.25 CNY")
+    assert context.sent[0][1] == (("456",), expected)
+    assert unrestricted_prose not in repr(result)
+    assert len(context.prompts) == len(context.sent) == 1
 
 
 @run_async
@@ -164,7 +183,7 @@ async def test_tool_or_error_response_is_not_interpreted_even_with_safe_text(ext
 
     async def generate(**kwargs):
         context.prompts.append(kwargs)
-        return SimpleNamespace(completion_text="来提醒你留意额度啦～", **extra)
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE, **extra)
 
     context.llm_generate = generate
     result = await delivery(context).deliver(
@@ -238,7 +257,7 @@ async def test_late_platform_disappearance_keeps_specific_blocked_detail():
 
     async def generate(**kwargs):
         context.adapter = None
-        return SimpleNamespace(completion_text="主人，留意额度哦～")
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
 
     context.llm_generate = generate
     result = await delivery(context).deliver(
@@ -258,10 +277,10 @@ async def test_late_platform_disappearance_keeps_specific_blocked_detail():
     ["ai_off", "config_ai_off", "persona", "provider", "runner", "session_off"],
 )
 @pytest.mark.parametrize("change_at", [4, 5])
-async def test_final_session_await_cannot_leave_a_stale_persona_introduction(
+async def test_final_session_await_cannot_leave_a_stale_persona_notice(
     change, change_at
 ):
-    context = FakeContext(text="主人，我来轻轻敲个门～请看看下方的明细。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     original = context.session_enabled
 
     async def final_permission(umo):
@@ -320,7 +339,7 @@ async def test_final_session_await_cannot_leave_a_stale_persona_introduction(
 async def test_final_routing_keeps_one_last_session_hard_gate_then_sync_config(
     change,
 ):
-    context = FakeContext(text="主人，记得看看下面的明细哦～")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     events = []
 
     def trace(name, method):
@@ -397,12 +416,13 @@ async def test_runtime_preserves_only_controlled_reason_codes_and_detail(
     await monitor.close()
 
 
-def test_site_credit_uses_readable_label_without_duplicate_internal_metric():
+def test_fallback_keeps_unit_without_adding_metric_or_threshold():
     text = format_alert_facts(
         (replace(fact(), metric="site_credit", unit="site_credit"),)
     )
-    assert "站内额度：-8.25 site_credit" in text
-    assert "（site_credit）" not in text and "站点积分" not in text
+    assert "Synthetic account" in text and "-8.25 site_credit" in text
+    assert "站内额度" not in text and "站点积分" not in text
+    assert "10 site_credit" not in text and "阈值" not in text
 
 
 @run_async

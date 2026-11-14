@@ -1,12 +1,12 @@
-"""Untrusted model introductions; program-owned fact blocks and bounded delivery."""
+"""Validated persona notices, program-owned facts and bounded delivery."""
 
 from __future__ import annotations
 
 import asyncio
+import copy
 import hashlib
 import json
 import re
-import unicodedata
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
@@ -19,7 +19,8 @@ from .alert_config import (
     OFFICIAL_TARGET_SCENES,
     official_recipient,
 )
-from .i18n import current_locale, message, render_text, tr, use_locale
+from .alert_notice import render_notice, template_prompt
+from .i18n import current_locale, message, tr, use_locale
 
 _QQ = re.compile(r"[1-9][0-9]{0,19}\Z")
 _OFFICIAL_SESSION = re.compile(r"[A-Za-z0-9_-]{1,257}\Z")
@@ -45,145 +46,6 @@ DELIVERY_DETAILS = {
     "legacy_target_unknown": message("alert.delivery.legacy_target_unknown"),
 }
 
-# These checks reduce factual/action leakage from the short introduction, rather
-# than proving its semantics. Ordinary counts, nicknames, emoji and prose remain.
-_LINK_OR_PAYLOAD = re.compile(
-    r"(?:[a-z][a-z0-9+.-]*://|www\.|(?:https?|mailto|javascript|data):"
-    r"|\b(?:[a-z0-9-]+\.)+[a-z]{2,63}\b|\[[^\]]*\]\s*\("
-    r"|\[\s*cq\s*:|@(?:all|everyone|here|全体成员|全體成員|全員|\d+)\b"
-    r"|<\s*/?\s*(?:tool_call|function_call|script)\b"
-    r'|["\'](?:tool_calls?|function_call|tools_call_name)["\']\s*:)',
-    re.IGNORECASE,
-)
-_NUMBER = (
-    r"(?:[+-]?\d[\d.,]*(?:e[+-]?\d+)?|[零〇一二两兩三四五六七八九十百千万萬亿億]+)"
-)
-_VALUE = re.compile(
-    _NUMBER + r"|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten"
-    r"|hundred|thousand|million|billion)\b",
-    re.IGNORECASE,
-)
-_MONEY = re.compile(
-    r"[¥￥$€£]|人民币|人民幣|美元|米ドル|欧元|歐元|ユーロ|日元|日圓|英镑|英鎊|港币|港幣|新台币|新臺幣"
-    r"|\b(?:dollars?|yuan|yen|euros?|pounds?|credits?)\b"
-    r"|(?<![a-z])(?:cny|usd|eur|jpy|gbp|hkd|cad|aud|twd|(?-i:[A-Z]{3}))(?![a-z])",
-    re.IGNORECASE,
-)
-_SHORT_AMOUNT = re.compile(
-    rf"{_NUMBER}\s*(?:元|円|ドル|块钱|塊錢|毛钱|毛錢|分钱|分錢|积分|積分|點數|ポイント|クレジット"
-    r"|点额度|(?:块|塊|毛|分)(?=$|[\s，。！？!?;；]|啦|了|哦))"
-)
-_FINANCE_TERM = r"余额|餘額|残高|额度|額度|积分|積分|點數|阈值|門檻|しきい値|クォータ|クレジット|ポイント"
-_FINANCE = re.compile(rf"{_FINANCE_TERM}|\b(?:balance|quota|credit|threshold)\b", re.I)
-_FINANCE_STATE = re.compile(
-    r"为负|為負|负数|負數|负值|負值|归零|歸零|为零|為零|小于零|等于零|零余额|零餘額|见底|見底"
-    r"|耗[光尽盡]|用[光尽盡完]|欠费|欠費|已空|透支|マイナス|ゼロ|使い切|底をつ"
-    r"|\b(?:negative|zero|empty|depleted|exhausted|overdrawn)\b",
-    re.I,
-)
-_SERVICE = re.compile(
-    r"服务|服務|接口|账户|帳戶|账号|帳號|アカウント|サービス|\b(?:service|account|api)\b",
-    re.I,
-)
-_SERVICE_STATE = re.compile(
-    r"停[服用止]|禁用|封禁|中断|中斷|不可用|已恢复|已恢復|利用でき|利用不可|無効|再開|復旧"
-    r"|\b(?:unavailable|disabled|suspended|blocked|closed|restored|stopped)\b",
-    re.I,
-)
-_PAYMENT = re.compile(
-    r"充值|儲值|付款|支付|缴费|繳費|转账|轉帳|汇款|匯款|入金|支払い|振込|課金|チャージ"
-    r"|\b(?:pay(?:ment|ing|s)?|paid|recharg(?:e|ed|ing)"
-    r"|top[ -]?up|topp(?:ed|ing)\s+up|transfer\s+(?:money|funds))\b",
-    re.I,
-)
-_UNIT_CLAIM = re.compile(
-    r"(?:单位|單位|币种|幣別|単位|通貨)\s*(?:为|為|是|は|[:：=])|\b(?:currency|unit)\s*(?:is\b|[:=])",
-    re.I,
-)
-_CONVERSATIONAL_NUMBER = re.compile(
-    rf"(?:{_NUMBER}|\b(?:one|two|three)\b)\s*(?:分钟|秒钟|小时|次|眼|minutes?\b|seconds?\b|moments?\b)",
-    re.I,
-)
-_WRITTEN_CLAIM = re.compile(
-    rf"(?:{_FINANCE_TERM})\s*(?:还剩|還剩|还有|還有|仅剩|僅剩|只剩|剩余|剩餘|现有|現有|为|為|是|只有|仅有|僅有|约|約|は|[:：=])+\s*{_NUMBER}"
-    rf"|(?:{_FINANCE_TERM})\s*[零〇一二两兩三四五六七八九]*[十百千万萬亿億][零〇一二两兩三四五六七八九十百千万萬亿億]*"
-    r"|\b(?:is|equals|has|have|remaining|left)\s+(?:(?:now|just|only|about|approximately)\s+)*"
-    r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand)\b",
-    re.I,
-)
-
-
-_DEPLETION = re.compile(
-    rf"(?:没有|沒有|已無|已无)(?:任何|剩餘|剩余)?(?:{_FINANCE_TERM})"
-    rf"|(?:{_FINANCE_TERM})(?:が|は)\s*(?:残ってい(?:ない|ません)|な(?:い|くな)|ありません)"
-)
-
-
-def _has_financial_claim(text: str) -> bool:
-    """Conservative checks for the supported languages, not a semantic proof.
-
-    The model's job is a social introduction, not financial/payment advice. Check
-    categories within clauses so intervening qualifiers cannot hide an amount or
-    status, while ordinary conversational counts and conditional '额度一低' survive.
-    """
-    # 'Pay attention' is an ordinary invitation, not a financial operation.
-    without_attention = re.sub(
-        r"\b(?:pay(?:ing)?|paid)\s+attention\b", "", text, flags=re.I
-    )
-    if _PAYMENT.search(without_attention) or _UNIT_CLAIM.search(text):
-        return True
-    for clause in re.split(r"[。!?！？;；\n]|(?<!\d)[,.，](?!\d)", text):
-        if _SHORT_AMOUNT.search(clause):
-            return True
-        values = _CONVERSATIONAL_NUMBER.sub("", clause)
-        if _VALUE.search(values) and _MONEY.search(values):
-            return True
-        if _FINANCE.search(clause):
-            # Chinese numeral glyphs are also ordinary prose ('一定', '一栏').
-            # Require a value construction, rather than treating every 一 as money.
-            if (
-                re.search(r"\d", values)
-                or _WRITTEN_CLAIM.search(values)
-                or _DEPLETION.search(values)
-                or _FINANCE_STATE.search(clause)
-            ):
-                return True
-        if _SERVICE.search(clause) and (
-            _SERVICE_STATE.search(clause) or _FINANCE_STATE.search(clause)
-        ):
-            return True
-    return False
-
-
-def _safe_introduction(content: Any) -> str:
-    """Accept bounded plain prose without interpreting markup or model actions."""
-    if not isinstance(content, str) or not content.strip() or len(content) > 160:
-        return ""
-    if any(
-        unicodedata.category(char) in {"Cc", "Cs", "Cf"} and char not in "\n\r\t\u200d"
-        for char in content
-    ):
-        return ""
-    checked = unicodedata.normalize("NFKC", content)
-    if _LINK_OR_PAYLOAD.search(checked) or _has_financial_claim(checked):
-        return ""
-    return " ".join(content.split())
-
-
-_METRIC_LABELS = {
-    "AvailableCashAmount": message("alert.metric.available_cash"),
-    "AvailableAmount": message("alert.metric.available"),
-    "CreditAmount": message("alert.metric.credit_amount"),
-    "total_balance": message("alert.metric.total"),
-    "granted_balance": message("alert.metric.granted"),
-    "topped_up_balance": message("alert.metric.topped_up"),
-    "credit": message("alert.metric.credit"),
-    "site_credit": message("alert.metric.site_credit"),
-    "mapped_balance": message("alert.metric.mapped"),
-    "available_balance": message("provider.wallet.available_balance"),
-    "posted_prepaid_balance": message("provider.xai.posted_balance"),
-}
-
 
 @dataclass(frozen=True, slots=True)
 class AlertFact:
@@ -194,6 +56,12 @@ class AlertFact:
     threshold: Decimal
     unit: str
     fetched_at: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _PersonaInput:
+    prompt: str
+    contexts: list[dict]
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,27 +88,22 @@ def _exact_decimal(value: Decimal) -> str:
     return format(value, "f") if len(digits) + abs(exponent) <= 128 else str(value)
 
 
-def format_alert_facts(facts: tuple[AlertFact, ...], hint: str = "") -> str:
-    """Build the authoritative fact block exclusively from program data."""
+def format_alert_facts(facts: tuple[AlertFact, ...]) -> str:
+    """Build one merged fallback with only account names and balances."""
     lines = [tr("alert.fact.title")]
-    if introduction := _safe_introduction(hint):
-        lines.append(introduction)
-    for fact in facts:
-        # Names remain Plain text, never CQ/At markup or a model instruction.
-        name = " ".join(fact.display_name.split())[:128]
-        label = render_text(_METRIC_LABELS.get(fact.metric, fact.metric))
-        lines.append(
-            tr(
-                "alert.fact.line",
-                name=name,
-                metric=label,
-                amount=_exact_decimal(fact.amount),
-                unit=fact.unit,
-                threshold=_exact_decimal(fact.threshold),
-            )
-        )
-    lines.append(tr("alert.fact.source"))
+    lines.extend(tr("alert.fact.line", **row) for row in _notice_rows(facts))
     return "\n".join(lines)
+
+
+def _notice_rows(facts: tuple[AlertFact, ...]) -> tuple[dict[str, str], ...]:
+    """Keep actual account data local, including the original exact units."""
+    return tuple(
+        {
+            "name": " ".join(fact.display_name.split()),
+            "balance": f"{_exact_decimal(fact.amount)} {fact.unit}",
+        }
+        for fact in facts
+    )
 
 
 class AlertDelivery:
@@ -563,12 +426,46 @@ class AlertDelivery:
         ):
             return {}, tr("alert.delivery.llm_off")
         if not isinstance(runner, Mapping) or runner.get("runner_type") != "local":
+            # local is AstrBot's built-in executor, including cloud models.
+            # Other executors select remote applications, not a chat Provider;
+            # get_current_chat_provider_id would fall back to an unrelated one.
             return {}, tr("alert.delivery.llm_nonlocal")
         return provider_settings, ""
 
+    async def _conversation_persona_id(
+        self, manager: Any, umo: str, conversation_id: str, active: Callable[[], bool]
+    ) -> str | None:
+        # get_conversation loads and serializes real chat history. Use the
+        # host's metadata-only projection instead, without searching content.
+        page = 1
+        while self._alive(active):
+            conversations, total = await manager.get_filtered_conversations(
+                page=page, page_size=100, umo_query=umo, include_history=False
+            )
+            if not self._alive(active):
+                return None
+            for conversation in conversations:
+                if conversation.cid == conversation_id and conversation.user_id == umo:
+                    return conversation.persona_id
+            if not conversations or page * 100 >= total:
+                return None
+            page += 1
+        return None
+
+    def _model_signature(self, provider_id: str) -> tuple:
+        # Provider ID alone does not detect /model switches or replacement of
+        # a provider instance under the same ID. No credentials enter this key.
+        getter = getattr(self.context, "get_provider_by_id", None)
+        if getter is None:
+            return ()
+        provider = getter(provider_id)
+        if provider is None:
+            raise ValueError("chat provider unavailable")
+        return (id(provider), provider.get_model())
+
     async def _resolve_target_llm(
         self, target: Any, active: Callable[[], bool], *, final: bool = False
-    ) -> tuple[tuple | None, str, str]:
+    ) -> tuple[tuple | None, _PersonaInput | str, str]:
         """Read host routing only, preserving exact UMO and host persona priority."""
         provider_settings, note = self._target_llm_settings(target.umo)
         if note:
@@ -589,18 +486,25 @@ class AlertDelivery:
             return None, "", ""
         if not isinstance(provider_id, str) or not provider_id.strip():
             return None, "", tr("alert.delivery.llm_model_unavailable")
+        model_signature = self._model_signature(provider_id)
+        runner_signature = hashlib.sha256(
+            json.dumps(
+                self.context.get_config(umo=target.umo).get("agent_runner"),
+                sort_keys=True,
+                ensure_ascii=False,
+            ).encode()
+        ).hexdigest()
         manager = self.context.conversation_manager
         conversation_id = await manager.get_curr_conversation_id(target.umo)
         if not self._alive(active):
             return None, "", ""
         conversation_persona_id = None
         if conversation_id:
-            conversation = await manager.get_conversation(
-                target.umo, conversation_id, create_if_not_exists=False
+            conversation_persona_id = await self._conversation_persona_id(
+                manager, target.umo, conversation_id, active
             )
             if not self._alive(active):
                 return None, "", ""
-            conversation_persona_id = getattr(conversation, "persona_id", None)
         if not self.validate_target(target) or not self._alive(active):
             return None, "", ""
         platform_name = (
@@ -625,8 +529,22 @@ class AlertDelivery:
             if selected_id not in (None, "[%None]"):
                 return None, "", tr("alert.delivery.llm_persona_unavailable")
             full_prompt = ""
+            examples = []
         elif isinstance(persona, Mapping) and isinstance(persona.get("prompt"), str):
             full_prompt = persona["prompt"]
+            # This is the same processed field the host's main agent prepends
+            # to contexts. These are configured examples, not chat history.
+            examples = copy.deepcopy(persona.get("_begin_dialogs_processed", []))
+            if not isinstance(examples, list) or any(
+                not isinstance(item, dict)
+                or item.get("role") not in ("user", "assistant")
+                or not isinstance(item.get("content"), str)
+                for item in examples
+            ):
+                return None, "", tr("alert.delivery.llm_persona_unavailable")
+            if persona.get("begin_dialogs") and not examples:
+                # An invalid/unprocessed preset must not silently disappear.
+                return None, "", tr("alert.delivery.llm_persona_unavailable")
         else:
             return None, "", tr("alert.delivery.llm_persona_unavailable")
         _, note = self._target_llm_settings(target.umo)
@@ -652,44 +570,43 @@ class AlertDelivery:
             conversation_id,
             conversation_persona_id,
             platform_name,
-            hashlib.sha256(full_prompt.encode()).hexdigest(),
+            hashlib.sha256(
+                json.dumps(
+                    [full_prompt, examples], ensure_ascii=False, sort_keys=True
+                ).encode()
+            ).hexdigest(),
+            runner_signature,
+            model_signature,
         )
-        return signature, full_prompt[:4000], ""
+        return signature, _PersonaInput(full_prompt, examples), ""
 
-    async def _hint(
-        self, target: Any, llm: Any, active: Callable[[], bool]
+    async def _notice(
+        self,
+        target: Any,
+        facts: tuple[AlertFact, ...],
+        llm: Any,
+        active: Callable[[], bool],
     ) -> tuple[str, str, tuple | None]:
         if not llm.enabled or not self._alive(active):
             return "", "", None
+        prompt = template_prompt(len(facts))
+        if not prompt:
+            return "", tr("alert.delivery.llm_failed"), None
 
         async def generate():
-            signature, persona_prompt, note = await self._resolve_target_llm(
+            signature, persona_input, note = await self._resolve_target_llm(
                 target, active
             )
             if signature is None or not self._alive(active):
                 return "", note, None
             # No balances, names, endpoints, recipients, credentials, history or
-            # tools enter this request. The model writes only the introduction.
+            # tools enter this request. Configured persona examples accompany
+            # the full persona and anonymous schema; substitution is local.
             response = await self.context.llm_generate(
                 chat_provider_id=signature[0],
-                prompt=(
-                    "请按当前人格的语气，主动写一段简短自然的招呼或提醒引言。"
-                    "可以使用符合人格的称呼、情绪和表情，不必套用固定句式。"
-                    "提醒对方留意下方的额度明细、按需安排使用即可。"
-                    "仅返回一至两句纯文本，最多160字；不要解释创作过程。"
-                ),
-                system_prompt=persona_prompt
-                + (
-                    "\n你正在撰写通知引言，不是执行对话任务。"
-                    "账户、余额、单位、阈值由程序在下方独立补充，以该事实块为准；"
-                    "仅作自然引言，不得断言财务数值、币种、正负或零余额、额度耗尽、"
-                    "账户及服务可用性；也不要把付款作为继续使用的先决条件。"
-                    "不要提供充值链接、支付操作、@提及、CQ代码或工具调用，"
-                    "不要声称已经充值、付款或执行其他操作。"
-                )
-                + "\n"
-                + tr("alert.delivery.llm_language"),
-                contexts=[],
+                prompt=prompt,
+                system_prompt=persona_input.prompt,
+                contexts=persona_input.contexts,
                 tools=None,
             )
             if not self._alive(active):
@@ -705,10 +622,10 @@ class AlertDelivery:
             ):
                 return "", tr("alert.delivery.llm_failed"), None
             content = getattr(response, "completion_text", "")
-            hint = _safe_introduction(content)
+            notice = render_notice(content, _notice_rows(facts))
             return (
-                (hint, "", signature)
-                if hint
+                (notice, "", signature)
+                if notice
                 else ("", tr("alert.delivery.llm_failed"), None)
             )
 
@@ -739,9 +656,9 @@ class AlertDelivery:
             return self._blocked(
                 "session_disabled" if allowed is False else "session_check_failed"
             )
-        hint_locale = self._locale() if self._locale is not None else current_locale()
-        with use_locale(hint_locale):
-            hint, note, signature = await self._hint(target, llm, active)
+        notice_locale = self._locale() if self._locale is not None else current_locale()
+        with use_locale(notice_locale):
+            notice, note, signature = await self._notice(target, facts, llm, active)
         if not self._alive(active):
             return DeliveryResult("cancelled", tr("alert.delivery.cancelled"))
         if reason := self._target_reason(target):
@@ -750,7 +667,7 @@ class AlertDelivery:
         transport_started = False
 
         async def send():
-            nonlocal transport_started, hint, note
+            nonlocal transport_started, notice, note
             if not self._alive(active):
                 return cancelled
             allowed = await self._session_state(
@@ -788,7 +705,7 @@ class AlertDelivery:
                         if allowed is False
                         else "session_check_failed"
                     )
-            if hint:
+            if notice:
                 # Re-read after the preceding permission await. Rebuilding below is
                 # synchronous; no extra model call or automatic resend occurs.
                 try:
@@ -803,7 +720,7 @@ class AlertDelivery:
                 if not self._alive(active):
                     return cancelled
                 if current != signature:
-                    hint = ""
+                    notice = ""
                     note = latest_note or tr("alert.delivery.llm_changed")
                 # Sending permission wins over tone consistency. A session may
                 # have been disabled during the read-only routing awaits above.
@@ -819,13 +736,13 @@ class AlertDelivery:
                         if allowed is False
                         else "session_check_failed"
                     )
-                if hint:
+                if notice:
                     try:
                         _, latest_note = self._target_llm_settings(target.umo)
                     except Exception:
                         latest_note = tr("alert.delivery.llm_config_unavailable")
                     if latest_note:
-                        hint, note = "", latest_note
+                        notice, note = "", latest_note
                 # Host routing/persona/session-AI have no atomic public snapshot.
                 # Concurrent changes not observable through this final sync
                 # config read remain a host TOCTOU limit; never retry a send.
@@ -844,11 +761,11 @@ class AlertDelivery:
             ):
                 return self._blocked("platform_unavailable")
             try:
-                locale = self._locale() if self._locale is not None else hint_locale
+                locale = self._locale() if self._locale is not None else notice_locale
                 with use_locale(locale):
-                    if hint and locale != hint_locale:
-                        hint, note = "", tr("alert.delivery.llm_locale_changed")
-                    text = format_alert_facts(facts, hint)
+                    # Persona language is independent of the plugin UI locale.
+                    # Only the ordinary fallback needs the current UI language.
+                    text = notice or format_alert_facts(facts)
                 if official is None:
                     outbound = self.component_factory(target.mentions, text)
             except Exception:

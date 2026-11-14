@@ -34,7 +34,7 @@ async def exercise(*, host, plugin, client, web, result, root, headers, plugin_n
     captured = fixture.calls
     llm_calls, http_calls, command_calls = [], [], []
     natural_hint = "我来轻轻提醒一下，记得照看账户额度呀。"
-    llm_reply = natural_hint
+    llm_reply = None
     phases = result["phases"]
     cards = root / "evidence-cards"
     cards.mkdir()
@@ -93,7 +93,24 @@ async def exercise(*, host, plugin, client, web, result, root, headers, plugin_n
 
         async def text_chat(self, **kwargs):
             llm_calls.append(kwargs)
-            return LLMResponse(role="assistant", completion_text=llm_reply)
+            if llm_reply is not None:
+                return LLMResponse(role="assistant", completion_text=llm_reply)
+            # Only synthetic model prose; placeholders mirror the anonymous
+            # request schema and never inspect accounts or their balances.
+            import re
+
+            tokens = re.findall(r"<yql\.(?:\d+\.)?account>", kwargs["prompt"])
+            paragraphs = []
+            for token in dict.fromkeys(tokens):
+                prefix = token[: -len("account>")]
+                paragraphs.append(
+                    f"{token}的{prefix}metric>现在是{prefix}balance>，"
+                    f"已达到或低于提醒线{prefix}threshold>，记得留意一下呀。"
+                )
+            return LLMResponse(
+                role="assistant",
+                completion_text=natural_hint + "\n\n" + "\n\n".join(paragraphs),
+            )
 
     provider = OfflineProvider(
         {"id": "yql-offline-model", "type": "yql_offline_llm", "key": []}, {}

@@ -309,7 +309,7 @@ class _Context:
         self.llm_finished = asyncio.Event()
         self.conversation_manager = SimpleNamespace(
             get_curr_conversation_id=self.get_curr_conversation_id,
-            get_conversation=self.get_conversation,
+            get_filtered_conversations=self.get_filtered_conversations,
         )
         self.persona_manager = SimpleNamespace(
             resolve_selected_persona=self.resolve_selected_persona
@@ -345,13 +345,17 @@ class _Context:
         self.host_calls.append(("conversation", umo))
         return "existing-conversation"
 
-    async def get_conversation(self, umo, conversation_id, *, create_if_not_exists):
-        assert (umo, conversation_id, create_if_not_exists) == (
-            TARGET,
-            "existing-conversation",
-            False,
-        )
-        return SimpleNamespace(persona_id="conversation-persona")
+    async def get_filtered_conversations(
+        self, *, page, page_size, umo_query, include_history
+    ):
+        assert (page, page_size, umo_query, include_history) == (1, 100, TARGET, False)
+        return [
+            SimpleNamespace(
+                cid="existing-conversation",
+                user_id=TARGET,
+                persona_id="conversation-persona",
+            )
+        ], 1
 
     async def resolve_selected_persona(
         self, *, umo, conversation_persona_id, platform_name, provider_settings
@@ -370,7 +374,8 @@ class _Context:
     ):
         assert chat_provider_id == "synthetic-target-model"
         assert contexts == [] and tools is None
-        assert "Speak gently." in system_prompt
+        assert system_prompt == "Speak gently."
+        assert "threshold" not in prompt and "metric" not in prompt
         for sensitive in (SECRET, TARGET, "Package Account", "5 CNY"):
             assert sensitive not in prompt + system_prompt
         self.llm_calls.append(chat_provider_id)
@@ -385,7 +390,11 @@ class _Context:
                 await self.llm_release.wait()
             finally:
                 self.llm_finished.set()
-        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+        return SimpleNamespace(
+            completion_text=(
+                "温馨提醒，<yql.1.name>的余额是<yql.1.balance>，请抽空看看吧。"
+            )
+        )
 
     async def send_message(self, umo, message_chain):
         assert umo == TARGET
@@ -398,7 +407,9 @@ class _Context:
         assert segments[0] == {"type": "at", "data": {"qq": "456"}}
         assert segments[1]["type"] == "text"
         assert "5 CNY" in segments[1]["data"]["text"]
-        assert "10 CNY" in segments[1]["data"]["text"]
+        assert "10 CNY" not in segments[1]["data"]["text"]
+        assert "总余额" not in segments[1]["data"]["text"]
+        assert "阈值" not in segments[1]["data"]["text"]
         assert SECRET not in repr(segments)
         self.sent.append((umo, segments))
         return True  # Submission only, not proof of delivery to QQ.
@@ -644,7 +655,10 @@ async def _scenario(unpacked, state, host, font):
         await _eventually(
             lambda: account_status()["status"] == "submitted", "persisted submission"
         )
-        assert "温馨提醒" in context.sent[0][1][1]["data"]["text"]
+        assert account_status()["detail_code"] == ""
+        assert context.sent[0][1][1]["data"]["text"] == (
+            "温馨提醒，Package Account的余额是5 CNY，请抽空看看吧。"
+        )
         assert {name for name, _ in context.host_calls} >= {
             "config",
             "model",

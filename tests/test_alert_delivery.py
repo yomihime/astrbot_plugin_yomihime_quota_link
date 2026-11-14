@@ -13,6 +13,8 @@ from quota_link.alert_delivery import (
     format_alert_facts,
 )
 
+PERSONA_TEMPLATE = "温馨提醒，<yql.1.name>的余额是<yql.1.balance>，请抽空看看吧。"
+
 
 def run_async(function):
     @wraps(function)
@@ -47,7 +49,7 @@ class FakeContext:
         self.persona_manager = SimpleNamespace(resolve_selected_persona=self.persona)
         self.conversation_manager = SimpleNamespace(
             get_curr_conversation_id=self.current_conversation,
-            get_conversation=self.conversation,
+            get_filtered_conversations=self.conversation,
         )
 
     def get_config(self, *, umo):
@@ -58,12 +60,16 @@ class FakeContext:
         self.conversation_reads.append(("current", umo))
         return self.current_id
 
-    async def conversation(self, umo, cid, *, create_if_not_exists):
-        self.conversation_reads.append(("read", umo, cid, create_if_not_exists))
-        return SimpleNamespace(
-            persona_id=self.conversation_persona_id,
-            history="PRIVATE HISTORY MUST NEVER ENTER PROMPT",
-        )
+    async def conversation(self, *, page, page_size, umo_query, include_history):
+        assert page == 1 and page_size == 100 and include_history is False
+        self.conversation_reads.append(("metadata", umo_query, False))
+        return [
+            SimpleNamespace(
+                cid=self.current_id,
+                user_id=umo_query,
+                persona_id=self.conversation_persona_id,
+            )
+        ], 1
 
     async def session_enabled(self, umo):
         self.session_checks.append(umo)
@@ -186,22 +192,16 @@ async def test_mentions_use_actual_adapter_and_message_type(
     "text",
     [
         "",
-        "余额还有9999元",
-        "このアカウントの残高はゼロです。",
-        "このアカウントには残高がありません。",
-        "もうクレジットがありません。",
-        "帳戶餘額已經歸零。",
-        "目前這個帳戶已經沒有餘額了。",
-        "請儲值才能繼續使用。",
-        "@all",
-        "[CQ:at,qq=all]",
-        "https://evil.test",
-        "充值成功",
-        "x" * 500,
+        "This response contains no required slots.",
+        "<yql.1.name>",
+        "<yql.1.balance>",
+        "<yql.1.name> <yql.1.balance> <yql.1.balance>",
+        "<yql.1.name> <yql.1.balance> <yql.2.name>",
+        "<yql.1.name> <yql.1.balance> <yql.1.name",
         RuntimeError("model-secret"),
     ],
 )
-async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
+async def test_output_missing_required_slots_or_failed_model_falls_back_once(text):
     context = FakeContext(text=text)
     result = await delivery(context).deliver(
         BalanceAlertTarget("custom:FriendMessage:123"),
@@ -210,10 +210,12 @@ async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted"
+    assert result.status == "submitted" and result.reason_code == "fixed_hint"
+    assert len(context.prompts) == len(context.sent) == 1
     sent = context.sent[0][1][1]
     assert sent == format_alert_facts((fact(),))
-    assert "-8.25 CNY" in sent and "10 CNY" in sent
+    assert "-8.25 CNY" in sent and "10 CNY" not in sent
+    assert "可用额度" not in sent and "阈值" not in sent
     prompt = repr(context.prompts)
     assert "-8.25" not in prompt and "Synthetic account" not in prompt
     assert "custom:FriendMessage" not in prompt and "model-secret" not in prompt
@@ -223,10 +225,10 @@ async def test_invalid_or_failed_llm_output_falls_back_to_fixed_facts(text):
 
 @run_async
 @pytest.mark.parametrize("change_language", [False, True])
-async def test_notification_uses_current_language_when_model_completes(change_language):
+async def test_valid_persona_notice_survives_plugin_ui_language_change(change_language):
     context = FakeContext()
     language = "en-US"
-    generated = "Please check the details below."
+    generated = "Captain, <yql.1.name> has <yql.1.balance>."
 
     async def generate(**kwargs):
         nonlocal language
@@ -244,17 +246,96 @@ async def test_notification_uses_current_language_when_model_completes(change_la
         reserve=lambda: True,
     )
     assert result.status == "submitted"
-    assert "Write the introduction in English." in context.prompts[0]["system_prompt"]
+    assert (
+        "Write the complete notice in English."
+        not in context.prompts[0]["system_prompt"]
+    )
     assert len(context.prompts) == 1 and len(context.sent) == 1
     sent = context.sent[0][1][1]
-    assert (generated in sent) is not change_language
-    assert ("クォータアラート" in sent) is change_language
-    assert "-8.25 CNY ≤ 10 CNY" in sent
+    assert result.reason_code == ""
+    assert sent == "Captain, Synthetic account has -8.25 CNY."
+
+
+@run_async
+async def test_failed_model_fallback_uses_current_ui_language():
+    from quota_link.i18n import use_locale
+
+    context = FakeContext()
+    language = "en-US"
+
+    async def generate(**kwargs):
+        nonlocal language
+        context.prompts.append(kwargs)
+        language = "ja-JP"
+        raise RuntimeError("synthetic model failure")
+
+    context.llm_generate = generate
+    result = await delivery(context, locale=lambda: language).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.status == "submitted" and result.reason_code == "fixed_hint"
+    assert len(context.prompts) == len(context.sent) == 1
+    with use_locale("ja-JP"):
+        assert context.sent[0][1][1] == format_alert_facts((fact(),))
+    assert "クォータアラート" in context.sent[0][1][1]
+
+
+@run_async
+@pytest.mark.parametrize("change", ["permission", "model", "persona"])
+async def test_ui_language_change_does_not_bypass_permissions_or_routing(change):
+    from quota_link.i18n import use_locale
+
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    language = "en-US"
+
+    async def generate(**kwargs):
+        nonlocal language
+        context.prompts.append(kwargs)
+        language = "ja-JP"
+        if change == "permission":
+            context.session_on = False
+        elif change == "model":
+
+            async def new_model(umo):
+                return "new-model"
+
+            context.get_current_chat_provider_id = new_model
+        else:
+            context.selected_persona = (
+                "new-persona",
+                {"prompt": "A different persona."},
+                None,
+                False,
+            )
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
+
+    context.llm_generate = generate
+    reservations = []
+    result = await delivery(context, locale=lambda: language).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: reservations.append(True) or True,
+    )
+    assert len(context.prompts) == 1
+    if change == "permission":
+        assert result.status == "blocked" and result.reason_code == "session_disabled"
+        assert not context.sent and not reservations
+    else:
+        assert result.status == "submitted" and result.reason_code == "fixed_hint"
+        assert len(context.sent) == len(reservations) == 1
+        with use_locale("ja-JP"):
+            assert context.sent[0][1][1] == format_alert_facts((fact(),))
 
 
 @run_async
 async def test_target_host_model_and_resolved_persona_never_attach_history():
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     result = await delivery(context).deliver(
         BalanceAlertTarget("custom:FriendMessage:123"),
         (fact(),),
@@ -262,14 +343,14 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted"
+    assert result.status == "submitted" and result.reason_code == ""
     assert context.resolved == ["custom:FriendMessage:123"] * 3
     assert context.prompts[0]["chat_provider_id"] == "fake-model"
     assert (
         context.conversation_reads
         == [
             ("current", "custom:FriendMessage:123"),
-            ("read", "custom:FriendMessage:123", "existing-conversation", False),
+            ("metadata", "custom:FriendMessage:123", False),
         ]
         * 3
     )
@@ -286,8 +367,184 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
         * 3
     )
     assert "PRIVATE HISTORY" not in repr(context.prompts)
-    assert "Speak gently." in context.prompts[0]["system_prompt"]
-    assert "温馨提醒" in context.sent[0][1][1]
+    assert context.prompts[0]["system_prompt"] == "Speak gently."
+    assert "<yql.1.name>" in context.prompts[0]["prompt"]
+    assert "<yql.1.balance>" in context.prompts[0]["prompt"]
+    assert "threshold" not in repr(context.prompts)
+    assert "metric" not in repr(context.prompts)
+    assert context.sent[0][1][1] == (
+        "温馨提醒，Synthetic account的余额是-8.25 CNY，请抽空看看吧。"
+    )
+
+
+@run_async
+@pytest.mark.parametrize("language", ["zh-CN", "en-US", "ja-JP"])
+async def test_full_long_persona_and_host_processed_examples_reach_model(language):
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    prompt = "長い人格。" * 1200 + "最後の指示 / End of persona."
+    examples = [
+        {"role": "user", "content": "Bonjour! " * 900, "_no_save": True},
+        {"role": "assistant", "content": "Salut, capitaine! 尾部。", "_no_save": True},
+    ]
+    context.selected_persona = (
+        "gentle",
+        {
+            "prompt": prompt,
+            "begin_dialogs": [item["content"] for item in examples],
+            "_begin_dialogs_processed": examples,
+        },
+        None,
+        False,
+    )
+    result = await delivery(context, locale=lambda: language).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.status == "submitted" and result.reason_code == ""
+    request = context.prompts[0]
+    assert request["system_prompt"] == prompt
+    assert request["contexts"] == examples
+    assert request["contexts"] is not examples
+    assert request["contexts"][0] is not examples[0]
+    assert request["tools"] is None
+    assert "Write the complete notice in English." not in request["system_prompt"]
+    assert "请使用简体中文" not in request["system_prompt"]
+
+
+@run_async
+@pytest.mark.parametrize(
+    "persona",
+    [
+        {"prompt": "Complete persona", "begin_dialogs": ["Unprocessed example"]},
+        {"prompt": "Complete persona", "_begin_dialogs_processed": "invalid"},
+        {
+            "prompt": "Complete persona",
+            "_begin_dialogs_processed": [
+                {"role": "tool", "content": "invalid example role"}
+            ],
+        },
+    ],
+)
+async def test_invalid_persona_examples_fall_back_without_silent_omission(persona):
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    context.selected_persona = ("gentle", persona, None, False)
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.reason_code == "fixed_hint" and not context.prompts
+    assert context.sent[0][1][1] == format_alert_facts((fact(),))
+
+
+@run_async
+@pytest.mark.parametrize("change", ["example", "model", "provider", "runner_config"])
+async def test_persona_examples_and_model_changes_discard_old_notice(change):
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    persona = {
+        "prompt": "Speak gently.",
+        "_begin_dialogs_processed": [
+            {"role": "user", "content": "Hello", "_no_save": True},
+            {"role": "assistant", "content": "Good evening", "_no_save": True},
+        ],
+    }
+    context.selected_persona = ("gentle", persona, None, False)
+    model = ["remote-model-a"]
+    provider = [SimpleNamespace(get_model=lambda: model[0])]
+    context.get_provider_by_id = lambda provider_id: provider[0]
+
+    async def generate(**kwargs):
+        context.prompts.append(kwargs)
+        if change == "example":
+            persona["_begin_dialogs_processed"][1]["content"] = "New tone"
+        elif change == "model":
+            model[0] = "remote-model-b"
+        elif change == "provider":
+            provider[0] = SimpleNamespace(get_model=lambda: model[0])
+        else:
+            context.config["agent_runner"]["config"] = {"model": {"temperature": 0.8}}
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
+
+    context.llm_generate = generate
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.status == "submitted" and result.reason_code == "fixed_hint"
+    assert len(context.prompts) == len(context.sent) == 1
+    assert context.sent[0][1][1] == format_alert_facts((fact(),))
+
+
+@run_async
+async def test_metadata_only_lookup_paginates_and_matches_exact_session():
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    calls = []
+
+    async def metadata(*, page, page_size, umo_query, include_history):
+        calls.append(page)
+        assert include_history is False and umo_query == "custom:FriendMessage:123"
+        if page == 1:
+            return [
+                SimpleNamespace(
+                    cid=context.current_id, user_id="other", persona_id="wrong"
+                )
+            ], 101
+        return [
+            SimpleNamespace(
+                cid=context.current_id, user_id=umo_query, persona_id="gentle"
+            )
+        ], 101
+
+    context.conversation_manager.get_filtered_conversations = metadata
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.reason_code == "" and calls == [1, 2] * 3
+    assert all(
+        item["conversation_persona_id"] == "gentle" for item in context.persona_reads
+    )
+
+
+@run_async
+async def test_host_without_metadata_only_api_falls_back_without_loading_history():
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    context.conversation_manager = SimpleNamespace(
+        get_curr_conversation_id=context.current_conversation,
+        get_conversation=lambda *args, **kwargs: pytest.fail(
+            "history must not be read"
+        ),
+    )
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.reason_code == "fixed_hint" and not context.prompts
+
+
+def test_long_account_names_are_preserved_in_normal_and_persona_reminders():
+    from dataclasses import replace
+
+    from quota_link.alert_delivery import _notice_rows
+
+    name = "Account" * 100 + "-distinctive-final-suffix"
+    item = replace(fact(), display_name=name)
+    assert name in format_alert_facts((item,))
+    assert _notice_rows((item,)) == ({"name": name, "balance": "-8.25 CNY"},)
 
 
 @run_async
@@ -297,7 +554,7 @@ async def test_revocation_during_model_generation_never_reaches_transport():
 
     async def generate(**kwargs):
         active[0] = False
-        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
 
     context.llm_generate = generate
     result = await delivery(context).deliver(
@@ -413,7 +670,7 @@ async def test_target_disabled_ai_or_nonlocal_runner_never_resolves_fallback_mod
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted" and "固定提醒" in result.message
+    assert result.status == "submitted" and "普通提醒" in result.message
     assert not context.resolved and not context.prompts and not context.persona_reads
     assert context.sent[0][1][1] == format_alert_facts((fact(),))
     assert all(umo == "custom:GroupMessage:scope_123" for umo in context.config_reads)
@@ -456,7 +713,7 @@ async def test_full_session_switch_rechecked_after_llm_before_reservation():
 
     async def generate(**kwargs):
         context.session_on = False
-        return SimpleNamespace(completion_text="温馨提醒：请及时检查账户额度。")
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
 
     context.llm_generate = generate
     result = await delivery(context).deliver(
@@ -501,7 +758,7 @@ async def test_missing_or_failing_session_callbacks_do_not_allow_hidden_bypass()
 
 @run_async
 async def test_no_current_conversation_never_creates_or_reads_one():
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     context.current_id = None
     await delivery(context).deliver(
         BalanceAlertTarget("custom:FriendMessage:123"),
@@ -527,7 +784,7 @@ async def test_no_current_conversation_never_creates_or_reads_one():
 async def test_resolver_none_persona_and_webchat_special_are_respected(
     selected, expected_llm
 ):
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     context.selected_persona = selected
     context.conversation_persona_id = "[%None]"
     result = await delivery(context).deliver(
@@ -555,7 +812,7 @@ async def test_resolver_none_persona_and_webchat_special_are_respected(
     ],
 )
 async def test_revocation_after_each_host_await_never_sends(stage):
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
     active = [True]
     original = getattr(context, stage)
 
@@ -567,7 +824,7 @@ async def test_revocation_after_each_host_await_never_sends(stage):
     setattr(context, stage, revoke)
     context.conversation_manager = SimpleNamespace(
         get_curr_conversation_id=context.current_conversation,
-        get_conversation=context.conversation,
+        get_filtered_conversations=context.conversation,
     )
     context.persona_manager = SimpleNamespace(resolve_selected_persona=context.persona)
     result = await delivery(context).deliver(
@@ -617,7 +874,7 @@ async def test_sdk_suppressing_cancellation_cannot_continue_to_late_model_call()
 
 @run_async
 async def test_model_and_persona_are_resolved_independently_for_each_exact_target():
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+    context = FakeContext(text=PERSONA_TEMPLATE)
 
     async def provider(umo):
         context.resolved.append(umo)
@@ -626,9 +883,15 @@ async def test_model_and_persona_are_resolved_independently_for_each_exact_targe
     async def current(umo):
         return "conversation-" + umo
 
-    async def conv(umo, cid, *, create_if_not_exists):
-        assert cid == "conversation-" + umo and create_if_not_exists is False
-        return SimpleNamespace(persona_id="persona-" + umo)
+    async def conv(*, umo_query, include_history, **kwargs):
+        assert include_history is False
+        return [
+            SimpleNamespace(
+                cid="conversation-" + umo_query,
+                user_id=umo_query,
+                persona_id="persona-" + umo_query,
+            )
+        ], 1
 
     async def persona(**kwargs):
         assert kwargs["conversation_persona_id"] == "persona-" + kwargs["umo"]
@@ -641,7 +904,7 @@ async def test_model_and_persona_are_resolved_independently_for_each_exact_targe
 
     context.get_current_chat_provider_id = provider
     context.conversation_manager = SimpleNamespace(
-        get_curr_conversation_id=current, get_conversation=conv
+        get_curr_conversation_id=current, get_filtered_conversations=conv
     )
     context.persona_manager = SimpleNamespace(resolve_selected_persona=persona)
     targets = ("custom:GroupMessage:sender_123", "custom:GroupMessage:other_123")
@@ -666,8 +929,8 @@ async def test_model_and_persona_are_resolved_independently_for_each_exact_targe
     "change",
     ["model", "persona_id", "persona_prompt", "ai_off", "runner", "full_session"],
 )
-async def test_host_settings_changed_during_generation_never_send_stale_hint(change):
-    context = FakeContext(text="温馨提醒：请及时检查账户额度。")
+async def test_host_settings_changed_during_generation_never_send_stale_notice(change):
+    context = FakeContext(text=PERSONA_TEMPLATE)
     old_generate = context.llm_generate
 
     async def generate(**kwargs):
@@ -713,7 +976,7 @@ async def test_host_settings_changed_during_generation_never_send_stale_hint(cha
     if change == "full_session":
         assert result.status == "blocked" and not context.sent and not reservations
     else:
-        assert result.status == "submitted" and "固定提醒" in result.message
+        assert result.status == "submitted" and "普通提醒" in result.message
         assert context.sent[0][1][1] == format_alert_facts((fact(),))
 
 
@@ -772,11 +1035,11 @@ async def test_controlled_reason_codes_preserve_status_and_never_expose_free_tex
     )
     assert disabled.status == "submitted" and disabled.reason_code == ""
     context.session_ai_on = True
-    context.text = "温馨提醒：请及时检查账户额度。"
-    hinted = await delivery(context).deliver(
+    context.text = PERSONA_TEMPLATE
+    personalized = await delivery(context).deliver(
         target, (fact(),), BalanceAlertLLM(), active=lambda: True, reserve=lambda: True
     )
-    assert hinted.status == "submitted" and hinted.reason_code == ""
+    assert personalized.status == "submitted" and personalized.reason_code == ""
     context.config["agent_runner"]["runner_type"] = "dify"
     external = await delivery(context).deliver(
         target, (fact(),), BalanceAlertLLM(), active=lambda: True, reserve=lambda: True

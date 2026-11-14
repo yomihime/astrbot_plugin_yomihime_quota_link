@@ -702,11 +702,13 @@ async def test_large_batch_is_bounded_and_pending_accounts_send_later(tmp_path):
     monitor, _, clock, _, context = engine(tmp_path, settings(count=13, interval=1))
     await monitor.run_once()
     assert len(context.sent) == 1
-    assert context.sent[0][1][1].count("（预警阈值）") == 10
+    assert context.sent[0][1][1].count(" CNY") == 10
+    assert "阈值" not in context.sent[0][1][1]
     clock.advance(300)
     await monitor.run_once()
     assert len(context.sent) == 2
-    assert context.sent[1][1][1].count("（预警阈值）") == 3
+    assert context.sent[1][1][1].count(" CNY") == 3
+    assert "阈值" not in context.sent[1][1][1]
     await monitor.close()
 
 
@@ -719,7 +721,7 @@ async def test_first_alerts_are_not_starved_by_ten_repeating_accounts(tmp_path):
     clock.advance(300)
     await monitor.run_once()
     sent_text = "\n".join(message for _, (_, message) in context.sent)
-    assert all(f"Synthetic {index} ·" in sent_text for index in range(13))
+    assert all(f"Synthetic {index}：" in sent_text for index in range(13))
     await monitor.close()
 
 
@@ -741,9 +743,9 @@ async def test_slow_bounded_queue_eventually_reports_every_first_episode(tmp_pat
         assert len(service.calls) - previous_calls <= 10
         clock.advance(300)
         text = "\n".join(message for _, (_, message) in context.sent)
-        if all(f"Synthetic {index} ·" in text for index in range(20)):
+        if all(f"Synthetic {index}：" in text for index in range(20)):
             break
-    assert all(f"Synthetic {index} ·" in text for index in range(20))
+    assert all(f"Synthetic {index}：" in text for index in range(20))
     await monitor.close()
 
 
