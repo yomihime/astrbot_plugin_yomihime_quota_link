@@ -377,3 +377,74 @@ def test_optional_suggestions_and_nonfinancial_numbers_are_not_banned(prose):
 def test_empty_claim_retains_account_subject_and_metric_adverbs(template):
     row = {**FIRST, "balance": "7 CNY", "threshold": "10 CNY"}
     assert render_notice(template, (row,)) == ""
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "负责提醒的账户共有 {number} 个。",
+        "本次账户数量为{number}。",
+        "這次帳戶共計 {number} 個。",
+        "账户：{number}。",
+        "Accounts: {number}",
+        "The account count is {number}.",
+        "The number of accounts is {number}.",
+        "Accounts total: {number}",
+    ],
+)
+@pytest.mark.parametrize("number", ["1", "2", "1.1", "-1"])
+@pytest.mark.parametrize("count", [1, 2])
+def test_reversed_account_counts_match_rows(template, number, count):
+    prose = template.format(number=number)
+    body = NOTICE
+    rows = (FIRST,)
+    if count == 2:
+        body = NOTICE.replace("<yql.", "<yql.1.")
+        body += "\n\n" + NOTICE.replace("<yql.", "<yql.2.")
+        rows = (FIRST, SECOND)
+    result = render_notice(prose + "\n\n" + body, rows)
+    assert bool(result) == (number == str(count))
+    if result:
+        assert result.startswith(prose)
+
+
+@pytest.mark.parametrize("number", ["one", "two", "eleven", "twenty-one"])
+def test_reversed_written_account_counts_match_rows(number):
+    assert bool(render_notice(f"Account count is {number}.\n\n{NOTICE}", (FIRST,))) == (
+        number == "one"
+    )
+
+
+@pytest.mark.parametrize(
+    "number",
+    [
+        "一百",
+        "一千",
+        "一半",
+        "1e2",
+        "1E+2",
+        "1,000",
+        ".5",
+        "1st",
+        "1万",
+        "1/2",
+        "1 000",
+    ],
+)
+@pytest.mark.parametrize("template", ["账户共有{number}个。", "本次有{number}个账户。"])
+def test_account_count_never_accepts_only_a_valid_numeric_prefix(number, template):
+    assert (
+        render_notice(template.format(number=number) + "\n\n" + NOTICE, (FIRST,)) == ""
+    )
+
+
+@pytest.mark.parametrize(
+    "number", ["1e2", "1E+2", "1,000", ".5", "1st", "1/2", "1 000", "1 dozen"]
+)
+@pytest.mark.parametrize(
+    "template", ["Accounts: {number}.", "There are {number} accounts."]
+)
+def test_english_account_count_consumes_the_whole_quantity(number, template):
+    assert (
+        render_notice(template.format(number=number) + "\n\n" + NOTICE, (FIRST,)) == ""
+    )

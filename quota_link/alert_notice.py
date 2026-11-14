@@ -172,10 +172,28 @@ _EN_NUMBER_WORD = (
 )
 _COUNT_WORDS.update(dict(zip("零一二三四五六七八九十", range(11), strict=True)))
 _COUNT_WORDS.update({"两": 2, "兩": 2})
+# Consume the whole quantity even when its notation is unsupported. Otherwise
+# "one hundred" or "1e2" could be mistaken for the leading, valid count of one.
+_COUNT_LITERAL = (
+    r"[+−-]?(?:\d+(?:[.,/]\d+|\s+\d{3}(?!\d))*|[.,]\d+)"
+    r"(?:[a-z][a-z0-9+−-]*)?"
+    r"(?:[百千万萬亿億]+|\s+(?:hundred|thousand|million|billion|trillion|dozen))?"
+)
+_COUNT_CJK = (
+    r"[零〇一二两兩三四五六七八九十百千万萬亿億壹貳贰参參叁肆伍陸陆柒捌玖拾佰仟半]+"
+)
 _ACCOUNT_COUNT = re.compile(
-    rf"(?<![\w.+−-])(?P<en>[+−-]?\d+(?:\.\d+)?|{_EN_NUMBER_WORD}(?:[ -]+(?:and[ -]+)?{_EN_NUMBER_WORD})*)\s+accounts?\b"
-    r"|(?<![\d.+−-])(?P<cjk>[+−-]?\d+(?:\.\d+)?|[零一二两兩三四五六七八九十]+)\s*(?:个|個)?(?:账户|帳戶|賬戶)"
-    r"|(?<![\d.+−-])(?P<jp>[+−-]?\d+(?:\.\d+)?|[零一二三四五六七八九十]+)\s*(?:つ|件)のアカウント",
+    rf"(?<![\w.+−-])(?P<en>{_COUNT_LITERAL}|{_EN_NUMBER_WORD}(?:[ -]+(?:and[ -]+)?{_EN_NUMBER_WORD})*)\s+accounts?\b"
+    rf"|(?<![\d.+−-])(?P<cjk>{_COUNT_LITERAL}|{_COUNT_CJK})\s*(?:个|個)?(?:账户|帳戶|賬戶)"
+    rf"|(?<![\d.+−-])(?P<jp>{_COUNT_LITERAL}|{_COUNT_CJK})\s*(?:つ|件)のアカウント",
+    re.I,
+)
+_ACCOUNT_COUNT_REVERSED = re.compile(
+    r"(?:账户|帳戶|賬戶)\s*(?:(?:的)?(?:数量|數量)\s*(?:是|为|為|[:：])?|共有|共计|共計|总共|總共|合计|合計|共|[:：])\s*"
+    rf"(?P<cjk>{_COUNT_LITERAL}|{_COUNT_CJK})"
+    r"|\b(?:number of accounts?|account count|accounts?(?:\s+(?:count|total))?)\s*"
+    r"(?:[:=]|(?:is|are|totals?)\b)\s*"
+    rf"(?P<en>{_COUNT_LITERAL}|{_EN_NUMBER_WORD}(?:[ -]+(?:and[ -]+)?{_EN_NUMBER_WORD})*)(?![\w-]|\.\d)",
     re.I,
 )
 _PAYMENT_TOPIC = re.compile(
@@ -215,6 +233,7 @@ def _checked_counts(prose: str, count: int) -> str | None:
         return "accounts"
 
     result = _ACCOUNT_COUNT.sub(replace, prose)
+    result = _ACCOUNT_COUNT_REVERSED.sub(replace, result)
     return None if invalid else result
 
 
