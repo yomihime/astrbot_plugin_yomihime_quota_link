@@ -54,7 +54,6 @@
     "alert.delivery.llm_changed": "会話のモデルかペルソナが変わったため、定型文を使用しました",
     "alert.delivery.llm_config_unavailable": "会話の AI 設定を利用できないため、定型文を使用しました",
     "alert.delivery.llm_failed": "AI の通知文を生成できないか、チェックを通過しなかったため、定型文を使用しました",
-    "alert.delivery.llm_locale_changed": "通知の生成中に言語が変わったため、定型文を使用しました",
     "alert.delivery.llm_model_unavailable": "会話のモデルを利用できないため、定型文を使用しました",
     "alert.delivery.llm_nonlocal": "現在の実行方式ではこのペルソナ通知の生成に対応していないため、定型通知を使用しました",
     "alert.delivery.llm_not_called": "送信先の会話が無効か状態を確認できないため、AI を呼び出しませんでした",

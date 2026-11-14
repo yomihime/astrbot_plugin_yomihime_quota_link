@@ -763,8 +763,8 @@ class AlertDelivery:
             try:
                 locale = self._locale() if self._locale is not None else notice_locale
                 with use_locale(locale):
-                    if notice and locale != notice_locale:
-                        notice, note = "", tr("alert.delivery.llm_locale_changed")
+                    # Persona language is independent of the plugin UI locale.
+                    # Only the ordinary fallback needs the current UI language.
                     text = notice or format_alert_facts(facts)
                 if official is None:
                     outbound = self.component_factory(target.mentions, text)

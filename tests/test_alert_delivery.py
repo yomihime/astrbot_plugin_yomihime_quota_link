@@ -225,7 +225,7 @@ async def test_output_missing_required_slots_or_failed_model_falls_back_once(tex
 
 @run_async
 @pytest.mark.parametrize("change_language", [False, True])
-async def test_notification_uses_current_language_when_model_completes(change_language):
+async def test_valid_persona_notice_survives_plugin_ui_language_change(change_language):
     context = FakeContext()
     language = "en-US"
     generated = "Captain, <yql.1.name> has <yql.1.balance>."
@@ -252,13 +252,85 @@ async def test_notification_uses_current_language_when_model_completes(change_la
     )
     assert len(context.prompts) == 1 and len(context.sent) == 1
     sent = context.sent[0][1][1]
-    if change_language:
-        assert result.reason_code == "fixed_hint"
-        assert "Captain" not in sent and "クォータアラート" in sent
-        assert "-8.25 CNY" in sent and "10 CNY" not in sent
+    assert result.reason_code == ""
+    assert sent == "Captain, Synthetic account has -8.25 CNY."
+
+
+@run_async
+async def test_failed_model_fallback_uses_current_ui_language():
+    from quota_link.i18n import use_locale
+
+    context = FakeContext()
+    language = "en-US"
+
+    async def generate(**kwargs):
+        nonlocal language
+        context.prompts.append(kwargs)
+        language = "ja-JP"
+        raise RuntimeError("synthetic model failure")
+
+    context.llm_generate = generate
+    result = await delivery(context, locale=lambda: language).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.status == "submitted" and result.reason_code == "fixed_hint"
+    assert len(context.prompts) == len(context.sent) == 1
+    with use_locale("ja-JP"):
+        assert context.sent[0][1][1] == format_alert_facts((fact(),))
+    assert "クォータアラート" in context.sent[0][1][1]
+
+
+@run_async
+@pytest.mark.parametrize("change", ["permission", "model", "persona"])
+async def test_ui_language_change_does_not_bypass_permissions_or_routing(change):
+    from quota_link.i18n import use_locale
+
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    language = "en-US"
+
+    async def generate(**kwargs):
+        nonlocal language
+        context.prompts.append(kwargs)
+        language = "ja-JP"
+        if change == "permission":
+            context.session_on = False
+        elif change == "model":
+
+            async def new_model(umo):
+                return "new-model"
+
+            context.get_current_chat_provider_id = new_model
+        else:
+            context.selected_persona = (
+                "new-persona",
+                {"prompt": "A different persona."},
+                None,
+                False,
+            )
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
+
+    context.llm_generate = generate
+    reservations = []
+    result = await delivery(context, locale=lambda: language).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: reservations.append(True) or True,
+    )
+    assert len(context.prompts) == 1
+    if change == "permission":
+        assert result.status == "blocked" and result.reason_code == "session_disabled"
+        assert not context.sent and not reservations
     else:
-        assert result.reason_code == ""
-        assert sent == "Captain, Synthetic account has -8.25 CNY."
+        assert result.status == "submitted" and result.reason_code == "fixed_hint"
+        assert len(context.sent) == len(reservations) == 1
+        with use_locale("ja-JP"):
+            assert context.sent[0][1][1] == format_alert_facts((fact(),))
 
 
 @run_async

@@ -10,7 +10,9 @@ NOTICE = "主人，`<yql.1.name>`的余额是 <yql.1.balance>，有空看看就�
 @pytest.mark.parametrize("count", [1, 2, 100])
 def test_prompt_exposes_only_numbered_name_and_balance_slots(count):
     prompt = template_prompt(count)
-    assert "one combined balance alert" in prompt
+    assert "have triggered low-balance alerts" in prompt
+    assert "one combined message" in prompt
+    assert "pay attention to their low balances" in prompt
     assert "persona and its examples" in prompt
     assert "including its unit" in prompt
     for index in range(1, count + 1):

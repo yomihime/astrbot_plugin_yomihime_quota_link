@@ -54,7 +54,6 @@
     "alert.delivery.llm_changed": "The session model or persona changed. Used the standard notice",
     "alert.delivery.llm_config_unavailable": "Session AI settings were unavailable. Used the standard notice",
     "alert.delivery.llm_failed": "The AI notice could not be generated or did not pass validation. Used the standard notice",
-    "alert.delivery.llm_locale_changed": "The language changed while generating the notice, so the standard message was used",
     "alert.delivery.llm_model_unavailable": "The session model was unavailable. Used the standard notice",
     "alert.delivery.llm_nonlocal": "The current executor does not support this persona notice call. Used the standard notice",
     "alert.delivery.llm_not_called": "The target session is disabled or unavailable. Skipped the AI call",

@@ -22,7 +22,9 @@ def template_prompt(count: int) -> str:
     if count < 1:
         return ""
     return (
-        "Write one combined balance alert in the selected persona. "
+        "These accounts have triggered low-balance alerts. "
+        "Write one combined message in the selected persona, naturally reminding "
+        "the user to pay attention to their low balances. "
         "Let the persona and its examples guide the language and style. "
         "Use every placeholder below exactly once, unchanged. "
         "Each numbered name slot identifies an account; its balance slot gives "
