@@ -10,7 +10,7 @@ _FIELDS = ("account", "metric", "balance", "threshold")
 _MAX_LENGTH = 4096
 _TOKEN = re.compile(r"<yql\.(?:[1-9][0-9]*\.)?(?:account|metric|balance|threshold)>")
 _SLOT_MARKERS = {
-    "account": " ",
+    "account": "\x04",
     "metric": "\x01",
     "balance": "\x02",
     "threshold": "\x03",
@@ -25,8 +25,8 @@ _PAYLOAD = re.compile(
     re.I,
 )
 _FINANCE = re.compile(
-    r"余额|餘額|残高|额度|額度|积分|積分|點數|阈值|門檻|しきい値|クォータ|クレジット|ポイント"
-    r"|\b(?:balance|quota|credits?|threshold)\b",
+    r"[\x01\x02\x03]|余额|餘額|残高|额度|額度|积分|積分|點數|阈值|門檻|しきい値|クォータ|クレジット|ポイント"
+    r"|\b(?:balance|quota|credits?|threshold|limit)\b|还剩|還剩|剩余|剩餘|只剩|仅剩|僅剩",
     re.I,
 )
 _CJK_NUMBER = (
@@ -52,10 +52,15 @@ _UNIT = re.compile(
     re.I,
 )
 _VALUE_WITH_UNIT = re.compile(
-    rf"(?:[\x02\x03]|{_CJK_NUMBER})\s*\(?\s*(?:元|円|ドル|[块塊毛分](?:[钱錢]|(?=$|[\s。,.!?]|啦|了|哦))"
+    rf"(?:[\x02\x03]|\d+(?:\.\d+)?|{_CJK_NUMBER})\s*\(?\s*(?:元|円|ドル|[块塊毛分](?:[钱錢]|(?=$|[\s。,.!?]|啦|了|哦))"
     r"|积分|積分|點數|点数|額度點|额度点|ポイント|クレジット|\b(?:credits?|points?)\b)"
     r"|[\x02\x03]\s*\(?\s*[点點]"
     r"|[\x02\x03]\s*\(?\s*(?-i:[A-Z]{3,4})\b",
+    re.I,
+)
+_NUMERIC_CURRENCY = re.compile(
+    r"\d\s*(?:USD|CNY|RMB|JPY|EUR|GBP|HKD|TWD|CAD|AUD|CHF|INR|SGD|KRW|NZD|ZAR|THB"
+    r"|MYR|VND|IDR|PHP|MOP|AED|SAR|RUB|TRY|BRL|MXN|SEK|NOK|DKK|PLN)(?![a-z])",
     re.I,
 )
 _THRESHOLD_LABEL = (
@@ -93,23 +98,124 @@ _UNSUPPORTED_CLAIM = re.compile(
     r"|见底|見底|耗[光尽盡]|用[光尽盡完]|欠费|欠費|已空|透支|マイナス|ゼロ|使い切|底をつ"
     r"|(?:没有|沒有|已無|已无)(?:任何|剩餘|剩余)?(?:余额|餘額|额度|額度)"
     r"|(?:残高|クレジット|クォータ|ポイント)(?:が|は)\s*(?:残ってい(?:ない|ません)|な(?:い|くな)|ありません)"
-    r"|充值|儲值|付款|支付|缴费|繳費|转账|轉帳|汇款|匯款|入金|支払い|振込|課金|チャージ"
     r"|停[服用止]|禁用|封禁|中断|中斷|不可用|可正常使用|已恢复|已恢復|正常运行|正常運行|可以继续使用|可以繼續使用"
     r"|(?:订阅|訂閱|套餐|服务|服務|计划|計畫|賬戶|帳戶|账户).{0,8}(?:过期|過期|到期|失效|取消|终止|終止)"
     r"|(?:已经?|已經)(?:替|帮|幫|为|為)(?:你|您).{0,12}(?:处理|處理|更新|调整|調整|修改)"
     r"|利用(?:でき|不可|可能)|無効|再開|復旧|有効期限(?:切れ|が切れ)|期限(?:が)?切れ|失効"
     r"|高[于於]|超[过過]|大[于於]|多[于於]|未达(?:到)?阈值|未達(?:到)?門檻|上回|より(?:高|上|多)"
-    r"|\b(?:negative|zero|empty|depleted|exhausted|overdrawn|ran out|run out|used up"
+    r"|\b(?:negative|zero|depleted|exhausted|overdrawn|ran out|run out|used up"
     r"|unavailable|disabled|suspended|blocked|closed|restored|stopped|expired|terminated"
     r"|(?:subscription|plan|service|account)\s+(?:is\s+)?(?:cancelled|canceled|down)"
     r"|still (?:available|active|working)|continue (?:using|to use)"
     r"|(?:is|are) (?:available|operational|active)|working normally"
     r"|(?:updated|reset|changed) (?:your|the) (?:alert|threshold|account)"
-    r"|pay(?:ment|ing|s)?|paid|recharg(?:e|ed|ing)|top[ -]?up|topp(?:ed|ing)\s+up"
-    r"|transfer\s+(?:money|funds)|above|exceeds?|(?:higher|greater|more|larger)\s+than)\b"
+    r"|exceeds?|(?:higher|greater|more|larger)\s+than)\b"
     r"|[≥≧⩾]",
     re.I,
 )
+
+# A suggestion is not evidence of a payment or of a service restriction.
+_PAYMENT = r"(?:充值|儲值|付款|支付|缴费|繳費|转账|轉帳|汇款|匯款|入金|支払い|振込|課金|チャージ)"
+_PAYMENT_CLAIM = re.compile(
+    rf"(?:已|已经|已經|替你|帮你|幫你|替您|帮您|幫您|必须|必須|务必|務必)[^,，。;；\n!?！？]{{0,12}}{_PAYMENT}"
+    rf"|{_PAYMENT}[^,，。;；\n!?！？]{{0,8}}(?:成功|完成|済|完了|才能|才可|方可|即可恢复|即可恢復)"
+    rf"|{_PAYMENT}[^,，。;；\n!?！？]{{0,8}}[后後][^,，。;；\n!?！？]{{0,8}}(?:继续|繼續|使用)"
+    r"|(?:选择|選擇)(?:支付|付款)方式|(?:确认|確認)(?:支付|付款)"
+    r"|\b(?:paid|recharged|topped\s+up|transferred\s+(?:money|funds))\b"
+    r"|\b(?:payment|recharge|top[ -]?up|transfer)\s+(?:is\s+|was\s+)?(?:successful|completed|confirmed|required)\b"
+    r"|\b(?:must|need to|have to|will|shall|already)\s+(?:pay|recharge|top[ -]?up|transfer)\b"
+    r"|\b(?:pay|recharge|top[ -]?up)[^,，。;；\n!?！？]{0,30}(?:to continue|to restore|before you can|before continuing)\b",
+    re.I,
+)
+_COUNT_WORDS = dict(
+    zip(
+        (
+            "zero",
+            "one",
+            "two",
+            "three",
+            "four",
+            "five",
+            "six",
+            "seven",
+            "eight",
+            "nine",
+            "ten",
+            "eleven",
+            "twelve",
+            "thirteen",
+            "fourteen",
+            "fifteen",
+            "sixteen",
+            "seventeen",
+            "eighteen",
+            "nineteen",
+        ),
+        range(20),
+        strict=True,
+    )
+)
+for _tens, _value in zip(
+    ("twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"),
+    range(20, 100, 10),
+    strict=True,
+):
+    _COUNT_WORDS[_tens] = _value
+    for _unit, _number in tuple(_COUNT_WORDS.items()):
+        if 0 < _number < 10:
+            _COUNT_WORDS[f"{_tens} {_unit}"] = _value + _number
+_EN_NUMBER_WORD = (
+    r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve"
+    r"|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen"
+    r"|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety"
+    r"|hundred|thousand|million|billion|trillion)"
+)
+_COUNT_WORDS.update(dict(zip("零一二三四五六七八九十", range(11), strict=True)))
+_COUNT_WORDS.update({"两": 2, "兩": 2})
+_ACCOUNT_COUNT = re.compile(
+    rf"(?<![\w.+−-])(?P<en>[+−-]?\d+(?:\.\d+)?|{_EN_NUMBER_WORD}(?:[ -]+(?:and[ -]+)?{_EN_NUMBER_WORD})*)\s+accounts?\b"
+    r"|(?<![\d.+−-])(?P<cjk>[+−-]?\d+(?:\.\d+)?|[零一二两兩三四五六七八九十]+)\s*(?:个|個)?(?:账户|帳戶|賬戶)"
+    r"|(?<![\d.+−-])(?P<jp>[+−-]?\d+(?:\.\d+)?|[零一二三四五六七八九十]+)\s*(?:つ|件)のアカウント",
+    re.I,
+)
+_PAYMENT_TOPIC = re.compile(
+    rf"{_PAYMENT}|\b(?:pay|payment|recharg\w*|top[ -]?up|topping up|transfer)\b", re.I
+)
+_PAYMENT_QUANTITY = re.compile(
+    rf"{_PAYMENT}\s*(?:(?:大?约|大?約|大概|至少|最多)\s*)?{_CJK_NUMBER}"
+    r"(?=$|[\s。,.!?！？;；，]|就|左右|即可)"
+)
+_DURATION = re.compile(
+    rf"\b(?:\d+|{_EN_NUMBER_WORD})\s+(?:seconds?|minutes?|hours?|days?|weeks?)\b"
+    rf"|(?:\d+|{_CJK_NUMBER})\s*(?:秒钟|秒鐘|分钟|分鐘|小时|小時|天|秒|分|時間)",
+    re.I,
+)
+_SCOPED_VALUE_CLAIM = re.compile(
+    rf"(?:{_CURRENT_LABEL}|\x04|\baccount\b)\s+(?:is|has become|became|remains)\s+"
+    r"(?:(?:now|completely|entirely|totally|already|currently)\s+)*(?:empty|above)\b"
+    rf"|\bempty\s+(?:{_CURRENT_LABEL}|\x04|account\b)"
+    r"|[\x02\x03]\s+(?:is\s+)?above\s+[\x02\x03]",
+    re.I,
+)
+
+
+def _checked_counts(prose: str, count: int) -> str | None:
+    """Remove verified account counts before looking for invented amounts."""
+    invalid = False
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal invalid
+        word = next(value for value in match.groups() if value is not None).lower()
+        number = (
+            int(word)
+            if word.isascii() and word.isdigit()
+            else _COUNT_WORDS.get(re.sub(r"[ -]+", " ", word))
+        )
+        invalid |= number != count
+        return "accounts"
+
+    result = _ACCOUNT_COUNT.sub(replace, prose)
+    return None if invalid else result
 
 
 def _tokens(count: int) -> tuple[tuple[str, ...], ...]:
@@ -146,7 +252,9 @@ def template_prompt(count: int) -> str:
         "Describe the balance as the measured value and the threshold as the "
         "configured alert level. Both value slots already include their unit. "
         "Do not invent names, values, units, conversions, depletion, outages, "
-        "subscription or service status, payment advice or actions. "
+        "subscription or service status, completed payments or other actions. "
+        "A gentle optional top-up suggestion is fine; do not claim payment is required. "
+        f"You may mention that this notice covers {count} account(s). "
         "Do not output links, mentions, code, tool calls or markup. "
         "Keep each account's four placeholders together in its own paragraph. "
         "Use a blank line between account paragraphs. "
@@ -162,28 +270,40 @@ def _has_control(text: str, allowed: str) -> bool:
     )
 
 
-def _unsafe_prose(prose: str) -> bool:
+def _unsafe_prose(prose: str, count: int) -> bool:
     """Reject common false claims in the supported locales."""
     checked = unicodedata.normalize("NFKC", prose).replace("\u200d", "")
+    checked = _checked_counts(checked, count)
+    if checked is None:
+        return True
     checked = re.sub(r"\b(?:pay(?:ing)?|paid)\s+attention\b", "", checked, flags=re.I)
     if (
         _UNSUPPORTED_CLAIM.search(checked)
+        or _PAYMENT_CLAIM.search(checked)
+        or _PAYMENT_QUANTITY.search(checked)
+        or _SCOPED_VALUE_CLAIM.search(checked)
         or _UNIT.search(checked)
         or _VALUE_WITH_UNIT.search(checked)
+        or _NUMERIC_CURRENCY.search(checked)
         or _SWAPPED_ROLE.search(checked)
         or _UNLABELED_VALUES.search(checked)
         or _INVALID_VALUE_COMPARISON.search(checked)
-        or any(
-            unicodedata.category(char) == "Sc"
-            or (char.isnumeric() and not "\u3400" <= char <= "\u9fff")
-            for char in checked
-        )
+        or any(unicodedata.category(char) == "Sc" for char in checked)
     ):
         return True
-    return any(
-        _FINANCE.search(clause) and _WRITTEN_AMOUNT.search(clause)
-        for clause in re.split(r"[。.!?！？;；,，\n]", checked)
-    )
+    for clause in re.split(r"[。.!?！？;；,，\n]", checked):
+        payment = _PAYMENT_TOPIC.search(clause)
+        if payment:
+            # A time suggestion is not a proposed payment amount.
+            clause = _DURATION.sub("time", clause)
+        if (_FINANCE.search(clause) or payment) and (
+            _WRITTEN_AMOUNT.search(clause)
+            or any(
+                char.isnumeric() and not "\u3400" <= char <= "\u9fff" for char in clause
+            )
+        ):
+            return True
+    return False
 
 
 def render_notice(content: object, rows: tuple[Mapping[str, str], ...]) -> str:
@@ -221,7 +341,7 @@ def render_notice(content: object, rows: tuple[Mapping[str, str], ...]) -> str:
             lambda match: _SLOT_MARKERS[match[0][:-1].rsplit(".", 1)[-1]],
             paragraph,
         )
-        if _unsafe_prose(prose) or (
+        if _unsafe_prose(prose, len(rows)) or (
             found and not any(char.isalpha() for char in prose)
         ):
             return ""

@@ -276,3 +276,104 @@ def test_rejects_missing_invalid_or_oversized_local_facts():
     assert render_notice(NOTICE, ({**FIRST, "account": "test\x00"},)) == ""
     assert render_notice(NOTICE, ({**FIRST, "account": "test\n\nother"},)) == ""
     assert render_notice(NOTICE, ({**FIRST, "account": "x" * 4096},)) == ""
+
+
+@pytest.mark.parametrize(
+    "prose",
+    [
+        "有 2 个账户需要留意，有空记得充值。",
+        "有两个账户需要留意。",
+        "這次有兩個帳戶需要留意，有空再儲值就好。",
+        "These two accounts need attention. Top up when you have a moment.",
+        "2つのアカウントをお知らせします。時間があるときにチャージを検討してね。",
+    ],
+)
+def test_verified_account_counts_and_optional_topups_keep_persona(prose):
+    row = "<yql.account>的<yql.metric>是<yql.balance>，提醒阈值是<yql.threshold>。"
+    template = prose + "\n\n" + row.replace("<yql.", "<yql.1.")
+    template += "\n\n" + row.replace("<yql.", "<yql.2.")
+    result = render_notice(template, (FIRST, SECOND))
+    assert result.startswith(prose)
+    for facts in (FIRST, SECOND):
+        assert all(value in result for value in facts.values())
+
+
+@pytest.mark.parametrize(
+    "prose",
+    [
+        "有 2 个账户需要留意。",
+        "有 1.1 个账户需要留意。",
+        "有 -1 个账户需要留意。",
+        "There are -1 accounts.",
+        "有十二个账户需要留意。",
+        "Three accounts need attention.",
+        "這次有兩個帳戶。",
+        "2つのアカウントです。",
+        "充值已成功。",
+        "我已经帮你充值。",
+        "必须充值才能继续使用。",
+        "不充值就停服。",
+        "有空记得充值50。",
+        "有空记得充值大约50。",
+        "Top up 50 when you have time.",
+        "Consider topping up about fifty.",
+        "有空充值五十就好。",
+        "One hundred and one accounts need attention.",
+        "Eleven accounts need attention.",
+        "Twenty-one accounts need attention.",
+        "One hundred accounts need attention.",
+        "The balance is above the limit.",
+        "The account is empty.",
+        "999USD left.",
+        "999usd left.",
+        "还有999ZAR。",
+        "请在控制台完成付款后继续使用。",
+        "刚刚替您完成了充值。",
+        "先去充值页面，选择支付方式并确认付款。",
+        "Top up your account before continuing.",
+        "Payment successful.",
+        "I topped up your account.",
+        "You must pay to continue.",
+        "Your balance is 9.",
+        "余额是９。",
+        "还剩七块。",
+        "还剩7。",
+        "只剩7。",
+        "有空充值100元。",
+    ],
+)
+def test_wrong_counts_payment_claims_and_invented_amounts_still_fall_back(prose):
+    assert render_notice(prose + "\n\n" + NOTICE, (FIRST,)) == ""
+
+
+@pytest.mark.parametrize(
+    "prose",
+    [
+        "有 1 个账户需要留意，有空记得充值。",
+        "One account needs attention. You can consider topping up later.",
+        "Take 2 minutes when you have time.",
+        "先喝2口水，回头看看吧。",
+        "Pay attention when you have a moment.",
+        "For the account above, take a look when you have time.",
+        "You can check when your schedule is empty.",
+        "已提醒你，有空记得充值。",
+        "Top up in 2 minutes if you like.",
+        "有空花2分钟看看充值页面。",
+        "有空充值一下。",
+    ],
+)
+def test_optional_suggestions_and_nonfinancial_numbers_are_not_banned(prose):
+    assert render_notice(prose + "\n\n" + NOTICE, (FIRST,)).startswith(prose)
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "<yql.account> is empty. Its <yql.metric> is <yql.balance>; threshold is <yql.threshold>.",
+        "<yql.account>: <yql.metric> is completely empty at <yql.balance>; threshold is <yql.threshold>.",
+        "<yql.account> is now entirely empty. Its <yql.metric> is <yql.balance>; threshold is <yql.threshold>.",
+    ],
+)
+def test_empty_claim_retains_account_subject_and_metric_adverbs(template):
+    row = {**FIRST, "balance": "7 CNY", "threshold": "10 CNY"}
+    assert render_notice(template, (row,)) == ""

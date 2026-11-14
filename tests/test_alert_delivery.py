@@ -434,7 +434,7 @@ async def test_target_disabled_ai_or_nonlocal_runner_never_resolves_fallback_mod
         active=lambda: True,
         reserve=lambda: True,
     )
-    assert result.status == "submitted" and "固定提醒" in result.message
+    assert result.status == "submitted" and "普通提醒" in result.message
     assert not context.resolved and not context.prompts and not context.persona_reads
     assert context.sent[0][1][1] == format_alert_facts((fact(),))
     assert all(umo == "custom:GroupMessage:scope_123" for umo in context.config_reads)
@@ -734,7 +734,7 @@ async def test_host_settings_changed_during_generation_never_send_stale_notice(c
     if change == "full_session":
         assert result.status == "blocked" and not context.sent and not reservations
     else:
-        assert result.status == "submitted" and "固定提醒" in result.message
+        assert result.status == "submitted" and "普通提醒" in result.message
         assert context.sent[0][1][1] == format_alert_facts((fact(),))
 
 

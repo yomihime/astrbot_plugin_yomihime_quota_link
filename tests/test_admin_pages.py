@@ -202,6 +202,19 @@ def test_auth_failure_never_reads_body_or_dispatches(monkeypatch, alter):
         b'{"x":' + b"[" * 30 + b"0" + b"]" * 30 + b"}",
         b'{"padding":"' + b"x" * BODY_LIMIT + b'"}',
     ],
+    ids=[
+        "duplicate",
+        "nested-duplicate",
+        "array",
+        "null",
+        "nan",
+        "infinity",
+        "overflow",
+        "incomplete",
+        "invalid-utf8",
+        "deep",
+        "oversized",
+    ],
 )
 def test_hostile_json_is_rejected_before_dispatch(monkeypatch, body):
     request = Request(body=body)
