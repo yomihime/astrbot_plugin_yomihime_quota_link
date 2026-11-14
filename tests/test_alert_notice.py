@@ -27,7 +27,8 @@ def test_prompt_describes_whole_notice_and_only_exposes_anonymous_slots():
     many = template_prompt(2)
     assert "complete proactive low-quota notice" in one
     assert "already include their unit" in one
-    assert "blank line" in many
+    assert "flowing prose, lines or lists" in many
+    assert "own paragraph" not in many
     assert "fell below" in many
     for field in FIRST:
         assert one.count(f"<yql.{field}>") == 1
@@ -36,7 +37,7 @@ def test_prompt_describes_whole_notice_and_only_exposes_anonymous_slots():
         assert FIRST[field] not in many
         assert SECOND[field] not in many
     assert not template_prompt(0)
-    assert not template_prompt(100_000)
+    assert "<yql.100.account>" in template_prompt(100)
 
 
 def test_single_notice_preserves_persona_prose_and_exact_values():
@@ -122,7 +123,6 @@ def test_excess_whitespace_in_template_is_compacted_before_fact_substitution():
     [
         None,
         "",
-        "x" * 4097 + NOTICE,
         NOTICE.replace("<yql.balance>", ""),
         NOTICE.replace("<yql.metric>", "<yql.account>"),
         NOTICE.replace("<yql.account>", "<yql.1.account>"),
@@ -130,7 +130,6 @@ def test_excess_whitespace_in_template_is_compacted_before_fact_substitution():
         NOTICE + " <yql.provider>",
         NOTICE + " yql.balance",
         NOTICE + " <yql.account>",
-        NOTICE.replace("its alert level.", "its alert level.\n\n"),
         "<yql.account> <yql.metric> <yql.balance> <yql.threshold>",
         "<yql.account> <yql.metric> <yql.balance> <yql.threshold> Hi.",
         "<yql.account> <yql.metric>: <yql.threshold>，<yql.balance>。",
@@ -140,15 +139,154 @@ def test_invalid_templates_request_plain_fallback(notice):
     assert render_notice(notice, (FIRST,)) == ""
 
 
-def test_mixed_rows_and_one_paragraph_for_two_accounts_request_fallback():
+def test_mixed_or_duplicate_rows_request_fallback():
     row = "<yql.account>的<yql.metric>是<yql.balance>，提醒线设在<yql.threshold>。"
     left = row.replace("<yql.", "<yql.1.")
     right = row.replace("<yql.", "<yql.2.")
     mixed_left = left.replace("<yql.1.balance>", "<yql.2.balance>")
     mixed_right = right.replace("<yql.2.balance>", "<yql.1.balance>")
     assert render_notice(f"{mixed_left}\n\n{mixed_right}", (FIRST, SECOND)) == ""
-    assert render_notice(f"{left}\n{right}", (FIRST, SECOND)) == ""
     assert render_notice(f"{left}\n\n{left}", (FIRST, SECOND)) == ""
+
+
+@pytest.mark.parametrize("separator", [" ", "; ", "\n", "\n- ", "\n\n"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_multiple_accounts_allow_prose_lines_and_lists_without_required_paragraphs(
+    separator, reverse
+):
+    row = "<yql.account>的<yql.metric>是<yql.balance>，提醒线设在<yql.threshold>。"
+    indices = (2, 1) if reverse else (1, 2)
+    template = separator.join(row.replace("<yql.", f"<yql.{i}.") for i in indices)
+    result = render_notice(template, (FIRST, SECOND))
+    expected = template
+    for i, facts in enumerate((FIRST, SECOND), 1):
+        for field, value in facts.items():
+            expected = expected.replace(f"<yql.{i}.{field}>", value)
+    assert result == expected
+
+
+def test_single_account_may_continue_across_paragraphs():
+    template = NOTICE.replace("its alert level.", "its alert level.\n\n")
+    assert render_notice(template, (FIRST,)).count(FIRST["balance"]) == 1
+
+
+def test_account_can_be_a_heading_with_facts_on_following_lines():
+    template = (
+        "<yql.account>\n\n"
+        "<yql.metric>: <yql.balance>\n"
+        "Threshold: <yql.threshold>\nTake a look when you have time."
+    )
+    assert render_notice(template, (FIRST,)).startswith(FIRST["account"] + "\n\n")
+
+
+@pytest.mark.parametrize("field", tuple(FIRST))
+@pytest.mark.parametrize("replacement", ["", "<yql.3.{field}>", "<yql.2.{field}>"])
+def test_multiple_account_slots_are_complete_unique_and_in_range(field, replacement):
+    template = NOTICE.replace("<yql.", "<yql.1.")
+    template += " " + NOTICE.replace("<yql.", "<yql.2.")
+    template = template.replace(f"<yql.1.{field}>", replacement.format(field=field))
+    assert render_notice(template, (FIRST, SECOND)) == ""
+
+
+def test_multiple_accounts_allow_different_fact_orders_in_one_paragraph():
+    template = (
+        "The warning level is <yql.2.threshold> for <yql.2.account>. "
+        "The <yql.2.metric> is <yql.2.balance>. "
+        "<yql.1.account>的<yql.1.metric>是<yql.1.balance>，提醒阈值是<yql.1.threshold>。"
+    )
+    rendered = render_notice(template, (FIRST, SECOND))
+    assert rendered.startswith("The warning level is " + SECOND["threshold"])
+    for row in (FIRST, SECOND):
+        assert all(value in rendered for value in row.values())
+
+
+@pytest.mark.parametrize("ordinals", [("一", "二"), ("1", "2")])
+@pytest.mark.parametrize("total", [1, 2, 3])
+def test_account_ordinals_are_not_confused_with_the_total_count(ordinals, total):
+    row = "第{ordinal}个账户 <yql.account>的<yql.metric>是<yql.balance>，提醒阈值为<yql.threshold>。"
+    template = " ".join(
+        row.format(ordinal=ordinal).replace("<yql.", f"<yql.{i}.")
+        for i, ordinal in enumerate(ordinals, 1)
+    )
+    template += f" 这次提醒涉及 {total} 个账户，有空看看就好。"
+    result = render_notice(template, (FIRST, SECOND))
+    assert bool(result) == (total == 2)
+    if result:
+        assert f"第{ordinals[0]}个账户 {FIRST['account']}" in result
+        assert f"第{ordinals[1]}个账户 {SECOND['account']}" in result
+
+
+@pytest.mark.parametrize("ordinal", ["零", "三", "十一", "一百", "1e2", "-1"])
+def test_account_ordinals_outside_the_notice_are_rejected(ordinal):
+    template = NOTICE.replace("<yql.", "<yql.1.")
+    template += " " + NOTICE.replace("<yql.", "<yql.2.")
+    assert render_notice(f"第{ordinal}个账户。 {template}", (FIRST, SECOND)) == ""
+
+
+def test_long_prose_and_literal_local_account_names_are_not_truncated():
+    introduction = "A quiet reminder, whenever you have a moment. " * 130
+    account = "長い財布の名前・épargne・حساب・" * 220
+    template = introduction + "\n\n" + NOTICE
+    result = render_notice(template, ({**FIRST, "account": account},))
+    assert len(template) > 4096
+    assert len(account) > 4096
+    assert result.startswith(introduction.rstrip())
+    assert account in result
+    assert result.endswith("Take a peek when you have a moment. 🐈")
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "Hola, <yql.account>: <yql.metric> está en <yql.balance>; umbral: <yql.threshold>. Cuando puedas, échale un vistazo.",
+        "<yql.account> : <yql.metric> vaut <yql.balance> ; seuil : <yql.threshold>. À regarder tranquillement.",
+        "主人，<yql.account>的<yql.metric>是<yql.balance>，提醒阈值为<yql.threshold>。有空看看吧。",
+    ],
+)
+def test_language_and_form_of_address_are_not_prescribed(template):
+    facts = {**FIRST, "account": "未知品牌 / Compte inconnu / 未登録アカウント"}
+    expected = template
+    for field, value in facts.items():
+        expected = expected.replace(f"<yql.{field}>", value)
+    assert render_notice(template, (facts,)) == expected
+
+
+@pytest.mark.parametrize("quote", ["`", "``", "```", "**"])
+def test_literal_text_emphasis_around_slots_is_preserved(quote):
+    template = (
+        f"主人，{quote}<yql.account>{quote}的{quote}<yql.metric>{quote}"
+        f"是{quote}<yql.balance>{quote}，提醒阈值为{quote}<yql.threshold>{quote}。"
+        "有空看一眼就好。"
+    )
+    expected = template
+    for field, value in FIRST.items():
+        expected = expected.replace(f"<yql.{field}>", value)
+    assert render_notice(template, (FIRST,)) == expected
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "https://example.invalid",
+        "[CQ:at,qq=all]",
+        "[C`Q:at,qq=all]",
+        "@everyone",
+        "<tool_call>pay</tool_call>",
+    ],
+)
+def test_backticks_do_not_hide_unsafe_payloads(payload):
+    assert render_notice(f"`{payload}`\n\n{NOTICE}", (FIRST,)) == ""
+
+
+@pytest.mark.parametrize("quote", ["`", "**"])
+def test_emphasis_does_not_hide_swapped_value_roles_or_extra_units(quote):
+    template = (
+        f"<yql.account>的<yql.metric>是{quote}<yql.threshold>{quote}，"
+        f"提醒阈值为{quote}<yql.balance>{quote}。"
+    )
+    assert render_notice(template, (FIRST,)) == ""
+    template = NOTICE.replace("<yql.balance>", f"{quote}<yql.balance>{quote} USD")
+    assert render_notice(template, (FIRST,)) == ""
 
 
 @pytest.mark.parametrize(
@@ -173,6 +311,36 @@ def test_mixed_rows_and_one_paragraph_for_two_accounts_request_fallback():
         "I've paid your invoice.",
         "我已經幫你調整門檻。",
         "The unit is USD.",
+        "可用余额变成负值了。",
+        "餘額變成負值了。",
+        "余额小于零。",
+        "餘額小於零。",
+        "余额等于零。",
+        "USD 999.",
+        "CNY -9.",
+        "账户已空。",
+        "余额没有任何剩余额度。",
+        "残高が残っていません。",
+        "服务可正常使用。",
+        "服务已恢复。",
+        "服务可以继续使用。",
+        "The service is available.",
+        "The service is down.",
+        "The balance is larger than the threshold.",
+        "クレジットがない。",
+        "クレジットがなくなった。",
+        "额度已无任何余额。",
+        "计划过期。",
+        "服务中断。",
+        "账户封禁。",
+        "账户禁用。",
+        "残高は底をついた。",
+        "サービスは利用できる。",
+        "The service is working normally.",
+        "The service is still working.",
+        "Your balance is more than the threshold.",
+        "额度多于提醒阈值。",
+        "余额未达到阈值。",
         "Your balance exceeds the limit.",
         "額度高於門檻。",
         "しきい値を上回りました。",
@@ -270,12 +438,11 @@ def test_comparator_only_accepts_balance_at_or_below_threshold(operator, balance
     )
 
 
-def test_rejects_missing_invalid_or_oversized_local_facts():
+def test_rejects_missing_or_invalid_local_facts():
     assert render_notice(NOTICE, ()) == ""
     assert render_notice(NOTICE, ({"account": "test"},)) == ""
     assert render_notice(NOTICE, ({**FIRST, "account": "test\x00"},)) == ""
     assert render_notice(NOTICE, ({**FIRST, "account": "test\n\nother"},)) == ""
-    assert render_notice(NOTICE, ({**FIRST, "account": "x" * 4096},)) == ""
 
 
 @pytest.mark.parametrize(
@@ -340,6 +507,11 @@ def test_verified_account_counts_and_optional_topups_keep_persona(prose):
         "还剩7。",
         "只剩7。",
         "有空充值100元。",
+        "You have fifty dollars.",
+        "五十美元。",
+        "Your balance is measured in tokens.",
+        "The balance is in pounds.",
+        "I paid <yql.account>.",
     ],
 )
 def test_wrong_counts_payment_claims_and_invented_amounts_still_fall_back(prose):
@@ -360,10 +532,44 @@ def test_wrong_counts_payment_claims_and_invented_amounts_still_fall_back(prose)
         "Top up in 2 minutes if you like.",
         "有空花2分钟看看充值页面。",
         "有空充值一下。",
+        "Put those negative thoughts aside and take a breath.",
+        "The window is closed; take a break when you like.",
+        "I'm exhausted today, so here's a quiet reminder.",
+        "休憩は大事。いったん作業を停止してお茶にしよう。",
+        "暂停一下，喝两口水吧，主人。",
+        "After 2 minutes you can check the balance when you like.",
+        "This is a token of care.",
+        "My heart pounds with excitement.",
+        "I've recharged myself with a little nap.",
+        "I paid a visit to the garden.",
+        "心情变成负值了，先缓缓吧。",
+        "你的茶杯已空，有空再倒一杯吧。",
+        "窗外已经恢复平静，慢慢来吧。",
+        "お茶が残っていません。後で淹れよう。",
+        "I'm available if you feel like taking a break.",
     ],
 )
 def test_optional_suggestions_and_nonfinancial_numbers_are_not_banned(prose):
     assert render_notice(prose + "\n\n" + NOTICE, (FIRST,)).startswith(prose)
+
+
+@pytest.mark.parametrize(
+    "advice",
+    [
+        "let's take small steps, one at a time",
+        "take 2 minutes for yourself",
+        "this is a token of care",
+        "my heart pounds with excitement",
+        "I've recharged myself with a nap",
+        "I paid a visit to the garden",
+    ],
+)
+def test_advice_in_the_same_financial_sentence_does_not_become_an_amount(advice):
+    template = (
+        "<yql.account>'s <yql.metric> is <yql.balance> "
+        f"with threshold <yql.threshold> and {advice}."
+    )
+    assert advice in render_notice(template, (FIRST,))
 
 
 @pytest.mark.parametrize(

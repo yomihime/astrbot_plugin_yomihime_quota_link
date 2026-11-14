@@ -309,7 +309,7 @@ class _Context:
         self.llm_finished = asyncio.Event()
         self.conversation_manager = SimpleNamespace(
             get_curr_conversation_id=self.get_curr_conversation_id,
-            get_conversation=self.get_conversation,
+            get_filtered_conversations=self.get_filtered_conversations,
         )
         self.persona_manager = SimpleNamespace(
             resolve_selected_persona=self.resolve_selected_persona
@@ -345,13 +345,17 @@ class _Context:
         self.host_calls.append(("conversation", umo))
         return "existing-conversation"
 
-    async def get_conversation(self, umo, conversation_id, *, create_if_not_exists):
-        assert (umo, conversation_id, create_if_not_exists) == (
-            TARGET,
-            "existing-conversation",
-            False,
-        )
-        return SimpleNamespace(persona_id="conversation-persona")
+    async def get_filtered_conversations(
+        self, *, page, page_size, umo_query, include_history
+    ):
+        assert (page, page_size, umo_query, include_history) == (1, 100, TARGET, False)
+        return [
+            SimpleNamespace(
+                cid="existing-conversation",
+                user_id=TARGET,
+                persona_id="conversation-persona",
+            )
+        ], 1
 
     async def resolve_selected_persona(
         self, *, umo, conversation_persona_id, platform_name, provider_settings

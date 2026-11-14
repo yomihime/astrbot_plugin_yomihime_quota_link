@@ -36,6 +36,7 @@ from quota_link.alert_delivery import (
         "Take a moment to check the balance details, captain!",
         "主人，咱们一块看看额度吧。",
         "十分感谢你抽空看下额度，别太劳累啦。",
+        pytest.param("提醒你慢慢查看，不用着急。" * 420, id="long-persona-prose"),
     ],
 )
 async def test_free_personality_prose_integrates_exact_program_owned_facts(
@@ -147,7 +148,6 @@ async def test_free_personality_prose_integrates_exact_program_owned_facts(
         "@everyone 请看这里",
         "先看下额度\x00秘密内容",
         "请看额度\u202e反向覆盖",
-        "额" * 4097,
     ],
 )
 async def test_model_cannot_supply_financial_claims_links_or_active_payloads(

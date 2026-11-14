@@ -52,7 +52,7 @@ class FakeContext:
         self.persona_manager = SimpleNamespace(resolve_selected_persona=self.persona)
         self.conversation_manager = SimpleNamespace(
             get_curr_conversation_id=self.current_conversation,
-            get_conversation=self.conversation,
+            get_filtered_conversations=self.conversation,
         )
 
     def get_config(self, *, umo):
@@ -63,12 +63,16 @@ class FakeContext:
         self.conversation_reads.append(("current", umo))
         return self.current_id
 
-    async def conversation(self, umo, cid, *, create_if_not_exists):
-        self.conversation_reads.append(("read", umo, cid, create_if_not_exists))
-        return SimpleNamespace(
-            persona_id=self.conversation_persona_id,
-            history="PRIVATE HISTORY MUST NEVER ENTER PROMPT",
-        )
+    async def conversation(self, *, page, page_size, umo_query, include_history):
+        assert page == 1 and page_size == 100 and include_history is False
+        self.conversation_reads.append(("metadata", umo_query, False))
+        return [
+            SimpleNamespace(
+                cid=self.current_id,
+                user_id=umo_query,
+                persona_id=self.conversation_persona_id,
+            )
+        ], 1
 
     async def session_enabled(self, umo):
         self.session_checks.append(umo)
@@ -254,7 +258,8 @@ async def test_notification_uses_current_language_when_model_completes(change_la
     )
     assert result.status == "submitted"
     assert (
-        "Write the complete notice in English." in context.prompts[0]["system_prompt"]
+        "Write the complete notice in English."
+        not in context.prompts[0]["system_prompt"]
     )
     assert len(context.prompts) == 1 and len(context.sent) == 1
     sent = context.sent[0][1][1]
@@ -287,7 +292,7 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
         context.conversation_reads
         == [
             ("current", "custom:FriendMessage:123"),
-            ("read", "custom:FriendMessage:123", "existing-conversation", False),
+            ("metadata", "custom:FriendMessage:123", False),
         ]
         * 3
     )
@@ -309,6 +314,176 @@ async def test_target_host_model_and_resolved_persona_never_attach_history():
         "温馨提醒，Synthetic account的可用额度是-8.25 CNY，"
         "已到提醒阈值10 CNY，请抽空看看吧。"
     )
+
+
+@run_async
+@pytest.mark.parametrize("language", ["zh-CN", "en-US", "ja-JP"])
+async def test_full_long_persona_and_host_processed_examples_reach_model(language):
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    prompt = "長い人格。" * 1200 + "最後の指示 / End of persona."
+    examples = [
+        {"role": "user", "content": "Bonjour! " * 900, "_no_save": True},
+        {"role": "assistant", "content": "Salut, capitaine! 尾部。", "_no_save": True},
+    ]
+    context.selected_persona = (
+        "gentle",
+        {
+            "prompt": prompt,
+            "begin_dialogs": [item["content"] for item in examples],
+            "_begin_dialogs_processed": examples,
+        },
+        None,
+        False,
+    )
+    result = await delivery(context, locale=lambda: language).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.status == "submitted" and result.reason_code == ""
+    request = context.prompts[0]
+    assert request["system_prompt"].startswith(prompt)
+    assert request["contexts"] == examples
+    assert request["contexts"] is not examples
+    assert request["contexts"][0] is not examples[0]
+    assert request["tools"] is None
+    assert "Write the complete notice in English." not in request["system_prompt"]
+    assert "请使用简体中文" not in request["system_prompt"]
+
+
+@run_async
+@pytest.mark.parametrize(
+    "persona",
+    [
+        {"prompt": "Complete persona", "begin_dialogs": ["Unprocessed example"]},
+        {"prompt": "Complete persona", "_begin_dialogs_processed": "invalid"},
+        {
+            "prompt": "Complete persona",
+            "_begin_dialogs_processed": [
+                {"role": "tool", "content": "invalid example role"}
+            ],
+        },
+    ],
+)
+async def test_invalid_persona_examples_fall_back_without_silent_omission(persona):
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    context.selected_persona = ("gentle", persona, None, False)
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.reason_code == "fixed_hint" and not context.prompts
+    assert context.sent[0][1][1] == format_alert_facts((fact(),))
+
+
+@run_async
+@pytest.mark.parametrize("change", ["example", "model", "provider", "runner_config"])
+async def test_persona_examples_and_model_changes_discard_old_notice(change):
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    persona = {
+        "prompt": "Speak gently.",
+        "_begin_dialogs_processed": [
+            {"role": "user", "content": "Hello", "_no_save": True},
+            {"role": "assistant", "content": "Good evening", "_no_save": True},
+        ],
+    }
+    context.selected_persona = ("gentle", persona, None, False)
+    model = ["remote-model-a"]
+    provider = [SimpleNamespace(get_model=lambda: model[0])]
+    context.get_provider_by_id = lambda provider_id: provider[0]
+
+    async def generate(**kwargs):
+        context.prompts.append(kwargs)
+        if change == "example":
+            persona["_begin_dialogs_processed"][1]["content"] = "New tone"
+        elif change == "model":
+            model[0] = "remote-model-b"
+        elif change == "provider":
+            provider[0] = SimpleNamespace(get_model=lambda: model[0])
+        else:
+            context.config["agent_runner"]["config"] = {"model": {"temperature": 0.8}}
+        return SimpleNamespace(completion_text=PERSONA_TEMPLATE)
+
+    context.llm_generate = generate
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.status == "submitted" and result.reason_code == "fixed_hint"
+    assert len(context.prompts) == len(context.sent) == 1
+    assert context.sent[0][1][1] == format_alert_facts((fact(),))
+
+
+@run_async
+async def test_metadata_only_lookup_paginates_and_matches_exact_session():
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    calls = []
+
+    async def metadata(*, page, page_size, umo_query, include_history):
+        calls.append(page)
+        assert include_history is False and umo_query == "custom:FriendMessage:123"
+        if page == 1:
+            return [
+                SimpleNamespace(
+                    cid=context.current_id, user_id="other", persona_id="wrong"
+                )
+            ], 101
+        return [
+            SimpleNamespace(
+                cid=context.current_id, user_id=umo_query, persona_id="gentle"
+            )
+        ], 101
+
+    context.conversation_manager.get_filtered_conversations = metadata
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.reason_code == "" and calls == [1, 2] * 3
+    assert all(
+        item["conversation_persona_id"] == "gentle" for item in context.persona_reads
+    )
+
+
+@run_async
+async def test_host_without_metadata_only_api_falls_back_without_loading_history():
+    context = FakeContext(text=PERSONA_TEMPLATE)
+    context.conversation_manager = SimpleNamespace(
+        get_curr_conversation_id=context.current_conversation,
+        get_conversation=lambda *args, **kwargs: pytest.fail(
+            "history must not be read"
+        ),
+    )
+    result = await delivery(context).deliver(
+        BalanceAlertTarget("custom:FriendMessage:123"),
+        (fact(),),
+        BalanceAlertLLM(),
+        active=lambda: True,
+        reserve=lambda: True,
+    )
+    assert result.reason_code == "fixed_hint" and not context.prompts
+
+
+def test_long_account_names_are_preserved_in_normal_and_persona_reminders():
+    from dataclasses import replace
+
+    from quota_link.alert_delivery import _notice_rows
+
+    name = "Account" * 100 + "-distinctive-final-suffix"
+    item = replace(fact(), display_name=name)
+    assert name in format_alert_facts((item,))
+    assert _notice_rows((item,))[0]["account"] == name
 
 
 @run_async
@@ -588,7 +763,7 @@ async def test_revocation_after_each_host_await_never_sends(stage):
     setattr(context, stage, revoke)
     context.conversation_manager = SimpleNamespace(
         get_curr_conversation_id=context.current_conversation,
-        get_conversation=context.conversation,
+        get_filtered_conversations=context.conversation,
     )
     context.persona_manager = SimpleNamespace(resolve_selected_persona=context.persona)
     result = await delivery(context).deliver(
@@ -647,9 +822,15 @@ async def test_model_and_persona_are_resolved_independently_for_each_exact_targe
     async def current(umo):
         return "conversation-" + umo
 
-    async def conv(umo, cid, *, create_if_not_exists):
-        assert cid == "conversation-" + umo and create_if_not_exists is False
-        return SimpleNamespace(persona_id="persona-" + umo)
+    async def conv(*, umo_query, include_history, **kwargs):
+        assert include_history is False
+        return [
+            SimpleNamespace(
+                cid="conversation-" + umo_query,
+                user_id=umo_query,
+                persona_id="persona-" + umo_query,
+            )
+        ], 1
 
     async def persona(**kwargs):
         assert kwargs["conversation_persona_id"] == "persona-" + kwargs["umo"]
@@ -662,7 +843,7 @@ async def test_model_and_persona_are_resolved_independently_for_each_exact_targe
 
     context.get_current_chat_provider_id = provider
     context.conversation_manager = SimpleNamespace(
-        get_curr_conversation_id=current, get_conversation=conv
+        get_curr_conversation_id=current, get_filtered_conversations=conv
     )
     context.persona_manager = SimpleNamespace(resolve_selected_persona=persona)
     targets = ("custom:GroupMessage:sender_123", "custom:GroupMessage:other_123")

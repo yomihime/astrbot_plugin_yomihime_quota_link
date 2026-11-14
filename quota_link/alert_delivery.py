@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import hashlib
 import json
 import re
@@ -72,6 +73,12 @@ class AlertFact:
 
 
 @dataclass(frozen=True, slots=True)
+class _PersonaInput:
+    prompt: str
+    contexts: list[dict]
+
+
+@dataclass(frozen=True, slots=True)
 class DeliveryResult:
     status: str
     message: str
@@ -100,7 +107,7 @@ def format_alert_facts(facts: tuple[AlertFact, ...]) -> str:
     lines = [tr("alert.fact.title")]
     for fact in facts:
         # Names remain Plain text, never CQ/At markup or a model instruction.
-        name = " ".join(fact.display_name.split())[:128]
+        name = " ".join(fact.display_name.split())
         label = render_text(_METRIC_LABELS.get(fact.metric, fact.metric))
         lines.append(
             tr(
@@ -120,7 +127,7 @@ def _notice_rows(facts: tuple[AlertFact, ...]) -> tuple[dict[str, str], ...]:
     """Keep actual account data local, including the original exact units."""
     return tuple(
         {
-            "account": " ".join(fact.display_name.split())[:128],
+            "account": " ".join(fact.display_name.split()),
             "metric": render_text(_METRIC_LABELS.get(fact.metric, fact.metric)),
             "balance": f"{_exact_decimal(fact.amount)} {fact.unit}",
             "threshold": f"{_exact_decimal(fact.threshold)} {fact.unit}",
@@ -449,12 +456,46 @@ class AlertDelivery:
         ):
             return {}, tr("alert.delivery.llm_off")
         if not isinstance(runner, Mapping) or runner.get("runner_type") != "local":
+            # local is AstrBot's built-in executor, including cloud models.
+            # Other executors select remote applications, not a chat Provider;
+            # get_current_chat_provider_id would fall back to an unrelated one.
             return {}, tr("alert.delivery.llm_nonlocal")
         return provider_settings, ""
 
+    async def _conversation_persona_id(
+        self, manager: Any, umo: str, conversation_id: str, active: Callable[[], bool]
+    ) -> str | None:
+        # get_conversation loads and serializes real chat history. Use the
+        # host's metadata-only projection instead, without searching content.
+        page = 1
+        while self._alive(active):
+            conversations, total = await manager.get_filtered_conversations(
+                page=page, page_size=100, umo_query=umo, include_history=False
+            )
+            if not self._alive(active):
+                return None
+            for conversation in conversations:
+                if conversation.cid == conversation_id and conversation.user_id == umo:
+                    return conversation.persona_id
+            if not conversations or page * 100 >= total:
+                return None
+            page += 1
+        return None
+
+    def _model_signature(self, provider_id: str) -> tuple:
+        # Provider ID alone does not detect /model switches or replacement of
+        # a provider instance under the same ID. No credentials enter this key.
+        getter = getattr(self.context, "get_provider_by_id", None)
+        if getter is None:
+            return ()
+        provider = getter(provider_id)
+        if provider is None:
+            raise ValueError("chat provider unavailable")
+        return (id(provider), provider.get_model())
+
     async def _resolve_target_llm(
         self, target: Any, active: Callable[[], bool], *, final: bool = False
-    ) -> tuple[tuple | None, str, str]:
+    ) -> tuple[tuple | None, _PersonaInput | str, str]:
         """Read host routing only, preserving exact UMO and host persona priority."""
         provider_settings, note = self._target_llm_settings(target.umo)
         if note:
@@ -475,18 +516,25 @@ class AlertDelivery:
             return None, "", ""
         if not isinstance(provider_id, str) or not provider_id.strip():
             return None, "", tr("alert.delivery.llm_model_unavailable")
+        model_signature = self._model_signature(provider_id)
+        runner_signature = hashlib.sha256(
+            json.dumps(
+                self.context.get_config(umo=target.umo).get("agent_runner"),
+                sort_keys=True,
+                ensure_ascii=False,
+            ).encode()
+        ).hexdigest()
         manager = self.context.conversation_manager
         conversation_id = await manager.get_curr_conversation_id(target.umo)
         if not self._alive(active):
             return None, "", ""
         conversation_persona_id = None
         if conversation_id:
-            conversation = await manager.get_conversation(
-                target.umo, conversation_id, create_if_not_exists=False
+            conversation_persona_id = await self._conversation_persona_id(
+                manager, target.umo, conversation_id, active
             )
             if not self._alive(active):
                 return None, "", ""
-            conversation_persona_id = getattr(conversation, "persona_id", None)
         if not self.validate_target(target) or not self._alive(active):
             return None, "", ""
         platform_name = (
@@ -511,8 +559,22 @@ class AlertDelivery:
             if selected_id not in (None, "[%None]"):
                 return None, "", tr("alert.delivery.llm_persona_unavailable")
             full_prompt = ""
+            examples = []
         elif isinstance(persona, Mapping) and isinstance(persona.get("prompt"), str):
             full_prompt = persona["prompt"]
+            # This is the same processed field the host's main agent prepends
+            # to contexts. These are configured examples, not chat history.
+            examples = copy.deepcopy(persona.get("_begin_dialogs_processed", []))
+            if not isinstance(examples, list) or any(
+                not isinstance(item, dict)
+                or item.get("role") not in ("user", "assistant")
+                or not isinstance(item.get("content"), str)
+                for item in examples
+            ):
+                return None, "", tr("alert.delivery.llm_persona_unavailable")
+            if persona.get("begin_dialogs") and not examples:
+                # An invalid/unprocessed preset must not silently disappear.
+                return None, "", tr("alert.delivery.llm_persona_unavailable")
         else:
             return None, "", tr("alert.delivery.llm_persona_unavailable")
         _, note = self._target_llm_settings(target.umo)
@@ -538,9 +600,15 @@ class AlertDelivery:
             conversation_id,
             conversation_persona_id,
             platform_name,
-            hashlib.sha256(full_prompt.encode()).hexdigest(),
+            hashlib.sha256(
+                json.dumps(
+                    [full_prompt, examples], ensure_ascii=False, sort_keys=True
+                ).encode()
+            ).hexdigest(),
+            runner_signature,
+            model_signature,
         )
-        return signature, full_prompt[:4000], ""
+        return signature, _PersonaInput(full_prompt, examples), ""
 
     async def _notice(
         self,
@@ -556,18 +624,18 @@ class AlertDelivery:
             return "", tr("alert.delivery.llm_failed"), None
 
         async def generate():
-            signature, persona_prompt, note = await self._resolve_target_llm(
+            signature, persona_input, note = await self._resolve_target_llm(
                 target, active
             )
             if signature is None or not self._alive(active):
                 return "", note, None
             # No balances, names, endpoints, recipients, credentials, history or
-            # tools enter this request. Only anonymous placeholder count/schema
-            # accompanies the target persona; substitution is entirely local.
+            # tools enter this request. Configured persona examples accompany
+            # the full persona and anonymous schema; substitution is local.
             response = await self.context.llm_generate(
                 chat_provider_id=signature[0],
                 prompt=prompt,
-                system_prompt=persona_prompt
+                system_prompt=persona_input.prompt
                 + (
                     "\n你正在组织整条额度提醒，不是执行对话任务。"
                     "账户、指标、余额及阈值必须使用给定占位符融入自然语句，"
@@ -580,10 +648,11 @@ class AlertDelivery:
                     "账户及服务可用性；也不要把付款作为继续使用的先决条件。"
                     "不要提供充值链接、支付操作、@提及、CQ代码或工具调用，"
                     "不要声称已经充值、付款或执行其他操作。"
-                )
-                + "\n"
-                + tr("alert.delivery.llm_language"),
-                contexts=[],
+                    "根据人格、人格样例和本次提供的信息自行选择语言和表达。"
+                    "本次未提供当前聊天消息、真实聊天历史或成员资料；"
+                    "可沿用人格及人格样例中的称呼，不要虚构本次聊天事件。"
+                ),
+                contexts=persona_input.contexts,
                 tools=None,
             )
             if not self._alive(active):
